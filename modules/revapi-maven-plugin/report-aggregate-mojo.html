@@ -8,7 +8,7 @@
 
 	<head>
 		<meta charset="UTF-8" />
-		<title>Revapi Maven Plugin &#x2013; revapi:report</title>
+		<title>Revapi Maven Plugin &#x2013; revapi:report-aggregate</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="description" content="" />
 		<meta http-equiv="content-language" content="en" />
@@ -32,7 +32,7 @@
 
 	</head>
 
-	<body class="page-report-mojo project-revapi-maven-plugin" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
+	<body class="page-report-aggregate-mojo project-revapi-maven-plugin" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
 
 		<header class="navbar navbar-default navbar-fixed-top">
 			<div class="container">
@@ -113,21 +113,21 @@
 			<div class="body-content">
 <div class="section"> 
  <div class="page-header">
-  <h2 id="revapireport">revapi:report</h2>
+  <h2 id="revapireport-aggregate">revapi:report-aggregate</h2>
  </div> 
  <p><b>Note</b>:This goal should be used as a Maven report.</p> 
  <p><b>Full name</b>:</p> 
- <p>org.revapi:revapi-maven-plugin:0.5.0:report</p> 
+ <p>org.revapi:revapi-maven-plugin:0.5.0:report-aggregate</p> 
  <p><b>Description</b>:</p> 
  <div>
-   (no description) 
+   Uses the configuration supplied at the top level aggregator project to run analysis on all sub-projects. 
+  <p>The artifacts to compare are taken from the configurations of the child projects while the configuration of Revapi and the extensions to use are taken from the aggregator project. The analyses are run in succession using a single instance of Revapi. Therefore you need to configure your reporter(s) to somehow not overwrite the report, but append to it (the <tt>revapi-reporter-text</tt> reporter has an <tt>append</tt> boolean parameter for this, for example).</p> 
  </div> 
  <p><b>Attributes</b>:</p> 
  <ul> 
   <li>Requires a Maven project to be executed.</li> 
-  <li>The goal is thread-safe and supports parallel builds.</li> 
-  <li>Since version: <tt>0.1</tt>.</li> 
-  <li>Binds by default to the <a class="externalLink" href="http://maven.apache.org/ref/current/maven-core/lifecycles.html">lifecycle phase</a>: <tt>site</tt>.</li> 
+  <li>Executes as an aggregator plugin.</li> 
+  <li>Since version: <tt>0.5.0</tt>.</li> 
  </ul> 
  <div class="section"> 
   <h3 id="Optional_Parameters">Optional Parameters</h3> 
@@ -144,19 +144,19 @@
     <tr class="b"> 
      <td><b><a href="#alwaysCheckForReleaseVersion">alwaysCheckForReleaseVersion</a></b></td> 
      <td><tt>boolean</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>If true (the default) revapi will always download the information about the latest version from the remote repositories (instead of using locally cached info). This will respect the offline settings.<br><b>Default value is</b>: <tt>true</tt>.<br><b>User property is</b>: <tt>revapi.alwaysCheckForReleaseVersion</tt>.</td> 
     </tr> 
     <tr class="a"> 
      <td><b><a href="#analysisConfiguration">analysisConfiguration</a></b></td> 
      <td><tt>String</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>The JSON configuration of various analysis options. The available options depend on what analyzers are present on the plugins classpath through the <tt>&amp;lt;dependencies&amp;gt;</tt>. <p>These settings take precedence over the configuration loaded from <tt>analysisConfigurationFiles</tt>.</p><br></td> 
     </tr> 
     <tr class="b"> 
      <td><b><a href="#analysisConfigurationFiles">analysisConfigurationFiles</a></b></td> 
      <td><tt>Object[]</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>The list of files containing the configuration of various analysis options. The available options depend on what analyzers are present on the plugins classpath through the <tt>&amp;lt;dependencies&amp;gt;</tt>. <p>The <tt>analysisConfiguration</tt> can override the settings present in the files.</p> <p>The list is either a list of strings or has the following form:</p> 
       <div> 
        <pre>
@@ -206,73 +206,73 @@
     <tr class="a"> 
      <td><b><a href="#checkDependencies">checkDependencies</a></b></td> 
      <td><tt>boolean</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>Whether to include the dependencies in the API checks. This is the default thing to do because your API might be exposing classes from the dependencies and thus classes from your dependencies could become part of your API. <p>However, setting this to false might be useful in situations where you have checked your dependencies in another module and don't want do that again. In that case, you might want to configure Revapi to ignore missing classes because it might find the classes from your dependencies as used in your API and would complain that it could not find it. See <a class="externalLink" href="http://revapi.org/modules/revapi-java/extensions/java.html">the docs</a>.</p><br><b>Default value is</b>: <tt>true</tt>.<br><b>User property is</b>: <tt>revapi.checkDependencies</tt>.</td> 
     </tr> 
     <tr class="b"> 
      <td><b><a href="#failOnMissingConfigurationFiles">failOnMissingConfigurationFiles</a></b></td> 
      <td><tt>boolean</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>Set to false if you want to tolerate files referenced in the <tt>analysisConfigurationFiles</tt> missing on the filesystem and therefore not contributing to the analysis configuration. <p>The default is <tt>true</tt>, which means that a missing analysis configuration file will fail the build.</p><br><b>Default value is</b>: <tt>true</tt>.<br><b>User property is</b>: <tt>revapi.failOnMissingConfigurationFiles</tt>.</td> 
     </tr> 
     <tr class="a"> 
      <td><b><a href="#failOnUnresolvedArtifacts">failOnUnresolvedArtifacts</a></b></td> 
      <td><tt>boolean</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>If true, the build will fail if one of the old or new artifacts fails to be resolved. Defaults to false.<br><b>Default value is</b>: <tt>false</tt>.<br><b>User property is</b>: <tt>revapi.failOnUnresolvedArtifacts</tt>.</td> 
     </tr> 
     <tr class="b"> 
      <td><b><a href="#failOnUnresolvedDependencies">failOnUnresolvedDependencies</a></b></td> 
      <td><tt>boolean</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>If true, the build will fail if some of the dependencies of the old or new artifacts fail to be resolved. Defaults to false.<br><b>Default value is</b>: <tt>false</tt>.<br><b>User property is</b>: <tt>revapi.failOnUnresolvedDependencies</tt>.</td> 
     </tr> 
     <tr class="a"> 
      <td><b><a href="#generateSiteReport">generateSiteReport</a></b></td> 
      <td><tt>boolean</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>Set this to false if you want to use the goal to generate other kind of output than the default report for the Maven-generated site. You can generate such output by using different reporting extensions (like revapi-reporter-text).<br><b>Default value is</b>: <tt>true</tt>.<br><b>User property is</b>: <tt>revapi.generateSiteReport</tt>.</td> 
     </tr> 
     <tr class="b"> 
      <td><b><a href="#newArtifacts">newArtifacts</a></b></td> 
      <td><tt>String[]</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>The coordinates of the new artifacts. These are the full GAVs of the artifacts, which means that you can compare different artifacts than the one being built. If you merely want to specify the artifact being built, use <tt>newVersion</tt> property instead.<br><b>User property is</b>: <tt>revapi.newArtifacts</tt>.</td> 
     </tr> 
     <tr class="a"> 
      <td><b><a href="#newVersion">newVersion</a></b></td> 
      <td><tt>String</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>The new version of the artifact. Defaults to "${project.version}".<br><b>Default value is</b>: <tt>${project.version}</tt>.<br><b>User property is</b>: <tt>revapi.newVersion</tt>.</td> 
     </tr> 
     <tr class="b"> 
      <td><b><a href="#oldArtifacts">oldArtifacts</a></b></td> 
      <td><tt>String[]</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>The coordinates of the old artifacts. Defaults to single artifact with the latest released version of the current project. If the coordinates are exactly "BUILD" (without quotes) the build artifacts are used. If the this property is null, the <tt>oldVersion</tt> property is checked for a value of the old version of the artifact being built.<br><b>User property is</b>: <tt>revapi.oldArtifacts</tt>.</td> 
     </tr> 
     <tr class="a"> 
      <td><b><a href="#oldVersion">oldVersion</a></b></td> 
      <td><tt>String</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>If you don't want to compare a different artifact than the one being built, specifying the just the old version is simpler way of specifying the old artifact. The default value is "RELEASE" meaning that the old version is the last released version of the artifact being built.<br><b>Default value is</b>: <tt>RELEASE</tt>.<br><b>User property is</b>: <tt>revapi.oldVersion</tt>.</td> 
     </tr> 
     <tr class="b"> 
      <td><b><a href="#reportSeverity">reportSeverity</a></b></td> 
      <td><tt>FailSeverity</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>Problems with this or higher severity will be included in the report. Possible values: nonBreaking, potentiallyBreaking, breaking.<br><b>Default value is</b>: <tt>potentiallyBreaking</tt>.<br><b>User property is</b>: <tt>revapi.reportSeverity</tt>.</td> 
     </tr> 
     <tr class="a"> 
      <td><b><a href="#skip">skip</a></b></td> 
      <td><tt>boolean</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>Whether to skip the mojo execution.<br><b>Default value is</b>: <tt>false</tt>.<br><b>User property is</b>: <tt>revapi.skip</tt>.</td> 
     </tr> 
     <tr class="b"> 
      <td><b><a href="#versionFormat">versionFormat</a></b></td> 
      <td><tt>String</tt></td> 
-     <td><tt>0.1</tt></td> 
+     <td><tt>0.5.0</tt></td> 
      <td>If set, this property demands a format of the version string when the <tt>oldVersion</tt> or <tt>newVersion</tt> parameters are set to <tt>RELEASE</tt> or <tt>LATEST</tt> special version strings. <p>Because Maven will report the newest non-snapshot version as the latest release, we might end up comparing a <tt>.Beta</tt> or other pre-release versions with the new version. This might not be what you want and setting the versionFormat will make sure that a newest version conforming to the version format is used instead of the one resolved by Maven by default.</p> <p>This parameter is a regular expression pattern that the version string needs to match in order to be considered a <tt>RELEASE</tt>.</p><br><b>User property is</b>: <tt>revapi.versionFormat</tt>.</td> 
     </tr> 
    </tbody> 
@@ -286,7 +286,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>boolean</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.alwaysCheckForReleaseVersion</tt></li> 
    <li><b>Default</b>: <tt>true</tt></li> 
@@ -300,7 +300,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>java.lang.String</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
   </ul> 
   <hr> 
@@ -360,7 +360,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>java.lang.Object[]</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.analysisConfigurationFiles</tt></li> 
   </ul> 
@@ -372,7 +372,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>boolean</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.checkDependencies</tt></li> 
    <li><b>Default</b>: <tt>true</tt></li> 
@@ -386,7 +386,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>boolean</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.failOnMissingConfigurationFiles</tt></li> 
    <li><b>Default</b>: <tt>true</tt></li> 
@@ -398,7 +398,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>boolean</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.failOnUnresolvedArtifacts</tt></li> 
    <li><b>Default</b>: <tt>false</tt></li> 
@@ -410,7 +410,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>boolean</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.failOnUnresolvedDependencies</tt></li> 
    <li><b>Default</b>: <tt>false</tt></li> 
@@ -422,7 +422,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>boolean</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.generateSiteReport</tt></li> 
    <li><b>Default</b>: <tt>true</tt></li> 
@@ -435,7 +435,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>java.lang.String[]</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.newArtifacts</tt></li> 
   </ul> 
@@ -446,7 +446,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>java.lang.String</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.newVersion</tt></li> 
    <li><b>Default</b>: <tt>${project.version}</tt></li> 
@@ -459,7 +459,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>java.lang.String[]</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.oldArtifacts</tt></li> 
   </ul> 
@@ -470,7 +470,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>java.lang.String</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.oldVersion</tt></li> 
    <li><b>Default</b>: <tt>RELEASE</tt></li> 
@@ -482,7 +482,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>org.revapi.maven.FailSeverity</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.reportSeverity</tt></li> 
    <li><b>Default</b>: <tt>potentiallyBreaking</tt></li> 
@@ -494,7 +494,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>boolean</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.skip</tt></li> 
    <li><b>Default</b>: <tt>false</tt></li> 
@@ -512,7 +512,7 @@
   </div> 
   <ul> 
    <li><b>Type</b>: <tt>java.lang.String</tt></li> 
-   <li><b>Since</b>: <tt>0.1</tt></li> 
+   <li><b>Since</b>: <tt>0.5.0</tt></li> 
    <li><b>Required</b>: <tt>No</tt></li> 
    <li><b>User Property</b>: <tt>revapi.versionFormat</tt></li> 
   </ul> 
@@ -525,7 +525,7 @@
 				<div class="well">
 					<ul class="nav nav-list">
 						<li class="nav-header">Table of Contents</li>
-		<li class="dropdown"><a href="#revapireport" title="revapi:report">revapi:report <b class="caret"></b></a>
+		<li class="dropdown"><a href="#revapireport-aggregate" title="revapi:report-aggregate">revapi:report-aggregate <b class="caret"></b></a>
 			<ul class="nav nav-list">
 		<li><a href="#Optional_Parameters" title="Optional Parameters">Optional Parameters</a>
 		<li><a href="#Parameter_Details" title="Parameter Details">Parameter Details</a>
