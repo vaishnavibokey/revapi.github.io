@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Missing.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.classes</a> &gt; <span class="el_source">Missing.java</span></div><h1>Missing.java</h1><pre class="source lang-java linenums">package org.revapi.java.checks.classes;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaTypeElement;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="fc" id="L18">public final class Missing extends CheckBase {</span>
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L22">        return EnumSet.of(Type.CLASS);</span>
+    }
+
+    @Override
+    protected void doVisitClass(@Nullable JavaTypeElement oldType, @Nullable JavaTypeElement newType) {
+<span class="fc bfc" id="L27" title="All 6 branches covered.">        if ((oldType != null &amp;&amp; isMissing(oldType.getDeclaringElement()))</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">                || (newType != null &amp;&amp; isMissing(newType.getDeclaringElement()))) {</span>
+<span class="fc" id="L29">            pushActive(oldType, newType);</span>
+        }
+<span class="fc" id="L31">    }</span>
+
+    @Nullable
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L36">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (types == null) {</span>
+<span class="fc" id="L38">            return null;</span>
+        }
+
+<span class="fc" id="L41">        List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (types.oldElement != null) {</span>
+<span class="fc" id="L44">            ret.add(createDifference(Code.MISSING_IN_OLD_API, types.oldElement.getDeclaringElement().getQualifiedName().toString()));</span>
+        }
+
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (types.newElement != null) {</span>
+<span class="fc" id="L48">            ret.add(createDifference(Code.MISSING_IN_NEW_API, types.newElement.getDeclaringElement().getQualifiedName().toString()));</span>
+        }
+
+<span class="fc" id="L51">        return ret;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

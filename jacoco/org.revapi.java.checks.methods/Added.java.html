@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Added.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.methods</a> &gt; <span class="el_source">Added.java</span></div><h1>Added.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi.java.checks.methods;
+
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.SimpleElementVisitor7;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaMethodElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="fc" id="L41">public final class Added extends CheckBase {</span>
+<span class="fc" id="L42">    private static final Logger LOG = LoggerFactory.getLogger(Added.class);</span>
+
+<span class="fc" id="L44">    private final SimpleElementVisitor7&lt;TypeElement, Void&gt; enclosingClassExtractor = new SimpleElementVisitor7&lt;TypeElement, Void&gt;() {</span>
+        @Override
+        protected TypeElement defaultAction(Element e, Void ignored) {
+<span class="nc" id="L47">            return null;</span>
+        }
+
+        @Override
+        public TypeElement visitType(TypeElement e, Void ignored) {
+<span class="nc" id="L52">            return e;</span>
+        }
+    };
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L58">        return EnumSet.of(Type.METHOD);</span>
+    }
+
+    @Override
+    protected void doVisitMethod(JavaMethodElement oldMethod, JavaMethodElement newMethod) {
+<span class="pc bpc" id="L63" title="1 of 6 branches missed.">        if (oldMethod == null &amp;&amp; newMethod != null &amp;&amp; isAccessible(newMethod)) {</span>
+<span class="fc" id="L64">            pushActive(null, newMethod);</span>
+        }
+<span class="fc" id="L66">    }</span>
+
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L70">        ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (methods == null) {</span>
+<span class="fc" id="L72">            return null;</span>
+        }
+
+        // we need to consider several cases here:
+        // 1) method added to a interface
+        // 2) method added to a final class
+        // 3) concrete method added to a non-final class
+        // 4) abstract method added to a non-final class
+        // 5) final method added to a non-final class
+        // 5) previously inherited method is now declared in class
+
+<span class="fc" id="L83">        ExecutableElement method = methods.newElement.getDeclaringElement();</span>
+
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (methods.newElement.getParent() == null) {</span>
+<span class="nc" id="L86">            LOG.warn(&quot;Could not find an enclosing class of method &quot; + method + &quot;. That's weird.&quot;);</span>
+<span class="nc" id="L87">            return null;</span>
+        }
+
+<span class="fc" id="L90">        TypeElement enclosingClass = (TypeElement) methods.newElement.getParent().getDeclaringElement();</span>
+
+        Difference difference;
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (enclosingClass.getKind() == ElementKind.INTERFACE) {</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if (method.isDefault()) {</span>
+<span class="fc" id="L96">                difference = createDifference(Code.METHOD_DEFAULT_METHOD_ADDED_TO_INTERFACE);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            } else if (method.getModifiers().contains(Modifier.STATIC)) {</span>
+                //statics on interface can only be called using the interface they are declared on, even if a method
+                //with a same signature was declared on some of the super types in the old version, the users would
+                //not have been able to call those methods using the current type. So we don't need to specialize here
+                //based on the presence of a previously inherited method.
+<span class="fc" id="L102">                difference = createDifference(Code.METHOD_STATIC_METHOD_ADDED_TO_INTERFACE);</span>
+            } else {
+<span class="fc" id="L104">                difference = createDifference(Code.METHOD_ADDED_TO_INTERFACE);</span>
+            }
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        } else if (method.getModifiers().contains(Modifier.ABSTRACT)) {</span>
+<span class="fc" id="L107">            difference = createDifference(Code.METHOD_ABSTRACT_METHOD_ADDED);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        } else if (method.getModifiers().contains(Modifier.FINAL) &amp;&amp;</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                !enclosingClass.getModifiers().contains(Modifier.FINAL)) {</span>
+
+<span class="fc" id="L111">             difference = createDifference(Code.METHOD_FINAL_METHOD_ADDED_TO_NON_FINAL_CLASS);</span>
+        } else {
+<span class="fc" id="L113">            difference = createDifference(Code.METHOD_ADDED);</span>
+        }
+
+<span class="fc" id="L116">        return Collections.singletonList(difference);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

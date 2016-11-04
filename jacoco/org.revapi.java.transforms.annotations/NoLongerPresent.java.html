@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NoLongerPresent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.transforms.annotations</a> &gt; <span class="el_source">NoLongerPresent.java</span></div><h1>NoLongerPresent.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2015 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.transforms.annotations;
+
+import java.io.Reader;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.lang.model.element.ElementKind;
+
+import org.revapi.AnalysisContext;
+import org.revapi.Difference;
+import org.revapi.DifferenceTransform;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaTypeElement;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.3.0
+ */
+<span class="fc" id="L37">public class NoLongerPresent implements DifferenceTransform&lt;JavaTypeElement&gt; {</span>
+    private Locale locale;
+
+    @Nonnull
+    @Override
+    public Pattern[] getDifferenceCodePatterns() {
+<span class="fc" id="L43">        return new Pattern[]{Pattern.compile(&quot;java\\.class\\.removed&quot;)};</span>
+    }
+
+    @Override
+    public @Nullable Difference transform(@Nullable JavaTypeElement oldElement, @Nullable JavaTypeElement newElement,
+                                          @Nonnull Difference difference) {
+<span class="pc bpc" id="L49" title="2 of 4 branches missed.">        if (oldElement == null || newElement != null) {</span>
+<span class="nc" id="L50">            return difference;</span>
+        }
+
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (oldElement.getDeclaringElement().getKind() == ElementKind.ANNOTATION_TYPE) {</span>
+<span class="nc" id="L54">            return Code.ANNOTATION_NO_LONGER_PRESENT.createDifference(locale);</span>
+        } else {
+<span class="fc" id="L56">            return difference;</span>
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L62">    }</span>
+
+    @Override
+    public String[] getConfigurationRootPaths() {
+<span class="fc" id="L66">        return null;</span>
+    }
+
+    @Override
+    public @Nullable Reader getJSONSchema(String configurationRootPath) {
+<span class="nc" id="L71">        return null;</span>
+    }
+
+    @Override
+    public void initialize(AnalysisContext analysisContext) {
+<span class="fc" id="L76">        this.locale = analysisContext.getLocale();</span>
+<span class="fc" id="L77">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

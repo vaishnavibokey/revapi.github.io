@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypeElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">TypeElement.java</span></div><h1>TypeElement.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2015 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi.java.model;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.SimpleElementVisitor8;
+
+import org.revapi.Archive;
+import org.revapi.java.FlatFilter;
+import org.revapi.java.compilation.ClassPathUseSite;
+import org.revapi.java.compilation.ProbingEnvironment;
+import org.revapi.java.spi.JavaModelElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.UseSite;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public class TypeElement extends JavaElementBase&lt;javax.lang.model.element.TypeElement, DeclaredType&gt; implements JavaTypeElement {
+    private final String binaryName;
+    private final String canonicalName;
+    private Set&lt;UseSite&gt; useSites;
+    private Set&lt;ClassPathUseSite&gt; rawUseSites;
+    private boolean inApi;
+    private boolean inApiThroughUse;
+
+    /**
+     * This is a helper constructor used only during probing the class files. This is to ensure that we have a
+     * &quot;bare bones&quot; type element available even before we have functioning compilation infrastructure in
+     * the environment.
+     *
+     * @param env           probing environment
+     * @param binaryName    the binary name of the class
+     * @param canonicalName the canonical name of the class
+     */
+    public TypeElement(ProbingEnvironment env, Archive archive, String binaryName, String canonicalName) {
+<span class="fc" id="L64">        super(env, archive, null, null);</span>
+<span class="fc" id="L65">        this.binaryName = binaryName;</span>
+<span class="fc" id="L66">        this.canonicalName = canonicalName;</span>
+<span class="fc" id="L67">    }</span>
+
+    /**
+     * This constructor is used under &quot;normal working conditions&quot; when the probing environment already has
+     * the compilation infrastructure available (which is assumed since otherwise it would not be possible to obtain
+     * instances of the javax.lang.model.element.TypeElement interface).
+     *
+     * @param env     the probing environment
+     * @param element the model element to be represented
+     */
+    public TypeElement(ProbingEnvironment env, Archive archive, javax.lang.model.element.TypeElement element, DeclaredType type) {
+<span class="fc" id="L78">        super(env, archive, element, type);</span>
+<span class="fc" id="L79">        binaryName = env.getElementUtils().getBinaryName(element).toString();</span>
+<span class="fc" id="L80">        canonicalName = element.getQualifiedName().toString();</span>
+<span class="fc" id="L81">    }</span>
+
+    @Nonnull
+    @Override
+    protected String getHumanReadableElementType() {
+<span class="fc" id="L86">        return &quot;class&quot;;</span>
+    }
+
+    public String getBinaryName() {
+<span class="fc" id="L90">        return binaryName;</span>
+    }
+
+    public String getCanonicalName() {
+<span class="fc" id="L94">        return canonicalName;</span>
+    }
+
+    @Override public boolean isInAPI() {
+<span class="fc" id="L98">        return inApi;</span>
+    }
+
+    @Override public boolean isInApiThroughUse() {
+<span class="fc" id="L102">        return inApiThroughUse;</span>
+    }
+
+    @Override public Set&lt;UseSite&gt; getUseSites() {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (useSites == null) {</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (rawUseSites == null) {</span>
+<span class="fc" id="L108">                useSites = Collections.emptySet();</span>
+            } else {
+<span class="fc" id="L110">                useSites = rawUseSites.stream()</span>
+<span class="fc" id="L111">                        .map(u -&gt; new UseSite(u.useType, getModel(u.site, u.indexInParent)))</span>
+<span class="fc" id="L112">                        .collect(Collectors.toSet());</span>
+            }
+<span class="fc" id="L114">            rawUseSites = null;</span>
+        }
+
+<span class="fc" id="L117">        return useSites;</span>
+    }
+
+    public void setInApi(boolean inApi) {
+<span class="fc" id="L121">        this.inApi = inApi;</span>
+<span class="fc" id="L122">    }</span>
+
+    public void setInApiThroughUse(boolean inApiThroughUse) {
+<span class="fc" id="L125">        this.inApiThroughUse = inApiThroughUse;</span>
+<span class="fc" id="L126">    }</span>
+
+    public void setRawUseSites(Set&lt;ClassPathUseSite&gt; rawUseSites) {
+<span class="fc" id="L129">        this.rawUseSites = rawUseSites;</span>
+<span class="fc" id="L130">    }</span>
+
+    @Override
+    public int compareTo(@Nonnull org.revapi.Element o) {
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (!(o.getClass().equals(TypeElement.class))) {</span>
+<span class="fc" id="L135">            return JavaElementFactory.compareByType(this, o);</span>
+        }
+
+<span class="fc" id="L138">        return binaryName.compareTo(((TypeElement) o).binaryName);</span>
+    }
+
+    @Override protected String createFullHumanReadableString() {
+<span class="fc" id="L142">        TypeMirror rep = getModelRepresentation();</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        return getHumanReadableElementType() + &quot; &quot; + (rep == null ? canonicalName : Util.toHumanReadableString(rep));</span>
+    }
+
+    @Override
+    protected String createComparableSignature() {
+        //this isn't used, because compareTo is implemented differently
+<span class="nc" id="L149">        return null;</span>
+    }
+
+    private JavaModelElement getModel(Element element, int indexInParent) {
+<span class="fc" id="L153">        return element.accept(new SimpleElementVisitor8&lt;JavaModelElement, Void&gt;() {</span>
+            @Override public JavaModelElement visitVariable(VariableElement e, Void ignored) {
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">                if (e.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
+                    //this is a field
+<span class="fc" id="L157">                    TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
+<span class="fc" id="L158">                    Name fieldName = e.getSimpleName();</span>
+<span class="fc" id="L159">                    List&lt;FieldElement&gt; fs = type.searchChildren(FieldElement.class, false,</span>
+<span class="fc" id="L160">                            FlatFilter.by(f -&gt; fieldName.contentEquals(f.getDeclaringElement().getSimpleName())));</span>
+<span class="fc" id="L161">                    return fs.get(0);</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                } else if (e.getEnclosingElement() instanceof javax.lang.model.element.ExecutableElement) {</span>
+                    //this is a method parameter
+<span class="nc" id="L164">                    TypeElement type = environment.getTypeMap().get(e.getEnclosingElement().getEnclosingElement());</span>
+<span class="nc" id="L165">                    String methodSig = Util.toUniqueString(e.getEnclosingElement().asType());</span>
+<span class="nc" id="L166">                    List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
+<span class="nc" id="L167">                            FlatFilter.by(m -&gt; Util.toUniqueString(m.getDeclaringElement().asType()).equals(methodSig)));</span>
+
+<span class="nc" id="L169">                    MethodElement method = ms.get(0);</span>
+
+                    //now look for the parameter
+<span class="nc" id="L172">                    List&lt;MethodParameterElement&gt; params =</span>
+<span class="nc" id="L173">                            method.searchChildren(MethodParameterElement.class, false, FlatFilter.by(p -&gt; true));</span>
+
+<span class="nc" id="L175">                    return params.get(indexInParent);</span>
+                } else {
+<span class="nc" id="L177">                    return null;</span>
+                }
+            }
+
+            @Override public JavaModelElement visitType(javax.lang.model.element.TypeElement e, Void ignored) {
+<span class="fc" id="L182">                return environment.getTypeMap().get(e);</span>
+            }
+
+            @Override public JavaModelElement visitExecutable(ExecutableElement e, Void ignored) {
+<span class="fc" id="L186">                TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
+<span class="fc" id="L187">                String methodSig = Util.toUniqueString(e.asType());</span>
+<span class="fc" id="L188">                List&lt;MethodElement&gt; fs = type.searchChildren(MethodElement.class, false,</span>
+<span class="fc" id="L189">                        FlatFilter.by(f -&gt; Util.toUniqueString(f.getDeclaringElement().asType()).equals(methodSig)));</span>
+
+<span class="fc" id="L191">                return fs.get(0);</span>
+            }
+        }, null);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

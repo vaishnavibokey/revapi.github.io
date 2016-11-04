@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldMovedInHierarchy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.fields</a> &gt; <span class="el_source">FieldMovedInHierarchy.java</span></div><h1>FieldMovedInHierarchy.java</h1><pre class="source lang-java linenums">package org.revapi.java.checks.fields;
+
+import java.util.EnumSet;
+
+import javax.annotation.Nullable;
+
+import org.revapi.java.checks.common.MovedInHierarchy;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaFieldElement;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.11.0
+ */
+public final class FieldMovedInHierarchy extends MovedInHierarchy {
+    public FieldMovedInHierarchy() {
+<span class="fc" id="L17">        super(Code.FIELD_MOVED_TO_SUPER_CLASS, Code.FIELD_INHERITED_NOW_DECLARED);</span>
+<span class="fc" id="L18">    }</span>
+
+    @Override public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L21">        return EnumSet.of(Type.FIELD);</span>
+    }
+
+    @Override protected void doVisitField(@Nullable JavaFieldElement oldField, @Nullable JavaFieldElement newField) {
+<span class="fc" id="L25">        doVisit(oldField, newField);</span>
+<span class="fc" id="L26">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

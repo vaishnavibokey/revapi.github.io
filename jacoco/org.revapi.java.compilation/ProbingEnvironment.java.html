@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProbingEnvironment.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.compilation</a> &gt; <span class="el_source">ProbingEnvironment.java</span></div><h1>ProbingEnvironment.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2015 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi.java.compilation;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+
+import javax.annotation.Nonnull;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+
+import org.revapi.API;
+import org.revapi.java.model.JavaElementForest;
+import org.revapi.java.spi.TypeEnvironment;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public final class ProbingEnvironment implements TypeEnvironment {
+    private final API api;
+    private volatile ProcessingEnvironment processingEnvironment;
+<span class="fc" id="L43">    private final CountDownLatch compilationProgressLatch = new CountDownLatch(1);</span>
+<span class="fc" id="L44">    private final CountDownLatch compilationEnvironmentTeardownLatch = new CountDownLatch(1);</span>
+    private final JavaElementForest tree;
+<span class="fc" id="L46">    private final Set&lt;String&gt; explicitExclusions = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L47">    private final Set&lt;String&gt; explicitInclusions = new HashSet&lt;&gt;();</span>
+    private Map&lt;TypeElement, org.revapi.java.model.TypeElement&gt; typeMap;
+
+<span class="fc" id="L50">    public ProbingEnvironment(API api) {</span>
+<span class="fc" id="L51">        this.api = api;</span>
+<span class="fc" id="L52">        this.tree = new JavaElementForest(api);</span>
+<span class="fc" id="L53">    }</span>
+
+    public API getApi() {
+<span class="nc" id="L56">        return api;</span>
+    }
+
+    public CountDownLatch getCompilationTeardownLatch() {
+<span class="fc" id="L60">        return compilationEnvironmentTeardownLatch;</span>
+    }
+
+    public CountDownLatch getCompilationProgressLatch() {
+<span class="fc" id="L64">        return compilationProgressLatch;</span>
+    }
+
+    public JavaElementForest getTree() {
+<span class="fc" id="L68">        return tree;</span>
+    }
+
+    public void setProcessingEnvironment(ProcessingEnvironment env) {
+<span class="fc" id="L72">        this.processingEnvironment = env;</span>
+<span class="fc" id="L73">    }</span>
+
+    public boolean hasProcessingEnvironment() {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        return processingEnvironment != null;</span>
+    }
+
+    public boolean isExplicitlyIncluded(Element element) {
+<span class="nc" id="L80">        return explicitInclusions.contains(Util.toHumanReadableString(element));</span>
+    }
+
+    public boolean isExplicitlyExcluded(Element element) {
+<span class="nc" id="L84">        return explicitExclusions.contains(Util.toHumanReadableString(element));</span>
+    }
+
+    public boolean isScanningComplete() {
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        return typeMap != null;</span>
+    }
+
+    @Nonnull
+    @Override
+    public Elements getElementUtils() {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (processingEnvironment == null) {</span>
+<span class="nc" id="L95">            throw new IllegalStateException(&quot;Types instance not yet available. It is too early to call this method.&quot; +</span>
+                    &quot; Wait until after the archives are visited and the API model constructed.&quot;);
+        }
+<span class="fc" id="L98">        return new MissingTypeAwareDelegatingElements(processingEnvironment.getElementUtils());</span>
+    }
+
+    @Nonnull
+    @Override
+    @SuppressWarnings(&quot;ConstantConditions&quot;)
+    public Types getTypeUtils() {
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        if (processingEnvironment == null) {</span>
+<span class="nc" id="L106">            throw new IllegalStateException(&quot;Types instance not yet available. It is too early to call this method.&quot; +</span>
+                    &quot; Wait until after the archives are visited and the API model constructed.&quot;);
+        }
+<span class="fc" id="L109">        return new MissingTypeAwareDelegatingTypes(processingEnvironment.getTypeUtils());</span>
+    }
+
+    public void setTypeMap(Map&lt;TypeElement, org.revapi.java.model.TypeElement&gt; typeMap) {
+<span class="fc" id="L113">        this.typeMap = typeMap;</span>
+<span class="fc" id="L114">    }</span>
+
+    public Map&lt;TypeElement, org.revapi.java.model.TypeElement&gt; getTypeMap() {
+<span class="fc" id="L117">        return typeMap;</span>
+    }
+
+    public void addExplicitExclusion(String canonicalName) {
+<span class="fc" id="L121">        explicitExclusions.add(canonicalName);</span>
+<span class="fc" id="L122">    }</span>
+
+    public void addExplicitInclusion(String canonicalName) {
+<span class="fc" id="L125">        explicitInclusions.add(canonicalName);</span>
+<span class="fc" id="L126">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
