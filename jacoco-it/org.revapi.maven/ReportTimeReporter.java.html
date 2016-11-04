@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportTimeReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">ReportTimeReporter.java</span></div><h1>ReportTimeReporter.java</h1><pre class="source lang-java linenums">package org.revapi.maven;
+
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.AnalysisContext;
+import org.revapi.CompatibilityType;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Element;
+import org.revapi.Report;
+import org.revapi.Reporter;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+final class ReportTimeReporter implements Reporter {
+
+    private final DifferenceSeverity minSeverity;
+
+<span class="fc" id="L28">    EnumMap&lt;DifferenceSeverity, EnumMap&lt;CompatibilityType, List&lt;DifferenceReport&gt;&gt;&gt; reportsBySeverity =</span>
+        new EnumMap&lt;&gt;(DifferenceSeverity.class);
+
+<span class="fc" id="L31">    ReportTimeReporter(DifferenceSeverity minSeverity) {</span>
+<span class="fc" id="L32">        this.minSeverity = minSeverity;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    public void report(@Nonnull Report report) {
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (Difference d : report.getDifferences()) {</span>
+<span class="fc" id="L38">            addDifference(report.getOldElement(), report.getNewElement(), d);</span>
+<span class="fc" id="L39">        }</span>
+<span class="fc" id="L40">    }</span>
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L44">    }</span>
+
+    @Nullable
+    @Override
+    public String[] getConfigurationRootPaths() {
+<span class="nc" id="L49">        return null;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema(@Nonnull String configurationRootPath) {
+<span class="nc" id="L55">        return null;</span>
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L60">        reportsBySeverity.clear();</span>
+<span class="fc" id="L61">    }</span>
+
+    private void addDifference(Element oldElement, Element newElement, Difference difference) {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (Map.Entry&lt;CompatibilityType, DifferenceSeverity&gt; cls : difference.classification.entrySet()) {</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">            if (cls.getValue().compareTo(minSeverity) &lt; 0) {</span>
+<span class="nc" id="L66">                continue;</span>
+            }
+
+<span class="fc" id="L69">            EnumMap&lt;CompatibilityType, List&lt;DifferenceReport&gt;&gt; sevReports = reportsBySeverity.get(cls.getValue());</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            if (sevReports == null) {</span>
+<span class="fc" id="L71">                sevReports = new EnumMap&lt;&gt;(CompatibilityType.class);</span>
+<span class="fc" id="L72">                reportsBySeverity.put(cls.getValue(), sevReports);</span>
+            }
+
+<span class="fc" id="L75">            List&lt;DifferenceReport&gt; reps = sevReports.get(cls.getKey());</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            if (reps == null) {</span>
+<span class="fc" id="L77">                reps = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L78">                sevReports.put(cls.getKey(), reps);</span>
+            }
+
+<span class="fc" id="L81">            reps.add(new DifferenceReport(oldElement, newElement, difference));</span>
+<span class="fc" id="L82">        }</span>
+<span class="fc" id="L83">    }</span>
+
+    public static class DifferenceReport {
+        final Element oldElement;
+        final Element newElement;
+        final Difference difference;
+
+<span class="fc" id="L90">        private DifferenceReport(Element oldElement, Element newElement, Difference difference) {</span>
+<span class="fc" id="L91">            this.oldElement = oldElement;</span>
+<span class="fc" id="L92">            this.newElement = newElement;</span>
+<span class="fc" id="L93">            this.difference = difference;</span>
+<span class="fc" id="L94">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
