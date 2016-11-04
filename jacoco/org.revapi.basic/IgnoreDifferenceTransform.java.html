@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IgnoreDifferenceTransform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">IgnoreDifferenceTransform.java</span></div><h1>IgnoreDifferenceTransform.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2015 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi.basic;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.Difference;
+import org.revapi.Element;
+
+import org.jboss.dmr.ModelNode;
+
+/**
+ * A generic difference transform that can ignore differences based on the difference code ({@link
+ * org.revapi.Difference#code}) and on the old or new elements' full human representations
+ * ({@link org.revapi.Element#getFullHumanReadableString()}).
+ * 
+ * &lt;p&gt;The transform is configured using properties in the general form of:
+ * &lt;pre&gt;&lt;code&gt;
+ *  {
+ *      &quot;revapi&quot; : {
+ *          &quot;ignore&quot; : [
+ *              {
+ *                  &quot;regex&quot; : false,
+ *                  &quot;code&quot; : &quot;PROBLEM_CODE&quot;,
+ *                  &quot;old&quot; : &quot;FULL_REPRESENTATION_OF_THE_OLD_ELEMENT&quot;,
+ *                  &quot;new&quot; : &quot;FULL_REPRESENTATION_OF_THE_NEW_ELEMENT&quot;,
+ *                  &quot;justification&quot;: &quot;blah&quot;
+ *              },
+ *              ...
+ *          ]
+ *      }
+ *  }
+ * &lt;/code&gt;&lt;/pre&gt;
+ * The {@code code} is mandatory (obviously). The {@code old} and {@code new} properties are optional and the rule will
+ * match when all the specified properties of it match. If regex attribute is &quot;true&quot; (defaults to &quot;false&quot;), all the
+ * code, old and new are understood as regexes (java regexes, not javascript ones).
+ *
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public class IgnoreDifferenceTransform
+    extends AbstractDifferenceReferringTransform&lt;IgnoreDifferenceTransform.IgnoreRecipe, Void&gt; {
+
+    public static class IgnoreRecipe extends DifferenceMatchRecipe {
+        public IgnoreRecipe(ModelNode node) {
+<span class="fc" id="L65">            super(node);</span>
+<span class="fc" id="L66">        }</span>
+
+        @Override
+        public Difference transformMatching(Difference difference, Element oldElement,
+            Element newElement) {
+
+            //we ignore the matching elements, so null is the correct return value.
+<span class="fc" id="L73">            return null;</span>
+        }
+    }
+
+    public IgnoreDifferenceTransform() {
+<span class="fc" id="L78">        super(&quot;revapi&quot;, &quot;ignore&quot;);</span>
+<span class="fc" id="L79">    }</span>
+
+    @Nullable
+    @Override
+    public String[] getConfigurationRootPaths() {
+<span class="nc" id="L84">        return new String[]{&quot;revapi.ignore&quot;};</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema(@Nonnull String configurationRootPath) {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (&quot;revapi.ignore&quot;.equals(configurationRootPath)) {</span>
+<span class="nc" id="L91">            return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/ignore-schema.json&quot;),</span>
+<span class="nc" id="L92">                    Charset.forName(&quot;UTF-8&quot;));</span>
+        } else {
+<span class="nc" id="L94">            return null;</span>
+        }
+    }
+
+    @Nullable
+    @Override
+    protected Void initConfiguration() {
+<span class="fc" id="L101">        return null;</span>
+    }
+
+    @Nonnull
+    @Override
+    protected IgnoreRecipe newRecipe(Void context, ModelNode config) {
+<span class="fc" id="L107">        return new IgnoreRecipe(config);</span>
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L112">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

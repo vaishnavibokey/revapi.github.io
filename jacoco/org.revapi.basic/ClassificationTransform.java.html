@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClassificationTransform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">ClassificationTransform.java</span></div><h1>ClassificationTransform.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2015 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi.basic;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.util.EnumMap;
+import java.util.Map;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.CompatibilityType;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Element;
+
+import org.jboss.dmr.ModelNode;
+
+/**
+ * A generic difference transform that can change the classification of a difference. This can be used in situations
+ * where one wants to consider certain differences differently than the defining extension declared them.
+ * 
+ * &lt;p&gt;The transform can be configured like so:
+ * &lt;pre&gt;&lt;code&gt;
+ * {
+ *  &quot;revapi&quot; : {
+ *      &quot;reclassify&quot; : [
+ *          {
+ *              &quot;regex&quot; : false,
+ *              &quot;code&quot; : &quot;PROBLEM_CODE&quot;,
+ *              &quot;old&quot; : &quot;FULL_REPRESENTATION_OF_THE_OLD_ELEMENT&quot;,
+ *              &quot;new&quot; : &quot;FULL_REPRESENTATION_OF_THE_NEW_ELEMENT&quot;,
+ *              classify : {
+ *                  &quot;NEW_COMPATIBILITY_TYPE&quot;: &quot;NEW_SEVERITY&quot;,
+ *                  &quot;NEW_COMPATIBILITY_TYPE_2&quot;: &quot;NEW_SEVERITY_2&quot;,
+ *              }
+ *          },
+ *          ...
+ *      ]
+ *  }
+ * }
+ * &lt;/code&gt;&lt;/pre&gt;
+ * 
+ * &lt;p&gt;The {@code code} is mandatory (obviously). The {@code old} and {@code new} properties are optional and the rule will
+ * match when all the specified properties of it match. If regex attribute is &quot;true&quot; (defaults to &quot;false&quot;), all the
+ * code, old and new are understood as regexes (java regexes, not javascript ones).
+ * 
+ * &lt;p&gt;The {@code NEW_COMPATIBILITY_TYPE} corresponds to one of the names of the {@link org.revapi.CompatibilityType}
+ * enum and the {@code NEW_SEVERITY} corresponds to one of the names of the {@link org.revapi.DifferenceSeverity}
+ * enum. The reclassified difference inherits its classification (i.e. the compatibility type + severity pairs) and
+ * only redefines the ones explicitly defined in the configuration.
+ *
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public class ClassificationTransform
+    extends AbstractDifferenceReferringTransform&lt;ClassificationTransform.ClassificationRecipe, Void&gt; {
+
+    public static class ClassificationRecipe extends DifferenceMatchRecipe {
+<span class="fc" id="L76">        protected final Map&lt;CompatibilityType, DifferenceSeverity&gt; classification = new EnumMap&lt;&gt;(</span>
+            CompatibilityType.class);
+
+        public ClassificationRecipe(ModelNode node) {
+<span class="fc" id="L80">            super(node);</span>
+<span class="fc" id="L81">            ModelNode classfications = node.get(&quot;classify&quot;);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            for (CompatibilityType ct : CompatibilityType.values()) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                if (classfications.has(ct.name())) {</span>
+<span class="fc" id="L84">                    String val = classfications.get(ct.name()).asString();</span>
+<span class="fc" id="L85">                    DifferenceSeverity sev = DifferenceSeverity.valueOf(val);</span>
+<span class="fc" id="L86">                    classification.put(ct, sev);</span>
+                }
+            }
+<span class="fc" id="L89">        }</span>
+
+        @Override
+        public Difference transformMatching(Difference difference, Element oldElement,
+            Element newElement) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            if (classification.isEmpty()) {</span>
+<span class="nc" id="L95">                return difference;</span>
+            } else {
+<span class="fc" id="L97">                return Difference.builder().withCode(difference.code).withName(difference.name)</span>
+<span class="fc" id="L98">                    .withDescription(difference.description).addAttachments(difference.attachments)</span>
+<span class="fc" id="L99">                    .addClassifications(difference.classification).addClassifications(classification).build();</span>
+            }
+        }
+    }
+
+    public ClassificationTransform() {
+<span class="fc" id="L105">        super(&quot;revapi&quot;, &quot;reclassify&quot;);</span>
+<span class="fc" id="L106">    }</span>
+
+    @Nullable
+    @Override
+    public String[] getConfigurationRootPaths() {
+<span class="nc" id="L111">        return new String[]{&quot;revapi.reclassify&quot;};</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema(@Nonnull String configurationRootPath) {
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (&quot;revapi.reclassify&quot;.equals(configurationRootPath)) {</span>
+<span class="nc" id="L118">            return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/classification-schema.json&quot;),</span>
+<span class="nc" id="L119">                    Charset.forName(&quot;UTF-8&quot;));</span>
+        } else {
+<span class="nc" id="L121">            return null;</span>
+        }
+    }
+
+    @Nullable
+    @Override
+    protected Void initConfiguration() {
+<span class="fc" id="L128">        return null;</span>
+    }
+
+    @Nonnull
+    @Override
+    protected ClassificationRecipe newRecipe(Void context, ModelNode config) {
+<span class="fc" id="L134">        return new ClassificationRecipe(config);</span>
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L139">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
