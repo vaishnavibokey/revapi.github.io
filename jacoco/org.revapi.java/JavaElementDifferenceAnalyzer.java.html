@@ -377,10 +377,10 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="fc" id="L377">            append(bld, last);</span>
         }
 
-<span class="pc bpc" id="L380" title="1 of 2 branches missed.">        while (chainIt.hasNext()) {</span>
-<span class="nc" id="L381">            bld.append(&quot; &lt;- &quot;);</span>
-<span class="nc" id="L382">            last = chainIt.next();</span>
-<span class="nc" id="L383">            append(bld, last);</span>
+<span class="fc bfc" id="L380" title="All 2 branches covered.">        while (chainIt.hasNext()) {</span>
+<span class="fc" id="L381">            bld.append(&quot; &lt;- &quot;);</span>
+<span class="fc" id="L382">            last = chainIt.next();</span>
+<span class="fc" id="L383">            append(bld, last);</span>
         }
 
 <span class="fc" id="L386">        String message = MessageFormat.format(messages.getString(&quot;revapi.java.uses.partOfApi&quot;),</span>
@@ -428,82 +428,83 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
                 public Boolean visit(@Nonnull DeclaredType visitedType, @Nonnull UseSite use,
                     @Nullable Void parameter) {
 <span class="fc bfc" id="L430" title="All 2 branches covered.">                    if (traverseToApi(usedType, visitedType, use, path, visitedTypes)) {</span>
-<span class="fc" id="L431">                        return true;</span>
+<span class="fc" id="L431">                        path.add(0, new TypeAndUseSite(type, currentUse));</span>
+<span class="fc" id="L432">                        return true;</span>
                     }
-<span class="fc" id="L433">                    return null;</span>
+<span class="fc" id="L434">                    return null;</span>
                 }
 
                 @Nullable
                 @Override
                 public Boolean end(DeclaredType type, @Nullable Void parameter) {
-<span class="fc" id="L439">                    return null;</span>
+<span class="fc" id="L440">                    return null;</span>
                 }
             }, null);
 
-<span class="fc bfc" id="L443" title="All 2 branches covered.">            return ret == null ? false : ret;</span>
+<span class="fc bfc" id="L444" title="All 2 branches covered.">            return ret == null ? false : ret;</span>
         }
     }
 
     private JavaTypeElement findClassOf(JavaElement element) {
-<span class="pc bpc" id="L448" title="1 of 4 branches missed.">        while (element != null &amp;&amp; !(element instanceof JavaTypeElement)) {</span>
-<span class="fc" id="L449">            element = (JavaElement) element.getParent();</span>
+<span class="pc bpc" id="L449" title="1 of 4 branches missed.">        while (element != null &amp;&amp; !(element instanceof JavaTypeElement)) {</span>
+<span class="fc" id="L450">            element = (JavaElement) element.getParent();</span>
         }
 
-<span class="fc" id="L452">        return (JavaTypeElement) element;</span>
+<span class="fc" id="L453">        return (JavaTypeElement) element;</span>
     }
 
     private javax.lang.model.element.TypeElement findTypeOf(javax.lang.model.element.Element element) {
-<span class="pc bpc" id="L456" title="1 of 6 branches missed.">        while (element != null &amp;&amp; !(element.getKind().isClass() || element.getKind().isInterface())) {</span>
-<span class="fc" id="L457">            element = element.getEnclosingElement();</span>
+<span class="pc bpc" id="L457" title="1 of 6 branches missed.">        while (element != null &amp;&amp; !(element.getKind().isClass() || element.getKind().isInterface())) {</span>
+<span class="fc" id="L458">            element = element.getEnclosingElement();</span>
         }
 
-<span class="fc" id="L460">        return (javax.lang.model.element.TypeElement) element;</span>
+<span class="fc" id="L461">        return (javax.lang.model.element.TypeElement) element;</span>
     }
 
     private boolean isCheckedElsewhere(JavaModelElement element, ProbingEnvironment env) {
-<span class="fc bfc" id="L464" title="All 2 branches covered.">        if (element == null) {</span>
-<span class="fc" id="L465">            return false;</span>
+<span class="fc bfc" id="L465" title="All 2 branches covered.">        if (element == null) {</span>
+<span class="fc" id="L466">            return false;</span>
         }
 
-<span class="fc bfc" id="L468" title="All 2 branches covered.">        if (!element.isInherited()) {</span>
-<span class="fc" id="L469">            return false;</span>
+<span class="fc bfc" id="L469" title="All 2 branches covered.">        if (!element.isInherited()) {</span>
+<span class="fc" id="L470">            return false;</span>
         }
 
-<span class="fc" id="L472">        String elementSig = Util.toUniqueString(element.getModelRepresentation());</span>
-<span class="fc" id="L473">        String declSig = Util.toUniqueString(element.getDeclaringElement().asType());</span>
+<span class="fc" id="L473">        String elementSig = Util.toUniqueString(element.getModelRepresentation());</span>
+<span class="fc" id="L474">        String declSig = Util.toUniqueString(element.getDeclaringElement().asType());</span>
 
-<span class="fc bfc" id="L475" title="All 2 branches covered.">        if (!Objects.equals(elementSig, declSig)) {</span>
-<span class="fc" id="L476">            return false;</span>
+<span class="fc bfc" id="L476" title="All 2 branches covered.">        if (!Objects.equals(elementSig, declSig)) {</span>
+<span class="fc" id="L477">            return false;</span>
         }
 
-<span class="fc" id="L479">        javax.lang.model.element.TypeElement declaringType = findTypeOf(element.getDeclaringElement());</span>
+<span class="fc" id="L480">        javax.lang.model.element.TypeElement declaringType = findTypeOf(element.getDeclaringElement());</span>
 
-<span class="fc" id="L481">        JavaTypeElement declaringClass = env.getTypeMap().get(declaringType);</span>
+<span class="fc" id="L482">        JavaTypeElement declaringClass = env.getTypeMap().get(declaringType);</span>
 
-<span class="pc bpc" id="L483" title="1 of 4 branches missed.">        return declaringClass != null &amp;&amp; declaringClass.isInAPI();</span>
+<span class="pc bpc" id="L484" title="1 of 4 branches missed.">        return declaringClass != null &amp;&amp; declaringClass.isInAPI();</span>
     }
 
     //Javac's standard file manager is leaking resources across compilation tasks because it doesn't clear a shared
     //&quot;zip file index&quot; cache, when it is close()'d. We try to clear it by force.
     private static void forceClearCompilerCache() {
-<span class="pc bpc" id="L489" title="2 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
+<span class="pc bpc" id="L490" title="2 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
             try {
-<span class="fc" id="L491">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
-<span class="nc" id="L492">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
-<span class="nc" id="L493">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
+<span class="fc" id="L492">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
+<span class="nc" id="L493">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
+<span class="nc" id="L494">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
                                 &quot;This will probably leak memory&quot;, e);
-<span class="fc" id="L495">            }</span>
+<span class="fc" id="L496">            }</span>
         }
-<span class="fc" id="L497">    }</span>
+<span class="fc" id="L498">    }</span>
 
     private static class TypeAndUseSite {
         final DeclaredType type;
         final UseSite useSite;
 
-<span class="fc" id="L503">        public TypeAndUseSite(DeclaredType type, UseSite useSite) {</span>
-<span class="fc" id="L504">            this.type = type;</span>
-<span class="fc" id="L505">            this.useSite = useSite;</span>
-<span class="fc" id="L506">        }</span>
+<span class="fc" id="L504">        public TypeAndUseSite(DeclaredType type, UseSite useSite) {</span>
+<span class="fc" id="L505">            this.type = type;</span>
+<span class="fc" id="L506">            this.useSite = useSite;</span>
+<span class="fc" id="L507">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
