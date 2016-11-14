@@ -8,6 +8,7 @@ import static org.revapi.java.model.JavaElementFactory.elementFor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.AbstractMap;
@@ -27,6 +28,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nonnull;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -73,9 +75,10 @@ import org.slf4j.LoggerFactory;
  * @since 0.11.0
  */
 final class ClasspathScanner {
-<span class="fc" id="L76">    private static final Logger LOG = LoggerFactory.getLogger(ClasspathScanner.class);</span>
+<span class="fc" id="L78">    private static final Logger LOG = LoggerFactory.getLogger(ClasspathScanner.class);</span>
 
-<span class="fc" id="L78">    private static final List&lt;Modifier&gt; ACCESSIBLE_MODIFIERS = Arrays.asList(Modifier.PUBLIC, Modifier.PROTECTED);</span>
+<span class="fc" id="L80">    private static final List&lt;Modifier&gt; ACCESSIBLE_MODIFIERS = Arrays.asList(Modifier.PUBLIC, Modifier.PROTECTED);</span>
+    private static final String SYSTEM_CLASSPATH_NAME = &quot;&lt;system classpath&gt;&quot;;
 
     private final StandardJavaFileManager fileManager;
     private final ProbingEnvironment environment;
@@ -89,788 +92,815 @@ final class ClasspathScanner {
     ClasspathScanner(StandardJavaFileManager fileManager, ProbingEnvironment environment,
                      Map&lt;Archive, File&gt; classPath, Map&lt;Archive, File&gt; additionalClassPath,
                      AnalysisConfiguration.MissingClassReporting missingClassReporting,
-<span class="fc" id="L92">                     boolean ignoreMissingAnnotations, InclusionFilter inclusionFilter) {</span>
-<span class="fc" id="L93">        this.fileManager = fileManager;</span>
-<span class="fc" id="L94">        this.environment = environment;</span>
-<span class="fc" id="L95">        this.classPath = classPath;</span>
-<span class="fc" id="L96">        this.additionalClassPath = additionalClassPath;</span>
-<span class="fc bfc" id="L97" title="All 2 branches covered.">        this.missingClassReporting = missingClassReporting == null</span>
+<span class="fc" id="L95">                     boolean ignoreMissingAnnotations, InclusionFilter inclusionFilter) {</span>
+<span class="fc" id="L96">        this.fileManager = fileManager;</span>
+<span class="fc" id="L97">        this.environment = environment;</span>
+<span class="fc" id="L98">        this.classPath = classPath;</span>
+<span class="fc" id="L99">        this.additionalClassPath = additionalClassPath;</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        this.missingClassReporting = missingClassReporting == null</span>
                 ? AnalysisConfiguration.MissingClassReporting.ERROR
                 : missingClassReporting;
-<span class="fc" id="L100">        this.ignoreMissingAnnotations = ignoreMissingAnnotations;</span>
-<span class="fc" id="L101">        this.inclusionFilter = inclusionFilter;</span>
-<span class="fc" id="L102">        this.defaultInclusionCase = inclusionFilter.defaultCase();</span>
-<span class="fc" id="L103">    }</span>
+<span class="fc" id="L103">        this.ignoreMissingAnnotations = ignoreMissingAnnotations;</span>
+<span class="fc" id="L104">        this.inclusionFilter = inclusionFilter;</span>
+<span class="fc" id="L105">        this.defaultInclusionCase = inclusionFilter.defaultCase();</span>
+<span class="fc" id="L106">    }</span>
 
     void initTree() throws IOException {
-<span class="fc" id="L106">        List&lt;ArchiveLocation&gt; classPathLocations = classPath.keySet().stream().map(ArchiveLocation::new)</span>
-<span class="fc" id="L107">                .collect(toList());</span>
+<span class="fc" id="L109">        List&lt;ArchiveLocation&gt; classPathLocations = classPath.keySet().stream().map(ArchiveLocation::new)</span>
+<span class="fc" id="L110">                .collect(toList());</span>
 
-<span class="fc" id="L109">        Scanner scanner = new Scanner();</span>
+<span class="fc" id="L112">        Scanner scanner = new Scanner();</span>
 
-<span class="fc bfc" id="L111" title="All 2 branches covered.">        for (ArchiveLocation loc : classPathLocations) {</span>
-<span class="fc" id="L112">            scanner.scan(loc, classPath.get(loc.getArchive()), true);</span>
-<span class="fc" id="L113">        }</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        for (ArchiveLocation loc : classPathLocations) {</span>
+<span class="fc" id="L115">            scanner.scan(loc, classPath.get(loc.getArchive()), true);</span>
+<span class="fc" id="L116">        }</span>
 
-<span class="fc" id="L115">        Set&lt;TypeElement&gt; lastUnknowns = Collections.emptySet();</span>
+<span class="fc" id="L118">        Set&lt;TypeElement&gt; lastUnknowns = Collections.emptySet();</span>
 
-<span class="fc" id="L117">        Map&lt;String, ArchiveLocation&gt; cachedArchives = new HashMap&lt;&gt;(additionalClassPath.size());</span>
+<span class="fc" id="L120">        Map&lt;String, ArchiveLocation&gt; cachedArchives = new HashMap&lt;&gt;(additionalClassPath.size());</span>
 
-<span class="fc bfc" id="L119" title="All 4 branches covered.">        while (!scanner.requiredTypes.isEmpty() &amp;&amp; !lastUnknowns.equals(scanner.requiredTypes.keySet())) {</span>
-<span class="fc" id="L120">            lastUnknowns = new HashSet&lt;&gt;(scanner.requiredTypes.keySet());</span>
-<span class="fc bfc" id="L121" title="All 2 branches covered.">            for (TypeElement t : lastUnknowns) {</span>
+<span class="fc bfc" id="L122" title="All 4 branches covered.">        while (!scanner.requiredTypes.isEmpty() &amp;&amp; !lastUnknowns.equals(scanner.requiredTypes.keySet())) {</span>
+<span class="fc" id="L123">            lastUnknowns = new HashSet&lt;&gt;(scanner.requiredTypes.keySet());</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            for (TypeElement t : lastUnknowns) {</span>
                 try {
-<span class="fc" id="L123">                    Field f = t.getClass().getField(&quot;classfile&quot;);</span>
-<span class="fc" id="L124">                    JavaFileObject jfo = (JavaFileObject) f.get(t);</span>
-<span class="fc bfc" id="L125" title="All 2 branches covered.">                    if (jfo == null) {</span>
-<span class="fc" id="L126">                        t = environment.getElementUtils().getTypeElement(t.getQualifiedName());</span>
-<span class="fc bfc" id="L127" title="All 2 branches covered.">                        if (t == null) {</span>
+<span class="fc" id="L126">                    Field f = t.getClass().getField(&quot;classfile&quot;);</span>
+<span class="fc" id="L127">                    JavaFileObject jfo = (JavaFileObject) f.get(t);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                    if (jfo == null) {</span>
+<span class="fc" id="L129">                        t = environment.getElementUtils().getTypeElement(t.getQualifiedName());</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                        if (t == null) {</span>
                             //this type is really missing...
-<span class="fc" id="L129">                            continue;</span>
+<span class="fc" id="L132">                            continue;</span>
                         }
-<span class="fc" id="L131">                        jfo = (JavaFileObject) f.get(t);</span>
+<span class="fc" id="L134">                        jfo = (JavaFileObject) f.get(t);</span>
                     }
-<span class="fc" id="L133">                    URI uri = jfo.toUri();</span>
+<span class="fc" id="L136">                    URI uri = jfo.toUri();</span>
                     String path;
-<span class="pc bpc" id="L135" title="1 of 2 branches missed.">                    if (&quot;jar&quot;.equals(uri.getScheme())) {</span>
-<span class="fc" id="L136">                        uri = URI.create(uri.getSchemeSpecificPart());</span>
-<span class="fc" id="L137">                        path = uri.getPath().substring(0, uri.getPath().lastIndexOf('!'));</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                    if (&quot;jar&quot;.equals(uri.getScheme())) {</span>
+<span class="fc" id="L139">                        uri = URI.create(uri.getSchemeSpecificPart());</span>
+<span class="fc" id="L140">                        path = uri.getPath().substring(0, uri.getPath().lastIndexOf('!'));</span>
                     } else {
-<span class="nc" id="L139">                        path = uri.getPath();</span>
+<span class="nc" id="L142">                        path = uri.getPath();</span>
                     }
 
-<span class="fc" id="L142">                    ArchiveLocation loc = cachedArchives.get(path);</span>
-<span class="fc bfc" id="L143" title="All 2 branches covered.">                    if (loc == null) {</span>
-<span class="fc" id="L144">                        Archive ar = null;</span>
-<span class="fc bfc" id="L145" title="All 2 branches covered.">                        for (Map.Entry&lt;Archive, File&gt; e : additionalClassPath.entrySet()) {</span>
-<span class="fc bfc" id="L146" title="All 2 branches covered.">                            if (e.getValue().getAbsolutePath().equals(path)) {</span>
-<span class="fc" id="L147">                                ar = e.getKey();</span>
-<span class="fc" id="L148">                                break;</span>
+<span class="fc" id="L145">                    ArchiveLocation loc = cachedArchives.get(path);</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">                    if (loc == null) {</span>
+<span class="fc" id="L147">                        Archive ar = null;</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                        for (Map.Entry&lt;Archive, File&gt; e : additionalClassPath.entrySet()) {</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                            if (e.getValue().getAbsolutePath().equals(path)) {</span>
+<span class="fc" id="L150">                                ar = e.getKey();</span>
+<span class="fc" id="L151">                                break;</span>
                             }
-<span class="fc" id="L150">                        }</span>
+<span class="fc" id="L153">                        }</span>
 
-<span class="fc bfc" id="L152" title="All 2 branches covered.">                        if (ar != null) {</span>
-<span class="fc" id="L153">                            loc = new ArchiveLocation(ar);</span>
-<span class="fc" id="L154">                            cachedArchives.put(path, loc);</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">                        if (ar != null) {</span>
+<span class="fc" id="L156">                            loc = new ArchiveLocation(ar);</span>
+<span class="fc" id="L157">                            cachedArchives.put(path, loc);</span>
                         }
                     }
 
-<span class="fc bfc" id="L158" title="All 2 branches covered.">                    if (loc != null) {</span>
-<span class="fc" id="L159">                        scanner.scanClass(loc, t, false);</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                    if (loc != null) {</span>
+<span class="fc" id="L162">                        scanner.scanClass(loc, t, false);</span>
                     }
 
-<span class="nc" id="L162">                } catch (NoSuchFieldException e) {</span>
+<span class="nc" id="L165">                } catch (NoSuchFieldException e) {</span>
                     //TODO fallback to manually looping through archives
-<span class="nc" id="L164">                } catch (IllegalAccessException e) {</span>
+<span class="nc" id="L167">                } catch (IllegalAccessException e) {</span>
                     //should not happen
-<span class="nc" id="L166">                    throw new AssertionError(&quot;Illegal access after setAccessible(true) on a field. Wha?&quot;, e);</span>
-<span class="pc" id="L167">                }</span>
-<span class="fc" id="L168">            }</span>
+<span class="nc" id="L169">                    throw new AssertionError(&quot;Illegal access after setAccessible(true) on a field. Wha?&quot;, e);</span>
+<span class="pc" id="L170">                }</span>
+<span class="fc" id="L171">            }</span>
         }
 
-<span class="fc" id="L171">        scanner.initEnvironment();</span>
-<span class="fc" id="L172">    }</span>
+        //ok, so scanning the archives doesn't give us any new resolved classes that we need in the API...
+        //let's scan the system classpath. What will be left after this will be the truly missing classes.
 
-<span class="fc" id="L174">    private final class Scanner {</span>
-<span class="fc" id="L175">        final Set&lt;TypeElement&gt; processed = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L176">        final Map&lt;TypeElement, Boolean&gt; requiredTypes = new IdentityHashMap&lt;&gt;();</span>
-<span class="fc" id="L177">        final Map&lt;TypeElement, TypeRecord&gt; types = new IdentityHashMap&lt;&gt;();</span>
-<span class="fc" id="L178">        final TypeVisitor&lt;TypeElement, Void&gt; getTypeElement = new SimpleTypeVisitor8&lt;TypeElement, Void&gt;() {</span>
+        //making a copy because the required types might be modified during scanning
+<span class="fc" id="L178">        Map&lt;TypeElement, Boolean&gt; rts = new HashMap&lt;&gt;(scanner.requiredTypes);</span>
+
+<span class="fc" id="L180">        ArchiveLocation systemClassPath = new ArchiveLocation(new Archive() {</span>
+            @Nonnull @Override public String getName() {
+<span class="fc" id="L182">                return SYSTEM_CLASSPATH_NAME;</span>
+            }
+
+            @Nonnull @Override public InputStream openStream() throws IOException {
+<span class="nc" id="L186">                throw new UnsupportedOperationException();</span>
+            }
+        });
+
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        for (Map.Entry&lt;TypeElement, Boolean&gt; e : rts.entrySet()) {</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">            if (e.getKey().asType().getKind() != TypeKind.ERROR) {</span>
+<span class="fc" id="L192">                scanner.scanClass(systemClassPath, e.getKey(), false);</span>
+            }
+<span class="fc" id="L194">        }</span>
+
+<span class="fc" id="L196">        scanner.initEnvironment();</span>
+<span class="fc" id="L197">    }</span>
+
+<span class="fc" id="L199">    private final class Scanner {</span>
+<span class="fc" id="L200">        final Set&lt;TypeElement&gt; processed = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L201">        final Map&lt;TypeElement, Boolean&gt; requiredTypes = new IdentityHashMap&lt;&gt;();</span>
+<span class="fc" id="L202">        final Map&lt;TypeElement, TypeRecord&gt; types = new IdentityHashMap&lt;&gt;();</span>
+<span class="fc" id="L203">        final TypeVisitor&lt;TypeElement, Void&gt; getTypeElement = new SimpleTypeVisitor8&lt;TypeElement, Void&gt;() {</span>
             @Override
             protected TypeElement defaultAction(TypeMirror e, Void ignored) {
-<span class="nc" id="L181">                throw new IllegalStateException(&quot;Could not determine the element of a type: &quot; + e);</span>
+<span class="nc" id="L206">                throw new IllegalStateException(&quot;Could not determine the element of a type: &quot; + e);</span>
             }
 
             @Override
             public TypeElement visitDeclared(DeclaredType t, Void ignored) {
-<span class="fc" id="L186">                return (TypeElement) t.asElement();</span>
+<span class="fc" id="L211">                return (TypeElement) t.asElement();</span>
             }
 
             @Override
             public TypeElement visitTypeVariable(TypeVariable t, Void ignored) {
-<span class="fc" id="L191">                return t.getUpperBound().accept(this, null);</span>
+<span class="fc" id="L216">                return t.getUpperBound().accept(this, null);</span>
             }
 
             @Override
             public TypeElement visitArray(ArrayType t, Void ignored) {
-<span class="fc" id="L196">                return t.getComponentType().accept(this, null);</span>
+<span class="fc" id="L221">                return t.getComponentType().accept(this, null);</span>
             }
 
             @Override
             public TypeElement visitPrimitive(PrimitiveType t, Void ignored) {
-<span class="fc" id="L201">                return null;</span>
+<span class="fc" id="L226">                return null;</span>
             }
 
             @Override
             public TypeElement visitIntersection(IntersectionType t, Void aVoid) {
-<span class="nc" id="L206">                return t.getBounds().get(0).accept(this, null);</span>
+<span class="nc" id="L231">                return t.getBounds().get(0).accept(this, null);</span>
             }
 
             @Override
             public TypeElement visitWildcard(WildcardType t, Void aVoid) {
-<span class="nc bnc" id="L211" title="All 2 branches missed.">                if (t.getExtendsBound() != null) {</span>
-<span class="nc" id="L212">                    return t.getExtendsBound().accept(this, null);</span>
-<span class="nc bnc" id="L213" title="All 2 branches missed.">                } else if (t.getSuperBound() != null) {</span>
-<span class="nc" id="L214">                    return t.getSuperBound().accept(this, null);</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                if (t.getExtendsBound() != null) {</span>
+<span class="nc" id="L237">                    return t.getExtendsBound().accept(this, null);</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                } else if (t.getSuperBound() != null) {</span>
+<span class="nc" id="L239">                    return t.getSuperBound().accept(this, null);</span>
                 } else {
-<span class="nc" id="L216">                    return environment.getElementUtils().getTypeElement(&quot;java.lang.Object&quot;);</span>
+<span class="nc" id="L241">                    return environment.getElementUtils().getTypeElement(&quot;java.lang.Object&quot;);</span>
                 }
             }
 
             @Override
             public TypeElement visitNoType(NoType t, Void aVoid) {
-<span class="fc" id="L222">                return null;</span>
+<span class="fc" id="L247">                return null;</span>
             }
         };
 
         void scan(ArchiveLocation location, File path, boolean primaryApi) throws IOException {
-<span class="fc" id="L227">            fileManager.setLocation(location, Collections.singleton(path));</span>
+<span class="fc" id="L252">            fileManager.setLocation(location, Collections.singleton(path));</span>
 
-<span class="fc" id="L229">            Iterable&lt;? extends JavaFileObject&gt; jfos = fileManager.list(location, &quot;&quot;,</span>
-<span class="fc" id="L230">                    EnumSet.of(JavaFileObject.Kind.CLASS), true);</span>
+<span class="fc" id="L254">            Iterable&lt;? extends JavaFileObject&gt; jfos = fileManager.list(location, &quot;&quot;,</span>
+<span class="fc" id="L255">                    EnumSet.of(JavaFileObject.Kind.CLASS), true);</span>
 
-<span class="fc bfc" id="L232" title="All 2 branches covered.">            for (JavaFileObject jfo : jfos) {</span>
-<span class="fc" id="L233">                TypeElement type = Util.findTypeByBinaryName(environment.getElementUtils(),</span>
-<span class="fc" id="L234">                        fileManager.inferBinaryName(location, jfo));</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">            for (JavaFileObject jfo : jfos) {</span>
+<span class="fc" id="L258">                TypeElement type = Util.findTypeByBinaryName(environment.getElementUtils(),</span>
+<span class="fc" id="L259">                        fileManager.inferBinaryName(location, jfo));</span>
 
                 //type can be null if it represents an anonymous or member class...
-<span class="fc bfc" id="L237" title="All 2 branches covered.">                if (type != null) {</span>
-<span class="fc" id="L238">                    scanClass(location, type, primaryApi);</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">                if (type != null) {</span>
+<span class="fc" id="L263">                    scanClass(location, type, primaryApi);</span>
                 }
-<span class="fc" id="L240">            }</span>
-<span class="fc" id="L241">        }</span>
+<span class="fc" id="L265">            }</span>
+<span class="fc" id="L266">        }</span>
 
         void scanClass(ArchiveLocation loc, TypeElement type, boolean primaryApi) {
             try {
-<span class="fc bfc" id="L245" title="All 2 branches covered.">                if (processed.contains(type)) {</span>
-<span class="fc" id="L246">                    return;</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">                if (processed.contains(type)) {</span>
+<span class="fc" id="L271">                    return;</span>
                 }
 
-<span class="fc" id="L249">                processed.add(type);</span>
-<span class="fc" id="L250">                Boolean wasAnno = requiredTypes.remove(type);</span>
+<span class="fc" id="L274">                processed.add(type);</span>
+<span class="fc" id="L275">                Boolean wasAnno = requiredTypes.remove(type);</span>
 
-<span class="fc" id="L252">                String bn = environment.getElementUtils().getBinaryName(type).toString();</span>
-<span class="fc" id="L253">                String cn = type.getQualifiedName().toString();</span>
-<span class="fc" id="L254">                boolean includes = inclusionFilter.accepts(bn, cn);</span>
-<span class="fc" id="L255">                boolean excludes = inclusionFilter.rejects(bn, cn);</span>
+<span class="fc" id="L277">                String bn = environment.getElementUtils().getBinaryName(type).toString();</span>
+<span class="fc" id="L278">                String cn = type.getQualifiedName().toString();</span>
+<span class="fc" id="L279">                boolean includes = inclusionFilter.accepts(bn, cn);</span>
+<span class="fc" id="L280">                boolean excludes = inclusionFilter.rejects(bn, cn);</span>
+
+                //technically, we could find this out later on in the method, but doing this here ensures that the
+                //javac tries to fully load the class (and therefore throw any completion failures.
+                //Doing this then ensures that we get a correct TypeKind after this call.
+<span class="fc" id="L285">                TypeElement superType = getTypeElement.visit(IgnoreCompletionFailures.in(type::getSuperclass));</span>
 
                 //type.asType() possibly not completely correct when dealing with inner class of a parameterized class
-<span class="fc" id="L258">                TypeMirror typeType = type.asType();</span>
-<span class="fc bfc" id="L259" title="All 2 branches covered.">                if (typeType.getKind() == TypeKind.ERROR) {</span>
+<span class="fc" id="L288">                TypeMirror typeType = type.asType();</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">                if (typeType.getKind() == TypeKind.ERROR) {</span>
                     //just re-add the missing type and return. It will be dealt with accordingly
                     //in initEnvironment
-<span class="fc" id="L262">                    requiredTypes.put(type, wasAnno);</span>
-<span class="fc" id="L263">                    return;</span>
+<span class="fc" id="L292">                    requiredTypes.put(type, wasAnno);</span>
+<span class="fc" id="L293">                    return;</span>
                 }
 
-<span class="fc" id="L266">                org.revapi.java.model.TypeElement t =</span>
-<span class="fc" id="L267">                        new org.revapi.java.model.TypeElement(environment, loc.getArchive(), type,</span>
-<span class="fc" id="L268">                                (DeclaredType) type.asType());</span>
+<span class="fc" id="L296">                org.revapi.java.model.TypeElement t =</span>
+<span class="fc" id="L297">                        new org.revapi.java.model.TypeElement(environment, loc.getArchive(), type,</span>
+<span class="fc" id="L298">                                (DeclaredType) type.asType());</span>
 
-<span class="fc" id="L270">                TypeRecord tr = getTypeRecord(type);</span>
-<span class="fc" id="L271">                tr.modelElement = t;</span>
+<span class="fc" id="L300">                TypeRecord tr = getTypeRecord(type);</span>
+<span class="fc" id="L301">                tr.modelElement = t;</span>
                 //this will be revisited... in here we're just establishing the types that are in the API for sure...
-<span class="fc bfc" id="L273" title="All 4 branches covered.">                tr.inApi = !excludes &amp;&amp;</span>
-<span class="fc bfc" id="L274" title="All 4 branches covered.">                        (primaryApi &amp;&amp; !shouldBeIgnored(type) &amp;&amp; !(type.getEnclosingElement() instanceof TypeElement));</span>
-<span class="fc" id="L275">                tr.primaryApi = primaryApi;</span>
-<span class="fc" id="L276">                tr.explicitlyExcluded = excludes;</span>
-<span class="fc" id="L277">                tr.explicitlyIncluded = includes;</span>
+<span class="fc bfc" id="L303" title="All 4 branches covered.">                tr.inApi = !excludes &amp;&amp;</span>
+<span class="fc bfc" id="L304" title="All 4 branches covered.">                        (primaryApi &amp;&amp; !shouldBeIgnored(type) &amp;&amp; !(type.getEnclosingElement() instanceof TypeElement));</span>
+<span class="fc" id="L305">                tr.primaryApi = primaryApi;</span>
+<span class="fc" id="L306">                tr.explicitlyExcluded = excludes;</span>
+<span class="fc" id="L307">                tr.explicitlyIncluded = includes;</span>
 
-<span class="fc bfc" id="L279" title="All 2 branches covered.">                if (tr.explicitlyExcluded) {</span>
-<span class="fc" id="L280">                    return;</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">                if (tr.explicitlyExcluded) {</span>
+<span class="fc" id="L310">                    return;</span>
                 }
 
-<span class="fc" id="L283">                TypeElement superType = getTypeElement.visit(IgnoreCompletionFailures.in(type::getSuperclass));</span>
-<span class="fc bfc" id="L284" title="All 2 branches covered.">                if (superType != null) {</span>
-<span class="fc" id="L285">                    addUse(tr, type, superType, UseSite.Type.IS_INHERITED);</span>
-<span class="fc" id="L286">                    tr.superTypes.add(getTypeRecord(superType));</span>
-<span class="fc bfc" id="L287" title="All 2 branches covered.">                    if (!processed.contains(superType)) {</span>
-<span class="fc" id="L288">                        requiredTypes.put(superType, false);</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">                if (superType != null) {</span>
+<span class="fc" id="L314">                    addUse(tr, type, superType, UseSite.Type.IS_INHERITED);</span>
+<span class="fc" id="L315">                    tr.superTypes.add(getTypeRecord(superType));</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">                    if (!processed.contains(superType)) {</span>
+<span class="fc" id="L317">                        requiredTypes.put(superType, false);</span>
                     }
                 }
 
-<span class="fc" id="L292">                IgnoreCompletionFailures.in(type::getInterfaces).stream().map(getTypeElement::visit)</span>
-<span class="fc" id="L293">                        .forEach(e -&gt; {</span>
-<span class="pc bpc" id="L294" title="1 of 2 branches missed.">                            if (!processed.contains(e)) {</span>
-<span class="fc" id="L295">                                requiredTypes.put(e, false);</span>
+<span class="fc" id="L321">                IgnoreCompletionFailures.in(type::getInterfaces).stream().map(getTypeElement::visit)</span>
+<span class="fc" id="L322">                        .forEach(e -&gt; {</span>
+<span class="fc bfc" id="L323" title="All 2 branches covered.">                            if (!processed.contains(e)) {</span>
+<span class="fc" id="L324">                                requiredTypes.put(e, false);</span>
                             }
-<span class="fc" id="L297">                            addUse(tr, type, e, UseSite.Type.IS_IMPLEMENTED);</span>
-<span class="fc" id="L298">                            tr.superTypes.add(getTypeRecord(e));</span>
-<span class="fc" id="L299">                        });</span>
+<span class="fc" id="L326">                            addUse(tr, type, e, UseSite.Type.IS_IMPLEMENTED);</span>
+<span class="fc" id="L327">                            tr.superTypes.add(getTypeRecord(e));</span>
+<span class="fc" id="L328">                        });</span>
 
-<span class="fc bfc" id="L301" title="All 2 branches covered.">                for (Element e : IgnoreCompletionFailures.in(type::getEnclosedElements)) {</span>
-<span class="pc bfc" id="L302" title="All 4 branches covered.">                    switch (e.getKind()) {</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">                for (Element e : IgnoreCompletionFailures.in(type::getEnclosedElements)) {</span>
+<span class="pc bfc" id="L331" title="All 4 branches covered.">                    switch (e.getKind()) {</span>
                         case ANNOTATION_TYPE:
                         case CLASS:
                         case ENUM:
                         case INTERFACE:
-<span class="fc" id="L307">                            addUse(tr, type, (TypeElement) e, UseSite.Type.CONTAINS);</span>
+<span class="fc" id="L336">                            addUse(tr, type, (TypeElement) e, UseSite.Type.CONTAINS);</span>
                             //the contained classes by default inherit the API status of their containing class
-<span class="fc" id="L309">                            scanClass(loc, (TypeElement) e, tr.inApi);</span>
-<span class="fc" id="L310">                            break;</span>
+<span class="fc" id="L338">                            scanClass(loc, (TypeElement) e, tr.inApi);</span>
+<span class="fc" id="L339">                            break;</span>
                         case CONSTRUCTOR:
                         case METHOD:
-<span class="fc" id="L313">                            scanMethod(tr, (ExecutableElement) e);</span>
-<span class="fc" id="L314">                            break;</span>
+<span class="fc" id="L342">                            scanMethod(tr, (ExecutableElement) e);</span>
+<span class="fc" id="L343">                            break;</span>
                         case ENUM_CONSTANT:
                         case FIELD:
-<span class="fc" id="L317">                            scanField(tr, (VariableElement) e);</span>
+<span class="fc" id="L346">                            scanField(tr, (VariableElement) e);</span>
                             break;
                     }
-<span class="fc" id="L320">                }</span>
+<span class="fc" id="L349">                }</span>
 
-<span class="fc" id="L322">                type.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(tr, type, a));</span>
-<span class="nc" id="L323">            } catch (Exception e) {</span>
-<span class="nc" id="L324">                LOG.error(&quot;Failed to scan class &quot; + type.getQualifiedName().toString()</span>
+<span class="fc" id="L351">                type.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(tr, type, a));</span>
+<span class="nc" id="L352">            } catch (Exception e) {</span>
+<span class="nc" id="L353">                LOG.error(&quot;Failed to scan class &quot; + type.getQualifiedName().toString()</span>
                         + &quot;. Analysis results may be skewed.&quot;, e);
-<span class="fc" id="L326">            }</span>
-<span class="fc" id="L327">        }</span>
+<span class="fc" id="L355">            }</span>
+<span class="fc" id="L356">        }</span>
 
         void placeInTree(TypeRecord typeRecord) {
-<span class="fc" id="L330">            TypeElement type = typeRecord.modelElement.getDeclaringElement();</span>
+<span class="fc" id="L359">            TypeElement type = typeRecord.modelElement.getDeclaringElement();</span>
 
-<span class="fc bfc" id="L332" title="All 2 branches covered.">            if (!(type.getEnclosingElement() instanceof TypeElement)) {</span>
-<span class="fc" id="L333">                environment.getTree().getRootsUnsafe().add(typeRecord.modelElement);</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">            if (!(type.getEnclosingElement() instanceof TypeElement)) {</span>
+<span class="fc" id="L362">                environment.getTree().getRootsUnsafe().add(typeRecord.modelElement);</span>
             } else {
-<span class="fc" id="L335">                ArrayDeque&lt;String&gt; nesting = new ArrayDeque&lt;&gt;();</span>
-<span class="fc" id="L336">                type = (TypeElement) type.getEnclosingElement();</span>
-<span class="fc bfc" id="L337" title="All 2 branches covered.">                while (type != null) {</span>
-<span class="fc" id="L338">                    nesting.push(type.getQualifiedName().toString());</span>
-<span class="fc bfc" id="L339" title="All 2 branches covered.">                    type = type.getEnclosingElement() instanceof TypeElement</span>
-<span class="fc" id="L340">                            ? (TypeElement) type.getEnclosingElement()</span>
+<span class="fc" id="L364">                ArrayDeque&lt;String&gt; nesting = new ArrayDeque&lt;&gt;();</span>
+<span class="fc" id="L365">                type = (TypeElement) type.getEnclosingElement();</span>
+<span class="fc bfc" id="L366" title="All 2 branches covered.">                while (type != null) {</span>
+<span class="fc" id="L367">                    nesting.push(type.getQualifiedName().toString());</span>
+<span class="fc bfc" id="L368" title="All 2 branches covered.">                    type = type.getEnclosingElement() instanceof TypeElement</span>
+<span class="fc" id="L369">                            ? (TypeElement) type.getEnclosingElement()</span>
                             : null;
                 }
 
-<span class="fc" id="L344">                Function&lt;String, Filter&lt;org.revapi.java.model.TypeElement&gt;&gt; findByCN =</span>
-<span class="fc" id="L345">                        cn -&gt; FlatFilter.by(e -&gt; cn.equals(e.getCanonicalName()));</span>
+<span class="fc" id="L373">                Function&lt;String, Filter&lt;org.revapi.java.model.TypeElement&gt;&gt; findByCN =</span>
+<span class="fc" id="L374">                        cn -&gt; FlatFilter.by(e -&gt; cn.equals(e.getCanonicalName()));</span>
 
-<span class="fc" id="L347">                List&lt;org.revapi.java.model.TypeElement&gt; parents = Collections.emptyList();</span>
-<span class="fc bfc" id="L348" title="All 4 branches covered.">                while (parents.isEmpty() &amp;&amp; !nesting.isEmpty()) {</span>
-<span class="fc" id="L349">                    parents = environment.getTree().searchUnsafe(</span>
-<span class="fc" id="L350">                            org.revapi.java.model.TypeElement.class, false, findByCN.apply(nesting.pop()), null);</span>
+<span class="fc" id="L376">                List&lt;org.revapi.java.model.TypeElement&gt; parents = Collections.emptyList();</span>
+<span class="fc bfc" id="L377" title="All 4 branches covered.">                while (parents.isEmpty() &amp;&amp; !nesting.isEmpty()) {</span>
+<span class="fc" id="L378">                    parents = environment.getTree().searchUnsafe(</span>
+<span class="fc" id="L379">                            org.revapi.java.model.TypeElement.class, false, findByCN.apply(nesting.pop()), null);</span>
                 }
 
-<span class="fc bfc" id="L353" title="All 2 branches covered.">                org.revapi.java.model.TypeElement parent = parents.isEmpty() ? null : parents.get(0);</span>
-<span class="fc bfc" id="L354" title="All 2 branches covered.">                while (!nesting.isEmpty()) {</span>
-<span class="fc" id="L355">                    String cn = nesting.pop();</span>
-<span class="fc" id="L356">                    parents = environment.getTree().searchUnsafe(</span>
-<span class="fc" id="L357">                            org.revapi.java.model.TypeElement.class, false, findByCN.apply(cn),</span>
+<span class="fc bfc" id="L382" title="All 2 branches covered.">                org.revapi.java.model.TypeElement parent = parents.isEmpty() ? null : parents.get(0);</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">                while (!nesting.isEmpty()) {</span>
+<span class="fc" id="L384">                    String cn = nesting.pop();</span>
+<span class="fc" id="L385">                    parents = environment.getTree().searchUnsafe(</span>
+<span class="fc" id="L386">                            org.revapi.java.model.TypeElement.class, false, findByCN.apply(cn),</span>
                             parent);
-<span class="pc bpc" id="L359" title="1 of 2 branches missed.">                    if (parents.isEmpty()) {</span>
+<span class="pc bpc" id="L388" title="1 of 2 branches missed.">                    if (parents.isEmpty()) {</span>
                         //we found a &quot;gap&quot; in the parents included in the model. let's start from the top
                         //again
                         do {
-<span class="nc" id="L363">                            parents = environment.getTree().searchUnsafe(</span>
-<span class="nc" id="L364">                                    org.revapi.java.model.TypeElement.class, false, findByCN.apply(cn), null);</span>
-<span class="nc bnc" id="L365" title="All 4 branches missed.">                            if (parents.isEmpty() &amp;&amp; !nesting.isEmpty()) {</span>
-<span class="nc" id="L366">                                cn = nesting.pop();</span>
+<span class="nc" id="L392">                            parents = environment.getTree().searchUnsafe(</span>
+<span class="nc" id="L393">                                    org.revapi.java.model.TypeElement.class, false, findByCN.apply(cn), null);</span>
+<span class="nc bnc" id="L394" title="All 4 branches missed.">                            if (parents.isEmpty() &amp;&amp; !nesting.isEmpty()) {</span>
+<span class="nc" id="L395">                                cn = nesting.pop();</span>
                             } else {
                                 break;
                             }
-<span class="nc bnc" id="L370" title="All 2 branches missed.">                        } while (!nesting.isEmpty());</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">                        } while (!nesting.isEmpty());</span>
                     }
 
-<span class="pc bpc" id="L373" title="1 of 2 branches missed.">                    parent = parents.isEmpty() ? null : parents.get(0);</span>
-<span class="fc" id="L374">                }</span>
+<span class="pc bpc" id="L402" title="1 of 2 branches missed.">                    parent = parents.isEmpty() ? null : parents.get(0);</span>
+<span class="fc" id="L403">                }</span>
 
-<span class="fc bfc" id="L376" title="All 2 branches covered.">                if (parent == null) {</span>
-<span class="fc" id="L377">                    environment.getTree().getRootsUnsafe().add(typeRecord.modelElement);</span>
+<span class="fc bfc" id="L405" title="All 2 branches covered.">                if (parent == null) {</span>
+<span class="fc" id="L406">                    environment.getTree().getRootsUnsafe().add(typeRecord.modelElement);</span>
                 } else {
-<span class="fc" id="L379">                    parent.getChildren().add(typeRecord.modelElement);</span>
+<span class="fc" id="L408">                    parent.getChildren().add(typeRecord.modelElement);</span>
                 }
             }
-<span class="fc" id="L382">        }</span>
+<span class="fc" id="L411">        }</span>
 
         void scanField(TypeRecord owningType, VariableElement field) {
-<span class="fc bfc" id="L385" title="All 2 branches covered.">            if (shouldBeIgnored(field)) {</span>
-<span class="fc" id="L386">                owningType.inaccessibleDeclaredNonClassMembers.add(field);</span>
-<span class="fc" id="L387">                return;</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">            if (shouldBeIgnored(field)) {</span>
+<span class="fc" id="L415">                owningType.inaccessibleDeclaredNonClassMembers.add(field);</span>
+<span class="fc" id="L416">                return;</span>
             }
 
-<span class="fc" id="L390">            owningType.accessibleDeclaredNonClassMembers.add(field);</span>
+<span class="fc" id="L419">            owningType.accessibleDeclaredNonClassMembers.add(field);</span>
 
 
-<span class="fc" id="L393">            TypeElement fieldType = field.asType().accept(getTypeElement, null);</span>
+<span class="fc" id="L422">            TypeElement fieldType = field.asType().accept(getTypeElement, null);</span>
 
             //fieldType == null means primitive type, if no type can be found, exception is thrown
-<span class="fc bfc" id="L396" title="All 2 branches covered.">            if (fieldType == null) {</span>
-<span class="fc" id="L397">                return;</span>
+<span class="fc bfc" id="L425" title="All 2 branches covered.">            if (fieldType == null) {</span>
+<span class="fc" id="L426">                return;</span>
             }
 
 
-<span class="fc" id="L401">            addUse(owningType, field, fieldType, UseSite.Type.HAS_TYPE);</span>
-<span class="fc" id="L402">            addType(fieldType, false);</span>
+<span class="fc" id="L430">            addUse(owningType, field, fieldType, UseSite.Type.HAS_TYPE);</span>
+<span class="fc" id="L431">            addType(fieldType, false);</span>
 
-<span class="pc" id="L404">            field.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, field, a));</span>
-<span class="fc" id="L405">        }</span>
+<span class="pc" id="L433">            field.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, field, a));</span>
+<span class="fc" id="L434">        }</span>
 
         void scanMethod(TypeRecord owningType, ExecutableElement method) {
-<span class="fc bfc" id="L408" title="All 2 branches covered.">            if (shouldBeIgnored(method)) {</span>
-<span class="fc" id="L409">                owningType.inaccessibleDeclaredNonClassMembers.add(method);</span>
-<span class="fc" id="L410">                return;</span>
+<span class="fc bfc" id="L437" title="All 2 branches covered.">            if (shouldBeIgnored(method)) {</span>
+<span class="fc" id="L438">                owningType.inaccessibleDeclaredNonClassMembers.add(method);</span>
+<span class="fc" id="L439">                return;</span>
             }
 
-<span class="fc" id="L413">            owningType.accessibleDeclaredNonClassMembers.add(method);</span>
+<span class="fc" id="L442">            owningType.accessibleDeclaredNonClassMembers.add(method);</span>
 
-<span class="fc" id="L415">            TypeElement returnType = method.getReturnType().accept(getTypeElement, null);</span>
-<span class="fc bfc" id="L416" title="All 2 branches covered.">            if (returnType != null) {</span>
-<span class="fc" id="L417">                addUse(owningType, method, returnType, UseSite.Type.RETURN_TYPE);</span>
-<span class="fc" id="L418">                addType(returnType, false);</span>
+<span class="fc" id="L444">            TypeElement returnType = method.getReturnType().accept(getTypeElement, null);</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">            if (returnType != null) {</span>
+<span class="fc" id="L446">                addUse(owningType, method, returnType, UseSite.Type.RETURN_TYPE);</span>
+<span class="fc" id="L447">                addType(returnType, false);</span>
             }
 
-<span class="fc" id="L421">            int idx = 0;</span>
-<span class="fc bfc" id="L422" title="All 2 branches covered.">            for (VariableElement p : method.getParameters()) {</span>
-<span class="fc" id="L423">                TypeElement pt = p.asType().accept(getTypeElement, null);</span>
-<span class="fc bfc" id="L424" title="All 2 branches covered.">                if (pt != null) {</span>
-<span class="fc" id="L425">                    addUse(owningType, method, pt, UseSite.Type.PARAMETER_TYPE, idx++);</span>
-<span class="fc" id="L426">                    addType(pt, false);</span>
+<span class="fc" id="L450">            int idx = 0;</span>
+<span class="fc bfc" id="L451" title="All 2 branches covered.">            for (VariableElement p : method.getParameters()) {</span>
+<span class="fc" id="L452">                TypeElement pt = p.asType().accept(getTypeElement, null);</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">                if (pt != null) {</span>
+<span class="fc" id="L454">                    addUse(owningType, method, pt, UseSite.Type.PARAMETER_TYPE, idx++);</span>
+<span class="fc" id="L455">                    addType(pt, false);</span>
                 }
 
-<span class="pc" id="L429">                p.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, p, a));</span>
-<span class="fc" id="L430">            }</span>
+<span class="pc" id="L458">                p.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, p, a));</span>
+<span class="fc" id="L459">            }</span>
 
-<span class="fc" id="L432">            method.getThrownTypes().forEach(t -&gt; {</span>
-<span class="fc" id="L433">                TypeElement ex = t.accept(getTypeElement, null);</span>
-<span class="pc bpc" id="L434" title="1 of 2 branches missed.">                if (ex != null) {</span>
-<span class="fc" id="L435">                    addUse(owningType, method, ex, UseSite.Type.IS_THROWN);</span>
-<span class="fc" id="L436">                    addType(ex, false);</span>
+<span class="fc" id="L461">            method.getThrownTypes().forEach(t -&gt; {</span>
+<span class="fc" id="L462">                TypeElement ex = t.accept(getTypeElement, null);</span>
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">                if (ex != null) {</span>
+<span class="fc" id="L464">                    addUse(owningType, method, ex, UseSite.Type.IS_THROWN);</span>
+<span class="fc" id="L465">                    addType(ex, false);</span>
                 }
 
-<span class="pc" id="L439">                t.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, method, a));</span>
-<span class="fc" id="L440">            });</span>
+<span class="pc" id="L468">                t.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, method, a));</span>
+<span class="fc" id="L469">            });</span>
 
-<span class="fc" id="L442">            method.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, method, a));</span>
-<span class="fc" id="L443">        }</span>
+<span class="fc" id="L471">            method.getAnnotationMirrors().forEach(a -&gt; scanAnnotation(owningType, method, a));</span>
+<span class="fc" id="L472">        }</span>
 
         void scanAnnotation(TypeRecord owningType, Element annotated, AnnotationMirror annotation) {
-<span class="fc" id="L446">            TypeElement type = annotation.getAnnotationType().accept(getTypeElement, null);</span>
-<span class="pc bpc" id="L447" title="1 of 2 branches missed.">            if (type != null) {</span>
-<span class="fc" id="L448">                addUse(owningType, annotated, type, UseSite.Type.ANNOTATES);</span>
-<span class="fc" id="L449">                addType(type, true);</span>
+<span class="fc" id="L475">            TypeElement type = annotation.getAnnotationType().accept(getTypeElement, null);</span>
+<span class="pc bpc" id="L476" title="1 of 2 branches missed.">            if (type != null) {</span>
+<span class="fc" id="L477">                addUse(owningType, annotated, type, UseSite.Type.ANNOTATES);</span>
+<span class="fc" id="L478">                addType(type, true);</span>
             }
-<span class="fc" id="L451">        }</span>
+<span class="fc" id="L480">        }</span>
 
         boolean addType(TypeElement type, boolean isAnnotation) {
-<span class="fc bfc" id="L454" title="All 2 branches covered.">            if (processed.contains(type)) {</span>
-<span class="fc" id="L455">                return true;</span>
+<span class="fc bfc" id="L483" title="All 2 branches covered.">            if (processed.contains(type)) {</span>
+<span class="fc" id="L484">                return true;</span>
             }
 
-<span class="fc" id="L458">            requiredTypes.put(type, isAnnotation);</span>
-<span class="fc" id="L459">            return false;</span>
+<span class="fc" id="L487">            requiredTypes.put(type, isAnnotation);</span>
+<span class="fc" id="L488">            return false;</span>
         }
 
         void addUse(TypeRecord userType, Element user, TypeElement used, UseSite.Type useType) {
-<span class="fc" id="L463">            addUse(userType, user, used, useType, -1);</span>
-<span class="fc" id="L464">        }</span>
+<span class="fc" id="L492">            addUse(userType, user, used, useType, -1);</span>
+<span class="fc" id="L493">        }</span>
 
         void addUse(TypeRecord userType, Element user, TypeElement used, UseSite.Type useType, int indexInParent) {
-<span class="fc" id="L467">            TypeRecord usedTr = getTypeRecord(used);</span>
-<span class="fc" id="L468">            Set&lt;ClassPathUseSite&gt; sites = usedTr.useSites;</span>
-<span class="fc" id="L469">            sites.add(new ClassPathUseSite(useType, user, indexInParent));</span>
+<span class="fc" id="L496">            TypeRecord usedTr = getTypeRecord(used);</span>
+<span class="fc" id="L497">            Set&lt;ClassPathUseSite&gt; sites = usedTr.useSites;</span>
+<span class="fc" id="L498">            sites.add(new ClassPathUseSite(useType, user, indexInParent));</span>
 
-<span class="fc" id="L471">            Set&lt;TypeRecord&gt; usedTypes = userType.usedTypes.get(useType);</span>
-<span class="fc bfc" id="L472" title="All 2 branches covered.">            if (usedTypes == null) {</span>
-<span class="fc" id="L473">                usedTypes = new HashSet&lt;&gt;(4);</span>
-<span class="fc" id="L474">                userType.usedTypes.put(useType, usedTypes);</span>
+<span class="fc" id="L500">            Set&lt;TypeRecord&gt; usedTypes = userType.usedTypes.get(useType);</span>
+<span class="fc bfc" id="L501" title="All 2 branches covered.">            if (usedTypes == null) {</span>
+<span class="fc" id="L502">                usedTypes = new HashSet&lt;&gt;(4);</span>
+<span class="fc" id="L503">                userType.usedTypes.put(useType, usedTypes);</span>
             }
 
-<span class="fc" id="L477">            usedTypes.add(usedTr);</span>
-<span class="fc" id="L478">        }</span>
+<span class="fc" id="L506">            usedTypes.add(usedTr);</span>
+<span class="fc" id="L507">        }</span>
 
         TypeRecord getTypeRecord(TypeElement type) {
-<span class="fc" id="L481">            TypeRecord rec = types.get(type);</span>
-<span class="fc bfc" id="L482" title="All 2 branches covered.">            if (rec == null) {</span>
-<span class="fc" id="L483">                rec = new TypeRecord();</span>
-<span class="fc" id="L484">                rec.javacElement = type;</span>
-<span class="fc" id="L485">                int depth = 0;</span>
-<span class="fc" id="L486">                Element e = type.getEnclosingElement();</span>
-<span class="pc bpc" id="L487" title="1 of 4 branches missed.">                while (e != null &amp;&amp; e instanceof TypeElement) {</span>
-<span class="fc" id="L488">                    depth++;</span>
-<span class="fc" id="L489">                    e = e.getEnclosingElement();</span>
+<span class="fc" id="L510">            TypeRecord rec = types.get(type);</span>
+<span class="fc bfc" id="L511" title="All 2 branches covered.">            if (rec == null) {</span>
+<span class="fc" id="L512">                rec = new TypeRecord();</span>
+<span class="fc" id="L513">                rec.javacElement = type;</span>
+<span class="fc" id="L514">                int depth = 0;</span>
+<span class="fc" id="L515">                Element e = type.getEnclosingElement();</span>
+<span class="pc bpc" id="L516" title="1 of 4 branches missed.">                while (e != null &amp;&amp; e instanceof TypeElement) {</span>
+<span class="fc" id="L517">                    depth++;</span>
+<span class="fc" id="L518">                    e = e.getEnclosingElement();</span>
                 }
-<span class="fc" id="L491">                rec.nestingDepth = depth;</span>
-<span class="fc" id="L492">                types.put(type, rec);</span>
+<span class="fc" id="L520">                rec.nestingDepth = depth;</span>
+<span class="fc" id="L521">                types.put(type, rec);</span>
             }
 
-<span class="fc" id="L495">            return rec;</span>
+<span class="fc" id="L524">            return rec;</span>
         }
 
         void initEnvironment() {
-<span class="pc bpc" id="L499" title="3 of 4 branches missed.">            if (ignoreMissingAnnotations &amp;&amp; !requiredTypes.isEmpty()) {</span>
-<span class="nc" id="L500">                removeAnnotatesUses();</span>
+<span class="pc bpc" id="L528" title="3 of 4 branches missed.">            if (ignoreMissingAnnotations &amp;&amp; !requiredTypes.isEmpty()) {</span>
+<span class="nc" id="L529">                removeAnnotatesUses();</span>
             }
 
-<span class="fc" id="L503">            moveInnerClassesOfPrimariesToApi();</span>
-<span class="fc" id="L504">            determineApiStatus();</span>
-<span class="fc" id="L505">            initChildren();</span>
+<span class="fc" id="L532">            moveInnerClassesOfPrimariesToApi();</span>
+<span class="fc" id="L533">            determineApiStatus();</span>
+<span class="fc" id="L534">            initChildren();</span>
 
-<span class="fc" id="L507">            Set&lt;TypeRecord&gt; types = constructTree();</span>
+<span class="fc" id="L536">            Set&lt;TypeRecord&gt; types = constructTree();</span>
 
-<span class="fc bfc" id="L509" title="All 2 branches covered.">            if (!requiredTypes.isEmpty()) {</span>
-<span class="fc" id="L510">                handleMissingClasses(types);</span>
+<span class="fc bfc" id="L538" title="All 2 branches covered.">            if (!requiredTypes.isEmpty()) {</span>
+<span class="fc" id="L539">                handleMissingClasses(types);</span>
             }
 
-<span class="fc" id="L513">            environment.setTypeMap(types.stream().collect(toMap(tr -&gt; tr.javacElement, tr -&gt; tr.modelElement)));</span>
-<span class="fc" id="L514">       }</span>
+<span class="fc" id="L542">            environment.setTypeMap(types.stream().collect(toMap(tr -&gt; tr.javacElement, tr -&gt; tr.modelElement)));</span>
+<span class="fc" id="L543">        }</span>
 
         private void handleMissingClasses(Set&lt;TypeRecord&gt; types) {
-<span class="fc" id="L517">            Elements els = environment.getElementUtils();</span>
+<span class="fc" id="L546">            Elements els = environment.getElementUtils();</span>
 
-<span class="pc bfc" id="L519" title="All 3 branches covered.">            switch (missingClassReporting) {</span>
+<span class="pc bfc" id="L548" title="All 3 branches covered.">            switch (missingClassReporting) {</span>
                 case ERROR:
-<span class="fc" id="L521">                    List&lt;String&gt; reallyMissing = requiredTypes.keySet().stream()</span>
-<span class="fc" id="L522">                            .map(t -&gt; els.getTypeElement(t.getQualifiedName()))</span>
-<span class="pc bpc" id="L523" title="1 of 2 branches missed.">                            .filter(t -&gt; els.getTypeElement(t.getQualifiedName()) == null)</span>
-<span class="pc" id="L524">                            .map(t -&gt; t.getQualifiedName().toString())</span>
-<span class="fc" id="L525">                            .sorted()</span>
-<span class="fc" id="L526">                            .collect(toList());</span>
+<span class="fc" id="L550">                    List&lt;String&gt; reallyMissing = requiredTypes.keySet().stream()</span>
+<span class="fc" id="L551">                            .map(t -&gt; els.getTypeElement(t.getQualifiedName()))</span>
+<span class="pc bpc" id="L552" title="1 of 2 branches missed.">                            .filter(t -&gt; els.getTypeElement(t.getQualifiedName()) == null)</span>
+<span class="pc" id="L553">                            .map(t -&gt; t.getQualifiedName().toString())</span>
+<span class="fc" id="L554">                            .sorted()</span>
+<span class="fc" id="L555">                            .collect(toList());</span>
 
-<span class="pc bpc" id="L528" title="1 of 2 branches missed.">                    if (!reallyMissing.isEmpty()) {</span>
-<span class="nc" id="L529">                        throw new IllegalStateException(</span>
+<span class="pc bpc" id="L557" title="1 of 2 branches missed.">                    if (!reallyMissing.isEmpty()) {</span>
+<span class="nc" id="L558">                        throw new IllegalStateException(</span>
                                 &quot;The following classes that contribute to the public API of &quot; +
-<span class="nc" id="L531">                                        environment.getApi() +</span>
+<span class="nc" id="L560">                                        environment.getApi() +</span>
                                         &quot; could not be located: &quot; +
                                         reallyMissing);
                     }
                     break;
                 case REPORT:
-<span class="fc bfc" id="L537" title="All 2 branches covered.">                    for (TypeElement t : requiredTypes.keySet()) {</span>
-<span class="fc" id="L538">                        TypeElement type = els.getTypeElement(t.getQualifiedName());</span>
-<span class="fc bfc" id="L539" title="All 2 branches covered.">                        if (type == null) {</span>
-<span class="fc" id="L540">                            String bin = els.getBinaryName(t).toString();</span>
-<span class="fc" id="L541">                            MissingClassElement mce = new MissingClassElement(environment, bin,</span>
-<span class="fc" id="L542">                                    t.getQualifiedName().toString());</span>
-<span class="fc" id="L543">                            TypeRecord tr = new TypeRecord();</span>
-<span class="fc" id="L544">                            tr.javacElement = mce.getDeclaringElement();</span>
-<span class="fc" id="L545">                            tr.modelElement = mce;</span>
-<span class="fc" id="L546">                            types.add(tr);</span>
-<span class="fc" id="L547">                            environment.getTree().getRootsUnsafe().add(mce);</span>
+<span class="fc bfc" id="L566" title="All 2 branches covered.">                    for (TypeElement t : requiredTypes.keySet()) {</span>
+<span class="fc" id="L567">                        TypeElement type = els.getTypeElement(t.getQualifiedName());</span>
+<span class="fc bfc" id="L568" title="All 2 branches covered.">                        if (type == null) {</span>
+<span class="fc" id="L569">                            String bin = els.getBinaryName(t).toString();</span>
+<span class="fc" id="L570">                            MissingClassElement mce = new MissingClassElement(environment, bin,</span>
+<span class="fc" id="L571">                                    t.getQualifiedName().toString());</span>
+<span class="fc" id="L572">                            TypeRecord tr = new TypeRecord();</span>
+<span class="fc" id="L573">                            tr.javacElement = mce.getDeclaringElement();</span>
+<span class="fc" id="L574">                            tr.modelElement = mce;</span>
+<span class="fc" id="L575">                            types.add(tr);</span>
+<span class="fc" id="L576">                            environment.getTree().getRootsUnsafe().add(mce);</span>
                         }
-<span class="fc" id="L549">                    }</span>
+<span class="fc" id="L578">                    }</span>
             }
-<span class="fc" id="L551">        }</span>
+<span class="fc" id="L580">        }</span>
 
         private Set&lt;TypeRecord&gt; constructTree() {
-<span class="fc" id="L554">            Set&lt;TypeRecord&gt; types = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L555">            Set&lt;TypeElement&gt; ignored = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L556">            Comparator&lt;Map.Entry&lt;TypeElement, TypeRecord&gt;&gt; byNestingDepth = (a, b) -&gt; {</span>
-<span class="fc" id="L557">                TypeRecord ar = a.getValue();</span>
-<span class="fc" id="L558">                TypeRecord br = b.getValue();</span>
-<span class="fc" id="L559">                int ret = ar.nestingDepth - br.nestingDepth;</span>
-<span class="fc bfc" id="L560" title="All 2 branches covered.">                if (ret == 0) {</span>
-<span class="fc" id="L561">                    ret = a.getKey().getQualifiedName().toString().compareTo(b.getKey().getQualifiedName().toString());</span>
+<span class="fc" id="L583">            Set&lt;TypeRecord&gt; types = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L584">            Set&lt;TypeElement&gt; ignored = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L585">            Comparator&lt;Map.Entry&lt;TypeElement, TypeRecord&gt;&gt; byNestingDepth = (a, b) -&gt; {</span>
+<span class="fc" id="L586">                TypeRecord ar = a.getValue();</span>
+<span class="fc" id="L587">                TypeRecord br = b.getValue();</span>
+<span class="fc" id="L588">                int ret = ar.nestingDepth - br.nestingDepth;</span>
+<span class="fc bfc" id="L589" title="All 2 branches covered.">                if (ret == 0) {</span>
+<span class="fc" id="L590">                    ret = a.getKey().getQualifiedName().toString().compareTo(b.getKey().getQualifiedName().toString());</span>
                 }
 
                 //the less nested classes need to come first
-<span class="fc" id="L565">                return ret;</span>
+<span class="fc" id="L594">                return ret;</span>
             };
 
-<span class="fc" id="L568">            this.types.entrySet().stream().sorted(byNestingDepth).forEach(e -&gt; {</span>
-<span class="fc" id="L569">                TypeElement t = e.getKey();</span>
-<span class="fc" id="L570">                TypeRecord r = e.getValue();</span>
+<span class="fc" id="L597">            this.types.entrySet().stream().sorted(byNestingDepth).forEach(e -&gt; {</span>
+<span class="fc" id="L598">                TypeElement t = e.getKey();</span>
+<span class="fc" id="L599">                TypeRecord r = e.getValue();</span>
 
-                //the model element will be null for types from the bootstrap classpath
-<span class="fc bfc" id="L573" title="All 2 branches covered.">                if (r.modelElement != null) {</span>
-<span class="fc" id="L574">                    String cn = t.getQualifiedName().toString();</span>
-<span class="fc" id="L575">                    boolean includes = r.explicitlyIncluded;</span>
-<span class="fc" id="L576">                    boolean excludes = r.explicitlyExcluded;</span>
+                //the model element will be null for missing types. Additionally, we don't want the system classpath
+                //in our tree, because that is superfluous.
+<span class="fc bfc" id="L603" title="All 4 branches covered.">                if (r.modelElement != null &amp;&amp; !r.modelElement.getArchive().getName().equals(SYSTEM_CLASSPATH_NAME)) {</span>
+<span class="fc" id="L604">                    String cn = t.getQualifiedName().toString();</span>
+<span class="fc" id="L605">                    boolean includes = r.explicitlyIncluded;</span>
+<span class="fc" id="L606">                    boolean excludes = r.explicitlyExcluded;</span>
 
-<span class="fc bfc" id="L578" title="All 2 branches covered.">                    if (includes) {</span>
-<span class="fc" id="L579">                        environment.addExplicitInclusion(cn);</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">                    if (includes) {</span>
+<span class="fc" id="L609">                        environment.addExplicitInclusion(cn);</span>
                     }
 
-<span class="fc bfc" id="L582" title="All 2 branches covered.">                    if (excludes) {</span>
-<span class="fc" id="L583">                        environment.addExplicitExclusion(cn);</span>
-<span class="fc" id="L584">                        ignored.add(t);</span>
+<span class="fc bfc" id="L612" title="All 2 branches covered.">                    if (excludes) {</span>
+<span class="fc" id="L613">                        environment.addExplicitExclusion(cn);</span>
+<span class="fc" id="L614">                        ignored.add(t);</span>
                     } else {
-<span class="fc bfc" id="L586" title="All 4 branches covered.">                        boolean include = defaultInclusionCase || includes;</span>
-<span class="fc" id="L587">                        Element owner = t.getEnclosingElement();</span>
+<span class="fc bfc" id="L616" title="All 4 branches covered.">                        boolean include = defaultInclusionCase || includes;</span>
+<span class="fc" id="L617">                        Element owner = t.getEnclosingElement();</span>
 
-<span class="pc bpc" id="L589" title="1 of 4 branches missed.">                        if (owner != null &amp;&amp; owner instanceof TypeElement) {</span>
-<span class="fc" id="L590">                            ArrayDeque&lt;TypeElement&gt; owners = new ArrayDeque&lt;&gt;();</span>
-<span class="pc bpc" id="L591" title="1 of 4 branches missed.">                            while (owner != null &amp;&amp; owner instanceof TypeElement) {</span>
-<span class="fc" id="L592">                                owners.push((TypeElement) owner);</span>
-<span class="fc" id="L593">                                owner = owner.getEnclosingElement();</span>
+<span class="pc bpc" id="L619" title="1 of 4 branches missed.">                        if (owner != null &amp;&amp; owner instanceof TypeElement) {</span>
+<span class="fc" id="L620">                            ArrayDeque&lt;TypeElement&gt; owners = new ArrayDeque&lt;&gt;();</span>
+<span class="pc bpc" id="L621" title="1 of 4 branches missed.">                            while (owner != null &amp;&amp; owner instanceof TypeElement) {</span>
+<span class="fc" id="L622">                                owners.push((TypeElement) owner);</span>
+<span class="fc" id="L623">                                owner = owner.getEnclosingElement();</span>
                             }
 
                             //find the first owning class that is part of our model
-<span class="fc" id="L597">                            List&lt;TypeElement&gt; siblings = environment.getTree().getRootsUnsafe().stream().map(</span>
-<span class="fc" id="L598">                                    org.revapi.java.model.TypeElement::getDeclaringElement).collect(Collectors.toList());</span>
+<span class="fc" id="L627">                            List&lt;TypeElement&gt; siblings = environment.getTree().getRootsUnsafe().stream().map(</span>
+<span class="fc" id="L628">                                    org.revapi.java.model.TypeElement::getDeclaringElement).collect(Collectors.toList());</span>
 
-<span class="fc bfc" id="L600" title="All 2 branches covered.">                            while (!owners.isEmpty()) {</span>
-<span class="fc bfc" id="L601" title="All 4 branches covered.">                                if (ignored.contains(owners.peek()) || siblings.contains(owners.peek())) {</span>
-<span class="fc" id="L602">                                    break;</span>
+<span class="fc bfc" id="L630" title="All 2 branches covered.">                            while (!owners.isEmpty()) {</span>
+<span class="fc bfc" id="L631" title="All 4 branches covered.">                                if (ignored.contains(owners.peek()) || siblings.contains(owners.peek())) {</span>
+<span class="fc" id="L632">                                    break;</span>
                                 }
-<span class="fc" id="L604">                                owners.pop();</span>
+<span class="fc" id="L634">                                owners.pop();</span>
                             }
 
                             //if the user doesn't want this type included explicitly, we need to check in the parents
                             //if some of them wasn't explicitly excluded
-<span class="fc bfc" id="L609" title="All 4 branches covered.">                            if (!includes &amp;&amp; !owners.isEmpty()) {</span>
+<span class="fc bfc" id="L639" title="All 4 branches covered.">                            if (!includes &amp;&amp; !owners.isEmpty()) {</span>
                                 do {
-<span class="fc" id="L611">                                    TypeElement o = owners.pop();</span>
-<span class="pc bpc" id="L612" title="1 of 4 branches missed.">                                    include = !ignored.contains(o) &amp;&amp; siblings.contains(o);</span>
-<span class="fc" id="L613">                                    siblings = ElementFilter.typesIn(o.getEnclosedElements());</span>
-<span class="fc bfc" id="L614" title="All 4 branches covered.">                                } while (include &amp;&amp; !owners.isEmpty());</span>
+<span class="fc" id="L641">                                    TypeElement o = owners.pop();</span>
+<span class="pc bpc" id="L642" title="1 of 4 branches missed.">                                    include = !ignored.contains(o) &amp;&amp; siblings.contains(o);</span>
+<span class="fc" id="L643">                                    siblings = ElementFilter.typesIn(o.getEnclosedElements());</span>
+<span class="fc bfc" id="L644" title="All 4 branches covered.">                                } while (include &amp;&amp; !owners.isEmpty());</span>
                             }
                         }
 
-<span class="fc bfc" id="L618" title="All 2 branches covered.">                        if (include) {</span>
-<span class="fc" id="L619">                            placeInTree(r);</span>
-<span class="fc" id="L620">                            r.modelElement.setRawUseSites(r.useSites);</span>
-<span class="fc" id="L621">                            types.add(r);</span>
-<span class="fc" id="L622">                            r.modelElement.setInApi(r.inApi);</span>
-<span class="fc" id="L623">                            r.modelElement.setInApiThroughUse(r.inApiThroughUse);</span>
+<span class="fc bfc" id="L648" title="All 2 branches covered.">                        if (include) {</span>
+<span class="fc" id="L649">                            placeInTree(r);</span>
+<span class="fc" id="L650">                            r.modelElement.setRawUseSites(r.useSites);</span>
+<span class="fc" id="L651">                            types.add(r);</span>
+<span class="fc" id="L652">                            r.modelElement.setInApi(r.inApi);</span>
+<span class="fc" id="L653">                            r.modelElement.setInApiThroughUse(r.inApiThroughUse);</span>
                         }
                     }
                 }
-<span class="fc" id="L627">            });</span>
+<span class="fc" id="L657">            });</span>
 
-<span class="fc" id="L629">            return types;</span>
+<span class="fc" id="L659">            return types;</span>
         }
 
         private void determineApiStatus() {
-<span class="fc" id="L633">            Set&lt;TypeRecord&gt; undetermined = new HashSet&lt;&gt;(this.types.values());</span>
-<span class="fc bfc" id="L634" title="All 2 branches covered.">            while (!undetermined.isEmpty()) {</span>
-<span class="fc" id="L635">                undetermined = undetermined.stream()</span>
-<span class="fc bfc" id="L636" title="All 4 branches covered.">                        .filter(tr -&gt; tr.modelElement != null &amp;&amp; !tr.explicitlyExcluded)</span>
-<span class="fc" id="L637">                        .filter(tr -&gt; tr.inApi)</span>
-<span class="fc" id="L638">                        .flatMap(tr -&gt; tr.usedTypes.entrySet().stream()</span>
-<span class="fc" id="L639">                                .map(e -&gt; new AbstractMap.SimpleImmutableEntry&lt;&gt;(tr, e)))</span>
-<span class="fc" id="L640">                        .filter(e -&gt; movesToApi(e.getValue().getKey()))</span>
-<span class="fc" id="L641">                        .flatMap(e -&gt; e.getValue().getValue().stream())</span>
-<span class="fc bfc" id="L642" title="All 2 branches covered.">                        .filter(usedTr -&gt; usedTr.modelElement != null)</span>
-<span class="fc bfc" id="L643" title="All 2 branches covered.">                        .filter(usedTr -&gt; !usedTr.inApi)</span>
-<span class="pc bpc" id="L644" title="1 of 2 branches missed.">                        .filter(usedTr -&gt; !usedTr.explicitlyExcluded)</span>
-<span class="fc" id="L645">                        .map(usedTr -&gt; {</span>
-<span class="fc" id="L646">                            usedTr.inApi = true;</span>
-<span class="fc" id="L647">                            usedTr.inApiThroughUse = true;</span>
-<span class="fc" id="L648">                            return usedTr;</span>
+<span class="fc" id="L663">            Set&lt;TypeRecord&gt; undetermined = new HashSet&lt;&gt;(this.types.values());</span>
+<span class="fc bfc" id="L664" title="All 2 branches covered.">            while (!undetermined.isEmpty()) {</span>
+<span class="fc" id="L665">                undetermined = undetermined.stream()</span>
+<span class="fc bfc" id="L666" title="All 4 branches covered.">                        .filter(tr -&gt; tr.modelElement != null &amp;&amp; !tr.explicitlyExcluded)</span>
+<span class="fc" id="L667">                        .filter(tr -&gt; tr.inApi)</span>
+<span class="fc" id="L668">                        .flatMap(tr -&gt; tr.usedTypes.entrySet().stream()</span>
+<span class="fc" id="L669">                                .map(e -&gt; new AbstractMap.SimpleImmutableEntry&lt;&gt;(tr, e)))</span>
+<span class="fc" id="L670">                        .filter(e -&gt; movesToApi(e.getValue().getKey()))</span>
+<span class="fc" id="L671">                        .flatMap(e -&gt; e.getValue().getValue().stream())</span>
+<span class="fc bfc" id="L672" title="All 2 branches covered.">                        .filter(usedTr -&gt; usedTr.modelElement != null)</span>
+<span class="fc bfc" id="L673" title="All 2 branches covered.">                        .filter(usedTr -&gt; !usedTr.inApi)</span>
+<span class="pc bpc" id="L674" title="1 of 2 branches missed.">                        .filter(usedTr -&gt; !usedTr.explicitlyExcluded)</span>
+<span class="fc" id="L675">                        .map(usedTr -&gt; {</span>
+<span class="fc" id="L676">                            usedTr.inApi = true;</span>
+<span class="fc" id="L677">                            usedTr.inApiThroughUse = true;</span>
+<span class="fc" id="L678">                            return usedTr;</span>
                         })
-<span class="fc" id="L650">                        .collect(toSet());</span>
+<span class="fc" id="L680">                        .collect(toSet());</span>
             }
-<span class="fc" id="L652">        }</span>
+<span class="fc" id="L682">        }</span>
 
         private void moveInnerClassesOfPrimariesToApi() {
-<span class="fc" id="L655">            Set&lt;TypeRecord&gt; primaries = this.types.values().stream()</span>
-<span class="fc" id="L656">                    .filter(tr -&gt; tr.primaryApi)</span>
-<span class="fc" id="L657">                    .filter(tr -&gt; tr.inApi)</span>
-<span class="pc bpc" id="L658" title="1 of 2 branches missed.">                    .filter(tr -&gt; tr.nestingDepth == 0)</span>
-<span class="fc" id="L659">                    .collect(toSet());</span>
+<span class="fc" id="L685">            Set&lt;TypeRecord&gt; primaries = this.types.values().stream()</span>
+<span class="fc" id="L686">                    .filter(tr -&gt; tr.primaryApi)</span>
+<span class="fc" id="L687">                    .filter(tr -&gt; tr.inApi)</span>
+<span class="pc bpc" id="L688" title="1 of 2 branches missed.">                    .filter(tr -&gt; tr.nestingDepth == 0)</span>
+<span class="fc" id="L689">                    .collect(toSet());</span>
 
-<span class="fc bfc" id="L661" title="All 2 branches covered.">            while (!primaries.isEmpty()) {</span>
-<span class="fc" id="L662">                primaries = primaries.stream()</span>
-<span class="fc" id="L663">                        .flatMap(tr -&gt; tr.usedTypes.getOrDefault(UseSite.Type.CONTAINS, Collections.emptySet()).stream())</span>
-<span class="fc bfc" id="L664" title="All 2 branches covered.">                        .filter(containedTr -&gt; containedTr.modelElement != null)</span>
-<span class="fc bfc" id="L665" title="All 2 branches covered.">                        .filter(containedTr -&gt; !shouldBeIgnored(containedTr.modelElement.getDeclaringElement()))</span>
-<span class="fc" id="L666">                        .map(containedTr -&gt; {</span>
-<span class="fc" id="L667">                            containedTr.inApi = true;</span>
-<span class="fc" id="L668">                            return containedTr;</span>
+<span class="fc bfc" id="L691" title="All 2 branches covered.">            while (!primaries.isEmpty()) {</span>
+<span class="fc" id="L692">                primaries = primaries.stream()</span>
+<span class="fc" id="L693">                        .flatMap(tr -&gt; tr.usedTypes.getOrDefault(UseSite.Type.CONTAINS, Collections.emptySet()).stream())</span>
+<span class="fc bfc" id="L694" title="All 2 branches covered.">                        .filter(containedTr -&gt; containedTr.modelElement != null)</span>
+<span class="fc bfc" id="L695" title="All 2 branches covered.">                        .filter(containedTr -&gt; !shouldBeIgnored(containedTr.modelElement.getDeclaringElement()))</span>
+<span class="fc" id="L696">                        .map(containedTr -&gt; {</span>
+<span class="fc" id="L697">                            containedTr.inApi = true;</span>
+<span class="fc" id="L698">                            return containedTr;</span>
                         })
-<span class="fc" id="L670">                        .collect(toSet());</span>
+<span class="fc" id="L700">                        .collect(toSet());</span>
             }
-<span class="fc" id="L672">        }</span>
+<span class="fc" id="L702">        }</span>
 
         private void removeAnnotatesUses() {
-<span class="nc" id="L675">            Map&lt;TypeElement, Boolean&gt; newTypes = requiredTypes.entrySet().stream().filter(e -&gt; {</span>
-<span class="nc" id="L676">                boolean isAnno = e.getValue();</span>
-<span class="nc bnc" id="L677" title="All 2 branches missed.">                if (isAnno) {</span>
-<span class="nc" id="L678">                    this.types.get(e.getKey()).useSites.clear();</span>
+<span class="nc" id="L705">            Map&lt;TypeElement, Boolean&gt; newTypes = requiredTypes.entrySet().stream().filter(e -&gt; {</span>
+<span class="nc" id="L706">                boolean isAnno = e.getValue();</span>
+<span class="nc bnc" id="L707" title="All 2 branches missed.">                if (isAnno) {</span>
+<span class="nc" id="L708">                    this.types.get(e.getKey()).useSites.clear();</span>
                 }
-<span class="nc bnc" id="L680" title="All 2 branches missed.">                return !isAnno;</span>
-<span class="nc" id="L681">            }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));</span>
-<span class="nc" id="L682">            requiredTypes.clear();</span>
-<span class="nc" id="L683">            requiredTypes.putAll(newTypes);</span>
-<span class="nc" id="L684">        }</span>
+<span class="nc bnc" id="L710" title="All 2 branches missed.">                return !isAnno;</span>
+<span class="nc" id="L711">            }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));</span>
+<span class="nc" id="L712">            requiredTypes.clear();</span>
+<span class="nc" id="L713">            requiredTypes.putAll(newTypes);</span>
+<span class="nc" id="L714">        }</span>
 
         private void initChildren() {
-<span class="fc bfc" id="L687" title="All 2 branches covered.">            for (TypeRecord tr : this.types.values()) {</span>
-<span class="fc bfc" id="L688" title="All 2 branches covered.">                if (tr.modelElement == null) {</span>
-<span class="fc" id="L689">                    continue;</span>
+<span class="fc bfc" id="L717" title="All 2 branches covered.">            for (TypeRecord tr : this.types.values()) {</span>
+<span class="fc bfc" id="L718" title="All 2 branches covered.">                if (tr.modelElement == null) {</span>
+<span class="fc" id="L719">                    continue;</span>
                 }
 
                 //the set of methods' override-sensitive signatures - I.e. this is the list of methods
                 //actually visible on a type.
-<span class="fc" id="L694">                Set&lt;String&gt; methods = new HashSet&lt;&gt;(8);</span>
+<span class="fc" id="L724">                Set&lt;String&gt; methods = new HashSet&lt;&gt;(8);</span>
 
-<span class="fc" id="L696">                Function&lt;JavaElementBase&lt;?, ?&gt;, JavaElementBase&lt;?, ?&gt;&gt; addOverride = e -&gt; {</span>
-<span class="fc bfc" id="L697" title="All 2 branches covered.">                    if (e instanceof MethodElement) {</span>
-<span class="fc" id="L698">                        MethodElement me = (MethodElement) e;</span>
-<span class="fc" id="L699">                        methods.add(getOverrideMapKey(me.getDeclaringElement()));</span>
+<span class="fc" id="L726">                Function&lt;JavaElementBase&lt;?, ?&gt;, JavaElementBase&lt;?, ?&gt;&gt; addOverride = e -&gt; {</span>
+<span class="fc bfc" id="L727" title="All 2 branches covered.">                    if (e instanceof MethodElement) {</span>
+<span class="fc" id="L728">                        MethodElement me = (MethodElement) e;</span>
+<span class="fc" id="L729">                        methods.add(getOverrideMapKey(me.getDeclaringElement()));</span>
                     }
-<span class="fc" id="L701">                    return e;</span>
+<span class="fc" id="L731">                    return e;</span>
                 };
 
-<span class="fc" id="L704">                Function&lt;JavaElementBase&lt;?, ?&gt;, JavaElementBase&lt;?, ?&gt;&gt; initChildren = e -&gt; {</span>
-<span class="fc" id="L705">                    initNonClassElementChildrenAndMoveToApi(tr, e, false);</span>
-<span class="fc" id="L706">                    return e;</span>
+<span class="fc" id="L734">                Function&lt;JavaElementBase&lt;?, ?&gt;, JavaElementBase&lt;?, ?&gt;&gt; initChildren = e -&gt; {</span>
+<span class="fc" id="L735">                    initNonClassElementChildrenAndMoveToApi(tr, e, false);</span>
+<span class="fc" id="L736">                    return e;</span>
                 };
 
                 //add declared stuff
-<span class="fc" id="L710">                tr.accessibleDeclaredNonClassMembers.stream()</span>
-<span class="fc" id="L711">                        .map(e -&gt;</span>
-<span class="fc" id="L712">                                elementFor(e, e.asType(), environment, tr.modelElement.getArchive()))</span>
-<span class="fc" id="L713">                        .map(addOverride)</span>
-<span class="fc" id="L714">                        .map(initChildren)</span>
-<span class="fc" id="L715">                        .forEach(c -&gt; tr.modelElement.getChildren().add(c));</span>
+<span class="fc" id="L740">                tr.accessibleDeclaredNonClassMembers.stream()</span>
+<span class="fc" id="L741">                        .map(e -&gt;</span>
+<span class="fc" id="L742">                                elementFor(e, e.asType(), environment, tr.modelElement.getArchive()))</span>
+<span class="fc" id="L743">                        .map(addOverride)</span>
+<span class="fc" id="L744">                        .map(initChildren)</span>
+<span class="fc" id="L745">                        .forEach(c -&gt; tr.modelElement.getChildren().add(c));</span>
 
-<span class="fc" id="L717">                tr.inaccessibleDeclaredNonClassMembers.stream()</span>
-<span class="fc" id="L718">                        .map(e -&gt;</span>
-<span class="fc" id="L719">                                elementFor(e, e.asType(), environment, tr.modelElement.getArchive()))</span>
-<span class="fc" id="L720">                        .map(addOverride)</span>
-<span class="fc" id="L721">                        .map(initChildren)</span>
-<span class="fc" id="L722">                        .forEach(c -&gt; tr.modelElement.getChildren().add(c));</span>
+<span class="fc" id="L747">                tr.inaccessibleDeclaredNonClassMembers.stream()</span>
+<span class="fc" id="L748">                        .map(e -&gt;</span>
+<span class="fc" id="L749">                                elementFor(e, e.asType(), environment, tr.modelElement.getArchive()))</span>
+<span class="fc" id="L750">                        .map(addOverride)</span>
+<span class="fc" id="L751">                        .map(initChildren)</span>
+<span class="fc" id="L752">                        .forEach(c -&gt; tr.modelElement.getChildren().add(c));</span>
 
                 //now add inherited stuff
-<span class="fc" id="L725">                tr.superTypes.forEach(str -&gt; addInherited(tr, str, methods));</span>
+<span class="fc" id="L755">                tr.superTypes.forEach(str -&gt; addInherited(tr, str, methods));</span>
 
                 //and finally the annotations
-<span class="fc bfc" id="L728" title="All 2 branches covered.">                for (AnnotationMirror m : tr.javacElement.getAnnotationMirrors()) {</span>
-<span class="fc" id="L729">                    tr.modelElement.getChildren().add(new AnnotationElement(environment, tr.modelElement.getArchive(), m));</span>
-<span class="fc" id="L730">                }</span>
-<span class="fc" id="L731">            }</span>
-<span class="fc" id="L732">        }</span>
+<span class="fc bfc" id="L758" title="All 2 branches covered.">                for (AnnotationMirror m : tr.javacElement.getAnnotationMirrors()) {</span>
+<span class="fc" id="L759">                    tr.modelElement.getChildren().add(new AnnotationElement(environment, tr.modelElement.getArchive(), m));</span>
+<span class="fc" id="L760">                }</span>
+<span class="fc" id="L761">            }</span>
+<span class="fc" id="L762">        }</span>
 
         private void addInherited(TypeRecord target, TypeRecord superType, Set&lt;String&gt; methodOverrideMap) {
-<span class="fc" id="L735">            Types types = environment.getTypeUtils();</span>
+<span class="fc" id="L765">            Types types = environment.getTypeUtils();</span>
 
-<span class="fc" id="L737">            superType.accessibleDeclaredNonClassMembers.stream()</span>
-<span class="fc" id="L738">                    .map(e -&gt; {</span>
-<span class="fc bfc" id="L739" title="All 2 branches covered.">                        if (e instanceof ExecutableElement) {</span>
-<span class="fc" id="L740">                            ExecutableElement me = (ExecutableElement) e;</span>
-<span class="fc bfc" id="L741" title="All 2 branches covered.">                            if (!shouldAddInheritedMethodChild(me, methodOverrideMap)) {</span>
-<span class="fc" id="L742">                                return null;</span>
+<span class="fc" id="L767">            superType.accessibleDeclaredNonClassMembers.stream()</span>
+<span class="fc" id="L768">                    .map(e -&gt; {</span>
+<span class="fc bfc" id="L769" title="All 2 branches covered.">                        if (e instanceof ExecutableElement) {</span>
+<span class="fc" id="L770">                            ExecutableElement me = (ExecutableElement) e;</span>
+<span class="fc bfc" id="L771" title="All 2 branches covered.">                            if (!shouldAddInheritedMethodChild(me, methodOverrideMap)) {</span>
+<span class="fc" id="L772">                                return null;</span>
                             }
                         }
 
-<span class="fc" id="L746">                        TypeMirror elementType = types.asMemberOf((DeclaredType) target.javacElement.asType(), e);</span>
+<span class="fc" id="L776">                        TypeMirror elementType = types.asMemberOf((DeclaredType) target.javacElement.asType(), e);</span>
 
-<span class="fc" id="L748">                        JavaElementBase&lt;?, ?&gt; element = JavaElementFactory</span>
-<span class="fc" id="L749">                                .elementFor(e, elementType, environment, superType.modelElement.getArchive());</span>
+<span class="fc" id="L778">                        JavaElementBase&lt;?, ?&gt; element = JavaElementFactory</span>
+<span class="fc" id="L779">                                .elementFor(e, elementType, environment, superType.modelElement.getArchive());</span>
 
-<span class="fc" id="L751">                        element.setInherited(true);</span>
+<span class="fc" id="L781">                        element.setInherited(true);</span>
 
-<span class="fc" id="L753">                        initNonClassElementChildrenAndMoveToApi(target, element, true);</span>
+<span class="fc" id="L783">                        initNonClassElementChildrenAndMoveToApi(target, element, true);</span>
 
-<span class="fc" id="L755">                        return element;</span>
+<span class="fc" id="L785">                        return element;</span>
                     })
-<span class="fc bfc" id="L757" title="All 2 branches covered.">                    .filter(e -&gt; e != null)</span>
-<span class="fc" id="L758">                    .forEach(c -&gt; target.modelElement.getChildren().add(c));</span>
+<span class="fc bfc" id="L787" title="All 2 branches covered.">                    .filter(e -&gt; e != null)</span>
+<span class="fc" id="L788">                    .forEach(c -&gt; target.modelElement.getChildren().add(c));</span>
 
-<span class="fc bfc" id="L760" title="All 2 branches covered.">            for (TypeRecord st : superType.superTypes) {</span>
-<span class="fc" id="L761">                addInherited(target, st, methodOverrideMap);</span>
-<span class="fc" id="L762">            }</span>
-<span class="fc" id="L763">        }</span>
+<span class="fc bfc" id="L790" title="All 2 branches covered.">            for (TypeRecord st : superType.superTypes) {</span>
+<span class="fc" id="L791">                addInherited(target, st, methodOverrideMap);</span>
+<span class="fc" id="L792">            }</span>
+<span class="fc" id="L793">        }</span>
 
         private boolean shouldAddInheritedMethodChild(ExecutableElement methodElement, Set&lt;String&gt; overrideMap) {
-<span class="fc bfc" id="L766" title="All 2 branches covered.">            if (methodElement.getKind() == ElementKind.CONSTRUCTOR) {</span>
-<span class="fc" id="L767">                return false;</span>
+<span class="fc bfc" id="L796" title="All 2 branches covered.">            if (methodElement.getKind() == ElementKind.CONSTRUCTOR) {</span>
+<span class="fc" id="L797">                return false;</span>
             }
-<span class="fc" id="L769">            String overrideKey = getOverrideMapKey(methodElement);</span>
-<span class="fc" id="L770">            boolean alreadyIncludedMethod = overrideMap.contains(overrideKey);</span>
-<span class="fc bfc" id="L771" title="All 2 branches covered.">            if (alreadyIncludedMethod) {</span>
-<span class="fc" id="L772">                return false;</span>
+<span class="fc" id="L799">            String overrideKey = getOverrideMapKey(methodElement);</span>
+<span class="fc" id="L800">            boolean alreadyIncludedMethod = overrideMap.contains(overrideKey);</span>
+<span class="fc bfc" id="L801" title="All 2 branches covered.">            if (alreadyIncludedMethod) {</span>
+<span class="fc" id="L802">                return false;</span>
             } else {
                 //remember this to check if the next super type doesn't declare a method this one overrides
-<span class="fc" id="L775">                overrideMap.add(overrideKey);</span>
-<span class="fc" id="L776">                return true;</span>
+<span class="fc" id="L805">                overrideMap.add(overrideKey);</span>
+<span class="fc" id="L806">                return true;</span>
             }
         }
 
         private void initNonClassElementChildrenAndMoveToApi(TypeRecord targetType, JavaElementBase&lt;?, ?&gt; parent,
                                                              boolean inherited) {
-<span class="fc" id="L782">            Types types = environment.getTypeUtils();</span>
+<span class="fc" id="L812">            Types types = environment.getTypeUtils();</span>
 
-<span class="fc bfc" id="L784" title="All 4 branches covered.">            if (targetType.inApi &amp;&amp; !shouldBeIgnored(parent.getDeclaringElement())) {</span>
-<span class="fc" id="L785">                TypeMirror representation = types.asMemberOf(targetType.modelElement.getModelRepresentation(),</span>
-<span class="fc" id="L786">                        parent.getDeclaringElement());</span>
+<span class="fc bfc" id="L814" title="All 4 branches covered.">            if (targetType.inApi &amp;&amp; !shouldBeIgnored(parent.getDeclaringElement())) {</span>
+<span class="fc" id="L815">                TypeMirror representation = types.asMemberOf(targetType.modelElement.getModelRepresentation(),</span>
+<span class="fc" id="L816">                        parent.getDeclaringElement());</span>
 
-<span class="fc" id="L788">                representation.accept(new SimpleTypeVisitor8&lt;Void, Void&gt;() {</span>
+<span class="fc" id="L818">                representation.accept(new SimpleTypeVisitor8&lt;Void, Void&gt;() {</span>
                     @Override protected Void defaultAction(TypeMirror e, Void aVoid) {
-<span class="fc bfc" id="L790" title="All 4 branches covered.">                        if (e.getKind().isPrimitive() || e.getKind() == TypeKind.VOID) {</span>
-<span class="fc" id="L791">                            return null;</span>
+<span class="fc bfc" id="L820" title="All 4 branches covered.">                        if (e.getKind().isPrimitive() || e.getKind() == TypeKind.VOID) {</span>
+<span class="fc" id="L821">                            return null;</span>
                         }
 
-<span class="fc" id="L794">                        TypeElement childType = getTypeElement.visit(e);</span>
-<span class="pc bpc" id="L795" title="1 of 2 branches missed.">                        if (childType != null) {</span>
-<span class="fc" id="L796">                            TypeRecord tr = Scanner.this.types.get(childType);</span>
-<span class="fc bfc" id="L797" title="All 4 branches covered.">                            if (tr != null &amp;&amp; tr.modelElement != null) {</span>
-<span class="fc bfc" id="L798" title="All 2 branches covered.">                                if (!tr.inApi) {</span>
-<span class="fc" id="L799">                                    tr.inApiThroughUse = true;</span>
+<span class="fc" id="L824">                        TypeElement childType = getTypeElement.visit(e);</span>
+<span class="fc bfc" id="L825" title="All 2 branches covered.">                        if (childType != null) {</span>
+<span class="fc" id="L826">                            TypeRecord tr = Scanner.this.types.get(childType);</span>
+<span class="fc bfc" id="L827" title="All 4 branches covered.">                            if (tr != null &amp;&amp; tr.modelElement != null) {</span>
+<span class="fc bfc" id="L828" title="All 2 branches covered.">                                if (!tr.inApi) {</span>
+<span class="fc" id="L829">                                    tr.inApiThroughUse = true;</span>
                                 }
-<span class="fc" id="L801">                                tr.inApi = true;</span>
+<span class="fc" id="L831">                                tr.inApi = true;</span>
                             }
                         }
-<span class="fc" id="L804">                        return null;</span>
+<span class="fc" id="L834">                        return null;</span>
                     }
 
                     @Override public Void visitExecutable(ExecutableType t, Void aVoid) {
-<span class="fc" id="L808">                        t.getReturnType().accept(this, null);</span>
-<span class="fc" id="L809">                        t.getParameterTypes().forEach(p -&gt; p.accept(this, null));</span>
-<span class="fc" id="L810">                        return null;</span>
+<span class="fc" id="L838">                        t.getReturnType().accept(this, null);</span>
+<span class="fc" id="L839">                        t.getParameterTypes().forEach(p -&gt; p.accept(this, null));</span>
+<span class="fc" id="L840">                        return null;</span>
                     }
                 }, null);
             }
 
-<span class="pc bpc" id="L815" title="1 of 2 branches missed.">            for (Element child : parent.getDeclaringElement().getEnclosedElements()) {</span>
-<span class="nc bnc" id="L816" title="All 4 branches missed.">                if (child.getKind().isClass() || child.getKind().isInterface()) {</span>
-<span class="nc" id="L817">                    continue;</span>
+<span class="pc bpc" id="L845" title="1 of 2 branches missed.">            for (Element child : parent.getDeclaringElement().getEnclosedElements()) {</span>
+<span class="nc bnc" id="L846" title="All 4 branches missed.">                if (child.getKind().isClass() || child.getKind().isInterface()) {</span>
+<span class="nc" id="L847">                    continue;</span>
                 }
 
-<span class="nc" id="L820">                TypeMirror representation = types.asMemberOf(targetType.modelElement.getModelRepresentation(),</span>
+<span class="nc" id="L850">                TypeMirror representation = types.asMemberOf(targetType.modelElement.getModelRepresentation(),</span>
                         child);
 
-<span class="nc" id="L823">                JavaElementBase&lt;?, ?&gt; childEl = JavaElementFactory.elementFor(child, representation, environment,</span>
-<span class="nc" id="L824">                        parent.getArchive());</span>
+<span class="nc" id="L853">                JavaElementBase&lt;?, ?&gt; childEl = JavaElementFactory.elementFor(child, representation, environment,</span>
+<span class="nc" id="L854">                        parent.getArchive());</span>
 
-<span class="nc" id="L826">                childEl.setInherited(inherited);</span>
+<span class="nc" id="L856">                childEl.setInherited(inherited);</span>
 
-<span class="nc" id="L828">                parent.getChildren().add(childEl);</span>
+<span class="nc" id="L858">                parent.getChildren().add(childEl);</span>
 
-<span class="nc" id="L830">                initNonClassElementChildrenAndMoveToApi(targetType, childEl, inherited);</span>
-<span class="nc" id="L831">            }</span>
+<span class="nc" id="L860">                initNonClassElementChildrenAndMoveToApi(targetType, childEl, inherited);</span>
+<span class="nc" id="L861">            }</span>
 
-<span class="fc bfc" id="L833" title="All 2 branches covered.">            for (AnnotationMirror m : parent.getDeclaringElement().getAnnotationMirrors()) {</span>
-<span class="fc" id="L834">                parent.getChildren().add(new AnnotationElement(environment, parent.getArchive(), m));</span>
-<span class="fc" id="L835">            }</span>
-<span class="fc" id="L836">        }</span>
+<span class="fc bfc" id="L863" title="All 2 branches covered.">            for (AnnotationMirror m : parent.getDeclaringElement().getAnnotationMirrors()) {</span>
+<span class="fc" id="L864">                parent.getChildren().add(new AnnotationElement(environment, parent.getArchive(), m));</span>
+<span class="fc" id="L865">            }</span>
+<span class="fc" id="L866">        }</span>
     }
 
     private static String getOverrideMapKey(ExecutableElement method) {
-<span class="fc" id="L840">        return method.getSimpleName() + &quot;#&quot; + Util.toUniqueString(method.asType());</span>
+<span class="fc" id="L870">        return method.getSimpleName() + &quot;#&quot; + Util.toUniqueString(method.asType());</span>
     }
 
     private static final class ArchiveLocation implements JavaFileManager.Location {
         private final Archive archive;
 
-<span class="fc" id="L846">        private ArchiveLocation(Archive archive) {</span>
-<span class="fc" id="L847">            this.archive = archive;</span>
-<span class="fc" id="L848">        }</span>
+<span class="fc" id="L876">        private ArchiveLocation(Archive archive) {</span>
+<span class="fc" id="L877">            this.archive = archive;</span>
+<span class="fc" id="L878">        }</span>
 
         Archive getArchive() {
-<span class="fc" id="L851">            return archive;</span>
+<span class="fc" id="L881">            return archive;</span>
         }
 
         @Override
         public String getName() {
-<span class="nc" id="L856">            return &quot;archiveLocation_&quot; + archive.getName();</span>
+<span class="nc" id="L886">            return &quot;archiveLocation_&quot; + archive.getName();</span>
         }
 
         @Override
         public boolean isOutputLocation() {
-<span class="fc" id="L861">            return false;</span>
+<span class="fc" id="L891">            return false;</span>
         }
     }
 
-<span class="fc" id="L865">    private static final class TypeRecord {</span>
-<span class="fc" id="L866">        Set&lt;ClassPathUseSite&gt; useSites = new HashSet&lt;&gt;(2);</span>
+<span class="fc" id="L895">    private static final class TypeRecord {</span>
+<span class="fc" id="L896">        Set&lt;ClassPathUseSite&gt; useSites = new HashSet&lt;&gt;(2);</span>
         TypeElement javacElement;
         org.revapi.java.model.TypeElement modelElement;
-<span class="fc" id="L869">        Map&lt;UseSite.Type, Set&lt;TypeRecord&gt;&gt; usedTypes = new EnumMap&lt;&gt;(UseSite.Type.class);</span>
-<span class="fc" id="L870">        Set&lt;Element&gt; accessibleDeclaredNonClassMembers = new HashSet&lt;&gt;(4);</span>
-<span class="fc" id="L871">        Set&lt;Element&gt; inaccessibleDeclaredNonClassMembers = new HashSet&lt;&gt;(4);</span>
+<span class="fc" id="L899">        Map&lt;UseSite.Type, Set&lt;TypeRecord&gt;&gt; usedTypes = new EnumMap&lt;&gt;(UseSite.Type.class);</span>
+<span class="fc" id="L900">        Set&lt;Element&gt; accessibleDeclaredNonClassMembers = new HashSet&lt;&gt;(4);</span>
+<span class="fc" id="L901">        Set&lt;Element&gt; inaccessibleDeclaredNonClassMembers = new HashSet&lt;&gt;(4);</span>
         //important for this to be a linked hashset so that superclasses are processed prior to implemented interfaces
-<span class="fc" id="L873">        Set&lt;TypeRecord&gt; superTypes = new LinkedHashSet&lt;&gt;(2);</span>
+<span class="fc" id="L903">        Set&lt;TypeRecord&gt; superTypes = new LinkedHashSet&lt;&gt;(2);</span>
         boolean explicitlyExcluded;
         boolean explicitlyIncluded;
         boolean inApi;
@@ -879,20 +909,20 @@ final class ClasspathScanner {
         int nestingDepth;
 
         @Override public String toString() {
-<span class="nc" id="L882">            final StringBuilder sb = new StringBuilder(&quot;TypeRecord[&quot;);</span>
-<span class="nc" id="L883">            sb.append(&quot;inApi=&quot;).append(inApi);</span>
-<span class="nc" id="L884">            sb.append(&quot;, modelElement=&quot;).append(modelElement);</span>
-<span class="nc" id="L885">            sb.append(']');</span>
-<span class="nc" id="L886">            return sb.toString();</span>
+<span class="nc" id="L912">            final StringBuilder sb = new StringBuilder(&quot;TypeRecord[&quot;);</span>
+<span class="nc" id="L913">            sb.append(&quot;inApi=&quot;).append(inApi);</span>
+<span class="nc" id="L914">            sb.append(&quot;, modelElement=&quot;).append(modelElement);</span>
+<span class="nc" id="L915">            sb.append(']');</span>
+<span class="nc" id="L916">            return sb.toString();</span>
         }
     }
 
     private static boolean movesToApi(UseSite.Type useType) {
-<span class="fc" id="L891">        return useType.isMovingToApi();</span>
+<span class="fc" id="L921">        return useType.isMovingToApi();</span>
     }
 
     static boolean shouldBeIgnored(Element element) {
-<span class="fc" id="L895">        return Collections.disjoint(element.getModifiers(), ACCESSIBLE_MODIFIERS);</span>
+<span class="fc" id="L925">        return Collections.disjoint(element.getModifiers(), ACCESSIBLE_MODIFIERS);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
