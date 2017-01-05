@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DifferenceMatchRecipe.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">DifferenceMatchRecipe.java</span></div><h1>DifferenceMatchRecipe.java</h1><pre class="source lang-java linenums">package org.revapi.basic;
 
+import static java.util.stream.Collectors.toMap;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.revapi.Difference;
 import org.revapi.Element;
 
@@ -22,37 +30,114 @@ public abstract class DifferenceMatchRecipe {
     final Pattern oldElementRegex;
     final String newElement;
     final Pattern newElementRegex;
+    final Map&lt;String, String&gt; attachments;
+    final Map&lt;String, Pattern&gt; attachmentRegexes;
 
-<span class="fc" id="L26">    protected DifferenceMatchRecipe(ModelNode config) {</span>
-<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        if (!config.has(&quot;code&quot;)) {</span>
-<span class="nc" id="L28">            throw new IllegalArgumentException(&quot;Difference code has to be specified.&quot;);</span>
+<span class="fc" id="L36">    protected DifferenceMatchRecipe(ModelNode config, String... additionalReservedProperties) {</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (!config.has(&quot;code&quot;)) {</span>
+<span class="nc" id="L38">            throw new IllegalArgumentException(&quot;Difference code has to be specified.&quot;);</span>
         }
 
-<span class="pc bpc" id="L31" title="1 of 4 branches missed.">        regex = config.has(&quot;regex&quot;) &amp;&amp; config.get(&quot;regex&quot;).asBoolean();</span>
-<span class="fc" id="L32">        code = config.get(&quot;code&quot;).asString();</span>
-<span class="fc bfc" id="L33" title="All 2 branches covered.">        codeRegex = regex ? Pattern.compile(code) : null;</span>
-<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        oldElement = config.has(&quot;old&quot;) ? config.get(&quot;old&quot;).asString() : null;</span>
-<span class="pc bpc" id="L35" title="1 of 4 branches missed.">        oldElementRegex = regex &amp;&amp; oldElement != null ? Pattern.compile(oldElement) : null;</span>
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        newElement = config.has(&quot;new&quot;) ? config.get(&quot;new&quot;).asString() : null;</span>
-<span class="pc bpc" id="L37" title="1 of 4 branches missed.">        newElementRegex = regex &amp;&amp; newElement != null ? Pattern.compile(newElement) : null;</span>
-<span class="fc" id="L38">        this.config = config;</span>
-<span class="fc" id="L39">    }</span>
+<span class="fc" id="L41">        Set&lt;String&gt; reservedProperties = new HashSet&lt;&gt;(4 + additionalReservedProperties.length);</span>
+<span class="fc" id="L42">        reservedProperties.add(&quot;regex&quot;);</span>
+<span class="fc" id="L43">        reservedProperties.add(&quot;code&quot;);</span>
+<span class="fc" id="L44">        reservedProperties.add(&quot;old&quot;);</span>
+<span class="fc" id="L45">        reservedProperties.add(&quot;new&quot;);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for (String p : additionalReservedProperties) {</span>
+<span class="fc" id="L47">            reservedProperties.add(p);</span>
+        }
+
+<span class="pc bpc" id="L50" title="1 of 4 branches missed.">        regex = config.has(&quot;regex&quot;) &amp;&amp; config.get(&quot;regex&quot;).asBoolean();</span>
+<span class="fc" id="L51">        code = config.get(&quot;code&quot;).asString();</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        codeRegex = regex ? Pattern.compile(code) : null;</span>
+<span class="fc" id="L53">        oldElement = getElement(config.get(&quot;old&quot;));</span>
+<span class="pc bpc" id="L54" title="1 of 4 branches missed.">        oldElementRegex = regex &amp;&amp; oldElement != null ? Pattern.compile(oldElement) : null;</span>
+<span class="fc" id="L55">        newElement = getElement(config.get(&quot;new&quot;));</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">        newElementRegex = regex &amp;&amp; newElement != null ? Pattern.compile(newElement) : null;</span>
+<span class="fc" id="L57">        attachments = getAttachments(config, reservedProperties);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (regex) {</span>
+<span class="fc" id="L59">            attachmentRegexes = attachments.entrySet().stream()</span>
+<span class="fc" id="L60">                    .collect(toMap(Map.Entry::getKey, e -&gt; Pattern.compile(e.getValue())));</span>
+        } else {
+<span class="fc" id="L62">            attachmentRegexes = null;</span>
+        }
+<span class="fc" id="L64">        this.config = config;</span>
+<span class="fc" id="L65">    }</span>
 
     public boolean matches(Difference difference, Element oldElement, Element newElement) {
-<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (regex) {</span>
-<span class="pc bpc" id="L43" title="2 of 4 branches missed.">            return codeRegex.matcher(difference.code).matches() &amp;&amp;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (regex) {</span>
+<span class="pc bpc" id="L69" title="2 of 4 branches missed.">            boolean baseMatch = codeRegex.matcher(difference.code).matches() &amp;&amp;</span>
                 (oldElementRegex == null ||
-<span class="pc bpc" id="L45" title="3 of 4 branches missed.">                    oldElementRegex.matcher(oldElement.getFullHumanReadableString()).matches()) &amp;&amp;</span>
+<span class="pc bpc" id="L71" title="3 of 4 branches missed.">                    oldElementRegex.matcher(oldElement.getFullHumanReadableString()).matches()) &amp;&amp;</span>
                 (newElementRegex == null ||
-<span class="pc bnc" id="L47" title="All 2 branches missed.">                    newElementRegex.matcher(newElement.getFullHumanReadableString()).matches());</span>
+<span class="pc bnc" id="L73" title="All 2 branches missed.">                    newElementRegex.matcher(newElement.getFullHumanReadableString()).matches());</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            if (!baseMatch) {</span>
+<span class="nc" id="L75">                return false;</span>
+            } else {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                for (Map.Entry&lt;String, String&gt; e: difference.attachments.entrySet()) {</span>
+<span class="fc" id="L78">                    String key = e.getKey();</span>
+<span class="fc" id="L79">                    String val = e.getValue();</span>
+
+<span class="fc" id="L81">                    Pattern match = attachmentRegexes.get(key);</span>
+<span class="pc bpc" id="L82" title="2 of 4 branches missed.">                    if (match != null &amp;&amp; !match.matcher(val).matches()) {</span>
+<span class="nc" id="L83">                        return false;</span>
+                    }
+<span class="fc" id="L85">                }</span>
+
+<span class="fc" id="L87">                return true;</span>
+            }
         } else {
-<span class="pc bpc" id="L49" title="2 of 4 branches missed.">            return code.equals(difference.code) &amp;&amp;</span>
-<span class="pc bpc" id="L50" title="3 of 4 branches missed.">                (this.oldElement == null || this.oldElement.equals(oldElement.getFullHumanReadableString())) &amp;&amp;</span>
-<span class="pc bnc" id="L51" title="All 2 branches missed.">                (this.newElement == null || this.newElement.equals(newElement.getFullHumanReadableString()));</span>
+<span class="pc bpc" id="L90" title="2 of 4 branches missed.">            boolean baseMatch = code.equals(difference.code) &amp;&amp;</span>
+<span class="pc bpc" id="L91" title="3 of 4 branches missed.">                (this.oldElement == null || this.oldElement.equals(oldElement.getFullHumanReadableString())) &amp;&amp;</span>
+<span class="pc bnc" id="L92" title="All 2 branches missed.">                (this.newElement == null || this.newElement.equals(newElement.getFullHumanReadableString()));</span>
+
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            if (!baseMatch) {</span>
+<span class="nc" id="L95">                return false;</span>
+            } else {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                for (Map.Entry&lt;String, String&gt; e : difference.attachments.entrySet()) {</span>
+<span class="fc" id="L98">                    String key = e.getKey();</span>
+<span class="fc" id="L99">                    String val = e.getValue();</span>
+
+<span class="fc" id="L101">                    String match = attachments.get(key);</span>
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">                    if (match != null &amp;&amp; !match.equals(val)) {</span>
+<span class="fc" id="L103">                        return false;</span>
+                    }
+<span class="nc" id="L105">                }</span>
+
+<span class="fc" id="L107">                return true;</span>
+            }
         }
     }
 
     public abstract Difference transformMatching(Difference difference, Element oldElement,
         Element newElement);
+
+    private static String getElement(ModelNode elementRoot) {
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (!elementRoot.isDefined()) {</span>
+<span class="fc" id="L117">            return null;</span>
+        }
+
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        return elementRoot.getType() == ModelType.STRING ? elementRoot.asString() : null;</span>
+    }
+
+    private static Map&lt;String, String&gt; getAttachments(ModelNode elementRoot, Set&lt;String&gt; reservedProperties) {
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (!elementRoot.isDefined()) {</span>
+<span class="nc" id="L125">            return Collections.emptyMap();</span>
+        }
+
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if (elementRoot.getType() != ModelType.OBJECT) {</span>
+<span class="nc" id="L129">            return Collections.emptyMap();</span>
+        } else {
+<span class="fc" id="L131">            Set&lt;String&gt; keys = elementRoot.keys();</span>
+<span class="fc" id="L132">            Map&lt;String, String&gt; ret = new HashMap&lt;&gt;(keys.size());</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            for (String key: keys) {</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                if (!reservedProperties.contains(key)) {</span>
+<span class="fc" id="L135">                    ret.put(key, elementRoot.get(key).asString());</span>
+                }
+<span class="fc" id="L137">            }</span>
+
+<span class="fc" id="L139">            return ret;</span>
+        }
+    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

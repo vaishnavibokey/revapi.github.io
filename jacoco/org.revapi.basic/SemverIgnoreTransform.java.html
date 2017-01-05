@@ -147,7 +147,7 @@ import org.revapi.Element;
 <span class="fc" id="L147">            } else {</span>
 <span class="fc" id="L148">                DifferenceSeverity majorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;major&quot;), DifferenceSeverity.BREAKING);</span>
 <span class="fc" id="L149">                DifferenceSeverity minorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;minor&quot;), DifferenceSeverity.NON_BREAKING);</span>
-<span class="fc" id="L150">                DifferenceSeverity patchVersionAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;patch&quot;), null);</span>
+<span class="fc" id="L150">                DifferenceSeverity patchVersionAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;patch&quot;), DifferenceSeverity.EQUIVALENT);</span>
 
 <span class="fc bfc" id="L152" title="All 2 branches covered.">                if (newVersion.major &gt; oldVersion.major) {</span>
 <span class="fc" id="L153">                    allowedSeverity = majorChangeAllowed;</span>
@@ -229,17 +229,19 @@ import org.revapi.Element;
 <span class="pc bpc" id="L229" title="1 of 4 branches missed.">        if (configNode == null || !configNode.isDefined()) {</span>
 <span class="fc" id="L230">            return defaultValue;</span>
         } else {
-<span class="pc bpc" id="L232" title="9 of 18 branches missed.">            switch (configNode.asString()) {</span>
+<span class="pc bpc" id="L232" title="13 of 22 branches missed.">            switch (configNode.asString()) {</span>
                 case &quot;none&quot;:
 <span class="fc" id="L234">                    return null;</span>
+                case &quot;equivalent&quot;:
+<span class="nc" id="L236">                    return DifferenceSeverity.EQUIVALENT;</span>
                 case &quot;nonBreaking&quot;:
-<span class="fc" id="L236">                    return DifferenceSeverity.NON_BREAKING;</span>
+<span class="fc" id="L238">                    return DifferenceSeverity.NON_BREAKING;</span>
                 case &quot;potentiallyBreaking&quot;:
-<span class="fc" id="L238">                    return DifferenceSeverity.POTENTIALLY_BREAKING;</span>
+<span class="fc" id="L240">                    return DifferenceSeverity.POTENTIALLY_BREAKING;</span>
                 case &quot;breaking&quot;:
-<span class="nc" id="L240">                    return DifferenceSeverity.BREAKING;</span>
+<span class="nc" id="L242">                    return DifferenceSeverity.BREAKING;</span>
                 default:
-<span class="nc" id="L242">                    return defaultValue;</span>
+<span class="nc" id="L244">                    return defaultValue;</span>
             }
         }
     }
