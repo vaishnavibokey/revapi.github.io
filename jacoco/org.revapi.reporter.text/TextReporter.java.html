@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Text Reporter</a> &gt; <a href="index.source.html" class="el_package">org.revapi.reporter.text</a> &gt; <span class="el_source">TextReporter.java</span></div><h1>TextReporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2015 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi.reporter.text;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.AnalysisContext;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Element;
+import org.revapi.Report;
+import org.revapi.Reporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import freemarker.cache.ClassTemplateLoader;
+import freemarker.cache.MultiTemplateLoader;
+import freemarker.cache.TemplateLoader;
+import freemarker.template.Configuration;
+import freemarker.template.DefaultObjectWrapperBuilder;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="fc" id="L57">public class TextReporter implements Reporter {</span>
+<span class="fc" id="L58">    private static final Logger LOG = LoggerFactory.getLogger(TextReporter.class);</span>
+    private static final String CONFIG_ROOT_PATH = &quot;revapi.reporter.text&quot;;
+
+    private DifferenceSeverity minLevel;
+    private PrintWriter output;
+    private boolean shouldClose;
+
+    private SortedSet&lt;Report&gt; reports;
+
+    private Template template;
+
+    private AnalysisContext analysis;
+
+    @Nullable
+    @Override
+    public String[] getConfigurationRootPaths() {
+<span class="nc" id="L74">        return new String[]{CONFIG_ROOT_PATH};</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema(@Nonnull String configurationRootPath) {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (CONFIG_ROOT_PATH.equals(configurationRootPath)) {</span>
+<span class="nc" id="L81">            return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/schema.json&quot;),</span>
+<span class="nc" id="L82">                    Charset.forName(&quot;UTF-8&quot;));</span>
+        } else {
+<span class="nc" id="L84">            return null;</span>
+        }
+    }
+
+    /**
+     * For testing.
+     *
+     * @param wrt the output writer
+     */
+    void setOutput(PrintWriter wrt) {
+<span class="fc" id="L94">        this.output = wrt;</span>
+<span class="fc" id="L95">        this.shouldClose = true;</span>
+<span class="fc" id="L96">    }</span>
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysis) {
+        //noinspection ConstantConditions
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if (analysis != null) {</span>
+            try {
+<span class="fc" id="L103">                flushReports();</span>
+<span class="nc" id="L104">            } catch (IOException e) {</span>
+<span class="nc" id="L105">                throw new IllegalStateException(&quot;Failed to output previous analysis report.&quot;);</span>
+<span class="fc" id="L106">            }</span>
+        }
+
+<span class="fc" id="L109">        this.analysis = analysis;</span>
+
+<span class="fc" id="L111">        String minLevel = analysis.getConfiguration().get(&quot;revapi&quot;, &quot;reporter&quot;, &quot;text&quot;, &quot;minSeverity&quot;).asString();</span>
+<span class="fc" id="L112">        String output = analysis.getConfiguration().get(&quot;revapi&quot;, &quot;reporter&quot;, &quot;text&quot;, &quot;output&quot;).asString();</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        output = &quot;undefined&quot;.equals(output) ? &quot;out&quot; : output;</span>
+
+<span class="fc" id="L115">        String templatePath = analysis.getConfiguration().get(&quot;revapi&quot;, &quot;reporter&quot;, &quot;text&quot;, &quot;template&quot;).asString();</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (&quot;undefined&quot;.equals(templatePath)) {</span>
+<span class="fc" id="L117">            templatePath = null;</span>
+        }
+
+<span class="fc" id="L120">        boolean append = analysis.getConfiguration().get(&quot;revapi&quot;, &quot;reporter&quot;, &quot;text&quot;, &quot;append&quot;).asBoolean(false);</span>
+
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        this.minLevel = &quot;undefined&quot;.equals(minLevel) ? DifferenceSeverity.POTENTIALLY_BREAKING :</span>
+<span class="pc" id="L123">                DifferenceSeverity.valueOf(minLevel);</span>
+
+        OutputStream out;
+
+<span class="pc bpc" id="L127" title="7 of 10 branches missed.">        switch (output) {</span>
+        case &quot;out&quot;:
+<span class="fc" id="L129">            out = System.out;</span>
+<span class="fc" id="L130">            break;</span>
+        case &quot;err&quot;:
+<span class="nc" id="L132">            out = System.err;</span>
+<span class="nc" id="L133">            break;</span>
+        default:
+<span class="nc" id="L135">            File f = new File(output);</span>
+<span class="nc bnc" id="L136" title="All 4 branches missed.">            if (f.exists() &amp;&amp; !f.canWrite()) {</span>
+<span class="nc" id="L137">                LOG.warn(</span>
+<span class="nc" id="L138">                        &quot;The configured file for text reporter, '&quot; + f.getAbsolutePath() + &quot;' is not a writable file.&quot; +</span>
+                                &quot; Defaulting the output to standard output.&quot;);
+<span class="nc" id="L140">                out = System.out;</span>
+            } else {
+<span class="nc" id="L142">                File parent = f.getParentFile();</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                if (!parent.exists()) {</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                    if (!parent.mkdirs()) {</span>
+<span class="nc" id="L145">                        LOG.warn(&quot;Failed to create directory structure to write to the configured output file '&quot; +</span>
+<span class="nc" id="L146">                                f.getAbsolutePath() + &quot;'. Defaulting the output to standard output.&quot;);</span>
+<span class="nc" id="L147">                        out = System.out;</span>
+<span class="nc" id="L148">                        break;</span>
+                    }
+                }
+
+                try {
+<span class="nc" id="L153">                    out = new FileOutputStream(output, append);</span>
+<span class="nc" id="L154">                } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L155">                    LOG.warn(&quot;Failed to create the configured output file '&quot; + f.getAbsolutePath() + &quot;'.&quot; +</span>
+                            &quot; Defaulting the output to standard output.&quot;, e);
+<span class="nc" id="L157">                    out = System.out;</span>
+<span class="nc" id="L158">                }</span>
+            }
+        }
+
+<span class="pc bpc" id="L162" title="3 of 4 branches missed.">        shouldClose = out != System.out &amp;&amp; out != System.err;</span>
+
+<span class="fc" id="L164">        this.output = new PrintWriter(new OutputStreamWriter(out, Charset.forName(&quot;UTF-8&quot;)));</span>
+
+<span class="fc" id="L166">        this.reports = new TreeSet&lt;&gt;((r1, r2) -&gt; {</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">            Element r1El = r1.getOldElement() == null ? r1.getNewElement() : r1.getOldElement();</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">            Element r2El = r2.getOldElement() == null ? r2.getNewElement() : r2.getOldElement();</span>
+
+            //noinspection ConstantConditions
+<span class="fc" id="L171">            return r1El.compareTo(r2El);</span>
+        });
+
+<span class="fc" id="L174">        Configuration freeMarker = createFreeMarkerConfiguration();</span>
+
+<span class="fc" id="L176">        template = null;</span>
+        try {
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            template = templatePath == null</span>
+<span class="fc" id="L179">                    ? freeMarker.getTemplate(&quot;default-template-with-improbable-name@@#(*&amp;$)(.ftl&quot;)</span>
+<span class="fc" id="L180">                    : freeMarker.getTemplate(templatePath);</span>
+<span class="nc" id="L181">        } catch (IOException e) {</span>
+<span class="nc" id="L182">            throw new IllegalStateException(&quot;Failed to initialize the freemarker template.&quot;, e);</span>
+<span class="fc" id="L183">        }</span>
+<span class="fc" id="L184">    }</span>
+
+    /**
+     * Creates a new FreeMarker configuration.
+     * By default, it is configured as follows:
+     * &lt;ul&gt;
+     * &lt;li&gt;compatibility level is set to 2.3.23
+     * &lt;li&gt;the object wrapper is configured to expose fields
+     * &lt;li&gt;API builtins are enabled
+     * &lt;li&gt;there are 2 template loaders - 1 for loading templates from /META-INF using a classloader and a second
+     *     one to load templates from files.
+     * &lt;/ul&gt;
+     * @return
+     */
+    protected Configuration createFreeMarkerConfiguration() {
+<span class="fc" id="L199">        DefaultObjectWrapperBuilder bld = new DefaultObjectWrapperBuilder(Configuration.VERSION_2_3_23);</span>
+<span class="fc" id="L200">        bld.setExposeFields(true);</span>
+
+<span class="fc" id="L202">        Configuration freeMarker = new Configuration(Configuration.VERSION_2_3_23);</span>
+
+<span class="fc" id="L204">        freeMarker.setObjectWrapper(bld.build());</span>
+<span class="fc" id="L205">        freeMarker.setAPIBuiltinEnabled(true);</span>
+<span class="fc" id="L206">        freeMarker.setTemplateLoader(new MultiTemplateLoader(</span>
+<span class="fc" id="L207">                new TemplateLoader[]{new ClassTemplateLoader(getClass(), &quot;/META-INF&quot;),</span>
+                        new NaiveFileTemplateLoader()}));
+
+<span class="fc" id="L210">        return freeMarker;</span>
+    }
+
+    @Override
+    public void report(@Nonnull Report report) {
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">        if (report.getDifferences().isEmpty()) {</span>
+<span class="nc" id="L216">            return;</span>
+        }
+
+<span class="fc" id="L219">        DifferenceSeverity maxReportedSeverity = DifferenceSeverity.NON_BREAKING;</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        for (Difference d : report.getDifferences()) {</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">            for (DifferenceSeverity c : d.classification.values()) {</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">                if (c.compareTo(maxReportedSeverity) &gt; 0) {</span>
+<span class="fc" id="L223">                    maxReportedSeverity = c;</span>
+                }
+<span class="fc" id="L225">            }</span>
+<span class="fc" id="L226">        }</span>
+
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        if (maxReportedSeverity.compareTo(minLevel) &lt; 0) {</span>
+<span class="nc" id="L229">            return;</span>
+        }
+
+<span class="fc" id="L232">        reports.add(report);</span>
+<span class="fc" id="L233">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L237">        flushReports();</span>
+
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if (shouldClose) {</span>
+<span class="fc" id="L240">            output.close();</span>
+        }
+<span class="fc" id="L242">    }</span>
+
+    private void flushReports() throws IOException {
+        try {
+<span class="pc bpc" id="L246" title="1 of 4 branches missed.">            if (output != null &amp;&amp; template != null) {</span>
+<span class="fc" id="L247">                HashMap&lt;String, Object&gt; root = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L248">                root.put(&quot;reports&quot;, reports);</span>
+<span class="fc" id="L249">                root.put(&quot;analysis&quot;, analysis);</span>
+<span class="fc" id="L250">                template.process(root, output);</span>
+            }
+<span class="nc" id="L252">        } catch (TemplateException e) {</span>
+<span class="nc" id="L253">            throw new IOException(&quot;Failed to output the reports.&quot;, e);</span>
+<span class="fc" id="L254">        }</span>
+<span class="fc" id="L255">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
