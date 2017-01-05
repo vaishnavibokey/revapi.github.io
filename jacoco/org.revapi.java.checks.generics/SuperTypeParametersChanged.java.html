@@ -106,12 +106,15 @@ import org.revapi.java.spi.Util;
 
 <span class="fc" id="L107">        List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
 <span class="fc bfc" id="L108" title="All 2 branches covered.">        for (Map.Entry&lt;TypeMirror, TypeMirror&gt; e : changed.entrySet()) {</span>
-<span class="fc" id="L109">            ret.add(createDifference(Code.CLASS_SUPER_TYPE_TYPE_PARAMETERS_CHANGED,</span>
-<span class="fc" id="L110">                new String[]{Util.toHumanReadableString(e.getKey()), Util.toHumanReadableString(e.getValue())},</span>
-<span class="fc" id="L111">                e.getKey(), e.getValue()));</span>
-<span class="fc" id="L112">        }</span>
+<span class="fc" id="L109">            String oldS = Util.toHumanReadableString(e.getKey());</span>
+<span class="fc" id="L110">            String newS = Util.toHumanReadableString(e.getValue());</span>
+<span class="fc" id="L111">            ret.add(createDifference(Code.CLASS_SUPER_TYPE_TYPE_PARAMETERS_CHANGED,</span>
+<span class="fc" id="L112">                    Code.attachmentsFor(types.oldElement, types.newElement,</span>
+                            &quot;oldSuperType&quot;, oldS,
+                            &quot;newSuperType&quot;, newS)));
+<span class="fc" id="L115">        }</span>
 
-<span class="fc" id="L114">        return ret;</span>
+<span class="fc" id="L117">        return ret;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

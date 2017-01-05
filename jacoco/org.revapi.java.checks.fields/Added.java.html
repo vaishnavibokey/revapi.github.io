@@ -56,9 +56,11 @@ import org.revapi.java.spi.JavaFieldElement;
 <span class="fc" id="L56">        boolean isStatic = fields.newElement.getDeclaringElement().getModifiers().contains(Modifier.STATIC);</span>
 
 <span class="fc bfc" id="L58" title="All 2 branches covered.">        if (isStatic) {</span>
-<span class="fc" id="L59">            return Collections.singletonList(createDifference(Code.FIELD_ADDED_STATIC_FIELD));</span>
+<span class="fc" id="L59">            return Collections.singletonList(createDifference(Code.FIELD_ADDED_STATIC_FIELD,</span>
+<span class="fc" id="L60">                    Code.attachmentsFor(fields.oldElement, fields.newElement)));</span>
         } else {
-<span class="fc" id="L61">            return Collections.singletonList(createDifference(Code.FIELD_ADDED));</span>
+<span class="fc" id="L62">            return Collections.singletonList(createDifference(Code.FIELD_ADDED,</span>
+<span class="fc" id="L63">                    Code.attachmentsFor(fields.oldElement, fields.newElement)));</span>
         }
     }
 }

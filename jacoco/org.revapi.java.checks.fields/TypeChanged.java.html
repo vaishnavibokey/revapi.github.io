@@ -66,8 +66,10 @@ import org.revapi.java.spi.Util;
 <span class="fc" id="L66">        String newType = Util.toHumanReadableString(fields.newElement.getModelRepresentation());</span>
 
 <span class="fc" id="L68">        return Collections.singletonList(</span>
-<span class="fc" id="L69">            createDifference(Code.FIELD_TYPE_CHANGED, new String[]{oldType, newType},</span>
-<span class="fc" id="L70">                    fields.oldElement.getModelRepresentation(), fields.newElement.getModelRepresentation())</span>
+<span class="fc" id="L69">            createDifference(Code.FIELD_TYPE_CHANGED,</span>
+<span class="fc" id="L70">                    Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
+                            &quot;oldType&quot;, oldType,
+                            &quot;newType&quot;, newType))
         );
     }
 }

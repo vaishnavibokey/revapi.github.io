@@ -63,16 +63,16 @@ import org.revapi.java.spi.Util;
 
 <span class="fc bfc" id="L64" title="All 2 branches covered.">            if (newValue == null) {</span>
 <span class="fc" id="L65">                result.add(</span>
-<span class="fc" id="L66">                    createDifference(Code.ANNOTATION_ATTRIBUTE_REMOVED,</span>
-<span class="fc" id="L67">                        new String[]{name, Util.toHumanReadableString(oldAnnotation.getAnnotationType())},</span>
-<span class="fc" id="L68">                        oldValue.getKey(), oldAnnotation)</span>
+<span class="fc" id="L66">                    createDifference(Code.ANNOTATION_ATTRIBUTE_REMOVED, Code.attachmentsFor(oldElement, newElement,</span>
+                            &quot;attribute&quot;, name,
+<span class="fc" id="L68">                            &quot;value&quot;, Util.toHumanReadableString(oldValue.getValue())))</span>
                 );
 <span class="fc bfc" id="L70" title="All 2 branches covered.">            } else if (!Util.isEqual(oldValue.getValue(), newValue.getValue())) {</span>
 <span class="fc" id="L71">                result.add(createDifference(Code.ANNOTATION_ATTRIBUTE_VALUE_CHANGED,</span>
-<span class="fc" id="L72">                    new String[]{name, Util.toHumanReadableString(oldAnnotation.getAnnotationType()),</span>
-<span class="fc" id="L73">                        Util.toHumanReadableString(oldValue.getValue()),</span>
-<span class="fc" id="L74">                        Util.toHumanReadableString(newValue.getValue())}, oldValue.getKey(), oldAnnotation,</span>
-<span class="fc" id="L75">                    oldValue.getValue(), newValue.getValue()</span>
+<span class="fc" id="L72">                        Code.attachmentsFor(oldElement, newElement,</span>
+                        &quot;attribute&quot;, name,
+<span class="fc" id="L74">                        &quot;oldValue&quot;, Util.toHumanReadableString(oldValue.getValue()),</span>
+<span class="fc" id="L75">                        &quot;newValue&quot;, Util.toHumanReadableString(newValue.getValue()))</span>
                 ));
             }
 
@@ -87,9 +87,9 @@ import org.revapi.java.spi.Util;
 
 <span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (oldValue == null) {</span>
 <span class="fc" id="L89">                result.add(</span>
-<span class="fc" id="L90">                    createDifference(Code.ANNOTATION_ATTRIBUTE_ADDED,</span>
-<span class="fc" id="L91">                        new String[]{name, Util.toHumanReadableString(newAnnotation.getAnnotationType())},</span>
-<span class="fc" id="L92">                        newValue.getKey(), newAnnotation)</span>
+<span class="fc" id="L90">                    createDifference(Code.ANNOTATION_ATTRIBUTE_ADDED, Code.attachmentsFor(oldElement, newElement,</span>
+                            &quot;attribute&quot;, name,
+<span class="fc" id="L92">                            &quot;value&quot;, Util.toHumanReadableString(newValue.getValue())))</span>
                 );
             }
 <span class="fc" id="L95">        }</span>

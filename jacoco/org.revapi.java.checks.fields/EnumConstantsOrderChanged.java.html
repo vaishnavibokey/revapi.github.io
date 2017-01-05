@@ -88,10 +88,13 @@ import org.revapi.java.spi.JavaTypeElement;
 <span class="fc" id="L88">            return null;</span>
         }
 
-<span class="fc" id="L91">        int oldIdx = (Integer) fields.context[0];</span>
-<span class="fc" id="L92">        int newIdx = (Integer) fields.context[1];</span>
+<span class="fc" id="L91">        String oldIdx = fields.context[0].toString();</span>
+<span class="fc" id="L92">        String newIdx = fields.context[1].toString();</span>
 
-<span class="fc" id="L94">        return Collections.singletonList(createDifference(Code.FIELD_ENUM_CONSTANT_ORDER_CHANGED, oldIdx, newIdx));</span>
+<span class="fc" id="L94">        return Collections.singletonList(createDifference(Code.FIELD_ENUM_CONSTANT_ORDER_CHANGED,</span>
+<span class="fc" id="L95">                Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
+                        &quot;oldOrdinal&quot;, oldIdx,
+                        &quot;newOrdinal&quot;, newIdx)));
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

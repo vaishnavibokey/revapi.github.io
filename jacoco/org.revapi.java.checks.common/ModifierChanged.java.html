@@ -17,7 +17,10 @@
 package org.revapi.java.checks.common;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Modifier;
 
@@ -35,38 +38,79 @@ public abstract class ModifierChanged extends CheckBase {
     private final Code code;
     private final Modifier modifier;
 
-<span class="fc" id="L38">    protected ModifierChanged(boolean added, Code code, Modifier modifier) {</span>
-<span class="fc" id="L39">        this.added = added;</span>
-<span class="fc" id="L40">        this.code = code;</span>
-<span class="fc" id="L41">        this.modifier = modifier;</span>
-<span class="fc" id="L42">    }</span>
+<span class="fc" id="L41">    protected ModifierChanged(boolean added, Code code, Modifier modifier) {</span>
+<span class="fc" id="L42">        this.added = added;</span>
+<span class="fc" id="L43">        this.code = code;</span>
+<span class="fc" id="L44">        this.modifier = modifier;</span>
+<span class="fc" id="L45">    }</span>
 
     protected final void doVisit(JavaModelElement oldElement, JavaModelElement newElement) {
-<span class="fc bfc" id="L45" title="All 4 branches covered.">        if (oldElement == null || newElement == null) {</span>
-<span class="fc" id="L46">            return;</span>
+<span class="fc bfc" id="L48" title="All 4 branches covered.">        if (oldElement == null || newElement == null) {</span>
+<span class="fc" id="L49">            return;</span>
         }
 
-<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (isBothPrivate(oldElement, newElement)) {</span>
-<span class="fc" id="L50">            return;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (isBothPrivate(oldElement, newElement)) {</span>
+<span class="fc" id="L53">            return;</span>
         }
 
-<span class="fc" id="L53">        boolean oldHas = oldElement.getDeclaringElement().getModifiers().contains(modifier);</span>
-<span class="fc" id="L54">        boolean newHas = newElement.getDeclaringElement().getModifiers().contains(modifier);</span>
+<span class="fc" id="L56">        boolean oldHas = oldElement.getDeclaringElement().getModifiers().contains(modifier);</span>
+<span class="fc" id="L57">        boolean newHas = newElement.getDeclaringElement().getModifiers().contains(modifier);</span>
 
-<span class="fc bfc" id="L56" title="All 12 branches covered.">        if ((added &amp;&amp; !oldHas &amp;&amp; newHas) || (!added &amp;&amp; oldHas &amp;&amp; !newHas)) {</span>
-<span class="fc" id="L57">            pushActive(oldElement, newElement);</span>
+<span class="fc bfc" id="L59" title="All 12 branches covered.">        if ((added &amp;&amp; !oldHas &amp;&amp; newHas) || (!added &amp;&amp; oldHas &amp;&amp; !newHas)) {</span>
+<span class="fc" id="L60">            pushActive(oldElement, newElement);</span>
         }
-<span class="fc" id="L59">    }</span>
+<span class="fc" id="L62">    }</span>
 
     @Override
-    protected final List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L63">        ActiveElements&lt;JavaModelElement&gt; elements = popIfActive();</span>
-<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (elements == null) {</span>
-<span class="fc" id="L65">            return null;</span>
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L66">        ActiveElements&lt;JavaModelElement&gt; elements = popIfActive();</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (elements == null) {</span>
+<span class="fc" id="L68">            return null;</span>
         }
 
-<span class="fc" id="L68">        return Collections.singletonList(createDifference(code));</span>
+<span class="fc" id="L71">        return Collections.singletonList(createDifference(code, Code.attachmentsFor(elements.oldElement, elements.newElement,</span>
+<span class="fc" id="L72">                &quot;oldModifiers&quot;, stringify(elements.oldElement.getDeclaringElement().getModifiers()),</span>
+<span class="fc" id="L73">                &quot;newModifiers&quot;, stringify(elements.newElement.getDeclaringElement().getModifiers()))));</span>
     }
 
+    //ordered according to http://cr.openjdk.java.net/~alundblad/styleguide/index-v6.html
+    public static String stringify(Set&lt;Modifier&gt; modifiers) {
+<span class="fc" id="L78">        return modifiers.stream()</span>
+<span class="fc" id="L79">                .sorted(Comparator.comparingInt(ModifierChanged::score))</span>
+<span class="fc" id="L80">                .map(m -&gt; m.name().toLowerCase())</span>
+<span class="fc" id="L81">                .collect(Collectors.joining(&quot; &quot;));</span>
+    }
+
+    private static int score(Modifier mod) {
+        //public
+        //private
+        //protected
+        //abstract
+        //static
+        //final
+        //transient
+        //volatile
+        //default
+        //synchronized
+        //native
+        //strictfp
+
+<span class="pc bpc" id="L98" title="7 of 13 branches missed.">        switch (mod) {</span>
+<span class="fc" id="L99">            case PUBLIC: return 0;</span>
+<span class="nc" id="L100">            case PRIVATE: return 1;</span>
+<span class="nc" id="L101">            case PROTECTED: return 2;</span>
+<span class="fc" id="L102">            case ABSTRACT: return 3;</span>
+<span class="fc" id="L103">            case STATIC: return 4;</span>
+<span class="fc" id="L104">            case FINAL: return 5;</span>
+<span class="nc" id="L105">            case TRANSIENT: return 6;</span>
+<span class="nc" id="L106">            case VOLATILE: return 7;</span>
+<span class="fc" id="L107">            case DEFAULT: return 8;</span>
+<span class="nc" id="L108">            case SYNCHRONIZED: return 9;</span>
+<span class="fc" id="L109">            case NATIVE: return 10;</span>
+<span class="nc" id="L110">            case STRICTFP: return 11;</span>
+            default:
+<span class="nc" id="L112">                return 12;</span>
+        }
+    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

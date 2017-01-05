@@ -82,8 +82,8 @@ abstract class AbstractIncludeExcludeFilter implements ElementFilter {
 
     @Override
     public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (this.configurationRootPath.equals(configurationRootPath)) {</span>
-<span class="nc" id="L86">            return new InputStreamReader(getClass().getResourceAsStream(schemaPath), Charset.forName(&quot;UTF-8&quot;));</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (this.configurationRootPath.equals(configurationRootPath)) {</span>
+<span class="fc" id="L86">            return new InputStreamReader(getClass().getResourceAsStream(schemaPath), Charset.forName(&quot;UTF-8&quot;));</span>
         } else {
 <span class="nc" id="L88">            return null;</span>
         }
@@ -153,7 +153,7 @@ abstract class AbstractIncludeExcludeFilter implements ElementFilter {
 
     @Override
     public boolean shouldDescendInto(@Nullable Object element) {
-<span class="nc" id="L156">        return true;</span>
+<span class="fc" id="L156">        return true;</span>
     }
 
     @SuppressWarnings(&quot;ConstantConditions&quot;)
@@ -176,8 +176,8 @@ abstract class AbstractIncludeExcludeFilter implements ElementFilter {
 <span class="fc" id="L176">                : elementResults.get(parent);</span>
 
         //if we have no record of the parent inclusion, then this is a top-level class. Assume it wants to be included.
-<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (parentInclusionState == null) {</span>
-<span class="nc" id="L180">            parentInclusionState = InclusionState.UNDECIDED;</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (parentInclusionState == null) {</span>
+<span class="fc" id="L180">            parentInclusionState = InclusionState.UNDECIDED;</span>
         }
 
         //this is a java element, but not a model-based element - i.e. this is an annotation.
@@ -245,37 +245,39 @@ abstract class AbstractIncludeExcludeFilter implements ElementFilter {
     }
 
     boolean decideAnnotation(JavaAnnotationElement annotation, InclusionState parentInclusionState) {
-<span class="nc" id="L248">        return parentInclusionState.toBoolean();</span>
+        //annotations cannot be annotated but it would also be awkward to check a method and NOT its annotations...
+        //therefore we just include the annotations based on the inclusion state of the annotated element.
+<span class="fc" id="L250">        return parentInclusionState.toBoolean();</span>
     }
 
     protected abstract boolean canBeReIncluded(JavaModelElement element);
 
     protected abstract Stream&lt;String&gt; getTestedElementRepresentations(JavaModelElement element);
 
-<span class="pc" id="L255">    protected enum InclusionState {</span>
+<span class="pc" id="L257">    protected enum InclusionState {</span>
         /**
          * The element was explicitly determined to be included
          */
-<span class="fc" id="L259">        INCLUDED,</span>
+<span class="fc" id="L261">        INCLUDED,</span>
 
         /**
          * The element was explicitly determined to be excluded
          */
-<span class="fc" id="L264">        EXCLUDED,</span>
+<span class="fc" id="L266">        EXCLUDED,</span>
 
         /**
          * There was no precise decision possible on the element
          */
-<span class="fc" id="L269">        UNDECIDED;</span>
+<span class="fc" id="L271">        UNDECIDED;</span>
 
 
         boolean toBoolean() {
-<span class="fc bfc" id="L273" title="All 2 branches covered.">            switch (this) {</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">            switch (this) {</span>
             case INCLUDED:
             case UNDECIDED:
-<span class="fc" id="L276">                return true;</span>
+<span class="fc" id="L278">                return true;</span>
             default:
-<span class="fc" id="L278">                return false;</span>
+<span class="fc" id="L280">                return false;</span>
             }
         }
     }

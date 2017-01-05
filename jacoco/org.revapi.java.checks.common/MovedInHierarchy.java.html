@@ -46,20 +46,23 @@ public abstract class MovedInHierarchy extends CheckBase {
 <span class="fc" id="L46">    }</span>
 
     @Nullable @Override protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L49">        ActiveElements&lt;JavaModelElement&gt; fields = popIfActive();</span>
-<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (fields == null) {</span>
+<span class="fc" id="L49">        ActiveElements&lt;JavaModelElement&gt; els = popIfActive();</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (els == null) {</span>
 <span class="fc" id="L51">            return null;</span>
         }
 
 <span class="fc" id="L54">        String oldType =</span>
-<span class="fc" id="L55">                Util.toHumanReadableString(fields.oldElement.getDeclaringElement().getEnclosingElement().asType());</span>
+<span class="fc" id="L55">                Util.toHumanReadableString(els.oldElement.getDeclaringElement().getEnclosingElement().asType());</span>
 <span class="fc" id="L56">        String newType =</span>
-<span class="fc" id="L57">                Util.toHumanReadableString(fields.newElement.getDeclaringElement().getEnclosingElement().asType());</span>
+<span class="fc" id="L57">                Util.toHumanReadableString(els.newElement.getDeclaringElement().getEnclosingElement().asType());</span>
 
         //we know that oldEl.isInherited() != newEl.isInherited(), so it's enough to just check for the old
-<span class="fc bfc" id="L60" title="All 2 branches covered.">        Code code = fields.oldElement.isInherited() ? moveDown : moveUp;</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        Code code = els.oldElement.isInherited() ? moveDown : moveUp;</span>
 
-<span class="fc" id="L62">        return Collections.singletonList(createDifference(code, oldType, newType));</span>
+<span class="fc" id="L62">        return Collections.singletonList(createDifference(code,</span>
+<span class="fc" id="L63">                Code.attachmentsFor(els.oldElement, els.newElement,</span>
+                        &quot;oldClass&quot;, oldType,
+                        &quot;newClass&quot;, newType)));
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

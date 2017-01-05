@@ -55,27 +55,30 @@ import org.revapi.java.spi.JavaTypeElement;
 <span class="fc" id="L55">            TypeElement n = types.newElement.getDeclaringElement();</span>
 
 <span class="pc bpc" id="L57" title="1 of 2 branches missed.">            if (o.getKind() != n.getKind()) {</span>
-<span class="fc" id="L58">                Difference p = createDifference(Code.CLASS_KIND_CHANGED, new String[]{kind(o), kind(n)}, o, n);</span>
+<span class="fc" id="L58">                Difference p = createDifference(Code.CLASS_KIND_CHANGED,</span>
+<span class="fc" id="L59">                        Code.attachmentsFor(types.oldElement, types.newElement,</span>
+<span class="fc" id="L60">                                &quot;oldKind&quot;, kind(o),</span>
+<span class="fc" id="L61">                                &quot;newKind&quot;, kind(n)));</span>
 
-<span class="fc" id="L60">                return Collections.singletonList(p);</span>
+<span class="fc" id="L63">                return Collections.singletonList(p);</span>
             }
         }
 
-<span class="fc" id="L64">        return null;</span>
+<span class="fc" id="L67">        return null;</span>
     }
 
     private String kind(TypeElement e) {
-<span class="pc bpc" id="L68" title="1 of 5 branches missed.">        switch (e.getKind()) {</span>
-        case CLASS:
-<span class="fc" id="L70">            return &quot;class&quot;;</span>
-        case INTERFACE:
-<span class="fc" id="L72">            return &quot;interface&quot;;</span>
-        case ANNOTATION_TYPE:
-<span class="fc" id="L74">            return &quot;@interface&quot;;</span>
-        case ENUM:
-<span class="fc" id="L76">            return &quot;enum&quot;;</span>
-        default:
-<span class="nc" id="L78">            return &quot;unexpected (&quot; + e.getKind() + &quot;)&quot;;</span>
+<span class="pc bpc" id="L71" title="1 of 5 branches missed.">        switch (e.getKind()) {</span>
+            case CLASS:
+<span class="fc" id="L73">                return &quot;class&quot;;</span>
+            case INTERFACE:
+<span class="fc" id="L75">                return &quot;interface&quot;;</span>
+            case ANNOTATION_TYPE:
+<span class="fc" id="L77">                return &quot;@interface&quot;;</span>
+            case ENUM:
+<span class="fc" id="L79">                return &quot;enum&quot;;</span>
+            default:
+<span class="nc" id="L81">                return &quot;unexpected (&quot; + e.getKind() + &quot;)&quot;;</span>
         }
     }
 }

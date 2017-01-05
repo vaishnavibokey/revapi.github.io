@@ -73,13 +73,14 @@ import org.revapi.java.spi.Util;
 <span class="fc bfc" id="L73" title="All 2 branches covered.">        for (TypeMirror newIface : newInterfaces) {</span>
 <span class="fc bfc" id="L74" title="All 2 branches covered.">            if (!Util.isSubtype(newIface, oldInterfaces, getNewTypeEnvironment().getTypeUtils())) {</span>
 <span class="fc" id="L75">                result.add(</span>
-<span class="fc" id="L76">                    createDifference(Code.CLASS_NOW_IMPLEMENTS_INTERFACE, new String[]{</span>
-<span class="fc" id="L77">                        Util.toHumanReadableString(newIface)}, newIface)</span>
+<span class="fc" id="L76">                    createDifference(Code.CLASS_NOW_IMPLEMENTS_INTERFACE,</span>
+<span class="fc" id="L77">                            Code.attachmentsFor(types.oldElement, types.newElement,</span>
+<span class="fc" id="L78">                                    &quot;interface&quot;, Util.toHumanReadableString(newIface)))</span>
                 );
             }
-<span class="fc" id="L80">        }</span>
+<span class="fc" id="L81">        }</span>
 
-<span class="fc" id="L82">        return result;</span>
+<span class="fc" id="L83">        return result;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

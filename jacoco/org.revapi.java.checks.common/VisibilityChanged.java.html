@@ -60,7 +60,7 @@ public abstract class VisibilityChanged extends CheckBase {
 
             //public == 0, private == 3
 <span class="fc bfc" id="L62" title="All 2 branches covered.">            if (isProblem(getModifierRank(oldVisibility), getModifierRank(newVisibility))) {</span>
-<span class="fc" id="L63">                return Collections.singletonList(report(oldVisibility, newVisibility));</span>
+<span class="fc" id="L63">                return Collections.singletonList(report(elements, oldVisibility, newVisibility));</span>
             }
         }
 
@@ -100,13 +100,14 @@ public abstract class VisibilityChanged extends CheckBase {
         }
     }
 
-    private Difference report(Modifier oldVisibility, Modifier newVisibility) {
-<span class="fc" id="L104">        return createDifference(code, new String[]{modifier(oldVisibility), modifier(newVisibility)}, oldVisibility,</span>
-            newVisibility);
+    private Difference report(ActiveElements&lt;?&gt; els, Modifier oldVisibility, Modifier newVisibility) {
+<span class="fc" id="L104">        return createDifference(code, Code.attachmentsFor(els.oldElement, els.newElement,</span>
+<span class="fc" id="L105">                &quot;oldVisibility&quot;, modifier(oldVisibility),</span>
+<span class="fc" id="L106">                &quot;newVisibility&quot;, modifier(newVisibility)));</span>
     }
 
     private String modifier(Modifier m) {
-<span class="fc bfc" id="L109" title="All 2 branches covered.">        return m == null ? &quot;package&quot; : m.name().toLowerCase();</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        return m == null ? &quot;package&quot; : m.name().toLowerCase();</span>
     }
 
 }

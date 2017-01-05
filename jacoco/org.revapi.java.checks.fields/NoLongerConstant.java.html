@@ -19,6 +19,7 @@ package org.revapi.java.checks.fields;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 
 import org.revapi.Difference;
 import org.revapi.java.spi.Code;
@@ -28,34 +29,36 @@ import org.revapi.java.spi.JavaFieldElement;
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L31">public final class NoLongerConstant extends BothFieldsRequiringCheck {</span>
+<span class="fc" id="L32">public final class NoLongerConstant extends BothFieldsRequiringCheck {</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L35">        return EnumSet.of(Type.FIELD);</span>
+<span class="fc" id="L36">        return EnumSet.of(Type.FIELD);</span>
     }
 
     @Override
     protected void doVisitField(JavaFieldElement oldField, JavaFieldElement newField) {
-<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (!shouldCheck(oldField, newField)) {</span>
-<span class="fc" id="L41">            return;</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (!shouldCheck(oldField, newField)) {</span>
+<span class="fc" id="L42">            return;</span>
         }
 
-<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (oldField.getDeclaringElement().getConstantValue() != null</span>
-<span class="fc bfc" id="L45" title="All 2 branches covered.">                &amp;&amp; newField.getDeclaringElement().getConstantValue() == null) {</span>
-<span class="fc" id="L46">            pushActive(oldField, newField);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (oldField.getDeclaringElement().getConstantValue() != null</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                &amp;&amp; newField.getDeclaringElement().getConstantValue() == null) {</span>
+<span class="fc" id="L47">            pushActive(oldField, newField);</span>
         }
-<span class="fc" id="L48">    }</span>
+<span class="fc" id="L49">    }</span>
 
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L52">        ActiveElements&lt;JavaFieldElement&gt; fields = popIfActive();</span>
-<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (fields == null) {</span>
-<span class="fc" id="L54">            return null;</span>
+<span class="fc" id="L53">        ActiveElements&lt;JavaFieldElement&gt; fields = popIfActive();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (fields == null) {</span>
+<span class="fc" id="L55">            return null;</span>
         }
 
-<span class="fc" id="L57">        return Collections.singletonList(</span>
-<span class="fc" id="L58">            createDifference(Code.FIELD_NO_LONGER_CONSTANT, fields.oldElement.getDeclaringElement().getConstantValue()));</span>
+<span class="fc" id="L58">        return Collections.singletonList(</span>
+<span class="fc" id="L59">            createDifference(Code.FIELD_NO_LONGER_CONSTANT,</span>
+<span class="fc" id="L60">                    Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
+<span class="fc" id="L61">                            &quot;value&quot;, Objects.toString(fields.oldElement.getDeclaringElement().getConstantValue()))));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

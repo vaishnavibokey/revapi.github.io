@@ -17,6 +17,7 @@
 package org.revapi.java.transforms.methods;
 
 import java.io.Reader;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -30,66 +31,68 @@ import org.revapi.AnalysisContext;
 import org.revapi.Difference;
 import org.revapi.DifferenceTransform;
 import org.revapi.java.spi.Code;
-import org.revapi.java.spi.JavaModelElement;
+import org.revapi.java.spi.JavaMethodElement;
 
 /**
  * @author Lukas Krejci
  * @since 0.1
  */
-public final class AnnotationTypeAttributeAdded implements DifferenceTransform&lt;JavaModelElement&gt; {
+public final class AnnotationTypeAttributeAdded implements DifferenceTransform&lt;JavaMethodElement&gt; {
     private Locale locale;
     private final Pattern[] codes;
 
-<span class="fc" id="L43">    public AnnotationTypeAttributeAdded() {</span>
-<span class="fc" id="L44">        codes = new Pattern[]{Pattern.compile(&quot;^&quot; + Pattern.quote(Code.METHOD_ABSTRACT_METHOD_ADDED.code()) + &quot;$&quot;)};</span>
-<span class="fc" id="L45">    }</span>
+<span class="fc" id="L44">    public AnnotationTypeAttributeAdded() {</span>
+<span class="fc" id="L45">        codes = new Pattern[]{Pattern.compile(&quot;^&quot; + Pattern.quote(Code.METHOD_ABSTRACT_METHOD_ADDED.code()) + &quot;$&quot;)};</span>
+<span class="fc" id="L46">    }</span>
 
     @Nonnull
     @Override
     public Pattern[] getDifferenceCodePatterns() {
-<span class="fc" id="L50">        return codes;</span>
+<span class="fc" id="L51">        return codes;</span>
     }
 
     @Nullable
     @Override
     public String[] getConfigurationRootPaths() {
-<span class="fc" id="L56">        return null;</span>
+<span class="fc" id="L57">        return null;</span>
     }
 
     @Nullable
     @Override
     public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="nc" id="L62">        return null;</span>
+<span class="nc" id="L63">        return null;</span>
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L67">        locale = analysisContext.getLocale();</span>
-<span class="fc" id="L68">    }</span>
+<span class="fc" id="L68">        locale = analysisContext.getLocale();</span>
+<span class="fc" id="L69">    }</span>
 
     @Nullable
     @Override
-    public Difference transform(@Nullable JavaModelElement oldElement, @Nullable JavaModelElement newElement,
+    public Difference transform(@Nullable JavaMethodElement oldElement, @Nullable JavaMethodElement newElement,
         @Nonnull Difference difference) {
 
         @SuppressWarnings(&quot;ConstantConditions&quot;)
-<span class="fc" id="L76">        ExecutableElement method = (ExecutableElement) newElement.getDeclaringElement();</span>
+<span class="fc" id="L77">        ExecutableElement method = newElement.getDeclaringElement();</span>
 
-<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (method.getEnclosingElement().getKind() == ElementKind.ANNOTATION_TYPE) {</span>
-<span class="fc" id="L79">            AnnotationValue defaultValue = method.getDefaultValue();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (method.getEnclosingElement().getKind() == ElementKind.ANNOTATION_TYPE) {</span>
+<span class="fc" id="L80">            AnnotationValue defaultValue = method.getDefaultValue();</span>
 
-<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (defaultValue == null) {</span>
-<span class="fc" id="L82">                return Code.METHOD_ATTRIBUTE_WITH_NO_DEFAULT_ADDED_TO_ANNOTATION_TYPE.createDifference(locale);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (defaultValue == null) {</span>
+<span class="fc" id="L83">                return Code.METHOD_ATTRIBUTE_WITH_NO_DEFAULT_ADDED_TO_ANNOTATION_TYPE</span>
+<span class="fc" id="L84">                        .createDifference(locale, new LinkedHashMap&lt;&gt;(difference.attachments));</span>
             } else {
-<span class="fc" id="L84">                return Code.METHOD_ATTRIBUTE_WITH_DEFAULT_ADDED_TO_ANNOTATION_TYPE.createDifference(locale);</span>
+<span class="fc" id="L86">                return Code.METHOD_ATTRIBUTE_WITH_DEFAULT_ADDED_TO_ANNOTATION_TYPE</span>
+<span class="fc" id="L87">                        .createDifference(locale, new LinkedHashMap&lt;&gt;(difference.attachments));</span>
             }
         }
 
-<span class="fc" id="L88">        return difference;</span>
+<span class="fc" id="L91">        return difference;</span>
     }
 
     @Override
     public void close() {
-<span class="fc" id="L93">    }</span>
+<span class="fc" id="L96">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

@@ -24,31 +24,39 @@ import org.revapi.java.spi.JavaTypeElement;
 
     @Override
     protected void doVisitClass(@Nullable JavaTypeElement oldType, @Nullable JavaTypeElement newType) {
-<span class="fc bfc" id="L27" title="All 6 branches covered.">        if ((oldType != null &amp;&amp; isMissing(oldType.getDeclaringElement()))</span>
-<span class="fc bfc" id="L28" title="All 2 branches covered.">                || (newType != null &amp;&amp; isMissing(newType.getDeclaringElement()))) {</span>
-<span class="fc" id="L29">            pushActive(oldType, newType);</span>
+<span class="fc bfc" id="L27" title="All 4 branches covered.">        boolean oldMissing = oldType != null &amp;&amp; isMissing(oldType.getDeclaringElement());</span>
+<span class="fc bfc" id="L28" title="All 4 branches covered.">        boolean oldInApi = oldType != null &amp;&amp; oldType.isInAPI();</span>
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        boolean newMissing = newType != null &amp;&amp; isMissing(newType.getDeclaringElement());</span>
+<span class="fc bfc" id="L30" title="All 4 branches covered.">        boolean newInApi = newType != null &amp;&amp; newType.isInAPI();</span>
+
+<span class="fc bfc" id="L32" title="All 8 branches covered.">        if ((oldMissing || newMissing) &amp;&amp; (oldInApi || newInApi)) {</span>
+<span class="fc" id="L33">            pushActive(oldType, newType);</span>
         }
-<span class="fc" id="L31">    }</span>
+<span class="fc" id="L35">    }</span>
 
     @Nullable
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L36">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
-<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (types == null) {</span>
-<span class="fc" id="L38">            return null;</span>
+<span class="fc" id="L40">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (types == null) {</span>
+<span class="fc" id="L42">            return null;</span>
         }
 
-<span class="fc" id="L41">        List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L45">        List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
 
-<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (types.oldElement != null) {</span>
-<span class="fc" id="L44">            ret.add(createDifference(Code.MISSING_IN_OLD_API, types.oldElement.getDeclaringElement().getQualifiedName().toString()));</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (types.oldElement != null) {</span>
+<span class="fc" id="L48">            ret.add(createDifferenceWithExplicitParams(Code.MISSING_IN_OLD_API,</span>
+<span class="fc" id="L49">                    Code.attachmentsFor(types.oldElement, types.newElement),</span>
+<span class="fc" id="L50">                    types.oldElement.getDeclaringElement().getQualifiedName().toString()));</span>
         }
 
-<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (types.newElement != null) {</span>
-<span class="fc" id="L48">            ret.add(createDifference(Code.MISSING_IN_NEW_API, types.newElement.getDeclaringElement().getQualifiedName().toString()));</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (types.newElement != null) {</span>
+<span class="fc" id="L54">            ret.add(createDifferenceWithExplicitParams(Code.MISSING_IN_NEW_API,</span>
+<span class="fc" id="L55">                    Code.attachmentsFor(types.oldElement, types.newElement),</span>
+<span class="fc" id="L56">                    types.newElement.getDeclaringElement().getQualifiedName().toString()));</span>
         }
 
-<span class="fc" id="L51">        return ret;</span>
+<span class="fc" id="L59">        return ret;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

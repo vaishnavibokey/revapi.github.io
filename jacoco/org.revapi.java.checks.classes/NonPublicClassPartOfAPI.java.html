@@ -56,8 +56,8 @@ import org.revapi.java.spi.Util;
 <span class="fc" id="L56">            return null;</span>
         }
 
-<span class="fc" id="L59">        return Collections</span>
-<span class="fc" id="L60">            .singletonList(createDifference(Code.CLASS_NON_PUBLIC_PART_OF_API, new Object[]{types.newElement},</span>
+<span class="fc" id="L59">        return Collections.singletonList(createDifferenceWithExplicitParams(Code.CLASS_NON_PUBLIC_PART_OF_API,</span>
+<span class="fc" id="L60">                Code.attachmentsFor(types.oldElement, types.newElement),</span>
 <span class="fc" id="L61">                Util.toHumanReadableString(types.newElement.getModelRepresentation())));</span>
     }
 }

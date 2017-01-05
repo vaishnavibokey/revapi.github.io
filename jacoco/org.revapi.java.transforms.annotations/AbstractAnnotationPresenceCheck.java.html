@@ -17,21 +17,19 @@
 package org.revapi.java.transforms.annotations;
 
 import java.io.Reader;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.util.SimpleElementVisitor7;
 
 import org.revapi.AnalysisContext;
 import org.revapi.Difference;
 import org.revapi.DifferenceTransform;
-import org.revapi.java.model.AnnotationElement;
 import org.revapi.java.spi.Code;
 import org.revapi.java.spi.ElementPairVisitor;
 import org.revapi.java.spi.JavaModelElement;
@@ -47,99 +45,91 @@ abstract class AbstractAnnotationPresenceCheck implements DifferenceTransform&lt
     private final Pattern[] codes;
 
     protected AbstractAnnotationPresenceCheck(String annotationQualifiedName, Code annotationCheckCode,
-<span class="fc" id="L50">        Code transformedCode) {</span>
-<span class="fc" id="L51">        this.annotationQualifiedName = annotationQualifiedName;</span>
-<span class="fc" id="L52">        this.transformedCode = transformedCode;</span>
-<span class="fc" id="L53">        String regex = &quot;^&quot; + Pattern.quote(annotationCheckCode.code()) + &quot;$&quot;;</span>
-<span class="fc" id="L54">        codes = new Pattern[]{Pattern.compile(regex)};</span>
-<span class="fc" id="L55">    }</span>
+<span class="fc" id="L48">        Code transformedCode) {</span>
+<span class="fc" id="L49">        this.annotationQualifiedName = annotationQualifiedName;</span>
+<span class="fc" id="L50">        this.transformedCode = transformedCode;</span>
+<span class="fc" id="L51">        String regex = &quot;^&quot; + Pattern.quote(annotationCheckCode.code()) + &quot;$&quot;;</span>
+<span class="fc" id="L52">        codes = new Pattern[]{Pattern.compile(regex)};</span>
+<span class="fc" id="L53">    }</span>
 
     @Nonnull
     @Override
     public Pattern[] getDifferenceCodePatterns() {
-<span class="fc" id="L60">        return codes;</span>
+<span class="fc" id="L58">        return codes;</span>
     }
 
     @Nullable
     @Override
     public String[] getConfigurationRootPaths() {
-<span class="fc" id="L66">        return null;</span>
+<span class="fc" id="L64">        return null;</span>
     }
 
     @Nullable
     @Override
     public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="nc" id="L72">        return null;</span>
+<span class="nc" id="L70">        return null;</span>
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L77">        this.analysisContext = analysisContext;</span>
-<span class="fc" id="L78">    }</span>
+<span class="fc" id="L75">        this.analysisContext = analysisContext;</span>
+<span class="fc" id="L76">    }</span>
 
     @Nullable
     @Override
     public Difference transform(@Nullable final JavaModelElement oldElement,
-        @Nullable final JavaModelElement newElement,
-        @Nonnull final Difference difference) {
+        @Nullable final JavaModelElement newElement, @Nonnull final Difference difference) {
         //we're checking for change of presence of an annotation on an element. Thus both the old and new version
         //of the element must be non-null.
-<span class="pc bpc" id="L87" title="2 of 4 branches missed.">        if (oldElement == null || newElement == null) {</span>
-<span class="nc" id="L88">            return null;</span>
+<span class="pc bpc" id="L84" title="2 of 4 branches missed.">        if (oldElement == null || newElement == null) {</span>
+<span class="nc" id="L85">            return null;</span>
         }
 
-<span class="fc" id="L91">        AnnotationMirror affectedAnnotation = ((AnnotationElement) difference.attachments.get(0)).getAnnotation();</span>
+<span class="fc" id="L88">        String affectedAnnotation = difference.attachments.get(&quot;annotationType&quot;);</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (!annotationQualifiedName.equals(affectedAnnotation)) {</span>
+<span class="fc" id="L90">            return difference;</span>
+        }
 
-<span class="fc" id="L93">        return affectedAnnotation.getAnnotationType().asElement()</span>
-<span class="fc" id="L94">            .accept(new SimpleElementVisitor7&lt;Difference, Void&gt;() {</span>
-                @Override
-                protected Difference defaultAction(javax.lang.model.element.Element e, Void ignored) {
-<span class="nc" id="L97">                    return difference;</span>
-                }
+<span class="fc" id="L93">        return oldElement.getDeclaringElement().accept(new ElementPairVisitor&lt;Difference&gt;() {</span>
+            @Override
+            protected Difference unmatchedAction(@Nonnull javax.lang.model.element.Element element,
+                                                 @Nullable javax.lang.model.element.Element otherElement) {
+<span class="nc" id="L97">                return difference;</span>
+            }
 
-                @Override
-                public Difference visitType(TypeElement e, Void ignored) {
-<span class="fc bfc" id="L102" title="All 2 branches covered.">                    if (!annotationQualifiedName.equals(e.getQualifiedName().toString())) {</span>
-<span class="fc" id="L103">                        return difference;</span>
-                    }
+            @Override
+            protected Difference visitType(@Nonnull TypeElement oldElement,
+                                           @Nonnull TypeElement newElement) {
+<span class="fc" id="L103">                return common();</span>
+            }
 
-<span class="fc" id="L106">                    return oldElement.getDeclaringElement().accept(new ElementPairVisitor&lt;Difference&gt;() {</span>
-                        @Override
-                        protected Difference unmatchedAction(@Nonnull javax.lang.model.element.Element element,
-                            @Nullable javax.lang.model.element.Element otherElement) {
-<span class="nc" id="L110">                            return difference;</span>
-                        }
+            @Override
+            protected Difference visitPackage(@Nonnull PackageElement element,
+                                              @Nonnull PackageElement otherElement) {
+<span class="nc" id="L109">                return common();</span>
+            }
 
-                        @Override
-                        protected Difference visitType(@Nonnull TypeElement oldElement,
-                            @Nonnull TypeElement newElement) {
-<span class="fc" id="L116">                            return transformedCode.createDifference(analysisContext.getLocale());</span>
-                        }
+            @Override
+            protected Difference visitVariable(@Nonnull VariableElement element,
+                                               @Nonnull VariableElement otherElement) {
+<span class="nc" id="L115">                return common();</span>
+            }
 
-                        @Override
-                        protected Difference visitPackage(@Nonnull PackageElement element,
-                            @Nonnull PackageElement otherElement) {
-<span class="nc" id="L122">                            return transformedCode.createDifference(analysisContext.getLocale());</span>
-                        }
+            @Override
+            protected Difference visitExecutable(@Nonnull ExecutableElement element,
+                                                 @Nonnull ExecutableElement otherElement) {
+<span class="fc" id="L121">                return common();</span>
+            }
 
-                        @Override
-                        protected Difference visitVariable(@Nonnull VariableElement element,
-                            @Nonnull VariableElement otherElement) {
-<span class="nc" id="L128">                            return transformedCode.createDifference(analysisContext.getLocale());</span>
-                        }
-
-                        @Override
-                        protected Difference visitExecutable(@Nonnull ExecutableElement element,
-                            @Nonnull ExecutableElement otherElement) {
-<span class="fc" id="L134">                            return transformedCode.createDifference(analysisContext.getLocale());</span>
-                        }
-<span class="fc" id="L136">                    }, newElement.getDeclaringElement());</span>
-                }
-            }, null);
+            private Difference common() {
+<span class="fc" id="L125">                return transformedCode.createDifference(analysisContext.getLocale(),</span>
+                        new LinkedHashMap&lt;&gt;(difference.attachments));
+            }
+<span class="fc" id="L128">        }, newElement.getDeclaringElement());</span>
     }
 
     @Override
     public void close() throws Exception {
-<span class="fc" id="L143">    }</span>
+<span class="fc" id="L133">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

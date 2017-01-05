@@ -133,10 +133,10 @@ public final class AnalysisConfiguration {
     private static Set&lt;String&gt; readUseReportingCodes(ModelNode analysisConfig) {
 <span class="fc" id="L134">        Set&lt;String&gt; ret = new HashSet&lt;&gt;();</span>
 <span class="fc" id="L135">        ModelNode config = analysisConfig.get(&quot;revapi&quot;, &quot;java&quot;, &quot;reportUsesFor&quot;);</span>
-<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (config.isDefined()) {</span>
-<span class="nc bnc" id="L137" title="All 2 branches missed.">            for (ModelNode code : config.asList()) {</span>
-<span class="nc" id="L138">                ret.add(code.asString());</span>
-<span class="nc" id="L139">            }</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (config.isDefined()) {</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            for (ModelNode code : config.asList()) {</span>
+<span class="fc" id="L138">                ret.add(code.asString());</span>
+<span class="fc" id="L139">            }</span>
         } else {
 <span class="fc" id="L141">            ret.add(&quot;java.missing.oldClass&quot;);</span>
 <span class="fc" id="L142">            ret.add(&quot;java.missing.newClass&quot;);</span>

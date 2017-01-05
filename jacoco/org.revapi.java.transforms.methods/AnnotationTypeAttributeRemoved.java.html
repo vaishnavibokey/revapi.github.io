@@ -17,6 +17,7 @@
 package org.revapi.java.transforms.methods;
 
 import java.io.Reader;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -39,54 +40,55 @@ public class AnnotationTypeAttributeRemoved implements DifferenceTransform&lt;Ja
     private Locale locale;
     private final Pattern[] codes;
 
-<span class="fc" id="L42">    public AnnotationTypeAttributeRemoved() {</span>
-<span class="fc" id="L43">        codes = new Pattern[]{Pattern.compile(&quot;^&quot; + Pattern.quote(Code.METHOD_REMOVED.code()) + &quot;$&quot;)};</span>
-<span class="fc" id="L44">    }</span>
+<span class="fc" id="L43">    public AnnotationTypeAttributeRemoved() {</span>
+<span class="fc" id="L44">        codes = new Pattern[]{Pattern.compile(&quot;^&quot; + Pattern.quote(Code.METHOD_REMOVED.code()) + &quot;$&quot;)};</span>
+<span class="fc" id="L45">    }</span>
 
     @Nonnull
     @Override
     public Pattern[] getDifferenceCodePatterns() {
-<span class="fc" id="L49">        return codes;</span>
+<span class="fc" id="L50">        return codes;</span>
     }
 
     @Nullable
     @Override
     public String[] getConfigurationRootPaths() {
-<span class="fc" id="L55">        return null;</span>
+<span class="fc" id="L56">        return null;</span>
     }
 
     @Nullable
     @Override
     public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="nc" id="L61">        return null;</span>
+<span class="nc" id="L62">        return null;</span>
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L66">        locale = analysisContext.getLocale();</span>
-<span class="fc" id="L67">    }</span>
+<span class="fc" id="L67">        locale = analysisContext.getLocale();</span>
+<span class="fc" id="L68">    }</span>
 
     @Nullable
     @Override
     public Difference transform(@Nullable JavaModelElement oldElement, @Nullable JavaModelElement newElement,
         @Nonnull Difference difference) {
 
-<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (oldElement == null) {</span>
-<span class="nc" id="L75">            throw new IllegalStateException(&quot;Annotation type attribute detection called with one of the elements null.&quot;</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (oldElement == null) {</span>
+<span class="nc" id="L76">            throw new IllegalStateException(&quot;Annotation type attribute detection called with one of the elements null.&quot;</span>
                     + &quot; That should never be the case.&quot;);
         }
 
-<span class="fc" id="L79">        ExecutableElement method = (ExecutableElement) oldElement.getDeclaringElement();</span>
+<span class="fc" id="L80">        ExecutableElement method = (ExecutableElement) oldElement.getDeclaringElement();</span>
 
-<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (method.getEnclosingElement().getKind() == ElementKind.ANNOTATION_TYPE) {</span>
-<span class="fc" id="L82">            return Code.METHOD_ATTRIBUTE_REMOVED_FROM_ANNOTATION_TYPE.createDifference(locale);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (method.getEnclosingElement().getKind() == ElementKind.ANNOTATION_TYPE) {</span>
+<span class="fc" id="L83">            return Code.METHOD_ATTRIBUTE_REMOVED_FROM_ANNOTATION_TYPE.createDifference(locale,</span>
+                    new LinkedHashMap&lt;&gt;(difference.attachments));
         }
 
-<span class="fc" id="L85">        return difference;</span>
+<span class="fc" id="L87">        return difference;</span>
     }
 
     @Override
     public void close() {
-<span class="fc" id="L90">    }</span>
+<span class="fc" id="L92">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

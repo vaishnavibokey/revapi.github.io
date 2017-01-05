@@ -24,30 +24,28 @@ import org.revapi.Difference;
 import org.revapi.java.spi.CheckBase;
 import org.revapi.java.spi.Code;
 import org.revapi.java.spi.JavaAnnotationElement;
-import org.revapi.java.spi.Util;
 
 /**
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L33">public final class Added extends CheckBase {</span>
+<span class="fc" id="L32">public final class Added extends CheckBase {</span>
     @Override
     protected List&lt;Difference&gt; doVisitAnnotation(JavaAnnotationElement oldAnnotation,
         JavaAnnotationElement newAnnotation) {
 
-<span class="pc bpc" id="L38" title="1 of 4 branches missed.">        if (oldAnnotation == null &amp;&amp; newAnnotation != null) {</span>
-<span class="fc" id="L39">            return Collections.singletonList(</span>
-<span class="fc" id="L40">                createDifference(Code.ANNOTATION_ADDED, new String[]{</span>
-<span class="fc" id="L41">                    Util.toHumanReadableString(newAnnotation.getAnnotation().getAnnotationType())}, newAnnotation)</span>
+<span class="pc bpc" id="L37" title="1 of 4 branches missed.">        if (oldAnnotation == null &amp;&amp; newAnnotation != null) {</span>
+<span class="fc" id="L38">            return Collections.singletonList(</span>
+<span class="fc" id="L39">                createDifference(Code.ANNOTATION_ADDED, Code.attachmentsFor(null, newAnnotation))</span>
             );
         }
 
-<span class="fc" id="L45">        return null;</span>
+<span class="fc" id="L43">        return null;</span>
     }
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L50">        return EnumSet.of(Type.ANNOTATION);</span>
+<span class="fc" id="L48">        return EnumSet.of(Type.ANNOTATION);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

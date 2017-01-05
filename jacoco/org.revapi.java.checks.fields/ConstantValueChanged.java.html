@@ -59,9 +59,9 @@ import org.revapi.java.spi.JavaFieldElement;
         }
 
 <span class="fc" id="L61">        return Collections.singletonList(</span>
-<span class="fc" id="L62">            createDifference(Code.FIELD_CONSTANT_VALUE_CHANGED,</span>
-<span class="fc" id="L63">                Objects.toString(fields.oldElement.getDeclaringElement().getConstantValue()),</span>
-<span class="fc" id="L64">                Objects.toString(fields.newElement.getDeclaringElement().getConstantValue()))</span>
+<span class="fc" id="L62">            createDifference(Code.FIELD_CONSTANT_VALUE_CHANGED, Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
+<span class="fc" id="L63">                &quot;oldValue&quot;, Objects.toString(fields.oldElement.getDeclaringElement().getConstantValue()),</span>
+<span class="fc" id="L64">                &quot;newValue&quot;, Objects.toString(fields.newElement.getDeclaringElement().getConstantValue())))</span>
         );
     }
 }

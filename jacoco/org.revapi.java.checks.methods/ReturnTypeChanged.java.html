@@ -96,23 +96,26 @@ import org.revapi.java.spi.Util;
 <span class="fc" id="L96">        String oldHR = Util.toHumanReadableString(oldReturnType);</span>
 <span class="fc" id="L97">        String newHR = Util.toHumanReadableString(newReturnType);</span>
 
-<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        return code == null ? null : Collections.singletonList(createDifference(code, oldHR, newHR));</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        return code == null ? null : Collections.singletonList(createDifference(code,</span>
+<span class="fc" id="L100">                Code.attachmentsFor(methods.oldElement, methods.newElement,</span>
+                        &quot;oldType&quot;, oldHR,
+                        &quot;newType&quot;, newHR)));
     }
 
     private static boolean isPrimitiveOrVoid(TypeMirror type) {
-<span class="fc" id="L103">        TypeKind kind = type.getKind();</span>
-<span class="pc bpc" id="L104" title="1 of 3 branches missed.">        switch (kind) {</span>
+<span class="fc" id="L106">        TypeKind kind = type.getKind();</span>
+<span class="pc bpc" id="L107" title="1 of 3 branches missed.">        switch (kind) {</span>
             case VOID:
-<span class="fc" id="L106">                return true;</span>
+<span class="fc" id="L109">                return true;</span>
             case ARRAY:
-<span class="nc" id="L108">                return isPrimitiveOrVoid(((ArrayType) type).getComponentType());</span>
+<span class="nc" id="L111">                return isPrimitiveOrVoid(((ArrayType) type).getComponentType());</span>
             default:
-<span class="fc" id="L110">                return kind.isPrimitive();</span>
+<span class="fc" id="L113">                return kind.isPrimitive();</span>
         }
     }
 
     private boolean isCovariant(TypeMirror superType, TypeMirror subType) {
-<span class="fc" id="L115">        return Util.isSubtype(subType, Collections.singletonList(superType), getNewTypeEnvironment().getTypeUtils());</span>
+<span class="fc" id="L118">        return Util.isSubtype(subType, Collections.singletonList(superType), getNewTypeEnvironment().getTypeUtils());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

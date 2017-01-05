@@ -51,29 +51,30 @@ import org.revapi.java.spi.JavaTypeElement;
         }
 
 <span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (oldElement.getDeclaringElement().getKind() == ElementKind.ANNOTATION_TYPE) {</span>
-<span class="nc" id="L54">            return Code.ANNOTATION_NO_LONGER_PRESENT.createDifference(locale);</span>
+<span class="nc" id="L54">            return Code.ANNOTATION_NO_LONGER_PRESENT.createDifference(locale,</span>
+<span class="nc" id="L55">                    Code.attachmentsFor(oldElement, newElement));</span>
         } else {
-<span class="fc" id="L56">            return difference;</span>
+<span class="fc" id="L57">            return difference;</span>
         }
     }
 
     @Override
     public void close() throws Exception {
-<span class="fc" id="L62">    }</span>
+<span class="fc" id="L63">    }</span>
 
     @Override
     public String[] getConfigurationRootPaths() {
-<span class="fc" id="L66">        return null;</span>
+<span class="fc" id="L67">        return null;</span>
     }
 
     @Override
     public @Nullable Reader getJSONSchema(String configurationRootPath) {
-<span class="nc" id="L71">        return null;</span>
+<span class="nc" id="L72">        return null;</span>
     }
 
     @Override
     public void initialize(AnalysisContext analysisContext) {
-<span class="fc" id="L76">        this.locale = analysisContext.getLocale();</span>
-<span class="fc" id="L77">    }</span>
+<span class="fc" id="L77">        this.locale = analysisContext.getLocale();</span>
+<span class="fc" id="L78">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

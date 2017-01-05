@@ -123,28 +123,35 @@ import org.revapi.java.spi.Util;
 
 <span class="fc" id="L124">        List&lt;Difference&gt; diffs = new ArrayList&lt;&gt;();</span>
 <span class="pc bpc" id="L125" title="1 of 2 branches missed.">        if (oldT.getTypeParameters().isEmpty()) {</span>
-<span class="nc" id="L126">            diffs.add(createDifference(Code.GENERICS_ELEMENT_NOW_PARAMETERIZED));</span>
+<span class="nc" id="L126">            diffs.add(createDifference(Code.GENERICS_ELEMENT_NOW_PARAMETERIZED,</span>
+<span class="nc" id="L127">                    Code.attachmentsFor(els.oldElement, els.newElement)));</span>
         }
 
-<span class="fc bfc" id="L129" title="All 2 branches covered.">        for (TypeParameterElement e : added) {</span>
-<span class="fc" id="L130">            diffs.add(</span>
-<span class="fc" id="L131">                createDifference(Code.GENERICS_FORMAL_TYPE_PARAMETER_ADDED, new String[]{Util.toHumanReadableString(e)},</span>
-                    e)
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for (TypeParameterElement e : added) {</span>
+<span class="fc" id="L131">            diffs.add(</span>
+<span class="fc" id="L132">                createDifferenceWithExplicitParams(Code.GENERICS_FORMAL_TYPE_PARAMETER_ADDED,</span>
+<span class="fc" id="L133">                        Code.attachmentsFor(els.oldElement, els.newElement),</span>
+<span class="fc" id="L134">                        Util.toHumanReadableString(e))</span>
             );
-<span class="fc" id="L134">        }</span>
+<span class="fc" id="L136">        }</span>
 
-<span class="fc bfc" id="L136" title="All 2 branches covered.">        for (TypeParameterElement e : removed) {</span>
-<span class="fc" id="L137">            diffs.add(createDifference(Code.GENERICS_FORMAL_TYPE_PARAMETER_REMOVED,</span>
-<span class="fc" id="L138">                new String[]{Util.toHumanReadableString(e)}, e));</span>
-<span class="fc" id="L139">        }</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        for (TypeParameterElement e : removed) {</span>
+<span class="fc" id="L139">            diffs.add(createDifferenceWithExplicitParams(Code.GENERICS_FORMAL_TYPE_PARAMETER_REMOVED,</span>
+<span class="fc" id="L140">                    Code.attachmentsFor(els.oldElement, els.newElement),</span>
+<span class="fc" id="L141">                    Util.toHumanReadableString(e)));</span>
+<span class="fc" id="L142">        }</span>
 
-<span class="fc bfc" id="L141" title="All 2 branches covered.">        for (Map.Entry&lt;TypeParameterElement, TypeParameterElement&gt; e : changed.entrySet()) {</span>
-<span class="fc" id="L142">            diffs.add(createDifference(Code.GENERICS_FORMAL_TYPE_PARAMETER_CHANGED,</span>
-<span class="fc" id="L143">                new String[]{Util.toHumanReadableString(e.getKey()), Util.toHumanReadableString(e.getValue())},</span>
-<span class="fc" id="L144">                e.getKey(), e.getValue()));</span>
-<span class="fc" id="L145">        }</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        for (Map.Entry&lt;TypeParameterElement, TypeParameterElement&gt; e : changed.entrySet()) {</span>
+<span class="fc" id="L145">            String oldP = Util.toHumanReadableString(e.getKey());</span>
+<span class="fc" id="L146">            String newP = Util.toHumanReadableString(e.getValue());</span>
+<span class="fc" id="L147">            diffs.add(createDifferenceWithExplicitParams(Code.GENERICS_FORMAL_TYPE_PARAMETER_CHANGED,</span>
+<span class="fc" id="L148">                    Code.attachmentsFor(els.oldElement, els.newElement,</span>
+                            &quot;oldTypeParameter&quot;, oldP,
+                            &quot;newTypeParameter&quot;, newP),
+                    oldP, newP));
+<span class="fc" id="L152">        }</span>
 
-<span class="fc" id="L147">        return diffs;</span>
+<span class="fc" id="L154">        return diffs;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

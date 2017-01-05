@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
+import javax.lang.model.element.TypeElement;
+
 import org.revapi.Difference;
 import org.revapi.java.spi.CheckBase;
 import org.revapi.java.spi.Code;
@@ -29,35 +31,35 @@ import org.revapi.java.spi.JavaTypeElement;
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L32">public final class Added extends CheckBase {</span>
+<span class="fc" id="L34">public final class Added extends CheckBase {</span>
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L35">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
-<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (types != null) {</span>
-//TODO The heuristics of figuring out if a class is external is flawed.
-//            TypeElement typeInOld = getOldTypeEnvironment().getElementUtils().getTypeElement(types.newElement
-//                    .getQualifiedName());
-//
-//            Difference difference = typeInOld == null ? createDifference(Code.CLASS_ADDED) :
-//                    createDifference(Code.CLASS_EXTERNAL_CLASS_EXPOSED_IN_API);
-<span class="fc" id="L43">            Difference difference = createDifference(Code.CLASS_ADDED);</span>
+<span class="fc" id="L37">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (types != null) {</span>
+<span class="fc" id="L39">            TypeElement typeInOld = getOldTypeEnvironment().getElementUtils()</span>
+<span class="fc" id="L40">                    .getTypeElement(types.newElement.getDeclaringElement().getQualifiedName());</span>
 
-<span class="fc" id="L45">            return Collections.singletonList(difference);</span>
+<span class="fc" id="L42">            String[] attachments = Code.attachmentsFor(types.oldElement, types.newElement);</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">            Difference difference = typeInOld == null</span>
+<span class="pc" id="L44">                    ? createDifference(Code.CLASS_ADDED, attachments)</span>
+<span class="pc" id="L45">                    : createDifference(Code.CLASS_EXTERNAL_CLASS_EXPOSED_IN_API, attachments);</span>
+
+<span class="fc" id="L47">            return Collections.singletonList(difference);</span>
         }
 
-<span class="fc" id="L48">        return null;</span>
+<span class="fc" id="L50">        return null;</span>
     }
 
     @Override
     protected void doVisitClass(JavaTypeElement oldType, JavaTypeElement newType) {
-<span class="pc bpc" id="L53" title="1 of 6 branches missed.">        if (oldType == null &amp;&amp; newType != null &amp;&amp; isAccessible(newType)) {</span>
-<span class="fc" id="L54">            pushActive(null, newType);</span>
+<span class="pc bpc" id="L55" title="1 of 6 branches missed.">        if (oldType == null &amp;&amp; newType != null &amp;&amp; isAccessible(newType)) {</span>
+<span class="fc" id="L56">            pushActive(null, newType);</span>
         }
-<span class="fc" id="L56">    }</span>
+<span class="fc" id="L58">    }</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L60">        return EnumSet.of(Type.CLASS);</span>
+<span class="fc" id="L62">        return EnumSet.of(Type.CLASS);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

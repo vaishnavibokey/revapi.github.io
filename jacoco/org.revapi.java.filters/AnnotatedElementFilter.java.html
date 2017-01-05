@@ -20,12 +20,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import javax.annotation.Nullable;
-
-import org.revapi.java.spi.JavaAnnotationElement;
-import org.revapi.java.spi.JavaMethodElement;
 import org.revapi.java.spi.JavaModelElement;
-import org.revapi.java.spi.JavaTypeElement;
 import org.revapi.java.spi.Util;
 
 /**
@@ -34,35 +29,23 @@ import org.revapi.java.spi.Util;
  */
 public final class AnnotatedElementFilter extends AbstractIncludeExcludeFilter {
     public AnnotatedElementFilter() {
-<span class="fc" id="L37">        super(&quot;revapi.java.filter.annotated&quot;, &quot;/META-INF/annotated-elem-filter-schema.json&quot;);</span>
-<span class="fc" id="L38">    }</span>
-
-    @Override
-    public boolean shouldDescendInto(@Nullable Object element) {
-<span class="fc bfc" id="L42" title="All 6 branches covered.">        return doNothing || (element instanceof JavaTypeElement || element instanceof JavaMethodElement);</span>
-    }
+<span class="fc" id="L32">        super(&quot;revapi.java.filter.annotated&quot;, &quot;/META-INF/annotated-elem-filter-schema.json&quot;);</span>
+<span class="fc" id="L33">    }</span>
 
     @Override
     protected boolean canBeReIncluded(JavaModelElement element) {
-<span class="fc" id="L47">        return true;</span>
+<span class="fc" id="L37">        return true;</span>
     }
 
     @Override
     protected Stream&lt;String&gt; getTestedElementRepresentations(JavaModelElement element) {
-<span class="fc" id="L52">        return element.getDeclaringElement().getAnnotationMirrors().stream().map(Util::toHumanReadableString);</span>
-    }
-
-    @Override
-    boolean decideAnnotation(JavaAnnotationElement annotation,
-            AbstractIncludeExcludeFilter.InclusionState parentInclusionState) {
-        //annotations cannot be annotated, so include this only if there is no explicit inclusion filter
-<span class="fc bfc" id="L59" title="All 4 branches covered.">        return parentInclusionState.toBoolean() &amp;&amp; includeTest == null;</span>
+<span class="fc" id="L42">        return element.getDeclaringElement().getAnnotationMirrors().stream().map(Util::toHumanReadableString);</span>
     }
 
     @Override
     protected void validateConfiguration(boolean excludes, List&lt;String&gt; fullMatches, List&lt;Pattern&gt; patterns,
             boolean regexes) {
         //XXX probably we should do something here, but the check would be a little bit complex so let's not ;)
-<span class="fc" id="L66">    }</span>
+<span class="fc" id="L49">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

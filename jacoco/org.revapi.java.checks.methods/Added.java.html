@@ -93,27 +93,33 @@ import org.slf4j.LoggerFactory;
 
 <span class="fc bfc" id="L94" title="All 2 branches covered.">        if (enclosingClass.getKind() == ElementKind.INTERFACE) {</span>
 <span class="fc bfc" id="L95" title="All 2 branches covered.">            if (method.isDefault()) {</span>
-<span class="fc" id="L96">                difference = createDifference(Code.METHOD_DEFAULT_METHOD_ADDED_TO_INTERFACE);</span>
-<span class="fc bfc" id="L97" title="All 2 branches covered.">            } else if (method.getModifiers().contains(Modifier.STATIC)) {</span>
+<span class="fc" id="L96">                difference = createDifference(Code.METHOD_DEFAULT_METHOD_ADDED_TO_INTERFACE,</span>
+<span class="fc" id="L97">                        Code.attachmentsFor(methods.oldElement, methods.newElement));</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            } else if (method.getModifiers().contains(Modifier.STATIC)) {</span>
                 //statics on interface can only be called using the interface they are declared on, even if a method
                 //with a same signature was declared on some of the super types in the old version, the users would
                 //not have been able to call those methods using the current type. So we don't need to specialize here
                 //based on the presence of a previously inherited method.
-<span class="fc" id="L102">                difference = createDifference(Code.METHOD_STATIC_METHOD_ADDED_TO_INTERFACE);</span>
+<span class="fc" id="L103">                difference = createDifference(Code.METHOD_STATIC_METHOD_ADDED_TO_INTERFACE,</span>
+<span class="fc" id="L104">                        Code.attachmentsFor(methods.oldElement, methods.newElement));</span>
             } else {
-<span class="fc" id="L104">                difference = createDifference(Code.METHOD_ADDED_TO_INTERFACE);</span>
+<span class="fc" id="L106">                difference = createDifference(Code.METHOD_ADDED_TO_INTERFACE,</span>
+<span class="fc" id="L107">                        Code.attachmentsFor(methods.oldElement, methods.newElement));</span>
             }
-<span class="fc bfc" id="L106" title="All 2 branches covered.">        } else if (method.getModifiers().contains(Modifier.ABSTRACT)) {</span>
-<span class="fc" id="L107">            difference = createDifference(Code.METHOD_ABSTRACT_METHOD_ADDED);</span>
-<span class="fc bfc" id="L108" title="All 2 branches covered.">        } else if (method.getModifiers().contains(Modifier.FINAL) &amp;&amp;</span>
-<span class="fc bfc" id="L109" title="All 2 branches covered.">                !enclosingClass.getModifiers().contains(Modifier.FINAL)) {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        } else if (method.getModifiers().contains(Modifier.ABSTRACT)) {</span>
+<span class="fc" id="L110">            difference = createDifference(Code.METHOD_ABSTRACT_METHOD_ADDED,</span>
+<span class="fc" id="L111">                    Code.attachmentsFor(methods.oldElement, methods.newElement));</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        } else if (method.getModifiers().contains(Modifier.FINAL) &amp;&amp;</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                !enclosingClass.getModifiers().contains(Modifier.FINAL)) {</span>
 
-<span class="fc" id="L111">             difference = createDifference(Code.METHOD_FINAL_METHOD_ADDED_TO_NON_FINAL_CLASS);</span>
+<span class="fc" id="L115">             difference = createDifference(Code.METHOD_FINAL_METHOD_ADDED_TO_NON_FINAL_CLASS,</span>
+<span class="fc" id="L116">                     Code.attachmentsFor(methods.oldElement, methods.newElement));</span>
         } else {
-<span class="fc" id="L113">            difference = createDifference(Code.METHOD_ADDED);</span>
+<span class="fc" id="L118">            difference = createDifference(Code.METHOD_ADDED,</span>
+<span class="fc" id="L119">                    Code.attachmentsFor(methods.oldElement, methods.newElement));</span>
         }
 
-<span class="fc" id="L116">        return Collections.singletonList(difference);</span>
+<span class="fc" id="L122">        return Collections.singletonList(difference);</span>
     }
 
 }

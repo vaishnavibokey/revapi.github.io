@@ -103,8 +103,8 @@ public class TypeElement extends JavaElementBase&lt;javax.lang.model.element.Typ
 
     @Override public Set&lt;UseSite&gt; getUseSites() {
 <span class="fc bfc" id="L105" title="All 2 branches covered.">        if (useSites == null) {</span>
-<span class="fc bfc" id="L106" title="All 2 branches covered.">            if (rawUseSites == null) {</span>
-<span class="fc" id="L107">                useSites = Collections.emptySet();</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">            if (rawUseSites == null) {</span>
+<span class="nc" id="L107">                useSites = Collections.emptySet();</span>
             } else {
 <span class="fc" id="L109">                useSites = rawUseSites.stream()</span>
 <span class="fc" id="L110">                        .map(u -&gt; new UseSite(u.useType, getModel(u.site, u.indexInParent)))</span>

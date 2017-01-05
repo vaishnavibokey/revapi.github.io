@@ -88,10 +88,15 @@ import org.revapi.java.spi.Util;
 <span class="fc" id="L88">                .erasure(params.newElement.getModelRepresentation()));</span>
 
 <span class="fc bfc" id="L90" title="All 2 branches covered.">        if (!oldErasedType.equals(newErasedType)) {</span>
-<span class="fc" id="L91">            return Collections.singletonList(createDifference(Code.METHOD_PARAMETER_TYPE_CHANGED, oldType, newType));</span>
+<span class="fc" id="L91">            return Collections.singletonList(createDifference(Code.METHOD_PARAMETER_TYPE_CHANGED,</span>
+<span class="fc" id="L92">                    Code.attachmentsFor(params.oldElement, params.newElement,</span>
+                            &quot;oldType&quot;, oldType,
+                            &quot;newType&quot;, newType)));
         } else {
-<span class="fc" id="L93">            return Collections</span>
-<span class="fc" id="L94">                    .singletonList(createDifference(Code.METHOD_PARAMETER_TYPE_PARAMETER_CHANGED, oldType, newType));</span>
+<span class="fc" id="L96">            return Collections.singletonList(createDifference(Code.METHOD_PARAMETER_TYPE_PARAMETER_CHANGED,</span>
+<span class="fc" id="L97">                    Code.attachmentsFor(params.oldElement, params.newElement,</span>
+                            &quot;oldType&quot;, oldType,
+                            &quot;newType&quot;, newType)));
         }
     }
 }

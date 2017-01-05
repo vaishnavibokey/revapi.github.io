@@ -93,7 +93,7 @@ import org.revapi.java.spi.Util;
 <span class="fc" id="L93">        List&lt;? extends TypeMirror&gt; oldExceptions = new ArrayList&lt;&gt;(methods.oldElement.getModelRepresentation().getThrownTypes());</span>
 <span class="fc" id="L94">        List&lt;? extends TypeMirror&gt; newExceptions = new ArrayList&lt;&gt;(methods.newElement.getModelRepresentation().getThrownTypes());</span>
 
-<span class="fc" id="L96">        Comparator&lt;TypeMirror&gt; byClassName = (a, b) -&gt; Util.toUniqueString(a).compareTo(Util.toUniqueString(b));</span>
+<span class="fc" id="L96">        Comparator&lt;TypeMirror&gt; byClassName = Comparator.comparing(Util::toUniqueString);</span>
 
 <span class="fc" id="L98">        Collections.sort(oldExceptions, byClassName);</span>
 <span class="fc" id="L99">        Collections.sort(newExceptions, byClassName);</span>
@@ -144,49 +144,65 @@ import org.revapi.java.spi.Util;
 <span class="fc" id="L144">        List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
 
 <span class="fc bfc" id="L146" title="All 2 branches covered.">        if (!removedRuntimeExceptions.isEmpty()) {</span>
-<span class="fc" id="L147">            ret.add(createDifference(Code.METHOD_RUNTIME_EXCEPTION_REMOVED, removedRuntimeExceptions));</span>
+<span class="fc" id="L147">            removedRuntimeExceptions.forEach(ex -&gt;</span>
+<span class="fc" id="L148">                    ret.add(createDifference(Code.METHOD_RUNTIME_EXCEPTION_REMOVED,</span>
+<span class="fc" id="L149">                            Code.attachmentsFor(methods.oldElement, methods.newElement,</span>
+                                    &quot;exception&quot;, ex)))
+            );
         }
 
-<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (!addedRuntimeExceptions.isEmpty()) {</span>
-<span class="fc" id="L151">            ret.add(createDifference(Code.METHOD_RUNTIME_EXCEPTION_ADDED, addedRuntimeExceptions));</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (!addedRuntimeExceptions.isEmpty()) {</span>
+<span class="fc" id="L155">            addedRuntimeExceptions.forEach(ex -&gt;</span>
+<span class="fc" id="L156">                    ret.add(createDifference(Code.METHOD_RUNTIME_EXCEPTION_ADDED,</span>
+<span class="fc" id="L157">                            Code.attachmentsFor(methods.oldElement, methods.newElement,</span>
+                                    &quot;exception&quot;, ex)))
+            );
         }
 
-<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (!addedCheckedExceptions.isEmpty()) {</span>
-<span class="fc" id="L155">            ret.add(createDifference(Code.METHOD_CHECKED_EXCEPTION_ADDED, addedCheckedExceptions));</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (!addedCheckedExceptions.isEmpty()) {</span>
+<span class="fc" id="L163">            addedCheckedExceptions.forEach(ex -&gt;</span>
+<span class="fc" id="L164">                ret.add(createDifference(Code.METHOD_CHECKED_EXCEPTION_ADDED,</span>
+<span class="fc" id="L165">                        Code.attachmentsFor(methods.oldElement, methods.newElement,</span>
+                                &quot;exception&quot;, ex)))
+            );
         }
 
-<span class="fc bfc" id="L158" title="All 2 branches covered.">        if (!removedCheckedExceptions.isEmpty()) {</span>
-<span class="fc" id="L159">            ret.add(createDifference(Code.METHOD_CHECKED_EXCEPTION_REMOVED, removedCheckedExceptions));</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (!removedCheckedExceptions.isEmpty()) {</span>
+<span class="fc" id="L171">            removedCheckedExceptions.forEach(ex -&gt;</span>
+<span class="fc" id="L172">                ret.add(createDifference(Code.METHOD_CHECKED_EXCEPTION_REMOVED,</span>
+<span class="fc" id="L173">                        Code.attachmentsFor(methods.oldElement, methods.newElement,</span>
+                                &quot;exception&quot;, ex)))
+            );
         }
 
-<span class="fc" id="L162">        return ret;</span>
+<span class="fc" id="L178">        return ret;</span>
     }
 
     private boolean isRuntimeException(TypeElement exception) {
         //noinspection LoopStatementThatDoesntLoop
-<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        while (exception != null) {</span>
-<span class="fc" id="L168">            Name fqn = exception.getQualifiedName();</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        while (exception != null) {</span>
+<span class="fc" id="L184">            Name fqn = exception.getQualifiedName();</span>
 
-<span class="fc bfc" id="L170" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.RuntimeException&quot;)) {</span>
-<span class="fc" id="L171">                return true;</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.RuntimeException&quot;)) {</span>
+<span class="fc" id="L187">                return true;</span>
             }
 
-<span class="fc bfc" id="L174" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.Error&quot;)) {</span>
-<span class="fc" id="L175">                return true;</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.Error&quot;)) {</span>
+<span class="fc" id="L191">                return true;</span>
             }
 
-<span class="fc bfc" id="L178" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.Exception&quot;)) {</span>
-<span class="fc" id="L179">                return false;</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.Exception&quot;)) {</span>
+<span class="fc" id="L195">                return false;</span>
             }
 
-<span class="fc bfc" id="L182" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.Throwable&quot;)) {</span>
-<span class="fc" id="L183">                return false;</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">            if (fqn.contentEquals(&quot;java.lang.Throwable&quot;)) {</span>
+<span class="fc" id="L199">                return false;</span>
             }
 
-<span class="fc" id="L186">            exception = exception.getSuperclass().accept(CONVERT_TO_ELEMENT, null);</span>
-<span class="fc" id="L187">        }</span>
+<span class="fc" id="L202">            exception = exception.getSuperclass().accept(CONVERT_TO_ELEMENT, null);</span>
+<span class="fc" id="L203">        }</span>
 
-<span class="nc" id="L189">        return false;</span>
+<span class="nc" id="L205">        return false;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
