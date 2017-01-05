@@ -24,18 +24,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -44,10 +38,6 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.revapi.ApiAnalyzer;
-import org.revapi.DifferenceTransform;
-import org.revapi.ElementFilter;
-import org.revapi.Revapi;
 
 import com.ximpleware.AutoPilot;
 import com.ximpleware.ModifyException;
@@ -62,7 +52,7 @@ import com.ximpleware.XPathParseException;
  * @author Lukas Krejci
  * @since 0.4.0
  */
-<span class="fc" id="L65">class AbstractVersionModifyingMojo extends AbstractRevapiMojo {</span>
+<span class="fc" id="L55">class AbstractVersionModifyingMojo extends AbstractRevapiMojo {</span>
 
     @Component
     protected MavenSession mavenSession;
@@ -87,309 +77,279 @@ import com.ximpleware.XPathParseException;
      * You can modify this set if you use another extensions that change the found differences in a way that the
      * determined new version would not correspond to what it should be.
      */
-    @Parameter(property = Props.disallowedExtensions.NAME, defaultValue = Props.disallowedExtensions.DEFAULT_VALUE)
-    private String disallowedExtensions;
+    @Parameter(property = Props.disallowedExtensionsInVersioning.NAME, defaultValue = Props.disallowedExtensionsInVersioning.DEFAULT_VALUE)
+    protected String disallowedExtensions;
 
     private boolean preserveSuffix;
     private String replacementSuffix;
 
     public boolean isPreserveSuffix() {
-<span class="nc" id="L97">        return preserveSuffix;</span>
+<span class="nc" id="L87">        return preserveSuffix;</span>
     }
 
     void setPreserveSuffix(boolean preserveSuffix) {
-<span class="fc" id="L101">        this.preserveSuffix = preserveSuffix;</span>
-<span class="fc" id="L102">    }</span>
+<span class="fc" id="L91">        this.preserveSuffix = preserveSuffix;</span>
+<span class="fc" id="L92">    }</span>
 
     public String getReplacementSuffix() {
-<span class="nc" id="L105">        return replacementSuffix;</span>
+<span class="nc" id="L95">        return replacementSuffix;</span>
     }
 
     void setReplacementSuffix(String replacementSuffix) {
-<span class="fc" id="L109">        this.replacementSuffix = replacementSuffix;</span>
-<span class="fc" id="L110">    }</span>
+<span class="fc" id="L99">        this.replacementSuffix = replacementSuffix;</span>
+<span class="fc" id="L100">    }</span>
 
     public boolean isSingleVersionForAllModules() {
-<span class="nc" id="L113">        return singleVersionForAllModules;</span>
+<span class="nc" id="L103">        return singleVersionForAllModules;</span>
     }
 
     @Override public void execute() throws MojoExecutionException, MojoFailureException {
-<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (skip) {</span>
-<span class="nc" id="L118">            return;</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L108">            return;</span>
         }
         AnalysisResults analysisResults;
 
-<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (!initializeComparisonArtifacts()) {</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (!initializeComparisonArtifacts()) {</span>
             //we've got non-file artifacts, for which there is no reason to run analysis
-<span class="fc" id="L124">            DefaultArtifact oldArtifact = new DefaultArtifact(oldArtifacts[0]);</span>
-<span class="fc" id="L125">            analysisResults = new AnalysisResults(ApiChangeLevel.NO_CHANGE, oldArtifact.getVersion());</span>
-<span class="fc" id="L126">        } else {</span>
-<span class="fc" id="L127">            analysisResults = analyzeProject(project);</span>
+<span class="fc" id="L114">            DefaultArtifact oldArtifact = new DefaultArtifact(oldArtifacts[0]);</span>
+<span class="fc" id="L115">            analysisResults = new AnalysisResults(ApiChangeLevel.NO_CHANGE, oldArtifact.getVersion());</span>
+<span class="fc" id="L116">        } else {</span>
+<span class="fc" id="L117">            analysisResults = analyzeProject(project);</span>
         }
 
-<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if (analysisResults == null) {</span>
-<span class="nc" id="L131">            return;</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (analysisResults == null) {</span>
+<span class="nc" id="L121">            return;</span>
         }
 
-<span class="fc" id="L134">        ApiChangeLevel changeLevel = analysisResults.apiChangeLevel;</span>
+<span class="fc" id="L124">        ApiChangeLevel changeLevel = analysisResults.apiChangeLevel;</span>
 
-<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (singleVersionForAllModules) {</span>
-<span class="fc" id="L137">            File changesFile = getChangesFile();</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (singleVersionForAllModules) {</span>
+<span class="fc" id="L127">            File changesFile = getChangesFile();</span>
 
-<span class="pc" id="L139">            try (PrintWriter out = new PrintWriter(new FileOutputStream(changesFile, true))) {</span>
-<span class="fc" id="L140">                out.println(project.getArtifact().toString() + &quot;=&quot; + changeLevel + &quot;,&quot; + analysisResults.baseVersion);</span>
-<span class="pc bpc" id="L141" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
-<span class="nc" id="L142">                throw new MojoExecutionException(&quot;Failure while updating the changes tracking file.&quot;, e);</span>
-<span class="fc" id="L143">            }</span>
-<span class="fc" id="L144">        } else {</span>
-<span class="fc" id="L145">            Version v = nextVersion(analysisResults.baseVersion, changeLevel);</span>
-<span class="fc" id="L146">            updateProjectVersion(project, v);</span>
+<span class="pc" id="L129">            try (PrintWriter out = new PrintWriter(new FileOutputStream(changesFile, true))) {</span>
+<span class="fc" id="L130">                out.println(project.getArtifact().toString() + &quot;=&quot; + changeLevel + &quot;,&quot; + analysisResults.baseVersion);</span>
+<span class="pc bpc" id="L131" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L132">                throw new MojoExecutionException(&quot;Failure while updating the changes tracking file.&quot;, e);</span>
+<span class="fc" id="L133">            }</span>
+<span class="fc" id="L134">        } else {</span>
+<span class="fc" id="L135">            Version v = nextVersion(analysisResults.baseVersion, changeLevel);</span>
+<span class="fc" id="L136">            updateProjectVersion(project, v);</span>
         }
 
-<span class="fc bfc" id="L149" title="All 2 branches covered.">        if (singleVersionForAllModules</span>
-<span class="fc bfc" id="L150" title="All 2 branches covered.">                &amp;&amp; project.equals(mavenSession.getProjects().get(mavenSession.getProjects().size() - 1))) {</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (singleVersionForAllModules</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                &amp;&amp; project.equals(mavenSession.getProjects().get(mavenSession.getProjects().size() - 1))) {</span>
 
-<span class="pc" id="L152">            try (BufferedReader rdr = new BufferedReader(new FileReader(getChangesFile()))) {</span>
+<span class="pc" id="L142">            try (BufferedReader rdr = new BufferedReader(new FileReader(getChangesFile()))) {</span>
 
-<span class="fc" id="L154">                Map&lt;String, AnalysisResults&gt; projectChanges = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L144">                Map&lt;String, AnalysisResults&gt; projectChanges = new HashMap&lt;&gt;();</span>
 
                 String line;
-<span class="fc bfc" id="L157" title="All 2 branches covered.">                while ((line = rdr.readLine()) != null) {</span>
-<span class="fc" id="L158">                    int equalsIdx = line.indexOf('=');</span>
-<span class="fc" id="L159">                    String projectGav = line.substring(0, equalsIdx);</span>
-<span class="fc" id="L160">                    String changeAndBaseVersion = line.substring(equalsIdx + 1);</span>
-<span class="fc" id="L161">                    int commaIdx = changeAndBaseVersion.indexOf(',');</span>
-<span class="fc" id="L162">                    String change = changeAndBaseVersion.substring(0, commaIdx);</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">                while ((line = rdr.readLine()) != null) {</span>
+<span class="fc" id="L148">                    int equalsIdx = line.indexOf('=');</span>
+<span class="fc" id="L149">                    String projectGav = line.substring(0, equalsIdx);</span>
+<span class="fc" id="L150">                    String changeAndBaseVersion = line.substring(equalsIdx + 1);</span>
+<span class="fc" id="L151">                    int commaIdx = changeAndBaseVersion.indexOf(',');</span>
+<span class="fc" id="L152">                    String change = changeAndBaseVersion.substring(0, commaIdx);</span>
 
-<span class="fc" id="L164">                    String baseVersion = changeAndBaseVersion.substring(commaIdx + 1);</span>
-<span class="fc" id="L165">                    changeLevel = ApiChangeLevel.valueOf(change);</span>
+<span class="fc" id="L154">                    String baseVersion = changeAndBaseVersion.substring(commaIdx + 1);</span>
+<span class="fc" id="L155">                    changeLevel = ApiChangeLevel.valueOf(change);</span>
 
-<span class="fc" id="L167">                    projectChanges.put(projectGav, new AnalysisResults(changeLevel, baseVersion));</span>
-<span class="fc" id="L168">                }</span>
+<span class="fc" id="L157">                    projectChanges.put(projectGav, new AnalysisResults(changeLevel, baseVersion));</span>
+<span class="fc" id="L158">                }</span>
 
                 //establish the tree hierarchy of the projects
-<span class="fc" id="L171">                Set&lt;MavenProject&gt; roots = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L172">                Map&lt;MavenProject, Set&lt;MavenProject&gt;&gt; children = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L173">                Deque&lt;MavenProject&gt; unprocessed = new ArrayDeque&lt;&gt;(mavenSession.getProjects());</span>
+<span class="fc" id="L161">                Set&lt;MavenProject&gt; roots = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L162">                Map&lt;MavenProject, Set&lt;MavenProject&gt;&gt; children = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L163">                Deque&lt;MavenProject&gt; unprocessed = new ArrayDeque&lt;&gt;(mavenSession.getProjects());</span>
 
-<span class="fc bfc" id="L175" title="All 2 branches covered.">                while (!unprocessed.isEmpty()) {</span>
-<span class="fc" id="L176">                    MavenProject pr = unprocessed.pop();</span>
-<span class="pc bpc" id="L177" title="1 of 2 branches missed.">                    if (!projectChanges.containsKey(pr.getArtifact().toString())) {</span>
-<span class="nc" id="L178">                        continue;</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">                while (!unprocessed.isEmpty()) {</span>
+<span class="fc" id="L166">                    MavenProject pr = unprocessed.pop();</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">                    if (!projectChanges.containsKey(pr.getArtifact().toString())) {</span>
+<span class="nc" id="L168">                        continue;</span>
                     }
-<span class="fc" id="L180">                    MavenProject pa = pr.getParent();</span>
-<span class="fc bfc" id="L181" title="All 2 branches covered.">                    if (roots.contains(pa)) {</span>
-<span class="fc" id="L182">                        roots.remove(pr);</span>
-<span class="fc" id="L183">                        AnalysisResults paR = projectChanges.get(pa.getArtifact().toString());</span>
-<span class="fc" id="L184">                        AnalysisResults prR = projectChanges.get(pr.getArtifact().toString());</span>
-<span class="fc bfc" id="L185" title="All 2 branches covered.">                        if (prR.apiChangeLevel.ordinal() &gt; paR.apiChangeLevel.ordinal()) {</span>
-<span class="fc" id="L186">                            paR.apiChangeLevel = prR.apiChangeLevel;</span>
+<span class="fc" id="L170">                    MavenProject pa = pr.getParent();</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">                    if (roots.contains(pa)) {</span>
+<span class="fc" id="L172">                        roots.remove(pr);</span>
+<span class="fc" id="L173">                        AnalysisResults paR = projectChanges.get(pa.getArtifact().toString());</span>
+<span class="fc" id="L174">                        AnalysisResults prR = projectChanges.get(pr.getArtifact().toString());</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">                        if (prR.apiChangeLevel.ordinal() &gt; paR.apiChangeLevel.ordinal()) {</span>
+<span class="fc" id="L176">                            paR.apiChangeLevel = prR.apiChangeLevel;</span>
                         }
-<span class="fc" id="L188">                        children.get(pa).add(pr);</span>
-<span class="fc" id="L189">                    } else {</span>
-<span class="fc" id="L190">                        roots.add(pr);</span>
+<span class="fc" id="L178">                        children.get(pa).add(pr);</span>
+<span class="fc" id="L179">                    } else {</span>
+<span class="fc" id="L180">                        roots.add(pr);</span>
                     }
 
-<span class="fc" id="L193">                    children.put(pr, new HashSet&lt;MavenProject&gt;());</span>
-<span class="fc" id="L194">                }</span>
+<span class="fc" id="L183">                    children.put(pr, new HashSet&lt;MavenProject&gt;());</span>
+<span class="fc" id="L184">                }</span>
 
-<span class="fc" id="L196">                Iterator&lt;MavenProject&gt; it = roots.iterator();</span>
-<span class="fc bfc" id="L197" title="All 2 branches covered.">                while (it.hasNext()) {</span>
-<span class="fc" id="L198">                    Deque&lt;MavenProject&gt; tree = new ArrayDeque&lt;&gt;();</span>
-<span class="fc" id="L199">                    MavenProject p = it.next();</span>
-<span class="fc" id="L200">                    tree.add(p);</span>
-<span class="fc" id="L201">                    it.remove();</span>
+<span class="fc" id="L186">                Iterator&lt;MavenProject&gt; it = roots.iterator();</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">                while (it.hasNext()) {</span>
+<span class="fc" id="L188">                    Deque&lt;MavenProject&gt; tree = new ArrayDeque&lt;&gt;();</span>
+<span class="fc" id="L189">                    MavenProject p = it.next();</span>
+<span class="fc" id="L190">                    tree.add(p);</span>
+<span class="fc" id="L191">                    it.remove();</span>
 
-<span class="fc" id="L203">                    AnalysisResults results = projectChanges.get(p.getArtifact().toString());</span>
-<span class="fc" id="L204">                    Version v = nextVersion(results.baseVersion, results.apiChangeLevel);</span>
+<span class="fc" id="L193">                    AnalysisResults results = projectChanges.get(p.getArtifact().toString());</span>
+<span class="fc" id="L194">                    Version v = nextVersion(results.baseVersion, results.apiChangeLevel);</span>
 
-<span class="fc bfc" id="L206" title="All 2 branches covered.">                    while (!tree.isEmpty()) {</span>
-<span class="fc" id="L207">                        MavenProject current = tree.pop();</span>
-<span class="fc" id="L208">                        updateProjectVersion(current, v);</span>
-<span class="fc" id="L209">                        Set&lt;MavenProject&gt; c = children.get(current);</span>
-<span class="pc bpc" id="L210" title="1 of 2 branches missed.">                        if (c != null) {</span>
-<span class="fc bfc" id="L211" title="All 2 branches covered.">                            for (MavenProject cp : c) {</span>
-<span class="fc" id="L212">                                updateProjectParentVersion(cp, v);</span>
-<span class="fc" id="L213">                            }</span>
-<span class="fc" id="L214">                            tree.addAll(c);</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">                    while (!tree.isEmpty()) {</span>
+<span class="fc" id="L197">                        MavenProject current = tree.pop();</span>
+<span class="fc" id="L198">                        updateProjectVersion(current, v);</span>
+<span class="fc" id="L199">                        Set&lt;MavenProject&gt; c = children.get(current);</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">                        if (c != null) {</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">                            for (MavenProject cp : c) {</span>
+<span class="fc" id="L202">                                updateProjectParentVersion(cp, v);</span>
+<span class="fc" id="L203">                            }</span>
+<span class="fc" id="L204">                            tree.addAll(c);</span>
                         }
-<span class="fc" id="L216">                    }</span>
-<span class="fc" id="L217">                }</span>
-<span class="pc bpc" id="L218" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
-<span class="nc" id="L219">                throw new MojoExecutionException(&quot;Failure while reading the changes tracking file.&quot;, e);</span>
-<span class="fc" id="L220">            }</span>
+<span class="fc" id="L206">                    }</span>
+<span class="fc" id="L207">                }</span>
+<span class="pc bpc" id="L208" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L209">                throw new MojoExecutionException(&quot;Failure while reading the changes tracking file.&quot;, e);</span>
+<span class="fc" id="L210">            }</span>
         }
-<span class="fc" id="L222">    }</span>
+<span class="fc" id="L212">    }</span>
 
     private File getChangesFile() throws MojoExecutionException {
-<span class="fc" id="L225">        File targetDir = new File(mavenSession.getExecutionRootDirectory(), &quot;target&quot;);</span>
-<span class="pc bpc" id="L226" title="1 of 4 branches missed.">        if (!targetDir.exists() &amp;&amp; !targetDir.mkdirs()) {</span>
-<span class="nc" id="L227">            throw new MojoExecutionException(&quot;Failed to create the target directory: &quot; + targetDir);</span>
+<span class="fc" id="L215">        File targetDir = new File(mavenSession.getExecutionRootDirectory(), &quot;target&quot;);</span>
+<span class="pc bpc" id="L216" title="1 of 4 branches missed.">        if (!targetDir.exists() &amp;&amp; !targetDir.mkdirs()) {</span>
+<span class="nc" id="L217">            throw new MojoExecutionException(&quot;Failed to create the target directory: &quot; + targetDir);</span>
         }
 
-<span class="fc" id="L230">        File updateVersionsDir = new File(targetDir, &quot;revapi-update-versions&quot;);</span>
-<span class="pc bpc" id="L231" title="1 of 4 branches missed.">        if (!updateVersionsDir.exists() &amp;&amp; !updateVersionsDir.mkdirs()) {</span>
-<span class="nc" id="L232">            throw new MojoExecutionException(&quot;Failed to create the revapi-update-versions directory: &quot; + targetDir);</span>
+<span class="fc" id="L220">        File updateVersionsDir = new File(targetDir, &quot;revapi-update-versions&quot;);</span>
+<span class="pc bpc" id="L221" title="1 of 4 branches missed.">        if (!updateVersionsDir.exists() &amp;&amp; !updateVersionsDir.mkdirs()) {</span>
+<span class="nc" id="L222">            throw new MojoExecutionException(&quot;Failed to create the revapi-update-versions directory: &quot; + targetDir);</span>
         }
 
-<span class="fc" id="L235">        return new File(updateVersionsDir, &quot;per-project.changes&quot;);</span>
+<span class="fc" id="L225">        return new File(updateVersionsDir, &quot;per-project.changes&quot;);</span>
     }
 
     void updateProjectVersion(MavenProject project, Version version) throws MojoExecutionException {
         try {
-<span class="fc" id="L240">            VTDGen gen = new VTDGen();</span>
-<span class="fc" id="L241">            gen.enableIgnoredWhiteSpace(true);</span>
-<span class="fc" id="L242">            gen.parseFile(project.getFile().getAbsolutePath(), true);</span>
+<span class="fc" id="L230">            VTDGen gen = new VTDGen();</span>
+<span class="fc" id="L231">            gen.enableIgnoredWhiteSpace(true);</span>
+<span class="fc" id="L232">            gen.parseFile(project.getFile().getAbsolutePath(), true);</span>
 
-<span class="fc" id="L244">            VTDNav nav = gen.getNav();</span>
-<span class="fc" id="L245">            AutoPilot ap = new AutoPilot(nav);</span>
-<span class="fc" id="L246">            ap.selectXPath(&quot;namespace-uri(.)&quot;);</span>
-<span class="fc" id="L247">            String ns = ap.evalXPathToString();</span>
+<span class="fc" id="L234">            VTDNav nav = gen.getNav();</span>
+<span class="fc" id="L235">            AutoPilot ap = new AutoPilot(nav);</span>
+<span class="fc" id="L236">            ap.selectXPath(&quot;namespace-uri(.)&quot;);</span>
+<span class="fc" id="L237">            String ns = ap.evalXPathToString();</span>
 
-<span class="fc" id="L249">            nav.toElementNS(VTDNav.FIRST_CHILD, ns, &quot;version&quot;);</span>
-<span class="fc" id="L250">            int pos = nav.getText();</span>
+<span class="fc" id="L239">            nav.toElementNS(VTDNav.FIRST_CHILD, ns, &quot;version&quot;);</span>
+<span class="fc" id="L240">            int pos = nav.getText();</span>
 
-<span class="fc" id="L252">            XMLModifier mod = new XMLModifier(nav);</span>
-<span class="fc" id="L253">            mod.updateToken(pos, version.toString());</span>
+<span class="fc" id="L242">            XMLModifier mod = new XMLModifier(nav);</span>
+<span class="fc" id="L243">            mod.updateToken(pos, version.toString());</span>
 
-<span class="pc" id="L255">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
-<span class="fc" id="L256">                mod.output(out);</span>
-<span class="pc bpc" id="L257" title="6 of 8 branches missed.">            }</span>
-<span class="nc" id="L258">        } catch (IOException | ModifyException | NavException | XPathParseException | TranscodeException e) {</span>
-<span class="nc" id="L259">            throw new MojoExecutionException(&quot;Failed to update the version of project &quot; + project, e);</span>
-<span class="fc" id="L260">        }</span>
-<span class="fc" id="L261">    }</span>
+<span class="pc" id="L245">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
+<span class="fc" id="L246">                mod.output(out);</span>
+<span class="pc bpc" id="L247" title="6 of 8 branches missed.">            }</span>
+<span class="nc" id="L248">        } catch (IOException | ModifyException | NavException | XPathParseException | TranscodeException e) {</span>
+<span class="nc" id="L249">            throw new MojoExecutionException(&quot;Failed to update the version of project &quot; + project, e);</span>
+<span class="fc" id="L250">        }</span>
+<span class="fc" id="L251">    }</span>
 
     void updateProjectParentVersion(MavenProject project, Version version) throws MojoExecutionException {
         try {
-<span class="fc" id="L265">            VTDGen gen = new VTDGen();</span>
-<span class="fc" id="L266">            gen.enableIgnoredWhiteSpace(true);</span>
-<span class="fc" id="L267">            gen.parseFile(project.getFile().getAbsolutePath(), true);</span>
+<span class="fc" id="L255">            VTDGen gen = new VTDGen();</span>
+<span class="fc" id="L256">            gen.enableIgnoredWhiteSpace(true);</span>
+<span class="fc" id="L257">            gen.parseFile(project.getFile().getAbsolutePath(), true);</span>
 
-<span class="fc" id="L269">            VTDNav nav = gen.getNav();</span>
-<span class="fc" id="L270">            AutoPilot ap = new AutoPilot(nav);</span>
-<span class="fc" id="L271">            ap.selectXPath(&quot;namespace-uri(.)&quot;);</span>
-<span class="fc" id="L272">            String ns = ap.evalXPathToString();</span>
+<span class="fc" id="L259">            VTDNav nav = gen.getNav();</span>
+<span class="fc" id="L260">            AutoPilot ap = new AutoPilot(nav);</span>
+<span class="fc" id="L261">            ap.selectXPath(&quot;namespace-uri(.)&quot;);</span>
+<span class="fc" id="L262">            String ns = ap.evalXPathToString();</span>
 
-<span class="fc" id="L274">            nav.toElementNS(VTDNav.FIRST_CHILD, ns, &quot;parent&quot;);</span>
-<span class="fc" id="L275">            nav.toElementNS(VTDNav.FIRST_CHILD, ns, &quot;version&quot;);</span>
-<span class="fc" id="L276">            int pos = nav.getText();</span>
+<span class="fc" id="L264">            nav.toElementNS(VTDNav.FIRST_CHILD, ns, &quot;parent&quot;);</span>
+<span class="fc" id="L265">            nav.toElementNS(VTDNav.FIRST_CHILD, ns, &quot;version&quot;);</span>
+<span class="fc" id="L266">            int pos = nav.getText();</span>
 
-<span class="fc" id="L278">            XMLModifier mod = new XMLModifier(nav);</span>
-<span class="fc" id="L279">            mod.updateToken(pos, version.toString());</span>
+<span class="fc" id="L268">            XMLModifier mod = new XMLModifier(nav);</span>
+<span class="fc" id="L269">            mod.updateToken(pos, version.toString());</span>
 
-<span class="pc" id="L281">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
-<span class="fc" id="L282">                mod.output(out);</span>
-<span class="pc bpc" id="L283" title="6 of 8 branches missed.">            }</span>
-<span class="nc" id="L284">        } catch (IOException | ModifyException | NavException | XPathParseException | TranscodeException e) {</span>
-<span class="nc" id="L285">            throw new MojoExecutionException(&quot;Failed to update the parent version of project &quot; + project, e);</span>
-<span class="fc" id="L286">        }</span>
-<span class="fc" id="L287">    }</span>
+<span class="pc" id="L271">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
+<span class="fc" id="L272">                mod.output(out);</span>
+<span class="pc bpc" id="L273" title="6 of 8 branches missed.">            }</span>
+<span class="nc" id="L274">        } catch (IOException | ModifyException | NavException | XPathParseException | TranscodeException e) {</span>
+<span class="nc" id="L275">            throw new MojoExecutionException(&quot;Failed to update the parent version of project &quot; + project, e);</span>
+<span class="fc" id="L276">        }</span>
+<span class="fc" id="L277">    }</span>
 
     private Version nextVersion(String baseVersion, ApiChangeLevel changeLevel) {
-<span class="fc" id="L290">        Version v = Version.parse(project.getVersion());</span>
+<span class="fc" id="L280">        Version v = Version.parse(project.getVersion());</span>
 
-<span class="pc bpc" id="L292" title="1 of 2 branches missed.">        boolean isDev = v.getMajor() == 0;</span>
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">        boolean isDev = v.getMajor() == 0;</span>
 
-<span class="pc bpc" id="L294" title="2 of 4 branches missed.">        switch (changeLevel) {</span>
+<span class="pc bpc" id="L284" title="2 of 4 branches missed.">        switch (changeLevel) {</span>
             case NO_CHANGE:
-<span class="nc" id="L296">                break;</span>
+<span class="nc" id="L286">                break;</span>
             case NON_BREAKING_CHANGES:
-<span class="pc bpc" id="L298" title="1 of 2 branches missed.">                if (isDev) {</span>
-<span class="nc" id="L299">                    v.setPatch(v.getPatch() + 1);</span>
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">                if (isDev) {</span>
+<span class="nc" id="L289">                    v.setPatch(v.getPatch() + 1);</span>
                 } else {
-<span class="fc" id="L301">                    v.setMinor(v.getMinor() + 1);</span>
+<span class="fc" id="L291">                    v.setMinor(v.getMinor() + 1);</span>
+<span class="fc" id="L292">                    v.setPatch(0);</span>
+                }
+<span class="fc" id="L294">                break;</span>
+            case BREAKING_CHANGES:
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">                if (isDev) {</span>
+<span class="nc" id="L297">                    v.setMinor(v.getMinor() + 1);</span>
+<span class="nc" id="L298">                    v.setPatch(0);</span>
+                } else {
+<span class="fc" id="L300">                    v.setMajor(v.getMajor() + 1);</span>
+<span class="fc" id="L301">                    v.setMinor(0);</span>
 <span class="fc" id="L302">                    v.setPatch(0);</span>
                 }
 <span class="fc" id="L304">                break;</span>
-            case BREAKING_CHANGES:
-<span class="pc bpc" id="L306" title="1 of 2 branches missed.">                if (isDev) {</span>
-<span class="nc" id="L307">                    v.setMinor(v.getMinor() + 1);</span>
-<span class="nc" id="L308">                    v.setPatch(0);</span>
-                } else {
-<span class="fc" id="L310">                    v.setMajor(v.getMajor() + 1);</span>
-<span class="fc" id="L311">                    v.setMinor(0);</span>
-<span class="fc" id="L312">                    v.setPatch(0);</span>
-                }
-<span class="fc" id="L314">                break;</span>
             default:
-<span class="nc" id="L316">                throw new IllegalArgumentException(&quot;Unhandled API change level: &quot; + changeLevel);</span>
+<span class="nc" id="L306">                throw new IllegalArgumentException(&quot;Unhandled API change level: &quot; + changeLevel);</span>
         }
 
-<span class="pc bpc" id="L319" title="1 of 2 branches missed.">        if (replacementSuffix != null) {</span>
-<span class="nc" id="L320">            String sep = replacementSuffix.substring(0, 1);</span>
-<span class="nc" id="L321">            String suffix = replacementSuffix.substring(1);</span>
-<span class="nc" id="L322">            v.setSuffixSeparator(sep);</span>
-<span class="nc" id="L323">            v.setSuffix(suffix);</span>
-<span class="pc bpc" id="L324" title="1 of 2 branches missed.">        } else if (!preserveSuffix) {</span>
-<span class="nc" id="L325">            v.setSuffix(null);</span>
-<span class="nc" id="L326">            v.setSuffixSeparator(null);</span>
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">        if (replacementSuffix != null) {</span>
+<span class="nc" id="L310">            String sep = replacementSuffix.substring(0, 1);</span>
+<span class="nc" id="L311">            String suffix = replacementSuffix.substring(1);</span>
+<span class="nc" id="L312">            v.setSuffixSeparator(sep);</span>
+<span class="nc" id="L313">            v.setSuffix(suffix);</span>
+<span class="pc bpc" id="L314" title="1 of 2 branches missed.">        } else if (!preserveSuffix) {</span>
+<span class="nc" id="L315">            v.setSuffix(null);</span>
+<span class="nc" id="L316">            v.setSuffixSeparator(null);</span>
         }
 
-<span class="fc" id="L329">        return v;</span>
+<span class="fc" id="L319">        return v;</span>
     }
 
     private AnalysisResults analyzeProject(MavenProject project) throws MojoExecutionException {
-<span class="fc" id="L333">        final List&lt;String&gt; disallowedExtensions = Arrays.asList(this.disallowedExtensions.split(&quot;\\s*,\\s*&quot;));</span>
+<span class="fc" id="L323">        ApiBreakageHintingReporter reporter = new ApiBreakageHintingReporter();</span>
 
-<span class="fc" id="L335">        Supplier&lt;Revapi.Builder&gt; ctor = () -&gt; {</span>
-<span class="fc" id="L336">            Revapi.Builder bld = Revapi.builder();</span>
+<span class="pc" id="L325">        try (Analyzer analyzer = prepareAnalyzer(project, reporter)) {</span>
 
-<span class="fc" id="L338">            List&lt;ApiAnalyzer&gt; analyzers = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L339">            List&lt;ElementFilter&gt; filters = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L340">            List&lt;DifferenceTransform&lt;?&gt;&gt; transforms = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L327">            analyzer.resolveArtifacts();</span>
 
-<span class="fc" id="L342">            addAllAllowed(analyzers, ServiceLoader.load(ApiAnalyzer.class), disallowedExtensions);</span>
-<span class="fc" id="L343">            addAllAllowed(filters, ServiceLoader.load(ElementFilter.class), disallowedExtensions);</span>
-<span class="fc" id="L344">            addAllAllowed(transforms, ServiceLoader.load(DifferenceTransform.class), disallowedExtensions);</span>
-
-<span class="fc" id="L346">            bld.withAnalyzers(analyzers).withFilters(filters).withTransforms(transforms);</span>
-
-<span class="fc" id="L348">            return bld;</span>
-        };
-
-<span class="fc" id="L351">        ApiBreakageHintingReporter reporter = new ApiBreakageHintingReporter();</span>
-
-<span class="pc" id="L353">        try (Analyzer analyzer = new Analyzer(analysisConfiguration, analysisConfigurationFiles, oldArtifacts,</span>
-<span class="fc" id="L354">                newArtifacts, project, repositorySystem, repositorySystemSession, reporter, Locale.getDefault(),</span>
-<span class="fc" id="L355">                getLog(), failOnMissingConfigurationFiles, failOnUnresolvedArtifacts, failOnUnresolvedDependencies,</span>
-                alwaysCheckForReleaseVersion, checkDependencies, versionFormat, ctor)) {
-
-<span class="fc" id="L358">            analyzer.resolveArtifacts();</span>
-
-<span class="pc bpc" id="L360" title="1 of 2 branches missed.">            if (analyzer.getResolvedOldApi() == null) {</span>
-<span class="nc" id="L361">                return null;</span>
+<span class="pc bpc" id="L329" title="1 of 2 branches missed.">            if (analyzer.getResolvedOldApi() == null) {</span>
+<span class="nc" id="L330">                return null;</span>
             } else {
-<span class="fc" id="L363">                analyzer.analyze();</span>
+<span class="fc" id="L332">                analyzer.analyze();</span>
 
-<span class="fc" id="L365">                ApiChangeLevel level = reporter.getChangeLevel();</span>
-<span class="fc" id="L366">                String baseVersion = ((MavenArchive) analyzer.getResolvedOldApi().getArchives().iterator().next())</span>
-<span class="fc" id="L367">                        .getVersion();</span>
+<span class="fc" id="L334">                ApiChangeLevel level = reporter.getChangeLevel();</span>
+<span class="fc" id="L335">                String baseVersion = ((MavenArchive) analyzer.getResolvedOldApi().getArchives().iterator().next())</span>
+<span class="fc" id="L336">                        .getVersion();</span>
 
-<span class="fc" id="L369">                return new AnalysisResults(level, baseVersion);</span>
+<span class="fc" id="L338">                return new AnalysisResults(level, baseVersion);</span>
             }
-<span class="pc bpc" id="L371" title="10 of 12 branches missed.">        } catch (Exception e) {</span>
-<span class="nc" id="L372">            throw new MojoExecutionException(&quot;Analysis failure&quot;, e);</span>
+<span class="pc bpc" id="L340" title="10 of 12 branches missed.">        } catch (Exception e) {</span>
+<span class="nc" id="L341">            throw new MojoExecutionException(&quot;Analysis failure&quot;, e);</span>
         }
     }
-
-    @SuppressWarnings(&quot;unchecked&quot;)
-    private &lt;T&gt; void addAllAllowed(List&lt;T&gt; list, Iterable&lt;?&gt; candidates, List&lt;String&gt; disallowedClassNames) {
-<span class="fc bfc" id="L378" title="All 2 branches covered.">        for (Object o : candidates) {</span>
-<span class="pc bpc" id="L379" title="1 of 4 branches missed.">            if (o != null &amp;&amp; !disallowedClassNames.contains(o.getClass().getName())) {</span>
-<span class="fc" id="L380">                list.add((T) o);</span>
-            }
-<span class="fc" id="L382">        }</span>
-<span class="fc" id="L383">    }</span>
 
     private static final class AnalysisResults {
         ApiChangeLevel apiChangeLevel;
         final String baseVersion;
 
-<span class="fc" id="L389">        AnalysisResults(ApiChangeLevel apiChangeLevel, String baseVersion) {</span>
-<span class="fc" id="L390">            this.apiChangeLevel = apiChangeLevel;</span>
-<span class="fc" id="L391">            this.baseVersion = baseVersion;</span>
-<span class="fc" id="L392">        }</span>
+<span class="fc" id="L349">        AnalysisResults(ApiChangeLevel apiChangeLevel, String baseVersion) {</span>
+<span class="fc" id="L350">            this.apiChangeLevel = apiChangeLevel;</span>
+<span class="fc" id="L351">            this.baseVersion = baseVersion;</span>
+<span class="fc" id="L352">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

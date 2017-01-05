@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalyzerBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">AnalyzerBuilder.java</span></div><h1>AnalyzerBuilder.java</h1><pre class="source lang-java linenums">package org.revapi.maven;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.ServiceLoader;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.util.artifact.ArtifactIdUtils;
+import org.revapi.ApiAnalyzer;
+import org.revapi.DifferenceTransform;
+import org.revapi.ElementFilter;
+import org.revapi.Reporter;
+import org.revapi.Revapi;
+
+/**
+ * Common {@link Analyzer} instantiation logic for mojos.
+ *
+ * @author Lukas Krejci
+ * @since 0.8.0
+ */
+class AnalyzerBuilder {
+
+    private Log log;
+    private Locale locale;
+    private MavenProject project;
+    private boolean skip;
+    private String[] oldGavs;
+    private String[] newGavs;
+    private final Artifact[] oldArtifacts;
+    private final Artifact[] newArtifacts;
+    private String oldVersion;
+    private String newVersion;
+    private String disallowedExtensions;
+    private Reporter reporter;
+    private String analysisConfiguration;
+    private Object[] analysisConfigurationFiles;
+    private RepositorySystem repositorySystem;
+    private RepositorySystemSession repositorySystemSession;
+    private boolean failOnMissingConfigurationFiles;
+    private boolean failOnUnresolvedArtifacts;
+    private boolean failOnUnresolvedDependencies;
+    private boolean alwaysCheckForReleaseVersion;
+    private boolean checkDependencies;
+    private String versionFormat;
+    private Revapi revapi;
+
+    static AnalyzerBuilder forGavs(String[] oldGavs, String[] newGavs) {
+<span class="fc" id="L57">        return new AnalyzerBuilder(oldGavs, newGavs, null, null);</span>
+    }
+
+    static AnalyzerBuilder forArtifacts(Artifact[] oldArtifacts, Artifact[] newArtifacts) {
+<span class="fc" id="L61">        return new AnalyzerBuilder(null, null, oldArtifacts, newArtifacts);</span>
+    }
+
+<span class="fc" id="L64">    private AnalyzerBuilder(String[] oldGavs, String[] newGavs, Artifact[] oldArtifacts, Artifact[] newArtifacts) {</span>
+<span class="fc" id="L65">        this.oldGavs = oldGavs;</span>
+<span class="fc" id="L66">        this.newGavs = newGavs;</span>
+<span class="fc" id="L67">        this.oldArtifacts = oldArtifacts;</span>
+<span class="fc" id="L68">        this.newArtifacts = newArtifacts;</span>
+<span class="fc" id="L69">    }</span>
+
+    AnalyzerBuilder withProject(MavenProject project) {
+<span class="fc" id="L72">        this.project = project;</span>
+<span class="fc" id="L73">        return this;</span>
+    }
+
+    AnalyzerBuilder withSkip(boolean skip) {
+<span class="fc" id="L77">        this.skip = skip;</span>
+<span class="fc" id="L78">        return this;</span>
+    }
+
+    AnalyzerBuilder withOldVersion(String oldVersion) {
+<span class="fc" id="L82">        this.oldVersion = oldVersion;</span>
+<span class="fc" id="L83">        return this;</span>
+    }
+
+    AnalyzerBuilder withNewVersion(String newVersion) {
+<span class="fc" id="L87">        this.newVersion = newVersion;</span>
+<span class="fc" id="L88">        return this;</span>
+    }
+
+    AnalyzerBuilder withDisallowedExtensions(String disallowedExtensions) {
+<span class="fc" id="L92">        this.disallowedExtensions = disallowedExtensions;</span>
+<span class="fc" id="L93">        return this;</span>
+    }
+
+    AnalyzerBuilder withReporter(Reporter reporter) {
+<span class="fc" id="L97">        this.reporter = reporter;</span>
+<span class="fc" id="L98">        return this;</span>
+    }
+
+    AnalyzerBuilder withLocale(Locale locale) {
+<span class="fc" id="L102">        this.locale = locale;</span>
+<span class="fc" id="L103">        return this;</span>
+    }
+
+    AnalyzerBuilder withAnalysisConfiguration(String analysisConfiguration) {
+<span class="fc" id="L107">        this.analysisConfiguration = analysisConfiguration;</span>
+<span class="fc" id="L108">        return this;</span>
+    }
+
+    AnalyzerBuilder withAnalysisConfigurationFiles(Object[] analysisConfigurationFiles) {
+<span class="fc" id="L112">        this.analysisConfigurationFiles = analysisConfigurationFiles;</span>
+<span class="fc" id="L113">        return this;</span>
+    }
+
+    AnalyzerBuilder withRepositorySystem(RepositorySystem repositorySystem) {
+<span class="fc" id="L117">        this.repositorySystem = repositorySystem;</span>
+<span class="fc" id="L118">        return this;</span>
+    }
+
+    AnalyzerBuilder withRepositorySystemSession(RepositorySystemSession repositorySystemSession) {
+<span class="fc" id="L122">        this.repositorySystemSession = repositorySystemSession;</span>
+<span class="fc" id="L123">        return this;</span>
+    }
+
+    AnalyzerBuilder withFailOnMissingConfigurationFiles(boolean failOnMissingConfigurationFiles) {
+<span class="fc" id="L127">        this.failOnMissingConfigurationFiles = failOnMissingConfigurationFiles;</span>
+<span class="fc" id="L128">        return this;</span>
+    }
+
+    AnalyzerBuilder withFailOnUnresolvedDependencies(boolean failOnUnresolvedDependencies) {
+<span class="fc" id="L132">        this.failOnUnresolvedDependencies = failOnUnresolvedDependencies;</span>
+<span class="fc" id="L133">        return this;</span>
+    }
+
+    AnalyzerBuilder withFailOnUnresolvedArtifacts(boolean failOnUnresolvedArtifacts) {
+<span class="fc" id="L137">        this.failOnUnresolvedArtifacts = failOnUnresolvedArtifacts;</span>
+<span class="fc" id="L138">        return this;</span>
+    }
+
+    AnalyzerBuilder withAlwaysCheckForReleasedVersion(boolean alwaysCheckForReleaseVersion) {
+<span class="fc" id="L142">        this.alwaysCheckForReleaseVersion = alwaysCheckForReleaseVersion;</span>
+<span class="fc" id="L143">        return this;</span>
+    }
+
+    AnalyzerBuilder withCheckDependencies(boolean checkDependencies) {
+<span class="fc" id="L147">        this.checkDependencies = checkDependencies;</span>
+<span class="fc" id="L148">        return this;</span>
+    }
+
+    AnalyzerBuilder withVersionFormat(String versionFormat) {
+<span class="fc" id="L152">        this.versionFormat = versionFormat;</span>
+<span class="fc" id="L153">        return this;</span>
+    }
+
+    AnalyzerBuilder withLog(Log log) {
+<span class="fc" id="L157">        this.log = log;</span>
+<span class="fc" id="L158">        return this;</span>
+    }
+
+    AnalyzerBuilder withRevapiInstance(Revapi revapi) {
+<span class="nc" id="L162">        this.revapi = revapi;</span>
+<span class="nc" id="L163">        return this;</span>
+    }
+
+    public Result build() {
+<span class="fc" id="L167">        Result res = new Result();</span>
+
+<span class="fc" id="L169">        res.isOnClasspath = initializeComparisonArtifacts();</span>
+
+<span class="fc" id="L171">        res.newArtifacts = newGavs;</span>
+<span class="fc" id="L172">        res.oldArtifacts = oldGavs;</span>
+
+<span class="fc" id="L174">        res.skip = skip;</span>
+
+<span class="fc" id="L176">        res.analyzer = prepareAnalyzer();</span>
+
+<span class="fc" id="L178">        return res;</span>
+    }
+
+    private Analyzer prepareAnalyzer() {
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L183">            return null;</span>
+        }
+
+
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        final List&lt;String&gt; disallowedExtensions = this.disallowedExtensions == null</span>
+<span class="pc" id="L188">                ? Collections.emptyList()</span>
+<span class="pc" id="L189">                : Arrays.asList(this.disallowedExtensions.split(&quot;\\s*,\\s*&quot;));</span>
+
+<span class="fc" id="L191">        Supplier&lt;Revapi.Builder&gt; ctor = getDisallowedExtensionsAwareRevapiConstructor(disallowedExtensions);</span>
+
+<span class="fc" id="L193">        return new Analyzer(analysisConfiguration, analysisConfigurationFiles, oldArtifacts, newArtifacts, oldGavs,</span>
+                newGavs, project, repositorySystem, repositorySystemSession, reporter, locale, log,
+                failOnMissingConfigurationFiles, failOnUnresolvedArtifacts, failOnUnresolvedDependencies,
+                alwaysCheckForReleaseVersion, checkDependencies, versionFormat, ctor, revapi);
+    }
+
+    /**
+     * @return true if artifacts are initialized, false if not and the analysis should not proceed
+     */
+    private boolean initializeComparisonArtifacts() {
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        if (oldArtifacts == null) {</span>
+<span class="fc" id="L204">            return initializeComparisonGavs();</span>
+        } else {
+<span class="fc" id="L206">            String coords = Analyzer.getProjectArtifactCoordinates(project, null);</span>
+
+<span class="fc" id="L208">            boolean projectInOlds = Stream.of(oldArtifacts).anyMatch(a -&gt; ArtifactIdUtils.toId(a).equals(coords));</span>
+<span class="fc" id="L209">            boolean projectInNews = Stream.of(newArtifacts).anyMatch(a -&gt; ArtifactIdUtils.toId(a).equals(coords));</span>
+
+<span class="pc bpc" id="L211" title="3 of 6 branches missed.">            if ((projectInOlds || projectInNews) &amp;&amp; !project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="nc" id="L212">                return false;</span>
+            }
+
+<span class="fc" id="L215">            return true;</span>
+        }
+    }
+
+    private boolean initializeComparisonGavs() {
+<span class="pc bpc" id="L220" title="2 of 6 branches missed.">        if (newGavs != null &amp;&amp; newGavs.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newGavs[0])) {</span>
+<span class="nc" id="L221">            log.warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
+                    &quot; \&quot;${project.version}\&quot; as the value for \&quot;newVersion\&quot; (which is the default, so you don't&quot; +
+                    &quot; actually have to do that either).&quot;);
+<span class="nc" id="L224">            oldGavs = null;</span>
+        }
+
+<span class="pc bpc" id="L227" title="1 of 4 branches missed.">        if (oldGavs == null || oldGavs.length == 0) {</span>
+            //non-intuitively, we need to initialize the artifacts even if we will not proceed with the analysis itself
+            //that's because we need know the versions when figuring out the version modifications -
+            //see AbstractVersionModifyingMojo
+<span class="fc" id="L231">            oldGavs = new String[]{</span>
+<span class="fc" id="L232">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
+
+            //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
+            //analyze there
+            //only do it here, because oldArtifacts might point to another artifact.
+            //if we end up here in this branch, we know we'll be comparing the current artifact with something.
+<span class="fc bfc" id="L238" title="All 2 branches covered.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="fc" id="L239">                return false;</span>
+            }
+        }
+
+<span class="pc bpc" id="L243" title="1 of 4 branches missed.">        if (newGavs == null || newGavs.length == 0) {</span>
+<span class="fc" id="L244">            newGavs = new String[]{</span>
+<span class="fc" id="L245">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
+
+            //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
+            //analyze there
+            //again, do this check only here, because oldArtifact might point elsewhere. But if we end up here, it
+            //means that oldArtifacts would be compared against the current artifact (in some version). Comparing
+            //against a POM artifact is always no-op.
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="nc" id="L253">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L257">        return true;</span>
+    }
+
+    private static Supplier&lt;Revapi.Builder&gt;
+    getDisallowedExtensionsAwareRevapiConstructor(List&lt;String&gt; disallowedExtensions) {
+<span class="fc" id="L262">        return () -&gt; {</span>
+<span class="fc" id="L263">            Revapi.Builder bld = Revapi.builder();</span>
+
+<span class="fc" id="L265">            List&lt;ApiAnalyzer&gt; analyzers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L266">            List&lt;ElementFilter&gt; filters = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L267">            List&lt;DifferenceTransform&lt;?&gt;&gt; transforms = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L268">            List&lt;Reporter&gt; reporters = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L270">            addAllAllowed(analyzers, ServiceLoader.load(ApiAnalyzer.class), disallowedExtensions);</span>
+<span class="fc" id="L271">            addAllAllowed(filters, ServiceLoader.load(ElementFilter.class), disallowedExtensions);</span>
+<span class="fc" id="L272">            addAllAllowed(transforms, ServiceLoader.load(DifferenceTransform.class), disallowedExtensions);</span>
+<span class="fc" id="L273">            addAllAllowed(reporters, ServiceLoader.load(Reporter.class), disallowedExtensions);</span>
+
+<span class="fc" id="L275">            bld.withAnalyzers(analyzers).withFilters(filters).withTransforms(transforms).withReporters(reporters);</span>
+
+<span class="fc" id="L277">            return bld;</span>
+        };
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T&gt; void addAllAllowed(List&lt;T&gt; list, Iterable&lt;?&gt; candidates, List&lt;String&gt; disallowedClassNames) {
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        for (Object o : candidates) {</span>
+<span class="pc bpc" id="L284" title="2 of 4 branches missed.">            if (o != null &amp;&amp; !disallowedClassNames.contains(o.getClass().getName())) {</span>
+<span class="fc" id="L285">                list.add((T) o);</span>
+            }
+<span class="fc" id="L287">        }</span>
+<span class="fc" id="L288">    }</span>
+
+    static class Result {
+        boolean skip;
+        boolean isOnClasspath;
+        String[] oldArtifacts;
+        String[] newArtifacts;
+        Analyzer analyzer;
+
+<span class="fc" id="L297">        private Result() {}</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

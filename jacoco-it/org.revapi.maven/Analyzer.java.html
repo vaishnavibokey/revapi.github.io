@@ -62,8 +62,9 @@ import org.revapi.maven.utils.ScopeDependencyTraverser;
  * @author Lukas Krejci
  * @since 0.1
  */
-final class Analyzer implements AutoCloseable {
+public final class Analyzer implements AutoCloseable {
 <span class="fc" id="L66">    private static final Pattern ANY_NON_SNAPSHOT = Pattern.compile(&quot;^.*(?&lt;!-SNAPSHOT)$&quot;);</span>
+<span class="fc" id="L67">    private static final Pattern ANY = Pattern.compile(&quot;.*&quot;);</span>
 
     private final String analysisConfiguration;
 
@@ -105,123 +106,73 @@ final class Analyzer implements AutoCloseable {
 
     private Revapi revapi;
 
-    Analyzer(String analysisConfiguration, Object[] analysisConfigurationFiles, String[] oldGavs,
-             String[] newGavs, MavenProject project, RepositorySystem repositorySystem,
-             RepositorySystemSession repositorySystemSession, Reporter reporter, Locale locale, Log log,
-             boolean failOnMissingConfigurationFiles, boolean failOnMissingArchives,
-             boolean failOnMissingSupportArchives, boolean alwaysUpdate, boolean resolveDependencies,
-             String versionRegex) {
-
-<span class="fc" id="L115">        this(analysisConfiguration, analysisConfigurationFiles, oldGavs, newGavs, project, repositorySystem,</span>
-                repositorySystemSession, reporter, locale, log, failOnMissingConfigurationFiles, failOnMissingArchives,
-                failOnMissingSupportArchives, alwaysUpdate, resolveDependencies, versionRegex,
-<span class="fc" id="L118">                () -&gt; Revapi.builder().withAllExtensionsFromThreadContextClassLoader());</span>
-<span class="fc" id="L119">    }</span>
-
-    Analyzer(String analysisConfiguration, Object[] analysisConfigurationFiles, Artifact[] oldArtifacts,
-             Artifact[] newArtifacts, MavenProject project, RepositorySystem repositorySystem,
-             RepositorySystemSession repositorySystemSession, Reporter reporter, Locale locale, Log log,
-             boolean failOnMissingConfigurationFiles, boolean failOnMissingArchives,
-             boolean failOnMissingSupportArchives, boolean alwaysUpdate, boolean resolveDependencies,
-             String versionRegex) {
-
-<span class="fc" id="L128">        this(analysisConfiguration, analysisConfigurationFiles, oldArtifacts, newArtifacts, null, null, project,</span>
-                repositorySystem, repositorySystemSession, reporter, locale, log, failOnMissingConfigurationFiles,
-                failOnMissingArchives, failOnMissingSupportArchives, alwaysUpdate, resolveDependencies, versionRegex,
-<span class="fc" id="L131">                () -&gt; Revapi.builder().withAllExtensionsFromThreadContextClassLoader(), null);</span>
-<span class="fc" id="L132">    }</span>
-
-    Analyzer(String analysisConfiguration, Object[] analysisConfigurationFiles, String[] oldGavs,
-             String[] newGavs, MavenProject project, RepositorySystem repositorySystem,
-             RepositorySystemSession repositorySystemSession, Reporter reporter, Locale locale, Log log,
-             boolean failOnMissingConfigurationFiles, boolean failOnMissingArchives,
-             boolean failOnMissingSupportArchives, boolean alwaysUpdate, boolean resolveDependencies,
-             String versionRegex, Supplier&lt;Revapi.Builder&gt; revapiConstructor) {
-<span class="fc" id="L140">        this(analysisConfiguration, analysisConfigurationFiles, null, null, oldGavs, newGavs, project,</span>
-                repositorySystem, repositorySystemSession, reporter, locale, log, failOnMissingConfigurationFiles,
-                failOnMissingArchives, failOnMissingSupportArchives, alwaysUpdate, resolveDependencies, versionRegex,
-                revapiConstructor, null);
-<span class="fc" id="L144">    }</span>
-
-    Analyzer(String analysisConfiguration, Object[] analysisConfigurationFiles, Artifact[] oldArtifacts,
-             Artifact[] newArtifacts, MavenProject project, RepositorySystem repositorySystem,
-             RepositorySystemSession repositorySystemSession, Reporter reporter, Locale locale, Log log,
-             boolean failOnMissingConfigurationFiles, boolean failOnMissingArchives,
-             boolean failOnMissingSupportArchives, boolean alwaysUpdate, boolean resolveDependencies,
-             String versionRegex, Revapi sharedRevapi) {
-<span class="nc" id="L152">        this(analysisConfiguration, analysisConfigurationFiles, oldArtifacts, newArtifacts, null, null, project,</span>
-                repositorySystem, repositorySystemSession, reporter, locale, log, failOnMissingConfigurationFiles,
-                failOnMissingArchives, failOnMissingSupportArchives, alwaysUpdate, resolveDependencies, versionRegex,
-                null, sharedRevapi);
-<span class="nc" id="L156">    }</span>
-
     Analyzer(String analysisConfiguration, Object[] analysisConfigurationFiles, Artifact[] oldArtifacts,
              Artifact[] newArtifacts, String[] oldGavs, String[] newGavs, MavenProject project,
              RepositorySystem repositorySystem, RepositorySystemSession repositorySystemSession, Reporter reporter,
              Locale locale, Log log, boolean failOnMissingConfigurationFiles, boolean failOnMissingArchives,
              boolean failOnMissingSupportArchives, boolean alwaysUpdate, boolean resolveDependencies,
-<span class="fc" id="L163">             String versionRegex, Supplier&lt;Revapi.Builder&gt; revapiConstructor, Revapi sharedRevapi) {</span>
+<span class="fc" id="L114">             String versionRegex, Supplier&lt;Revapi.Builder&gt; revapiConstructor, Revapi sharedRevapi) {</span>
 
-<span class="fc" id="L165">        this.analysisConfiguration = analysisConfiguration;</span>
-<span class="fc" id="L166">        this.analysisConfigurationFiles = analysisConfigurationFiles;</span>
-<span class="fc" id="L167">        this.oldGavs = oldGavs;</span>
-<span class="fc" id="L168">        this.newGavs = newGavs;</span>
-<span class="fc" id="L169">        this.oldArtifacts = oldArtifacts;</span>
-<span class="fc" id="L170">        this.newArtifacts = newArtifacts;</span>
-<span class="fc" id="L171">        this.project = project;</span>
-<span class="fc" id="L172">        this.repositorySystem = repositorySystem;</span>
+<span class="fc" id="L116">        this.analysisConfiguration = analysisConfiguration;</span>
+<span class="fc" id="L117">        this.analysisConfigurationFiles = analysisConfigurationFiles;</span>
+<span class="fc" id="L118">        this.oldGavs = oldGavs;</span>
+<span class="fc" id="L119">        this.newGavs = newGavs;</span>
+<span class="fc" id="L120">        this.oldArtifacts = oldArtifacts;</span>
+<span class="fc" id="L121">        this.newArtifacts = newArtifacts;</span>
+<span class="fc" id="L122">        this.project = project;</span>
+<span class="fc" id="L123">        this.repositorySystem = repositorySystem;</span>
 
-<span class="fc" id="L174">        this.resolveDependencies = resolveDependencies;</span>
+<span class="fc" id="L125">        this.resolveDependencies = resolveDependencies;</span>
 
-<span class="fc bfc" id="L176" title="All 2 branches covered.">        this.versionRegex = versionRegex == null ? null : Pattern.compile(versionRegex);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        this.versionRegex = versionRegex == null ? null : Pattern.compile(versionRegex);</span>
 
-<span class="fc" id="L178">        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repositorySystemSession);</span>
-<span class="fc" id="L179">        session.setDependencySelector(new ScopeDependencySelector(&quot;compile&quot;, &quot;provided&quot;));</span>
-<span class="fc" id="L180">        session.setDependencyTraverser(new ScopeDependencyTraverser(&quot;compile&quot;, &quot;provided&quot;));</span>
+<span class="fc" id="L129">        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repositorySystemSession);</span>
+<span class="fc" id="L130">        session.setDependencySelector(new ScopeDependencySelector(&quot;compile&quot;, &quot;provided&quot;));</span>
+<span class="fc" id="L131">        session.setDependencyTraverser(new ScopeDependencyTraverser(&quot;compile&quot;, &quot;provided&quot;));</span>
 
-<span class="pc bpc" id="L182" title="1 of 2 branches missed.">        if (alwaysUpdate) {</span>
-<span class="fc" id="L183">            session.setUpdatePolicy(RepositoryPolicy.UPDATE_POLICY_ALWAYS);</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (alwaysUpdate) {</span>
+<span class="fc" id="L134">            session.setUpdatePolicy(RepositoryPolicy.UPDATE_POLICY_ALWAYS);</span>
         }
 
-<span class="fc" id="L186">        this.repositorySystemSession = session;</span>
+<span class="fc" id="L137">        this.repositorySystemSession = session;</span>
 
-<span class="fc" id="L188">        this.reporter = reporter;</span>
-<span class="fc" id="L189">        this.locale = locale;</span>
-<span class="fc" id="L190">        this.log = log;</span>
-<span class="fc" id="L191">        this.failOnMissingConfigurationFiles = failOnMissingConfigurationFiles;</span>
-<span class="fc" id="L192">        this.failOnMissingArchives = failOnMissingArchives;</span>
-<span class="fc" id="L193">        this.failOnMissingSupportArchives = failOnMissingSupportArchives;</span>
-<span class="fc" id="L194">        this.revapi = sharedRevapi;</span>
-<span class="fc" id="L195">        this.revapiConstructor = revapiConstructor;</span>
-<span class="fc" id="L196">    }</span>
+<span class="fc" id="L139">        this.reporter = reporter;</span>
+<span class="fc" id="L140">        this.locale = locale;</span>
+<span class="fc" id="L141">        this.log = log;</span>
+<span class="fc" id="L142">        this.failOnMissingConfigurationFiles = failOnMissingConfigurationFiles;</span>
+<span class="fc" id="L143">        this.failOnMissingArchives = failOnMissingArchives;</span>
+<span class="fc" id="L144">        this.failOnMissingSupportArchives = failOnMissingSupportArchives;</span>
+<span class="fc" id="L145">        this.revapi = sharedRevapi;</span>
+<span class="fc" id="L146">        this.revapiConstructor = revapiConstructor;</span>
+<span class="fc" id="L147">    }</span>
 
     public static String getProjectArtifactCoordinates(MavenProject project, String versionOverride) {
 
-<span class="fc" id="L200">        org.apache.maven.artifact.Artifact artifact = project.getArtifact();</span>
+<span class="fc" id="L151">        org.apache.maven.artifact.Artifact artifact = project.getArtifact();</span>
 
-<span class="fc" id="L202">        String extension = artifact.getArtifactHandler().getExtension();</span>
+<span class="fc" id="L153">        String extension = artifact.getArtifactHandler().getExtension();</span>
 
-<span class="fc bfc" id="L204" title="All 2 branches covered.">        String version = versionOverride == null ? project.getVersion() : versionOverride;</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        String version = versionOverride == null ? project.getVersion() : versionOverride;</span>
 
-<span class="pc bpc" id="L206" title="1 of 2 branches missed.">        if (artifact.hasClassifier()) {</span>
-<span class="nc" id="L207">            return project.getGroupId() + &quot;:&quot; + project.getArtifactId() + &quot;:&quot; + extension + &quot;:&quot; +</span>
-<span class="nc" id="L208">                    artifact.getClassifier() + &quot;:&quot; + version;</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (artifact.hasClassifier()) {</span>
+<span class="nc" id="L158">            return project.getGroupId() + &quot;:&quot; + project.getArtifactId() + &quot;:&quot; + extension + &quot;:&quot; +</span>
+<span class="nc" id="L159">                    artifact.getClassifier() + &quot;:&quot; + version;</span>
         } else {
-<span class="fc" id="L210">            return project.getGroupId() + &quot;:&quot; + project.getArtifactId() + &quot;:&quot; + extension + &quot;:&quot; +</span>
+<span class="fc" id="L161">            return project.getGroupId() + &quot;:&quot; + project.getArtifactId() + &quot;:&quot; + extension + &quot;:&quot; +</span>
                     version;
         }
     }
 
     void validateConfiguration() throws MojoExecutionException {
-<span class="nc" id="L216">        try (Revapi revapi = Revapi.builder().withAllExtensionsFromThreadContextClassLoader().build()) {</span>
-<span class="nc" id="L217">            AnalysisContext.Builder ctxBuilder = AnalysisContext.builder().withLocale(locale);</span>
-<span class="nc" id="L218">            gatherConfig(ctxBuilder);</span>
+<span class="nc" id="L167">        try (Revapi revapi = Revapi.builder().withAllExtensionsFromThreadContextClassLoader().build()) {</span>
+<span class="nc" id="L168">            AnalysisContext.Builder ctxBuilder = AnalysisContext.builder().withLocale(locale);</span>
+<span class="nc" id="L169">            gatherConfig(ctxBuilder);</span>
 
-<span class="nc" id="L220">            revapi.validateConfiguration(ctxBuilder.build());</span>
-<span class="nc bnc" id="L221" title="All 8 branches missed.">        } catch (Exception e) {</span>
-<span class="nc" id="L222">            throw new MojoExecutionException(&quot;Failed to validate analysis configuration.&quot;, e);</span>
-<span class="nc" id="L223">        }</span>
-<span class="nc" id="L224">    }</span>
+<span class="nc" id="L171">            revapi.validateConfiguration(ctxBuilder.build());</span>
+<span class="nc bnc" id="L172" title="All 8 branches missed.">        } catch (Exception e) {</span>
+<span class="nc" id="L173">            throw new MojoExecutionException(&quot;Failed to validate analysis configuration.&quot;, e);</span>
+<span class="nc" id="L174">        }</span>
+<span class="nc" id="L175">    }</span>
 
     /**
      * Resolves the gav using the resolver. If the gav corresponds to the project artifact and is an unresolved version
@@ -242,94 +193,98 @@ final class Analyzer implements AutoCloseable {
      */
     static Artifact resolveConstrained(MavenProject project, String gav, Pattern versionRegex, ArtifactResolver resolver)
             throws VersionRangeResolutionException, ArtifactResolutionException {
-<span class="pc bpc" id="L245" title="1 of 4 branches missed.">        if (gav.endsWith(&quot;:RELEASE&quot;) || gav.endsWith(&quot;:LATEST&quot;)) {</span>
+<span class="fc" id="L196">        boolean latest = gav.endsWith(&quot;:LATEST&quot;);</span>
+<span class="pc bpc" id="L197" title="1 of 4 branches missed.">        if (latest || gav.endsWith(&quot;:RELEASE&quot;)) {</span>
+<span class="fc" id="L198">            Artifact a = new DefaultArtifact(gav);</span>
 
-<span class="fc bfc" id="L247" title="All 2 branches covered.">            versionRegex = versionRegex == null ? ANY_NON_SNAPSHOT : versionRegex;</span>
-
-<span class="fc" id="L249">            Artifact a = new DefaultArtifact(gav);</span>
-
-<span class="pc bpc" id="L251" title="2 of 4 branches missed.">            String upTo = project.getGroupId().equals(a.getGroupId()) &amp;&amp; project.getArtifactId().equals(a.getArtifactId())</span>
-<span class="pc" id="L252">                    ? project.getVersion()</span>
-                    : null;
-
-<span class="fc" id="L255">            return resolver.resolveNewestMatching(gav, upTo, versionRegex);</span>
-        } else {
-<span class="fc" id="L257">            String projectGav = getProjectArtifactCoordinates(project, null);</span>
-<span class="fc" id="L258">            Artifact ret = null;</span>
-
-<span class="pc bpc" id="L260" title="1 of 2 branches missed.">            if (projectGav.equals(gav)) {</span>
-<span class="fc" id="L261">                ret = findProjectArtifact(project);</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            if (latest) {</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                versionRegex = versionRegex == null ? ANY : versionRegex;</span>
+            } else {
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                versionRegex = versionRegex == null ? ANY_NON_SNAPSHOT : versionRegex;</span>
             }
 
-<span class="pc bpc" id="L264" title="1 of 2 branches missed.">            return ret == null ? resolver.resolveArtifact(gav) : ret;</span>
+<span class="pc bpc" id="L206" title="2 of 4 branches missed.">            String upTo = project.getGroupId().equals(a.getGroupId()) &amp;&amp; project.getArtifactId().equals(a.getArtifactId())</span>
+<span class="pc" id="L207">                    ? project.getVersion()</span>
+                    : null;
+
+<span class="fc" id="L210">            return resolver.resolveNewestMatching(gav, upTo, versionRegex, latest, latest);</span>
+        } else {
+<span class="fc" id="L212">            String projectGav = getProjectArtifactCoordinates(project, null);</span>
+<span class="fc" id="L213">            Artifact ret = null;</span>
+
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">            if (projectGav.equals(gav)) {</span>
+<span class="fc" id="L216">                ret = findProjectArtifact(project);</span>
+            }
+
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">            return ret == null ? resolver.resolveArtifact(gav) : ret;</span>
         }
     }
 
     private static Artifact findProjectArtifact(MavenProject project) {
-<span class="fc" id="L269">        String extension = project.getArtifact().getArtifactHandler().getExtension();</span>
+<span class="fc" id="L224">        String extension = project.getArtifact().getArtifactHandler().getExtension();</span>
 
-<span class="fc" id="L271">        String fileName = project.getModel().getBuild().getFinalName() + &quot;.&quot; + extension;</span>
-<span class="fc" id="L272">        File f = new File(new File(project.getBasedir(), &quot;target&quot;), fileName);</span>
-<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        if (f.exists()) {</span>
-<span class="fc" id="L274">            Artifact ret = RepositoryUtils.toArtifact(project.getArtifact());</span>
-<span class="fc" id="L275">            return ret.setFile(f);</span>
+<span class="fc" id="L226">        String fileName = project.getModel().getBuild().getFinalName() + &quot;.&quot; + extension;</span>
+<span class="fc" id="L227">        File f = new File(new File(project.getBasedir(), &quot;target&quot;), fileName);</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        if (f.exists()) {</span>
+<span class="fc" id="L229">            Artifact ret = RepositoryUtils.toArtifact(project.getArtifact());</span>
+<span class="fc" id="L230">            return ret.setFile(f);</span>
         } else {
-<span class="nc" id="L277">            return null;</span>
+<span class="nc" id="L232">            return null;</span>
         }
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     void resolveArtifacts() {
-<span class="fc bfc" id="L283" title="All 2 branches covered.">        if (resolvedOldApi == null) {</span>
-<span class="fc" id="L284">            final ArtifactResolver resolver = new ArtifactResolver(repositorySystem, repositorySystemSession,</span>
-<span class="fc" id="L285">                    project.getRemoteProjectRepositories());</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        if (resolvedOldApi == null) {</span>
+<span class="fc" id="L239">            final ArtifactResolver resolver = new ArtifactResolver(repositorySystem, repositorySystemSession,</span>
+<span class="fc" id="L240">                    project.getRemoteProjectRepositories());</span>
 
-<span class="fc" id="L287">            Function&lt;String, MavenArchive&gt; toFileArchive = gav -&gt; {</span>
+<span class="fc" id="L242">            Function&lt;String, MavenArchive&gt; toFileArchive = gav -&gt; {</span>
                 try {
-<span class="fc" id="L289">                    Artifact a = resolveConstrained(project, gav, versionRegex, resolver);</span>
-<span class="fc" id="L290">                    return MavenArchive.of(a);</span>
-<span class="nc" id="L291">                } catch (ArtifactResolutionException | VersionRangeResolutionException | IllegalArgumentException e) {</span>
-<span class="nc" id="L292">                    throw new MarkerException(e.getMessage(), e);</span>
+<span class="fc" id="L244">                    Artifact a = resolveConstrained(project, gav, versionRegex, resolver);</span>
+<span class="fc" id="L245">                    return MavenArchive.of(a);</span>
+<span class="nc" id="L246">                } catch (ArtifactResolutionException | VersionRangeResolutionException | IllegalArgumentException e) {</span>
+<span class="nc" id="L247">                    throw new MarkerException(e.getMessage(), e);</span>
                 }
             };
 
-<span class="fc" id="L296">            List&lt;MavenArchive&gt; oldArchives = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L251">            List&lt;MavenArchive&gt; oldArchives = new ArrayList&lt;&gt;(1);</span>
             try {
-<span class="fc bfc" id="L298" title="All 2 branches covered.">                if (oldGavs != null) {</span>
-<span class="fc" id="L299">                    oldArchives = Stream.of(oldGavs).map(toFileArchive).collect(toList());</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">                if (oldGavs != null) {</span>
+<span class="fc" id="L254">                    oldArchives = Stream.of(oldGavs).map(toFileArchive).collect(toList());</span>
                 }
-<span class="fc bfc" id="L301" title="All 2 branches covered.">                if (oldArtifacts != null) {</span>
-<span class="fc" id="L302">                    oldArchives.addAll(Stream.of(oldArtifacts).map(MavenArchive::of).collect(toList()));</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">                if (oldArtifacts != null) {</span>
+<span class="fc" id="L257">                    oldArchives.addAll(Stream.of(oldArtifacts).map(MavenArchive::of).collect(toList()));</span>
                 }
-<span class="nc" id="L304">            } catch (MarkerException | IllegalArgumentException e) {</span>
-<span class="nc" id="L305">                String message = &quot;Failed to resolve old artifacts: &quot; + e.getMessage() + &quot;.&quot;;</span>
+<span class="nc" id="L259">            } catch (MarkerException | IllegalArgumentException e) {</span>
+<span class="nc" id="L260">                String message = &quot;Failed to resolve old artifacts: &quot; + e.getMessage() + &quot;.&quot;;</span>
 
-<span class="nc bnc" id="L307" title="All 2 branches missed.">                if (failOnMissingArchives) {</span>
-<span class="nc" id="L308">                    throw new IllegalStateException(message, e);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                if (failOnMissingArchives) {</span>
+<span class="nc" id="L263">                    throw new IllegalStateException(message, e);</span>
                 } else {
-<span class="nc" id="L310">                    log.warn(message + &quot; The API analysis will not proceed.&quot;);</span>
-<span class="nc" id="L311">                    return;</span>
+<span class="nc" id="L265">                    log.warn(message + &quot; The API analysis will not proceed.&quot;);</span>
+<span class="nc" id="L266">                    return;</span>
                 }
-<span class="fc" id="L313">            }</span>
+<span class="fc" id="L268">            }</span>
 
-<span class="fc" id="L315">            List&lt;MavenArchive&gt; newArchives = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L270">            List&lt;MavenArchive&gt; newArchives = new ArrayList&lt;&gt;(1);</span>
             try {
-<span class="fc bfc" id="L317" title="All 2 branches covered.">                if (newGavs != null) {</span>
-<span class="fc" id="L318">                    newArchives = Stream.of(newGavs).map(toFileArchive).collect(toList());</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">                if (newGavs != null) {</span>
+<span class="fc" id="L273">                    newArchives = Stream.of(newGavs).map(toFileArchive).collect(toList());</span>
                 }
-<span class="fc bfc" id="L320" title="All 2 branches covered.">                if (newArtifacts != null) {</span>
-<span class="fc" id="L321">                    newArchives.addAll(Stream.of(newArtifacts).map(MavenArchive::of).collect(toList()));</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">                if (newArtifacts != null) {</span>
+<span class="fc" id="L276">                    newArchives.addAll(Stream.of(newArtifacts).map(MavenArchive::of).collect(toList()));</span>
                 }
-<span class="nc" id="L323">            } catch (MarkerException | IllegalArgumentException e) {</span>
-<span class="nc" id="L324">                String message = &quot;Failed to resolve new artifacts: &quot; + e.getMessage() + &quot;.&quot;;</span>
+<span class="nc" id="L278">            } catch (MarkerException | IllegalArgumentException e) {</span>
+<span class="nc" id="L279">                String message = &quot;Failed to resolve new artifacts: &quot; + e.getMessage() + &quot;.&quot;;</span>
 
-<span class="nc bnc" id="L326" title="All 2 branches missed.">                if (failOnMissingArchives) {</span>
-<span class="nc" id="L327">                    throw new IllegalStateException(message, e);</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">                if (failOnMissingArchives) {</span>
+<span class="nc" id="L282">                    throw new IllegalStateException(message, e);</span>
                 } else {
-<span class="nc" id="L329">                    log.warn(message + &quot; The API analysis will not proceed.&quot;);</span>
-<span class="nc" id="L330">                    return;</span>
+<span class="nc" id="L284">                    log.warn(message + &quot; The API analysis will not proceed.&quot;);</span>
+<span class="nc" id="L285">                    return;</span>
                 }
-<span class="fc" id="L332">            }</span>
+<span class="fc" id="L287">            }</span>
 
             //now we need to be a little bit clever. When using RELEASE or LATEST as the version of the old artifact
             //it might happen that it gets resolved to the same version as the new artifacts - this notoriously happens
@@ -338,139 +293,139 @@ final class Analyzer implements AutoCloseable {
             //version in the repo and resolve RELEASE to it. You compare it against what you just built, i.e. the same
             //code, et voila, the site report doesn't ever contain any found differences...
 
-<span class="fc" id="L341">            Set&lt;MavenArchive&gt; oldTransitiveDeps = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L342">            Set&lt;MavenArchive&gt; newTransitiveDeps = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L296">            Set&lt;MavenArchive&gt; oldTransitiveDeps = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L297">            Set&lt;MavenArchive&gt; newTransitiveDeps = new HashSet&lt;&gt;();</span>
 
-<span class="fc bfc" id="L344" title="All 2 branches covered.">            if (resolveDependencies) {</span>
-<span class="fc" id="L345">                oldTransitiveDeps.addAll(collectDeps(&quot;old&quot;, resolver, oldGavs));</span>
-<span class="fc" id="L346">                oldTransitiveDeps.addAll(collectDeps(&quot;old&quot;, resolver, oldArtifacts));</span>
-<span class="fc" id="L347">                newTransitiveDeps.addAll(collectDeps(&quot;new&quot;, resolver, newGavs));</span>
-<span class="fc" id="L348">                newTransitiveDeps.addAll(collectDeps(&quot;new&quot;, resolver, newArtifacts));</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">            if (resolveDependencies) {</span>
+<span class="fc" id="L300">                oldTransitiveDeps.addAll(collectDeps(&quot;old&quot;, resolver, oldGavs));</span>
+<span class="fc" id="L301">                oldTransitiveDeps.addAll(collectDeps(&quot;old&quot;, resolver, oldArtifacts));</span>
+<span class="fc" id="L302">                newTransitiveDeps.addAll(collectDeps(&quot;new&quot;, resolver, newGavs));</span>
+<span class="fc" id="L303">                newTransitiveDeps.addAll(collectDeps(&quot;new&quot;, resolver, newArtifacts));</span>
             }
 
-<span class="fc" id="L351">            resolvedOldApi = API.of(oldArchives).supportedBy(oldTransitiveDeps).build();</span>
-<span class="fc" id="L352">            resolvedNewApi = API.of(newArchives).supportedBy(newTransitiveDeps).build();</span>
+<span class="fc" id="L306">            resolvedOldApi = API.of(oldArchives).supportedBy(oldTransitiveDeps).build();</span>
+<span class="fc" id="L307">            resolvedNewApi = API.of(newArchives).supportedBy(newTransitiveDeps).build();</span>
         }
-<span class="fc" id="L354">    }</span>
+<span class="fc" id="L309">    }</span>
 
     private Set&lt;MavenArchive&gt; collectDeps(String depDescription, ArtifactResolver resolver, String... gavs) {
         try {
-<span class="fc bfc" id="L358" title="All 2 branches covered.">            if (gavs == null) {</span>
-<span class="fc" id="L359">                return Collections.emptySet();</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">            if (gavs == null) {</span>
+<span class="fc" id="L314">                return Collections.emptySet();</span>
             }
-<span class="fc" id="L361">            ArtifactResolver.CollectionResult res = resolver.collectTransitiveDeps(gavs);</span>
-<span class="fc" id="L362">            return collectDeps(depDescription, res);</span>
-<span class="nc" id="L363">        } catch (RepositoryException e) {</span>
-<span class="nc" id="L364">            return handleResolutionError(e, depDescription, null);</span>
+<span class="fc" id="L316">            ArtifactResolver.CollectionResult res = resolver.collectTransitiveDeps(gavs);</span>
+<span class="fc" id="L317">            return collectDeps(depDescription, res);</span>
+<span class="nc" id="L318">        } catch (RepositoryException e) {</span>
+<span class="nc" id="L319">            return handleResolutionError(e, depDescription, null);</span>
         }
     }
 
     private Set&lt;MavenArchive&gt; collectDeps(String depDescription, ArtifactResolver resolver, Artifact... gavs) {
         try {
-<span class="fc bfc" id="L370" title="All 2 branches covered.">            if (gavs == null) {</span>
-<span class="fc" id="L371">                return Collections.emptySet();</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">            if (gavs == null) {</span>
+<span class="fc" id="L326">                return Collections.emptySet();</span>
             }
-<span class="fc" id="L373">            ArtifactResolver.CollectionResult res = resolver.collectTransitiveDeps(Stream.of(gavs).map(Object::toString)</span>
-<span class="fc" id="L374">                    .toArray(String[]::new));</span>
-<span class="fc" id="L375">            return collectDeps(depDescription, res);</span>
-<span class="nc" id="L376">        } catch (RepositoryException e) {</span>
-<span class="nc" id="L377">            return handleResolutionError(e, depDescription, null);</span>
+<span class="fc" id="L328">            ArtifactResolver.CollectionResult res = resolver.collectTransitiveDeps(Stream.of(gavs).map(Object::toString)</span>
+<span class="fc" id="L329">                    .toArray(String[]::new));</span>
+<span class="fc" id="L330">            return collectDeps(depDescription, res);</span>
+<span class="nc" id="L331">        } catch (RepositoryException e) {</span>
+<span class="nc" id="L332">            return handleResolutionError(e, depDescription, null);</span>
         }
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     private Set&lt;MavenArchive&gt; collectDeps(String depDescription, ArtifactResolver.CollectionResult res) {
-<span class="fc" id="L383">        Set&lt;MavenArchive&gt; ret = null;</span>
+<span class="fc" id="L338">        Set&lt;MavenArchive&gt; ret = null;</span>
         try {
-<span class="fc" id="L385">            ret = new HashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L386" title="All 2 branches covered.">            for (Artifact a : res.getResolvedArtifacts()) {</span>
+<span class="fc" id="L340">            ret = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">            for (Artifact a : res.getResolvedArtifacts()) {</span>
                 try {
-<span class="fc" id="L388">                    ret.add(MavenArchive.of(a));</span>
-<span class="nc" id="L389">                } catch (IllegalArgumentException e) {</span>
-<span class="nc" id="L390">                    res.getFailures().add(e);</span>
-<span class="fc" id="L391">                }</span>
-<span class="fc" id="L392">            }</span>
+<span class="fc" id="L343">                    ret.add(MavenArchive.of(a));</span>
+<span class="nc" id="L344">                } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L345">                    res.getFailures().add(e);</span>
+<span class="fc" id="L346">                }</span>
+<span class="fc" id="L347">            }</span>
 
-<span class="pc bpc" id="L394" title="1 of 2 branches missed.">            if (!res.getFailures().isEmpty()) {</span>
-<span class="nc" id="L395">                StringBuilder bld = new StringBuilder();</span>
-<span class="nc bnc" id="L396" title="All 2 branches missed.">                for (Exception e : res.getFailures()) {</span>
-<span class="nc" id="L397">                    bld.append(e.getMessage()).append(&quot;, &quot;);</span>
-<span class="nc" id="L398">                }</span>
-<span class="nc" id="L399">                bld.replace(bld.length() - 2, bld.length(), &quot;&quot;);</span>
-<span class="nc" id="L400">                throw new MarkerException(&quot;Resolution of some artifacts failed: &quot; + bld.toString());</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">            if (!res.getFailures().isEmpty()) {</span>
+<span class="nc" id="L350">                StringBuilder bld = new StringBuilder();</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">                for (Exception e : res.getFailures()) {</span>
+<span class="nc" id="L352">                    bld.append(e.getMessage()).append(&quot;, &quot;);</span>
+<span class="nc" id="L353">                }</span>
+<span class="nc" id="L354">                bld.replace(bld.length() - 2, bld.length(), &quot;&quot;);</span>
+<span class="nc" id="L355">                throw new MarkerException(&quot;Resolution of some artifacts failed: &quot; + bld.toString());</span>
             } else {
-<span class="fc" id="L402">                return ret;</span>
+<span class="fc" id="L357">                return ret;</span>
             }
-<span class="nc" id="L404">        } catch (MarkerException e) {</span>
-<span class="nc" id="L405">            return handleResolutionError(e, depDescription, ret);</span>
+<span class="nc" id="L359">        } catch (MarkerException e) {</span>
+<span class="nc" id="L360">            return handleResolutionError(e, depDescription, ret);</span>
         }
     }
 
     private Set&lt;MavenArchive&gt; handleResolutionError(Exception e, String depDescription, Set&lt;MavenArchive&gt; toReturn) {
-<span class="nc" id="L410">        String message = &quot;Failed to resolve dependencies of &quot; + depDescription + &quot; artifacts: &quot; + e.getMessage() +</span>
+<span class="nc" id="L365">        String message = &quot;Failed to resolve dependencies of &quot; + depDescription + &quot; artifacts: &quot; + e.getMessage() +</span>
                 &quot;.&quot;;
-<span class="nc bnc" id="L412" title="All 2 branches missed.">        if (failOnMissingSupportArchives) {</span>
-<span class="nc" id="L413">            throw new IllegalArgumentException(message, e);</span>
+<span class="nc bnc" id="L367" title="All 2 branches missed.">        if (failOnMissingSupportArchives) {</span>
+<span class="nc" id="L368">            throw new IllegalArgumentException(message, e);</span>
         } else {
-<span class="nc bnc" id="L415" title="All 2 branches missed.">            if (log.isDebugEnabled()) {</span>
-<span class="nc" id="L416">                log.warn(message + &quot;. The API analysis might produce unexpected results.&quot;, e);</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">            if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L371">                log.warn(message + &quot;. The API analysis might produce unexpected results.&quot;, e);</span>
             } else {
-<span class="nc" id="L418">                log.warn(message + &quot;. The API analysis might produce unexpected results.&quot;);</span>
+<span class="nc" id="L373">                log.warn(message + &quot;. The API analysis might produce unexpected results.&quot;);</span>
             }
-<span class="nc bnc" id="L420" title="All 2 branches missed.">            return toReturn == null ? Collections.&lt;MavenArchive&gt;emptySet() : toReturn;</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            return toReturn == null ? Collections.&lt;MavenArchive&gt;emptySet() : toReturn;</span>
         }
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     void analyze() throws MojoExecutionException {
         //This is useful so that users know what RELEASE actually resolved to.
-<span class="fc" id="L427">        Function&lt;MavenArchive, String&gt; extractName = new Function&lt;MavenArchive, String&gt;() {</span>
+<span class="fc" id="L382">        Function&lt;MavenArchive, String&gt; extractName = new Function&lt;MavenArchive, String&gt;() {</span>
             @Override public String apply(MavenArchive mavenArchive) {
-<span class="fc" id="L429">                return mavenArchive.getName();</span>
+<span class="fc" id="L384">                return mavenArchive.getName();</span>
             }
         };
 
-<span class="fc" id="L433">        resolveArtifacts();</span>
+<span class="fc" id="L388">        resolveArtifacts();</span>
 
-<span class="pc bpc" id="L435" title="2 of 4 branches missed.">        if (resolvedOldApi == null || resolvedNewApi == null) {</span>
-<span class="nc" id="L436">            return;</span>
+<span class="pc bpc" id="L390" title="2 of 4 branches missed.">        if (resolvedOldApi == null || resolvedNewApi == null) {</span>
+<span class="nc" id="L391">            return;</span>
         }
 
-<span class="fc" id="L439">        List&lt;?&gt; oldArchives = StreamSupport.stream(</span>
-<span class="fc" id="L440">                (Spliterator&lt;MavenArchive&gt;) resolvedOldApi.getArchives().spliterator(), false)</span>
-<span class="fc" id="L441">                .map(extractName).collect(toList());</span>
+<span class="fc" id="L394">        List&lt;?&gt; oldArchives = StreamSupport.stream(</span>
+<span class="fc" id="L395">                (Spliterator&lt;MavenArchive&gt;) resolvedOldApi.getArchives().spliterator(), false)</span>
+<span class="fc" id="L396">                .map(extractName).collect(toList());</span>
 
-<span class="fc" id="L443">        List&lt;?&gt; newArchives =  StreamSupport.stream(</span>
-<span class="fc" id="L444">                (Spliterator&lt;MavenArchive&gt;) resolvedNewApi.getArchives().spliterator(), false)</span>
-<span class="fc" id="L445">                .map(extractName).collect(toList());</span>
+<span class="fc" id="L398">        List&lt;?&gt; newArchives =  StreamSupport.stream(</span>
+<span class="fc" id="L399">                (Spliterator&lt;MavenArchive&gt;) resolvedNewApi.getArchives().spliterator(), false)</span>
+<span class="fc" id="L400">                .map(extractName).collect(toList());</span>
 
-<span class="fc bfc" id="L447" title="All 2 branches covered.">        log.info(&quot;Comparing &quot; + oldArchives + &quot; against &quot; + newArchives +</span>
+<span class="fc bfc" id="L402" title="All 2 branches covered.">        log.info(&quot;Comparing &quot; + oldArchives + &quot; against &quot; + newArchives +</span>
                 (resolveDependencies ? &quot; (including their transitive dependencies).&quot; : &quot;.&quot;));
 
         try {
-<span class="fc" id="L451">            buildRevapi();</span>
+<span class="fc" id="L406">            buildRevapi();</span>
 
-<span class="fc" id="L453">            AnalysisContext.Builder ctxBuilder = AnalysisContext.builder().withOldAPI(resolvedOldApi)</span>
-<span class="fc" id="L454">                    .withNewAPI(resolvedNewApi).withLocale(locale);</span>
-<span class="fc" id="L455">            gatherConfig(ctxBuilder);</span>
+<span class="fc" id="L408">            AnalysisContext.Builder ctxBuilder = AnalysisContext.builder().withOldAPI(resolvedOldApi)</span>
+<span class="fc" id="L409">                    .withNewAPI(resolvedNewApi).withLocale(locale);</span>
+<span class="fc" id="L410">            gatherConfig(ctxBuilder);</span>
 
-<span class="fc" id="L457">            revapi.analyze(ctxBuilder.build());</span>
-<span class="nc" id="L458">        } catch (Exception e) {</span>
-<span class="nc" id="L459">            throw new MojoExecutionException(&quot;Failed to analyze archives&quot;, e);</span>
-<span class="fc" id="L460">        }</span>
-<span class="fc" id="L461">    }</span>
+<span class="fc" id="L412">            revapi.analyze(ctxBuilder.build());</span>
+<span class="nc" id="L413">        } catch (Exception e) {</span>
+<span class="nc" id="L414">            throw new MojoExecutionException(&quot;Failed to analyze archives&quot;, e);</span>
+<span class="fc" id="L415">        }</span>
+<span class="fc" id="L416">    }</span>
 
     public API getResolvedNewApi() {
-<span class="fc" id="L464">        return resolvedNewApi;</span>
+<span class="fc" id="L419">        return resolvedNewApi;</span>
     }
 
     public API getResolvedOldApi() {
-<span class="fc" id="L468">        return resolvedOldApi;</span>
+<span class="fc" id="L423">        return resolvedOldApi;</span>
     }
 
     public Revapi getRevapi() {
-<span class="nc" id="L472">        buildRevapi();</span>
-<span class="nc" id="L473">        return revapi;</span>
+<span class="nc" id="L427">        buildRevapi();</span>
+<span class="nc" id="L428">        return revapi;</span>
     }
 
     /**
@@ -485,88 +440,88 @@ final class Analyzer implements AutoCloseable {
     public void close() throws Exception {
         //if revapiConstructor == null, we obtained the revapi instance from outside... The caller is therefore
         //responsible for closing it.
-<span class="pc bpc" id="L488" title="2 of 4 branches missed.">        if (revapi != null &amp;&amp; revapiConstructor != null) {</span>
-<span class="fc" id="L489">            revapi.close();</span>
+<span class="pc bpc" id="L443" title="2 of 4 branches missed.">        if (revapi != null &amp;&amp; revapiConstructor != null) {</span>
+<span class="fc" id="L444">            revapi.close();</span>
         }
-<span class="fc" id="L491">    }</span>
+<span class="fc" id="L446">    }</span>
 
     @SuppressWarnings(&quot;unchecked&quot;)
     private void gatherConfig(AnalysisContext.Builder ctxBld) throws MojoExecutionException {
-<span class="pc bpc" id="L495" title="1 of 4 branches missed.">        if (analysisConfigurationFiles != null &amp;&amp; analysisConfigurationFiles.length &gt; 0) {</span>
-<span class="fc bfc" id="L496" title="All 2 branches covered.">            for (Object pathOrConfigFile : analysisConfigurationFiles) {</span>
+<span class="pc bpc" id="L450" title="1 of 4 branches missed.">        if (analysisConfigurationFiles != null &amp;&amp; analysisConfigurationFiles.length &gt; 0) {</span>
+<span class="fc bfc" id="L451" title="All 2 branches covered.">            for (Object pathOrConfigFile : analysisConfigurationFiles) {</span>
                 ConfigurationFile configFile;
-<span class="fc bfc" id="L498" title="All 2 branches covered.">                if (pathOrConfigFile instanceof String) {</span>
-<span class="fc" id="L499">                    configFile = new ConfigurationFile();</span>
-<span class="fc" id="L500">                    configFile.setPath((String) pathOrConfigFile);</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">                if (pathOrConfigFile instanceof String) {</span>
+<span class="fc" id="L454">                    configFile = new ConfigurationFile();</span>
+<span class="fc" id="L455">                    configFile.setPath((String) pathOrConfigFile);</span>
                 } else {
-<span class="fc" id="L502">                    configFile = (ConfigurationFile) pathOrConfigFile;</span>
+<span class="fc" id="L457">                    configFile = (ConfigurationFile) pathOrConfigFile;</span>
                 }
 
-<span class="fc" id="L505">                String path = configFile.getPath();</span>
+<span class="fc" id="L460">                String path = configFile.getPath();</span>
 
-<span class="fc" id="L507">                File f = new File(path);</span>
-<span class="pc bpc" id="L508" title="1 of 2 branches missed.">                if (!f.isAbsolute()) {</span>
-<span class="fc" id="L509">                    f = new File(project.getBasedir(), path);</span>
+<span class="fc" id="L462">                File f = new File(path);</span>
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">                if (!f.isAbsolute()) {</span>
+<span class="fc" id="L464">                    f = new File(project.getBasedir(), path);</span>
                 }
 
-<span class="pc bpc" id="L512" title="2 of 4 branches missed.">                if (!f.isFile() || !f.canRead()) {</span>
-<span class="nc" id="L513">                    String message = &quot;Could not locate analysis configuration file '&quot; + f.getAbsolutePath() + &quot;'.&quot;;</span>
-<span class="nc bnc" id="L514" title="All 2 branches missed.">                    if (failOnMissingConfigurationFiles) {</span>
-<span class="nc" id="L515">                        throw new MojoExecutionException(message);</span>
+<span class="pc bpc" id="L467" title="2 of 4 branches missed.">                if (!f.isFile() || !f.canRead()) {</span>
+<span class="nc" id="L468">                    String message = &quot;Could not locate analysis configuration file '&quot; + f.getAbsolutePath() + &quot;'.&quot;;</span>
+<span class="nc bnc" id="L469" title="All 2 branches missed.">                    if (failOnMissingConfigurationFiles) {</span>
+<span class="nc" id="L470">                        throw new MojoExecutionException(message);</span>
                     } else {
-<span class="nc" id="L517">                        log.debug(message);</span>
-<span class="nc" id="L518">                        continue;</span>
+<span class="nc" id="L472">                        log.debug(message);</span>
+<span class="nc" id="L473">                        continue;</span>
                     }
                 }
 
-<span class="pc" id="L522">                try (FileInputStream in = new FileInputStream(f)) {</span>
-<span class="fc" id="L523">                    ModelNode config = ModelNode.fromJSONStream(JSONUtil.stripComments(in, Charset.forName(&quot;UTF-8&quot;)));</span>
+<span class="pc" id="L477">                try (FileInputStream in = new FileInputStream(f)) {</span>
+<span class="fc" id="L478">                    ModelNode config = ModelNode.fromJSONStream(JSONUtil.stripComments(in, Charset.forName(&quot;UTF-8&quot;)));</span>
 
-<span class="fc" id="L525">                    String[] roots = configFile.getRoots();</span>
+<span class="fc" id="L480">                    String[] roots = configFile.getRoots();</span>
 
-<span class="fc bfc" id="L527" title="All 2 branches covered.">                    if (roots == null) {</span>
-<span class="fc" id="L528">                        ctxBld.mergeConfiguration(config);</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">                    if (roots == null) {</span>
+<span class="fc" id="L483">                        ctxBld.mergeConfiguration(config);</span>
                     } else {
-<span class="fc bfc" id="L530" title="All 2 branches covered.">                        for (String r : roots) {</span>
-<span class="fc" id="L531">                            String[] rootPath = r.split(&quot;/&quot;);</span>
-<span class="fc" id="L532">                            ModelNode root = config.get(rootPath);</span>
+<span class="fc bfc" id="L485" title="All 2 branches covered.">                        for (String r : roots) {</span>
+<span class="fc" id="L486">                            String[] rootPath = r.split(&quot;/&quot;);</span>
+<span class="fc" id="L487">                            ModelNode root = config.get(rootPath);</span>
 
-<span class="pc bpc" id="L534" title="1 of 2 branches missed.">                            if (!root.isDefined()) {</span>
-<span class="nc" id="L535">                                continue;</span>
+<span class="pc bpc" id="L489" title="1 of 2 branches missed.">                            if (!root.isDefined()) {</span>
+<span class="nc" id="L490">                                continue;</span>
                             }
 
-<span class="fc" id="L538">                            ctxBld.mergeConfiguration(root);</span>
+<span class="fc" id="L493">                            ctxBld.mergeConfiguration(root);</span>
                         }
                     }
-<span class="pc bpc" id="L541" title="6 of 8 branches missed.">                } catch (IOException e) {</span>
-<span class="nc" id="L542">                    throw new MojoExecutionException(&quot;Could not load configuration from '&quot; + f.getAbsolutePath() + &quot;': &quot; + e.getMessage());</span>
-<span class="fc" id="L543">                }</span>
+<span class="pc bpc" id="L496" title="6 of 8 branches missed.">                } catch (IOException e) {</span>
+<span class="nc" id="L497">                    throw new MojoExecutionException(&quot;Could not load configuration from '&quot; + f.getAbsolutePath() + &quot;': &quot; + e.getMessage());</span>
+<span class="fc" id="L498">                }</span>
             }
         }
 
-<span class="fc bfc" id="L547" title="All 2 branches covered.">        if (analysisConfiguration != null) {</span>
-<span class="fc" id="L548">            ctxBld.mergeConfigurationFromJSON(analysisConfiguration);</span>
+<span class="fc bfc" id="L502" title="All 2 branches covered.">        if (analysisConfiguration != null) {</span>
+<span class="fc" id="L503">            ctxBld.mergeConfigurationFromJSON(analysisConfiguration);</span>
         }
-<span class="fc" id="L550">    }</span>
+<span class="fc" id="L505">    }</span>
 
     private void buildRevapi() {
-<span class="pc bpc" id="L553" title="1 of 2 branches missed.">        if (revapi == null) {</span>
-<span class="fc" id="L554">            Revapi.Builder builder = revapiConstructor.get();</span>
-<span class="pc bpc" id="L555" title="1 of 2 branches missed.">            if (reporter != null) {</span>
-<span class="fc" id="L556">                builder.withReporters(reporter);</span>
+<span class="pc bpc" id="L508" title="1 of 2 branches missed.">        if (revapi == null) {</span>
+<span class="fc" id="L509">            Revapi.Builder builder = revapiConstructor.get();</span>
+<span class="pc bpc" id="L510" title="1 of 2 branches missed.">            if (reporter != null) {</span>
+<span class="fc" id="L511">                builder.withReporters(reporter);</span>
             }
 
-<span class="fc" id="L559">            revapi = builder.build();</span>
+<span class="fc" id="L514">            revapi = builder.build();</span>
         }
-<span class="fc" id="L561">    }</span>
+<span class="fc" id="L516">    }</span>
     private static class MarkerException extends RuntimeException {
         public MarkerException(String message) {
-<span class="nc" id="L564">            super(message);</span>
-<span class="nc" id="L565">        }</span>
+<span class="nc" id="L519">            super(message);</span>
+<span class="nc" id="L520">        }</span>
 
         public MarkerException(String message, Throwable cause) {
-<span class="nc" id="L568">            super(message, cause);</span>
-<span class="nc" id="L569">        }</span>
+<span class="nc" id="L523">            super(message, cause);</span>
+<span class="nc" id="L524">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
