@@ -34,7 +34,7 @@ import org.revapi.java.spi.JavaAnnotationElement;
     protected List&lt;Difference&gt; doVisitAnnotation(JavaAnnotationElement oldAnnotation,
         JavaAnnotationElement newAnnotation) {
 
-<span class="pc bpc" id="L37" title="1 of 4 branches missed.">        if (oldAnnotation == null &amp;&amp; newAnnotation != null) {</span>
+<span class="pc bpc" id="L37" title="2 of 6 branches missed.">        if (oldAnnotation == null &amp;&amp; newAnnotation != null &amp;&amp; isAccessible(newAnnotation.getParent())) {</span>
 <span class="fc" id="L38">            return Collections.singletonList(</span>
 <span class="fc" id="L39">                createDifference(Code.ANNOTATION_ADDED, Code.attachmentsFor(null, newAnnotation))</span>
             );

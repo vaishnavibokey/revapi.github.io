@@ -15,7 +15,7 @@ import org.revapi.java.spi.Util;
  * @author Lukas Krejci
  * @since 0.11.0
  */
-public abstract class MovedInHierarchy extends CheckBase {
+<span class="pc bpc" id="L18" title="1 of 2 branches missed.">public abstract class MovedInHierarchy extends CheckBase {</span>
     private final Code moveUp;
     private final Code moveDown;
 
@@ -25,42 +25,41 @@ public abstract class MovedInHierarchy extends CheckBase {
 <span class="fc" id="L25">    }</span>
 
     protected void doVisit(@Nullable JavaModelElement oldEl, @Nullable JavaModelElement newEl) {
-<span class="fc bfc" id="L28" title="All 4 branches covered.">        if (oldEl == null || newEl == null) {</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (!isBothAccessible(oldEl, newEl)) {</span>
 <span class="fc" id="L29">            return;</span>
         }
 
-<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (oldEl.isInherited() == newEl.isInherited()) {</span>
-<span class="fc" id="L33">            return;</span>
+<span class="pc bpc" id="L32" title="2 of 4 branches missed.">        assert oldEl != null;</span>
+<span class="pc bpc" id="L33" title="2 of 4 branches missed.">        assert newEl != null;</span>
+
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (oldEl.isInherited() == newEl.isInherited()) {</span>
+<span class="fc" id="L36">            return;</span>
         }
 
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (!isBothAccessible(oldEl, newEl)) {</span>
-<span class="nc" id="L37">            return;</span>
-        }
+<span class="fc" id="L39">        String oldType = Util.toUniqueString(oldEl.getModelRepresentation());</span>
+<span class="fc" id="L40">        String newType = Util.toUniqueString(newEl.getModelRepresentation());</span>
 
-<span class="fc" id="L40">        String oldType = Util.toUniqueString(oldEl.getModelRepresentation());</span>
-<span class="fc" id="L41">        String newType = Util.toUniqueString(newEl.getModelRepresentation());</span>
-
-<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        if (oldType.equals(newType)) {</span>
-<span class="fc" id="L44">            pushActive(oldEl, newEl);</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (oldType.equals(newType)) {</span>
+<span class="fc" id="L43">            pushActive(oldEl, newEl);</span>
         }
-<span class="fc" id="L46">    }</span>
+<span class="fc" id="L45">    }</span>
 
     @Nullable @Override protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L49">        ActiveElements&lt;JavaModelElement&gt; els = popIfActive();</span>
-<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (els == null) {</span>
-<span class="fc" id="L51">            return null;</span>
+<span class="fc" id="L48">        ActiveElements&lt;JavaModelElement&gt; els = popIfActive();</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (els == null) {</span>
+<span class="fc" id="L50">            return null;</span>
         }
 
-<span class="fc" id="L54">        String oldType =</span>
-<span class="fc" id="L55">                Util.toHumanReadableString(els.oldElement.getDeclaringElement().getEnclosingElement().asType());</span>
-<span class="fc" id="L56">        String newType =</span>
-<span class="fc" id="L57">                Util.toHumanReadableString(els.newElement.getDeclaringElement().getEnclosingElement().asType());</span>
+<span class="fc" id="L53">        String oldType =</span>
+<span class="fc" id="L54">                Util.toHumanReadableString(els.oldElement.getDeclaringElement().getEnclosingElement().asType());</span>
+<span class="fc" id="L55">        String newType =</span>
+<span class="fc" id="L56">                Util.toHumanReadableString(els.newElement.getDeclaringElement().getEnclosingElement().asType());</span>
 
         //we know that oldEl.isInherited() != newEl.isInherited(), so it's enough to just check for the old
-<span class="fc bfc" id="L60" title="All 2 branches covered.">        Code code = els.oldElement.isInherited() ? moveDown : moveUp;</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        Code code = els.oldElement.isInherited() ? moveDown : moveUp;</span>
 
-<span class="fc" id="L62">        return Collections.singletonList(createDifference(code,</span>
-<span class="fc" id="L63">                Code.attachmentsFor(els.oldElement, els.newElement,</span>
+<span class="fc" id="L61">        return Collections.singletonList(createDifference(code,</span>
+<span class="fc" id="L62">                Code.attachmentsFor(els.oldElement, els.newElement,</span>
                         &quot;oldClass&quot;, oldType,
                         &quot;newClass&quot;, newType)));
     }

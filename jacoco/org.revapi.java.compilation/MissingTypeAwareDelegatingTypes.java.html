@@ -183,8 +183,8 @@ final class MissingTypeAwareDelegatingTypes implements Types {
 
     private static &lt;R, T extends TypeMirror&gt; IgnoreCompletionFailures.Fn1&lt;R, T&gt; checkMissing(Function&lt;T, R&gt; fn, R returnValueOnMissing) {
 <span class="fc" id="L185">        return (t) -&gt; {</span>
-<span class="fc bfc" id="L186" title="All 2 branches covered.">          if (isMissing(t)) {</span>
-<span class="fc" id="L187">              return returnValueOnMissing;</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">          if (isMissing(t)) {</span>
+<span class="nc" id="L187">              return returnValueOnMissing;</span>
           } else {
 <span class="fc" id="L189">              return fn.apply(t);</span>
           }

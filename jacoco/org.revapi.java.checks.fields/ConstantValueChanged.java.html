@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
 import org.revapi.java.spi.Code;
 import org.revapi.java.spi.JavaFieldElement;
 
@@ -29,39 +30,39 @@ import org.revapi.java.spi.JavaFieldElement;
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L32">public final class ConstantValueChanged extends BothFieldsRequiringCheck {</span>
+<span class="fc" id="L33">public final class ConstantValueChanged extends CheckBase {</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L36">        return EnumSet.of(Type.FIELD);</span>
+<span class="fc" id="L37">        return EnumSet.of(Type.FIELD);</span>
     }
 
     @Override
     protected void doVisitField(JavaFieldElement oldField, JavaFieldElement newField) {
-<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (!shouldCheck(oldField, newField)) {</span>
-<span class="fc" id="L42">            return;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (!isBothAccessible(oldField, newField)) {</span>
+<span class="fc" id="L43">            return;</span>
         }
 
-<span class="fc" id="L45">        Object oldC = oldField.getDeclaringElement().getConstantValue();</span>
-<span class="fc" id="L46">        Object newC = newField.getDeclaringElement().getConstantValue();</span>
+<span class="fc" id="L46">        Object oldC = oldField.getDeclaringElement().getConstantValue();</span>
+<span class="fc" id="L47">        Object newC = newField.getDeclaringElement().getConstantValue();</span>
 
-<span class="fc bfc" id="L48" title="All 6 branches covered.">        if (oldC != null &amp;&amp; newC != null &amp;&amp; !oldC.equals(newC)) {</span>
-<span class="fc" id="L49">            pushActive(oldField, newField);</span>
+<span class="fc bfc" id="L49" title="All 6 branches covered.">        if (oldC != null &amp;&amp; newC != null &amp;&amp; !oldC.equals(newC)) {</span>
+<span class="fc" id="L50">            pushActive(oldField, newField);</span>
         }
-<span class="fc" id="L51">    }</span>
+<span class="fc" id="L52">    }</span>
 
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L55">        ActiveElements&lt;JavaFieldElement&gt; fields = popIfActive();</span>
+<span class="fc" id="L56">        ActiveElements&lt;JavaFieldElement&gt; fields = popIfActive();</span>
 
-<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (fields == null) {</span>
-<span class="fc" id="L58">            return null;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (fields == null) {</span>
+<span class="fc" id="L59">            return null;</span>
         }
 
-<span class="fc" id="L61">        return Collections.singletonList(</span>
-<span class="fc" id="L62">            createDifference(Code.FIELD_CONSTANT_VALUE_CHANGED, Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
-<span class="fc" id="L63">                &quot;oldValue&quot;, Objects.toString(fields.oldElement.getDeclaringElement().getConstantValue()),</span>
-<span class="fc" id="L64">                &quot;newValue&quot;, Objects.toString(fields.newElement.getDeclaringElement().getConstantValue())))</span>
+<span class="fc" id="L62">        return Collections.singletonList(</span>
+<span class="fc" id="L63">            createDifference(Code.FIELD_CONSTANT_VALUE_CHANGED, Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
+<span class="fc" id="L64">                &quot;oldValue&quot;, Objects.toString(fields.oldElement.getDeclaringElement().getConstantValue()),</span>
+<span class="fc" id="L65">                &quot;newValue&quot;, Objects.toString(fields.newElement.getDeclaringElement().getConstantValue())))</span>
         );
     }
 }

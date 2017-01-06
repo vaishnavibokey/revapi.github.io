@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
 import org.revapi.java.spi.Code;
 import org.revapi.java.spi.JavaFieldElement;
 import org.revapi.java.spi.Util;
@@ -29,45 +30,45 @@ import org.revapi.java.spi.Util;
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L32">public final class TypeChanged extends BothFieldsRequiringCheck {</span>
+<span class="fc" id="L33">public final class TypeChanged extends CheckBase {</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L36">        return EnumSet.of(Type.FIELD);</span>
+<span class="fc" id="L37">        return EnumSet.of(Type.FIELD);</span>
     }
 
     @Override
     protected void doVisitField(JavaFieldElement oldField, JavaFieldElement newField) {
-<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (!shouldCheck(oldField, newField)) {</span>
-<span class="fc" id="L42">            return;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (!isBothAccessible(oldField, newField)) {</span>
+<span class="fc" id="L43">            return;</span>
         }
 
-<span class="fc" id="L45">        String oldType = Util.toUniqueString(</span>
-<span class="fc" id="L46">                oldField.getTypeEnvironment().getTypeUtils().erasure(</span>
-<span class="fc" id="L47">                        oldField.getModelRepresentation()));</span>
-<span class="fc" id="L48">        String newType = Util.toUniqueString(</span>
-<span class="fc" id="L49">                newField.getTypeEnvironment().getTypeUtils().erasure(</span>
-<span class="fc" id="L50">                        newField.getModelRepresentation()));</span>
+<span class="fc" id="L46">        String oldType = Util.toUniqueString(</span>
+<span class="fc" id="L47">                oldField.getTypeEnvironment().getTypeUtils().erasure(</span>
+<span class="fc" id="L48">                        oldField.getModelRepresentation()));</span>
+<span class="fc" id="L49">        String newType = Util.toUniqueString(</span>
+<span class="fc" id="L50">                newField.getTypeEnvironment().getTypeUtils().erasure(</span>
+<span class="fc" id="L51">                        newField.getModelRepresentation()));</span>
 
 
-<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (!oldType.equals(newType)) {</span>
-<span class="fc" id="L54">            pushActive(oldField, newField);</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (!oldType.equals(newType)) {</span>
+<span class="fc" id="L55">            pushActive(oldField, newField);</span>
         }
-<span class="fc" id="L56">    }</span>
+<span class="fc" id="L57">    }</span>
 
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L60">        ActiveElements&lt;JavaFieldElement&gt; fields = popIfActive();</span>
-<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (fields == null) {</span>
-<span class="fc" id="L62">            return null;</span>
+<span class="fc" id="L61">        ActiveElements&lt;JavaFieldElement&gt; fields = popIfActive();</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (fields == null) {</span>
+<span class="fc" id="L63">            return null;</span>
         }
 
-<span class="fc" id="L65">        String oldType = Util.toHumanReadableString(fields.oldElement.getModelRepresentation());</span>
-<span class="fc" id="L66">        String newType = Util.toHumanReadableString(fields.newElement.getModelRepresentation());</span>
+<span class="fc" id="L66">        String oldType = Util.toHumanReadableString(fields.oldElement.getModelRepresentation());</span>
+<span class="fc" id="L67">        String newType = Util.toHumanReadableString(fields.newElement.getModelRepresentation());</span>
 
-<span class="fc" id="L68">        return Collections.singletonList(</span>
-<span class="fc" id="L69">            createDifference(Code.FIELD_TYPE_CHANGED,</span>
-<span class="fc" id="L70">                    Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
+<span class="fc" id="L69">        return Collections.singletonList(</span>
+<span class="fc" id="L70">            createDifference(Code.FIELD_TYPE_CHANGED,</span>
+<span class="fc" id="L71">                    Code.attachmentsFor(fields.oldElement, fields.newElement,</span>
                             &quot;oldType&quot;, oldType,
                             &quot;newType&quot;, newType))
         );

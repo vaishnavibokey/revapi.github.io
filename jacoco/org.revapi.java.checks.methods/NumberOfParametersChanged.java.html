@@ -31,7 +31,7 @@ import org.revapi.java.spi.JavaMethodElement;
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L34">public final class NumberOfParametersChanged extends CheckBase {</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">public final class NumberOfParametersChanged extends CheckBase {</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
@@ -40,26 +40,29 @@ import org.revapi.java.spi.JavaMethodElement;
 
     @Override
     protected void doVisitMethod(@Nullable JavaMethodElement oldMethod, @Nullable JavaMethodElement newMethod) {
-<span class="fc bfc" id="L43" title="All 6 branches covered.">        if (oldMethod == null || newMethod == null || isBothPrivate(oldMethod, newMethod)) {</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (!isBothAccessible(oldMethod, newMethod)) {</span>
 <span class="fc" id="L44">            return;</span>
         }
 
-<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (oldMethod.getModelRepresentation().getParameterTypes().size() != newMethod.getModelRepresentation().getParameterTypes().size()) {</span>
-<span class="fc" id="L48">            pushActive(oldMethod, newMethod);</span>
+<span class="pc bpc" id="L47" title="2 of 4 branches missed.">        assert oldMethod != null;</span>
+<span class="pc bpc" id="L48" title="2 of 4 branches missed.">        assert newMethod != null;</span>
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (oldMethod.getModelRepresentation().getParameterTypes().size() != newMethod.getModelRepresentation().getParameterTypes().size()) {</span>
+<span class="fc" id="L51">            pushActive(oldMethod, newMethod);</span>
         }
-<span class="fc" id="L50">    }</span>
+<span class="fc" id="L53">    }</span>
 
     @Nullable
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L55">        ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
+<span class="fc" id="L58">        ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
 
-<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (methods == null) {</span>
-<span class="fc" id="L58">            return null;</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (methods == null) {</span>
+<span class="fc" id="L61">            return null;</span>
         }
 
-<span class="fc" id="L61">        return Collections.singletonList(createDifference(Code.METHOD_NUMBER_OF_PARAMETERS_CHANGED,</span>
-<span class="fc" id="L62">                Code.attachmentsFor(methods.oldElement, methods.newElement)));</span>
+<span class="fc" id="L64">        return Collections.singletonList(createDifference(Code.METHOD_NUMBER_OF_PARAMETERS_CHANGED,</span>
+<span class="fc" id="L65">                Code.attachmentsFor(methods.oldElement, methods.newElement)));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

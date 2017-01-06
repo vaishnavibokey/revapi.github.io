@@ -25,6 +25,7 @@ import org.revapi.Archive;
 import org.revapi.Element;
 import org.revapi.java.compilation.ProbingEnvironment;
 import org.revapi.java.spi.JavaAnnotationElement;
+import org.revapi.java.spi.JavaModelElement;
 import org.revapi.java.spi.TypeEnvironment;
 import org.revapi.java.spi.Util;
 import org.revapi.simple.SimpleElement;
@@ -39,61 +40,66 @@ public final class AnnotationElement extends SimpleElement implements JavaAnnota
     private final Archive archive;
     private String comparableSignature;
 
-<span class="fc" id="L42">    public AnnotationElement(ProbingEnvironment environment, Archive archive, AnnotationMirror annotation) {</span>
-<span class="fc" id="L43">        this.environment = environment;</span>
-<span class="fc" id="L44">        this.annotation = annotation;</span>
-<span class="fc" id="L45">        this.archive = archive;</span>
-<span class="fc" id="L46">    }</span>
+<span class="fc" id="L43">    public AnnotationElement(ProbingEnvironment environment, Archive archive, AnnotationMirror annotation) {</span>
+<span class="fc" id="L44">        this.environment = environment;</span>
+<span class="fc" id="L45">        this.annotation = annotation;</span>
+<span class="fc" id="L46">        this.archive = archive;</span>
+<span class="fc" id="L47">    }</span>
+
+    @SuppressWarnings(&quot;ConstantConditions&quot;)
+    @Nonnull @Override public JavaModelElement getParent() {
+<span class="fc" id="L51">        return (JavaModelElement) super.getParent();</span>
+    }
 
     @Nonnull
     @Override
     public API getApi() {
-<span class="nc" id="L51">        return environment.getApi();</span>
+<span class="nc" id="L57">        return environment.getApi();</span>
     }
 
     @Nullable
     @Override
     public Archive getArchive() {
-<span class="nc" id="L57">        return archive;</span>
+<span class="nc" id="L63">        return archive;</span>
     }
 
     @Nonnull
     @Override
     public AnnotationMirror getAnnotation() {
-<span class="fc" id="L63">        return annotation;</span>
+<span class="fc" id="L69">        return annotation;</span>
     }
 
     @Nonnull
     @Override
     public TypeEnvironment getTypeEnvironment() {
-<span class="nc" id="L69">        return environment;</span>
+<span class="nc" id="L75">        return environment;</span>
     }
 
     @Override
     public int compareTo(@Nonnull Element o) {
-<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (!(o instanceof AnnotationElement)) {</span>
-<span class="fc" id="L75">            return JavaElementFactory.compareByType(this, o);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (!(o instanceof AnnotationElement)) {</span>
+<span class="fc" id="L81">            return JavaElementFactory.compareByType(this, o);</span>
         }
 
-<span class="fc" id="L78">        return getComparableSignature().compareTo(((AnnotationElement) o).getComparableSignature());</span>
+<span class="fc" id="L84">        return getComparableSignature().compareTo(((AnnotationElement) o).getComparableSignature());</span>
     }
 
     @Override
     public @Nonnull String getFullHumanReadableString() {
-<span class="fc" id="L83">        return Util.toHumanReadableString(annotation);</span>
+<span class="fc" id="L89">        return Util.toHumanReadableString(annotation);</span>
     }
 
     @Override
     public String toString() {
-<span class="nc" id="L88">        return getFullHumanReadableString();</span>
+<span class="nc" id="L94">        return getFullHumanReadableString();</span>
     }
 
     private String getComparableSignature() {
-<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (comparableSignature == null) {</span>
-<span class="fc" id="L93">            comparableSignature = &quot;@&quot; + Util.toHumanReadableString(annotation.getAnnotationType());</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (comparableSignature == null) {</span>
+<span class="fc" id="L99">            comparableSignature = &quot;@&quot; + Util.toHumanReadableString(annotation.getAnnotationType());</span>
         }
 
-<span class="fc" id="L96">        return comparableSignature;</span>
+<span class="fc" id="L102">        return comparableSignature;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

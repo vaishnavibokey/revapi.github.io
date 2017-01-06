@@ -133,110 +133,106 @@ import org.revapi.java.spi.Util;
 
     @Override
     protected void doVisitClass(JavaTypeElement oldEl, JavaTypeElement newEl) {
-<span class="fc bfc" id="L136" title="All 4 branches covered.">        if (oldEl == null || newEl == null) {</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (!isBothAccessible(oldEl, newEl)) {</span>
 <span class="fc" id="L137">            return;</span>
         }
 
 <span class="fc" id="L140">        TypeElement oldType = oldEl.getDeclaringElement();</span>
 <span class="fc" id="L141">        TypeElement newType = newEl.getDeclaringElement();</span>
 
-<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (isBothPrivate(oldEl, newEl)) {</span>
-<span class="fc" id="L144">            return;</span>
-        }
+<span class="fc" id="L143">        List&lt;TypeMirror&gt; oldSuperTypes = Util</span>
+<span class="fc" id="L144">            .getAllSuperClasses(getOldTypeEnvironment().getTypeUtils(), oldType.asType());</span>
+<span class="fc" id="L145">        List&lt;TypeMirror&gt; newSuperTypes = Util</span>
+<span class="fc" id="L146">            .getAllSuperClasses(getNewTypeEnvironment().getTypeUtils(), newType.asType());</span>
 
-<span class="fc" id="L147">        List&lt;TypeMirror&gt; oldSuperTypes = Util</span>
-<span class="fc" id="L148">            .getAllSuperClasses(getOldTypeEnvironment().getTypeUtils(), oldType.asType());</span>
-<span class="fc" id="L149">        List&lt;TypeMirror&gt; newSuperTypes = Util</span>
-<span class="fc" id="L150">            .getAllSuperClasses(getNewTypeEnvironment().getTypeUtils(), newType.asType());</span>
-
-<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (oldSuperTypes.size() != newSuperTypes.size()) {</span>
-<span class="fc" id="L153">            pushActive(oldEl, newEl, oldSuperTypes, newSuperTypes);</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (oldSuperTypes.size() != newSuperTypes.size()) {</span>
+<span class="fc" id="L149">            pushActive(oldEl, newEl, oldSuperTypes, newSuperTypes);</span>
         } else {
-<span class="fc" id="L155">            Types oldTypes = getOldTypeEnvironment().getTypeUtils();</span>
-<span class="fc" id="L156">            Types newTypes = getNewTypeEnvironment().getTypeUtils();</span>
+<span class="fc" id="L151">            Types oldTypes = getOldTypeEnvironment().getTypeUtils();</span>
+<span class="fc" id="L152">            Types newTypes = getNewTypeEnvironment().getTypeUtils();</span>
 
-<span class="fc bfc" id="L158" title="All 2 branches covered.">            for (int i = 0; i &lt; oldSuperTypes.size(); ++i) {</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            for (int i = 0; i &lt; oldSuperTypes.size(); ++i) {</span>
                 //need to erase them all so that we get only true type changes. formal type parameter changes
                 //are captured by SuperTypeParametersChanged check
-<span class="fc" id="L161">                TypeMirror oldSuperClass = oldTypes.erasure(oldSuperTypes.get(i));</span>
-<span class="fc" id="L162">                TypeMirror newSuperClass = newTypes.erasure(newSuperTypes.get(i));</span>
+<span class="fc" id="L157">                TypeMirror oldSuperClass = oldTypes.erasure(oldSuperTypes.get(i));</span>
+<span class="fc" id="L158">                TypeMirror newSuperClass = newTypes.erasure(newSuperTypes.get(i));</span>
 
-<span class="fc bfc" id="L164" title="All 2 branches covered.">                if (!Util.isSameType(oldSuperClass, newSuperClass)) {</span>
-<span class="fc" id="L165">                    pushActive(oldEl, newEl, oldSuperTypes, newSuperTypes);</span>
-<span class="fc" id="L166">                    break;</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">                if (!Util.isSameType(oldSuperClass, newSuperClass)) {</span>
+<span class="fc" id="L161">                    pushActive(oldEl, newEl, oldSuperTypes, newSuperTypes);</span>
+<span class="fc" id="L162">                    break;</span>
                 }
             }
         }
-<span class="fc" id="L170">    }</span>
+<span class="fc" id="L166">    }</span>
 
     private boolean changedToCheckedException(@Nonnull Types newTypeEnv, @Nonnull TypeMirror newType,
         @Nonnull List&lt;TypeMirror&gt; oldTypes) {
 
-<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (&quot;java.lang.Exception&quot;.equals(Util.toHumanReadableString(newType))) {</span>
-<span class="fc" id="L176">            return isTypeThrowable(oldTypes);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (&quot;java.lang.Exception&quot;.equals(Util.toHumanReadableString(newType))) {</span>
+<span class="fc" id="L172">            return isTypeThrowable(oldTypes);</span>
         } else {
-<span class="fc bfc" id="L178" title="All 2 branches covered.">            for (TypeMirror sc : Util.getAllSuperClasses(newTypeEnv, newType)) {</span>
-<span class="fc bfc" id="L179" title="All 2 branches covered.">                if (&quot;java.lang.Exception&quot;.equals(Util.toHumanReadableString(sc))) {</span>
-<span class="fc" id="L180">                    return isTypeThrowable(oldTypes);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">            for (TypeMirror sc : Util.getAllSuperClasses(newTypeEnv, newType)) {</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">                if (&quot;java.lang.Exception&quot;.equals(Util.toHumanReadableString(sc))) {</span>
+<span class="fc" id="L176">                    return isTypeThrowable(oldTypes);</span>
                 }
-<span class="fc" id="L182">            }</span>
+<span class="fc" id="L178">            }</span>
         }
 
-<span class="fc" id="L185">        return false;</span>
+<span class="fc" id="L181">        return false;</span>
     }
 
     private boolean isTypeThrowable(@Nonnull List&lt;TypeMirror&gt; superClassesOfType) {
-<span class="fc bfc" id="L189" title="All 2 branches covered.">        for (TypeMirror sc : superClassesOfType) {</span>
-<span class="fc bfc" id="L190" title="All 2 branches covered.">            if (Util.toHumanReadableString(sc).equals(&quot;java.lang.Throwable&quot;)) {</span>
-<span class="fc" id="L191">                return true;</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        for (TypeMirror sc : superClassesOfType) {</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">            if (Util.toHumanReadableString(sc).equals(&quot;java.lang.Throwable&quot;)) {</span>
+<span class="fc" id="L187">                return true;</span>
             }
-<span class="fc" id="L193">        }</span>
+<span class="fc" id="L189">        }</span>
 
-<span class="fc" id="L195">        return false;</span>
+<span class="fc" id="L191">        return false;</span>
     }
 
     private List&lt;String&gt; superClassChainAsUniqueStrings(@Nonnull TypeMirror cls, @Nonnull Types env) {
-<span class="fc" id="L199">        List&lt;TypeMirror&gt; supers = Util.getAllSuperClasses(env, cls);</span>
-<span class="fc" id="L200">        List&lt;String&gt; ret = new ArrayList&lt;&gt;(supers.size());</span>
+<span class="fc" id="L195">        List&lt;TypeMirror&gt; supers = Util.getAllSuperClasses(env, cls);</span>
+<span class="fc" id="L196">        List&lt;String&gt; ret = new ArrayList&lt;&gt;(supers.size());</span>
 
-<span class="fc bfc" id="L202" title="All 2 branches covered.">        for (TypeMirror s : supers) {</span>
-<span class="fc" id="L203">            ret.add(Util.toUniqueString(env.erasure(s)));</span>
-<span class="fc" id="L204">        }</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        for (TypeMirror s : supers) {</span>
+<span class="fc" id="L199">            ret.add(Util.toUniqueString(env.erasure(s)));</span>
+<span class="fc" id="L200">        }</span>
 
-<span class="fc" id="L206">        return ret;</span>
+<span class="fc" id="L202">        return ret;</span>
     }
 
     private void removeClassesWithEquivalentSuperClassChain(Iterator&lt;TypeMirror&gt; candidates,
         TypeEnvironment candidateEnvironment, TypeEnvironment oppositeEnvironment) {
 
-<span class="fc bfc" id="L212" title="All 2 branches covered.">        while (candidates.hasNext()) {</span>
-<span class="fc" id="L213">            boolean report = true;</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        while (candidates.hasNext()) {</span>
+<span class="fc" id="L209">            boolean report = true;</span>
 
-<span class="fc" id="L215">            TypeMirror candidate = candidates.next();</span>
-<span class="fc" id="L216">            String typeName = Util.toHumanReadableString(candidate);</span>
-<span class="fc" id="L217">            TypeElement el = oppositeEnvironment.getElementUtils().getTypeElement(typeName);</span>
-<span class="pc bpc" id="L218" title="1 of 2 branches missed.">            if (el != null) {</span>
-<span class="fc" id="L219">                TypeMirror opposite = el.asType();</span>
+<span class="fc" id="L211">            TypeMirror candidate = candidates.next();</span>
+<span class="fc" id="L212">            String typeName = Util.toHumanReadableString(candidate);</span>
+<span class="fc" id="L213">            TypeElement el = oppositeEnvironment.getElementUtils().getTypeElement(typeName);</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">            if (el != null) {</span>
+<span class="fc" id="L215">                TypeMirror opposite = el.asType();</span>
 
-<span class="fc" id="L221">                List&lt;String&gt; candidateSuperChain = superClassChainAsUniqueStrings(candidate,</span>
-<span class="fc" id="L222">                    candidateEnvironment.getTypeUtils());</span>
+<span class="fc" id="L217">                List&lt;String&gt; candidateSuperChain = superClassChainAsUniqueStrings(candidate,</span>
+<span class="fc" id="L218">                    candidateEnvironment.getTypeUtils());</span>
 
-<span class="fc" id="L224">                List&lt;String&gt; oppositeSuperChain = superClassChainAsUniqueStrings(opposite,</span>
-<span class="fc" id="L225">                    oppositeEnvironment.getTypeUtils());</span>
+<span class="fc" id="L220">                List&lt;String&gt; oppositeSuperChain = superClassChainAsUniqueStrings(opposite,</span>
+<span class="fc" id="L221">                    oppositeEnvironment.getTypeUtils());</span>
 
-<span class="pc bpc" id="L227" title="1 of 2 branches missed.">                report = !candidateSuperChain.equals(oppositeSuperChain);</span>
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">                report = !candidateSuperChain.equals(oppositeSuperChain);</span>
             }
 
-<span class="pc bpc" id="L230" title="1 of 2 branches missed.">            if (!report) {</span>
-<span class="fc" id="L231">                candidates.remove();</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">            if (!report) {</span>
+<span class="fc" id="L227">                candidates.remove();</span>
             }
-<span class="fc" id="L233">        }</span>
-<span class="fc" id="L234">    }</span>
+<span class="fc" id="L229">        }</span>
+<span class="fc" id="L230">    }</span>
 
     private List&lt;TypeMirror&gt; retainInCopy(List&lt;TypeMirror&gt; all, List&lt;TypeMirror&gt; retained) {
-<span class="fc" id="L237">        List&lt;TypeMirror&gt; tmp = new ArrayList&lt;&gt;(all);</span>
-<span class="fc" id="L238">        tmp.retainAll(retained);</span>
-<span class="fc" id="L239">        return tmp;</span>
+<span class="fc" id="L233">        List&lt;TypeMirror&gt; tmp = new ArrayList&lt;&gt;(all);</span>
+<span class="fc" id="L234">        tmp.retainAll(retained);</span>
+<span class="fc" id="L235">        return tmp;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

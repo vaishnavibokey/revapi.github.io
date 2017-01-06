@@ -27,6 +27,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.ElementFilter;
 
 import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
 import org.revapi.java.spi.Code;
 import org.revapi.java.spi.JavaFieldElement;
 import org.revapi.java.spi.JavaTypeElement;
@@ -35,22 +36,21 @@ import org.revapi.java.spi.JavaTypeElement;
  * @author Lukas Krejci
  * @since 1.0
  */
-<span class="fc" id="L38">public class EnumConstantsOrderChanged extends BothFieldsRequiringCheck {</span>
+<span class="fc" id="L39">public class EnumConstantsOrderChanged extends CheckBase {</span>
     private boolean isEnumClass;
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L43">        return EnumSet.of(Type.CLASS, Type.FIELD);</span>
+<span class="fc" id="L44">        return EnumSet.of(Type.CLASS, Type.FIELD);</span>
     }
 
     @Override
     protected void doVisitClass(@Nullable JavaTypeElement oldType, @Nullable JavaTypeElement newType) {
-<span class="fc bfc" id="L48" title="All 4 branches covered.">        isEnumClass = newType != null &amp;&amp; newType.getDeclaringElement().getKind() == ElementKind.ENUM;</span>
-<span class="fc" id="L49">    }</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        isEnumClass = newType != null &amp;&amp; newType.getDeclaringElement().getKind() == ElementKind.ENUM;</span>
+<span class="fc" id="L50">    }</span>
 
-    @Override
-    protected boolean shouldCheck(JavaFieldElement oldField, JavaFieldElement newField) {
-<span class="fc bfc" id="L53" title="All 4 branches covered.">        return isEnumClass &amp;&amp; super.shouldCheck(oldField, newField)</span>
+    private boolean shouldCheck(JavaFieldElement oldField, JavaFieldElement newField) {
+<span class="fc bfc" id="L53" title="All 4 branches covered.">        return isEnumClass &amp;&amp; isBothAccessible(oldField, newField)</span>
 <span class="fc bfc" id="L54" title="All 2 branches covered.">                &amp;&amp; oldField.getDeclaringElement().getKind() == ElementKind.ENUM_CONSTANT</span>
 <span class="pc bpc" id="L55" title="1 of 2 branches missed.">                &amp;&amp; newField.getDeclaringElement().getKind() == ElementKind.ENUM_CONSTANT;</span>
     }

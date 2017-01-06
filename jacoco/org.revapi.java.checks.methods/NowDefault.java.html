@@ -34,7 +34,7 @@ import org.revapi.java.spi.JavaMethodElement;
  * @author Lukas Krejci
  * @since 0.4.0
  */
-<span class="fc" id="L37">public class NowDefault extends CheckBase {</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">public class NowDefault extends CheckBase {</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
@@ -43,29 +43,32 @@ import org.revapi.java.spi.JavaMethodElement;
 
     @Override
     protected void doVisitMethod(@Nullable JavaMethodElement oldMethod, @Nullable JavaMethodElement newMethod) {
-<span class="fc bfc" id="L46" title="All 4 branches covered.">        if (oldMethod == null || newMethod == null) {</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (!isBothAccessible(oldMethod, newMethod)) {</span>
 <span class="fc" id="L47">            return;</span>
         }
 
-<span class="fc bfc" id="L50" title="All 2 branches covered.">        boolean onInterfaces = oldMethod.getParent().getDeclaringElement().getKind() == ElementKind.INTERFACE</span>
-<span class="pc bpc" id="L51" title="1 of 2 branches missed.">                &amp;&amp; newMethod.getParent().getDeclaringElement().getKind() == ElementKind.INTERFACE;</span>
+<span class="pc bpc" id="L50" title="2 of 4 branches missed.">        assert oldMethod != null;</span>
+<span class="pc bpc" id="L51" title="2 of 4 branches missed.">        assert newMethod != null;</span>
 
-<span class="fc bfc" id="L53" title="All 6 branches covered.">        if (onInterfaces &amp;&amp; !oldMethod.getDeclaringElement().isDefault() &amp;&amp; newMethod.getDeclaringElement().isDefault()) {</span>
-<span class="fc" id="L54">            pushActive(oldMethod, newMethod);</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        boolean onInterfaces = oldMethod.getParent().getDeclaringElement().getKind() == ElementKind.INTERFACE</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">                &amp;&amp; newMethod.getParent().getDeclaringElement().getKind() == ElementKind.INTERFACE;</span>
+
+<span class="fc bfc" id="L56" title="All 6 branches covered.">        if (onInterfaces &amp;&amp; !oldMethod.getDeclaringElement().isDefault() &amp;&amp; newMethod.getDeclaringElement().isDefault()) {</span>
+<span class="fc" id="L57">            pushActive(oldMethod, newMethod);</span>
         }
-<span class="fc" id="L56">    }</span>
+<span class="fc" id="L59">    }</span>
 
     @Override
     protected @Nullable List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L60">        CheckBase.ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
-<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (methods == null) {</span>
-<span class="fc" id="L62">            return null;</span>
+<span class="fc" id="L63">        CheckBase.ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (methods == null) {</span>
+<span class="fc" id="L65">            return null;</span>
         }
 
-<span class="fc" id="L65">        return Collections.singletonList(createDifference(Code.METHOD_NOW_DEFAULT,</span>
-<span class="fc" id="L66">                Code.attachmentsFor(methods.oldElement, methods.newElement,</span>
-<span class="fc" id="L67">                        &quot;oldModifiers&quot;, stringify(methods.oldElement.getDeclaringElement().getModifiers()),</span>
-<span class="fc" id="L68">                        &quot;newModifiers&quot;, stringify(methods.newElement.getDeclaringElement().getModifiers()))));</span>
+<span class="fc" id="L68">        return Collections.singletonList(createDifference(Code.METHOD_NOW_DEFAULT,</span>
+<span class="fc" id="L69">                Code.attachmentsFor(methods.oldElement, methods.newElement,</span>
+<span class="fc" id="L70">                        &quot;oldModifiers&quot;, stringify(methods.oldElement.getDeclaringElement().getModifiers()),</span>
+<span class="fc" id="L71">                        &quot;newModifiers&quot;, stringify(methods.newElement.getDeclaringElement().getModifiers()))));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

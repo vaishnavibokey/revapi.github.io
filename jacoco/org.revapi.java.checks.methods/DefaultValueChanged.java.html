@@ -78,7 +78,7 @@ import org.revapi.java.spi.Util;
 
     @Override
     protected void doVisitMethod(JavaMethodElement oldMethod, JavaMethodElement newMethod) {
-<span class="fc bfc" id="L81" title="All 6 branches covered.">        if (oldMethod == null || newMethod == null || isBothPrivate(oldMethod, newMethod)) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (!isBothAccessible(oldMethod, newMethod)) {</span>
 <span class="fc" id="L82">            return;</span>
         }
 

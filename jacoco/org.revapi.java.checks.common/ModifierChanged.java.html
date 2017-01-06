@@ -45,40 +45,36 @@ public abstract class ModifierChanged extends CheckBase {
 <span class="fc" id="L45">    }</span>
 
     protected final void doVisit(JavaModelElement oldElement, JavaModelElement newElement) {
-<span class="fc bfc" id="L48" title="All 4 branches covered.">        if (oldElement == null || newElement == null) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (!isBothAccessible(oldElement, newElement)) {</span>
 <span class="fc" id="L49">            return;</span>
         }
 
-<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (isBothPrivate(oldElement, newElement)) {</span>
-<span class="fc" id="L53">            return;</span>
-        }
+<span class="fc" id="L52">        boolean oldHas = oldElement.getDeclaringElement().getModifiers().contains(modifier);</span>
+<span class="fc" id="L53">        boolean newHas = newElement.getDeclaringElement().getModifiers().contains(modifier);</span>
 
-<span class="fc" id="L56">        boolean oldHas = oldElement.getDeclaringElement().getModifiers().contains(modifier);</span>
-<span class="fc" id="L57">        boolean newHas = newElement.getDeclaringElement().getModifiers().contains(modifier);</span>
-
-<span class="fc bfc" id="L59" title="All 12 branches covered.">        if ((added &amp;&amp; !oldHas &amp;&amp; newHas) || (!added &amp;&amp; oldHas &amp;&amp; !newHas)) {</span>
-<span class="fc" id="L60">            pushActive(oldElement, newElement);</span>
+<span class="fc bfc" id="L55" title="All 12 branches covered.">        if ((added &amp;&amp; !oldHas &amp;&amp; newHas) || (!added &amp;&amp; oldHas &amp;&amp; !newHas)) {</span>
+<span class="fc" id="L56">            pushActive(oldElement, newElement);</span>
         }
-<span class="fc" id="L62">    }</span>
+<span class="fc" id="L58">    }</span>
 
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L66">        ActiveElements&lt;JavaModelElement&gt; elements = popIfActive();</span>
-<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (elements == null) {</span>
-<span class="fc" id="L68">            return null;</span>
+<span class="fc" id="L62">        ActiveElements&lt;JavaModelElement&gt; elements = popIfActive();</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (elements == null) {</span>
+<span class="fc" id="L64">            return null;</span>
         }
 
-<span class="fc" id="L71">        return Collections.singletonList(createDifference(code, Code.attachmentsFor(elements.oldElement, elements.newElement,</span>
-<span class="fc" id="L72">                &quot;oldModifiers&quot;, stringify(elements.oldElement.getDeclaringElement().getModifiers()),</span>
-<span class="fc" id="L73">                &quot;newModifiers&quot;, stringify(elements.newElement.getDeclaringElement().getModifiers()))));</span>
+<span class="fc" id="L67">        return Collections.singletonList(createDifference(code, Code.attachmentsFor(elements.oldElement, elements.newElement,</span>
+<span class="fc" id="L68">                &quot;oldModifiers&quot;, stringify(elements.oldElement.getDeclaringElement().getModifiers()),</span>
+<span class="fc" id="L69">                &quot;newModifiers&quot;, stringify(elements.newElement.getDeclaringElement().getModifiers()))));</span>
     }
 
     //ordered according to http://cr.openjdk.java.net/~alundblad/styleguide/index-v6.html
     public static String stringify(Set&lt;Modifier&gt; modifiers) {
-<span class="fc" id="L78">        return modifiers.stream()</span>
-<span class="fc" id="L79">                .sorted(Comparator.comparingInt(ModifierChanged::score))</span>
-<span class="fc" id="L80">                .map(m -&gt; m.name().toLowerCase())</span>
-<span class="fc" id="L81">                .collect(Collectors.joining(&quot; &quot;));</span>
+<span class="fc" id="L74">        return modifiers.stream()</span>
+<span class="fc" id="L75">                .sorted(Comparator.comparingInt(ModifierChanged::score))</span>
+<span class="fc" id="L76">                .map(m -&gt; m.name().toLowerCase())</span>
+<span class="fc" id="L77">                .collect(Collectors.joining(&quot; &quot;));</span>
     }
 
     private static int score(Modifier mod) {
@@ -95,21 +91,21 @@ public abstract class ModifierChanged extends CheckBase {
         //native
         //strictfp
 
-<span class="pc bpc" id="L98" title="7 of 13 branches missed.">        switch (mod) {</span>
-<span class="fc" id="L99">            case PUBLIC: return 0;</span>
-<span class="nc" id="L100">            case PRIVATE: return 1;</span>
-<span class="nc" id="L101">            case PROTECTED: return 2;</span>
-<span class="fc" id="L102">            case ABSTRACT: return 3;</span>
-<span class="fc" id="L103">            case STATIC: return 4;</span>
-<span class="fc" id="L104">            case FINAL: return 5;</span>
-<span class="nc" id="L105">            case TRANSIENT: return 6;</span>
-<span class="nc" id="L106">            case VOLATILE: return 7;</span>
-<span class="fc" id="L107">            case DEFAULT: return 8;</span>
-<span class="nc" id="L108">            case SYNCHRONIZED: return 9;</span>
-<span class="fc" id="L109">            case NATIVE: return 10;</span>
-<span class="nc" id="L110">            case STRICTFP: return 11;</span>
+<span class="pc bpc" id="L94" title="7 of 13 branches missed.">        switch (mod) {</span>
+<span class="fc" id="L95">            case PUBLIC: return 0;</span>
+<span class="nc" id="L96">            case PRIVATE: return 1;</span>
+<span class="nc" id="L97">            case PROTECTED: return 2;</span>
+<span class="fc" id="L98">            case ABSTRACT: return 3;</span>
+<span class="fc" id="L99">            case STATIC: return 4;</span>
+<span class="fc" id="L100">            case FINAL: return 5;</span>
+<span class="nc" id="L101">            case TRANSIENT: return 6;</span>
+<span class="nc" id="L102">            case VOLATILE: return 7;</span>
+<span class="fc" id="L103">            case DEFAULT: return 8;</span>
+<span class="nc" id="L104">            case SYNCHRONIZED: return 9;</span>
+<span class="fc" id="L105">            case NATIVE: return 10;</span>
+<span class="nc" id="L106">            case STRICTFP: return 11;</span>
             default:
-<span class="nc" id="L112">                return 12;</span>
+<span class="nc" id="L108">                return 12;</span>
         }
     }
 }
