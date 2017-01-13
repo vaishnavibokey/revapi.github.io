@@ -203,7 +203,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 
     private &lt;T extends JavaModelElement&gt; void doRestrictedCheck(T oldElement, T newElement, Check.Type interest) {
 <span class="fc bfc" id="L205" title="All 2 branches covered.">        if (!(isCheckedElsewhere(oldElement, oldEnvironment)</span>
-<span class="pc bpc" id="L206" title="1 of 2 branches missed.">                &amp;&amp; isCheckedElsewhere(newElement, newEnvironment))) {</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">                &amp;&amp; isCheckedElsewhere(newElement, newEnvironment))) {</span>
 <span class="fc" id="L207">            checkTypeStack.push(interest);</span>
 <span class="fc bfc" id="L208" title="All 2 branches covered.">            for (Check c : checksByInterest.get(interest)) {</span>
 <span class="fc" id="L209">                Stats.of(c.getClass().getName()).start();</span>
@@ -225,7 +225,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
             //&quot;ignore what's on the stack because no checks actually happened&quot;.
             //ArrayDeque doesn't support null elements so we have to have something to represent this state. So we
             //abuse the ANNOTATION check type for this, because it is otherwise not used in the stack.
-<span class="nc" id="L228">            checkTypeStack.push(Check.Type.ANNOTATION);</span>
+<span class="fc" id="L228">            checkTypeStack.push(Check.Type.ANNOTATION);</span>
         }
 <span class="fc" id="L230">    }</span>
 
@@ -239,7 +239,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="fc" id="L239">        List&lt;Difference&gt; differences = new ArrayList&lt;&gt;();</span>
 <span class="fc" id="L240">        Check.Type lastInterest = checkTypeStack.pop();</span>
         //see #doRestrictedCheck for why we use ANNOTATION as &quot;no checks happened&quot;...
-<span class="pc bpc" id="L242" title="1 of 2 branches missed.">        if (lastInterest != Check.Type.ANNOTATION) {</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (lastInterest != Check.Type.ANNOTATION) {</span>
 <span class="fc bfc" id="L243" title="All 2 branches covered.">            for (Check c : checksByInterest.get(lastInterest)) {</span>
 <span class="fc" id="L244">                List&lt;Difference&gt; p = c.visitEnd();</span>
 <span class="fc bfc" id="L245" title="All 2 branches covered.">                if (p != null) {</span>
@@ -484,48 +484,49 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 
     private boolean isCheckedElsewhere(JavaModelElement element, ProbingEnvironment env) {
 <span class="fc bfc" id="L486" title="All 2 branches covered.">        if (element == null) {</span>
-<span class="fc" id="L487">            return false;</span>
+            //the other element will not be null and therefore we will determine the fact with the other element...
+<span class="fc" id="L488">            return true;</span>
         }
 
-<span class="fc bfc" id="L490" title="All 2 branches covered.">        if (!element.isInherited()) {</span>
-<span class="fc" id="L491">            return false;</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">        if (!element.isInherited()) {</span>
+<span class="fc" id="L492">            return false;</span>
         }
 
-<span class="fc" id="L494">        String elementSig = Util.toUniqueString(element.getModelRepresentation());</span>
-<span class="fc" id="L495">        String declSig = Util.toUniqueString(element.getDeclaringElement().asType());</span>
+<span class="fc" id="L495">        String elementSig = Util.toUniqueString(element.getModelRepresentation());</span>
+<span class="fc" id="L496">        String declSig = Util.toUniqueString(element.getDeclaringElement().asType());</span>
 
-<span class="fc bfc" id="L497" title="All 2 branches covered.">        if (!Objects.equals(elementSig, declSig)) {</span>
-<span class="fc" id="L498">            return false;</span>
+<span class="fc bfc" id="L498" title="All 2 branches covered.">        if (!Objects.equals(elementSig, declSig)) {</span>
+<span class="fc" id="L499">            return false;</span>
         }
 
-<span class="fc" id="L501">        javax.lang.model.element.TypeElement declaringType = findTypeOf(element.getDeclaringElement());</span>
+<span class="fc" id="L502">        javax.lang.model.element.TypeElement declaringType = findTypeOf(element.getDeclaringElement());</span>
 
-<span class="fc" id="L503">        JavaTypeElement declaringClass = env.getTypeMap().get(declaringType);</span>
+<span class="fc" id="L504">        JavaTypeElement declaringClass = env.getTypeMap().get(declaringType);</span>
 
-<span class="fc bfc" id="L505" title="All 4 branches covered.">        return declaringClass != null &amp;&amp; declaringClass.isInAPI();</span>
+<span class="fc bfc" id="L506" title="All 4 branches covered.">        return declaringClass != null &amp;&amp; declaringClass.isInAPI();</span>
     }
 
     //Javac's standard file manager is leaking resources across compilation tasks because it doesn't clear a shared
     //&quot;zip file index&quot; cache, when it is close()'d. We try to clear it by force.
     private static void forceClearCompilerCache() {
-<span class="pc bpc" id="L511" title="2 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
+<span class="pc bpc" id="L512" title="2 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
             try {
-<span class="fc" id="L513">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
-<span class="nc" id="L514">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
-<span class="nc" id="L515">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
+<span class="fc" id="L514">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
+<span class="nc" id="L515">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
+<span class="nc" id="L516">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
                                 &quot;This will probably leak memory&quot;, e);
-<span class="fc" id="L517">            }</span>
+<span class="fc" id="L518">            }</span>
         }
-<span class="fc" id="L519">    }</span>
+<span class="fc" id="L520">    }</span>
 
     private static class TypeAndUseSite {
         final DeclaredType type;
         final UseSite useSite;
 
-<span class="fc" id="L525">        public TypeAndUseSite(DeclaredType type, UseSite useSite) {</span>
-<span class="fc" id="L526">            this.type = type;</span>
-<span class="fc" id="L527">            this.useSite = useSite;</span>
-<span class="fc" id="L528">        }</span>
+<span class="fc" id="L526">        public TypeAndUseSite(DeclaredType type, UseSite useSite) {</span>
+<span class="fc" id="L527">            this.type = type;</span>
+<span class="fc" id="L528">            this.useSite = useSite;</span>
+<span class="fc" id="L529">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>

@@ -40,11 +40,11 @@ public final class JavaElementFactory {
 <span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (modelElement instanceof javax.lang.model.element.TypeElement) {</span>
 <span class="nc" id="L41">            return new TypeElement(env, archive, (javax.lang.model.element.TypeElement) modelElement, (DeclaredType) modelType);</span>
 <span class="fc bfc" id="L42" title="All 2 branches covered.">        } else if (modelElement instanceof VariableElement &amp;&amp;</span>
-<span class="pc bpc" id="L43" title="1 of 2 branches missed.">            modelElement.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">            modelElement.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
 <span class="fc" id="L44">            return new FieldElement(env, archive, (VariableElement) modelElement, modelType);</span>
-<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        } else if (modelElement instanceof VariableElement &amp;&amp;</span>
-<span class="nc bnc" id="L46" title="All 2 branches missed.">            modelElement.getEnclosingElement() instanceof ExecutableElement) {</span>
-<span class="nc" id="L47">            return new MethodParameterElement(env, archive, (VariableElement) modelElement, modelType);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        } else if (modelElement instanceof VariableElement &amp;&amp;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">            modelElement.getEnclosingElement() instanceof ExecutableElement) {</span>
+<span class="fc" id="L47">            return new MethodParameterElement(env, archive, (VariableElement) modelElement, modelType);</span>
 <span class="pc bpc" id="L48" title="1 of 2 branches missed.">        } else if (modelElement instanceof ExecutableElement) {</span>
 <span class="fc" id="L49">            return new MethodElement(env, archive, (ExecutableElement) modelElement, (ExecutableType) modelType);</span>
         } else {

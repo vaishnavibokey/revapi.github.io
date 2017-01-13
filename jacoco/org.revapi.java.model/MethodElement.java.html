@@ -16,17 +16,11 @@
 
 package org.revapi.java.model;
 
-import java.util.List;
-import java.util.SortedSet;
-
 import javax.annotation.Nonnull;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeMirror;
 
 import org.revapi.Archive;
-import org.revapi.Element;
 import org.revapi.java.compilation.ProbingEnvironment;
 import org.revapi.java.spi.JavaMethodElement;
 import org.revapi.java.spi.JavaTypeElement;
@@ -39,46 +33,26 @@ import org.revapi.java.spi.Util;
 public final class MethodElement extends JavaElementBase&lt;ExecutableElement, ExecutableType&gt; implements JavaMethodElement {
 
     public MethodElement(ProbingEnvironment env, Archive archive, ExecutableElement element, ExecutableType type) {
-<span class="fc" id="L42">        super(env, archive, element, type);</span>
-<span class="fc" id="L43">    }</span>
+<span class="fc" id="L36">        super(env, archive, element, type);</span>
+<span class="fc" id="L37">    }</span>
 
     @SuppressWarnings(&quot;ConstantConditions&quot;)
     @Nonnull @Override public JavaTypeElement getParent() {
-<span class="fc" id="L47">        return (JavaTypeElement) super.getParent();</span>
+<span class="fc" id="L41">        return (JavaTypeElement) super.getParent();</span>
     }
 
     @Nonnull
     @Override
     protected String getHumanReadableElementType() {
-<span class="fc" id="L53">        return &quot;method&quot;;</span>
+<span class="fc" id="L47">        return &quot;method&quot;;</span>
     }
 
     @Override
     protected String createComparableSignature() {
         //the choice of '#' for a separator between the name and signature is because it precedes both '(' and any
         //legal character in a method name in the ASCII table
-<span class="fc" id="L60">        return getDeclaringElement().getSimpleName() + &quot;#&quot; +</span>
-<span class="fc" id="L61">            Util.toUniqueString(getModelRepresentation());</span>
-    }
-
-    @Nonnull
-    @Override
-    protected SortedSet&lt;Element&gt; newChildrenInstance() {
-<span class="fc" id="L67">        SortedSet&lt;Element&gt; ret = super.newChildrenInstance();</span>
-
-<span class="fc" id="L69">        List&lt;? extends TypeMirror&gt; pts = getModelRepresentation ().getParameterTypes();</span>
-<span class="fc" id="L70">        List&lt;? extends VariableElement&gt; pes = getDeclaringElement().getParameters();</span>
-
-<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (int i = 0; i &lt; pts.size(); ++i) {</span>
-<span class="fc" id="L73">            TypeMirror t = pts.get(i);</span>
-<span class="fc" id="L74">            VariableElement e = pes.get(i);</span>
-
-<span class="fc" id="L76">            MethodParameterElement p = new MethodParameterElement(environment, getArchive(), e, t);</span>
-<span class="fc" id="L77">            p.setParent(this);</span>
-<span class="fc" id="L78">            ret.add(p);</span>
-        }
-
-<span class="fc" id="L81">        return ret;</span>
+<span class="fc" id="L54">        return getDeclaringElement().getSimpleName() + &quot;#&quot; +</span>
+<span class="fc" id="L55">            Util.toUniqueString(getModelRepresentation());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
