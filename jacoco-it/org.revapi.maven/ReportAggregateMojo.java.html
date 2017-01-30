@@ -271,59 +271,60 @@ import org.revapi.maven.utils.ScopeDependencyTraverser;
 <span class="fc" id="L271">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
 <span class="fc" id="L272">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
 <span class="fc" id="L273">                .withCheckDependencies(resolveDependencies)</span>
-<span class="fc" id="L274">                .withDisallowedExtensions(disallowedExtensions)</span>
-<span class="fc" id="L275">                .withFailOnMissingConfigurationFiles(failOnMissingConfigurationFiles)</span>
-<span class="fc" id="L276">                .withFailOnUnresolvedArtifacts(failOnMissingArchives)</span>
-<span class="fc" id="L277">                .withFailOnUnresolvedDependencies(failOnMissingSupportArchives)</span>
-<span class="fc" id="L278">                .withLocale(locale)</span>
-<span class="fc" id="L279">                .withLog(getLog())</span>
-<span class="fc" id="L280">                .withProject(project)</span>
-<span class="fc" id="L281">                .withRepositorySystem(repositorySystem)</span>
-<span class="fc" id="L282">                .withRepositorySystemSession(repositorySystemSession)</span>
-<span class="fc" id="L283">                .withSkip(skip)</span>
-<span class="fc" id="L284">                .withVersionFormat(versionRegex);</span>
+<span class="fc" id="L274">                .withResolveProvidedDependencies(resolveProvidedDependencies)</span>
+<span class="fc" id="L275">                .withDisallowedExtensions(disallowedExtensions)</span>
+<span class="fc" id="L276">                .withFailOnMissingConfigurationFiles(failOnMissingConfigurationFiles)</span>
+<span class="fc" id="L277">                .withFailOnUnresolvedArtifacts(failOnMissingArchives)</span>
+<span class="fc" id="L278">                .withFailOnUnresolvedDependencies(failOnMissingSupportArchives)</span>
+<span class="fc" id="L279">                .withLocale(locale)</span>
+<span class="fc" id="L280">                .withLog(getLog())</span>
+<span class="fc" id="L281">                .withProject(project)</span>
+<span class="fc" id="L282">                .withRepositorySystem(repositorySystem)</span>
+<span class="fc" id="L283">                .withRepositorySystemSession(repositorySystemSession)</span>
+<span class="fc" id="L284">                .withSkip(skip)</span>
+<span class="fc" id="L285">                .withVersionFormat(versionRegex);</span>
 
-<span class="pc bpc" id="L286" title="1 of 2 branches missed.">        if (revapi == null) {</span>
-<span class="fc" id="L287">            bld = bld.withReporter(defaultReporter);</span>
+<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        if (revapi == null) {</span>
+<span class="fc" id="L288">            bld = bld.withReporter(defaultReporter);</span>
         } else {
-<span class="nc" id="L289">            bld = bld.withRevapiInstance(revapi);</span>
+<span class="nc" id="L290">            bld = bld.withRevapiInstance(revapi);</span>
         }
 
-<span class="fc" id="L292">        return bld.build().analyzer;</span>
+<span class="fc" id="L293">        return bld.build().analyzer;</span>
     }
 
     protected static Plugin findRevapi(MavenProject project) {
-<span class="fc" id="L296">        return project.getBuildPlugins().stream()</span>
-<span class="fc" id="L297">                .filter(p -&gt; &quot;org.revapi:revapi-maven-plugin&quot;.equals(p.getKey()))</span>
-<span class="fc" id="L298">                .findAny().orElse(null);</span>
+<span class="fc" id="L297">        return project.getBuildPlugins().stream()</span>
+<span class="fc" id="L298">                .filter(p -&gt; &quot;org.revapi:revapi-maven-plugin&quot;.equals(p.getKey()))</span>
+<span class="fc" id="L299">                .findAny().orElse(null);</span>
     }
 
     protected static String[] getArtifacts(Xpp3Dom config, String artifactTag) {
-<span class="pc bpc" id="L302" title="1 of 2 branches missed.">        Xpp3Dom oldArtifactsXml = config == null ? null : config.getChild(artifactTag);</span>
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        Xpp3Dom oldArtifactsXml = config == null ? null : config.getChild(artifactTag);</span>
 
-<span class="pc bpc" id="L304" title="1 of 2 branches missed.">        if (oldArtifactsXml == null) {</span>
-<span class="fc" id="L305">            return new String[0];</span>
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">        if (oldArtifactsXml == null) {</span>
+<span class="fc" id="L306">            return new String[0];</span>
         }
 
-<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (oldArtifactsXml.getChildCount() == 0) {</span>
-<span class="nc" id="L309">            String artifact = oldArtifactsXml.getValue();</span>
-<span class="nc" id="L310">            return new String[]{artifact};</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (oldArtifactsXml.getChildCount() == 0) {</span>
+<span class="nc" id="L310">            String artifact = oldArtifactsXml.getValue();</span>
+<span class="nc" id="L311">            return new String[]{artifact};</span>
         } else {
-<span class="nc" id="L312">            String[] ret = new String[oldArtifactsXml.getChildCount()];</span>
-<span class="nc bnc" id="L313" title="All 2 branches missed.">            for (int i = 0; i &lt; oldArtifactsXml.getChildCount(); ++i) {</span>
-<span class="nc" id="L314">                ret[i] = oldArtifactsXml.getChild(i).getValue();</span>
+<span class="nc" id="L313">            String[] ret = new String[oldArtifactsXml.getChildCount()];</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">            for (int i = 0; i &lt; oldArtifactsXml.getChildCount(); ++i) {</span>
+<span class="nc" id="L315">                ret[i] = oldArtifactsXml.getChild(i).getValue();</span>
             }
 
-<span class="nc" id="L317">            return ret;</span>
+<span class="nc" id="L318">            return ret;</span>
         }
     }
 
     private static String getValueOfChild(Xpp3Dom element, String childName) {
-<span class="pc bpc" id="L322" title="1 of 2 branches missed.">        Xpp3Dom child = element == null ? null : element.getChild(childName);</span>
-<span class="pc bpc" id="L323" title="1 of 2 branches missed.">        return child == null ? null : child.getValue();</span>
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">        Xpp3Dom child = element == null ? null : element.getChild(childName);</span>
+<span class="pc bpc" id="L324" title="1 of 2 branches missed.">        return child == null ? null : child.getValue();</span>
     }
 
-<span class="fc" id="L326">    private static final class ProjectVersions {</span>
+<span class="fc" id="L327">    private static final class ProjectVersions {</span>
         Artifact[] oldGavs;
         Artifact[] newGavs;
     }
