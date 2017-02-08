@@ -18,6 +18,7 @@ package org.revapi.java.model;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -60,10 +61,10 @@ public class TypeElement extends JavaElementBase&lt;javax.lang.model.element.Typ
      * @param canonicalName the canonical name of the class
      */
     public TypeElement(ProbingEnvironment env, Archive archive, String binaryName, String canonicalName) {
-<span class="fc" id="L63">        super(env, archive, null, null);</span>
-<span class="fc" id="L64">        this.binaryName = binaryName;</span>
-<span class="fc" id="L65">        this.canonicalName = canonicalName;</span>
-<span class="fc" id="L66">    }</span>
+<span class="fc" id="L64">        super(env, archive, null, null);</span>
+<span class="fc" id="L65">        this.binaryName = binaryName;</span>
+<span class="fc" id="L66">        this.canonicalName = canonicalName;</span>
+<span class="fc" id="L67">    }</span>
 
     /**
      * This constructor is used under &quot;normal working conditions&quot; when the probing environment already has
@@ -74,129 +75,144 @@ public class TypeElement extends JavaElementBase&lt;javax.lang.model.element.Typ
      * @param element the model element to be represented
      */
     public TypeElement(ProbingEnvironment env, Archive archive, javax.lang.model.element.TypeElement element, DeclaredType type) {
-<span class="fc" id="L77">        super(env, archive, element, type);</span>
-<span class="fc" id="L78">        binaryName = env.getElementUtils().getBinaryName(element).toString();</span>
-<span class="fc" id="L79">        canonicalName = element.getQualifiedName().toString();</span>
-<span class="fc" id="L80">    }</span>
+<span class="fc" id="L78">        super(env, archive, element, type);</span>
+<span class="fc" id="L79">        binaryName = env.getElementUtils().getBinaryName(element).toString();</span>
+<span class="fc" id="L80">        canonicalName = element.getQualifiedName().toString();</span>
+<span class="fc" id="L81">    }</span>
 
     @Nonnull
     @Override
     protected String getHumanReadableElementType() {
-<span class="pc bpc" id="L85" title="1 of 5 branches missed.">        switch (element.getKind()) {</span>
+<span class="pc bpc" id="L86" title="1 of 5 branches missed.">        switch (element.getKind()) {</span>
             case ANNOTATION_TYPE:
-<span class="fc" id="L87">                return &quot;@interface&quot;;</span>
+<span class="fc" id="L88">                return &quot;@interface&quot;;</span>
             case CLASS:
-<span class="fc" id="L89">                return &quot;class&quot;;</span>
+<span class="fc" id="L90">                return &quot;class&quot;;</span>
             case ENUM:
-<span class="fc" id="L91">                return &quot;enum&quot;;</span>
+<span class="fc" id="L92">                return &quot;enum&quot;;</span>
             case INTERFACE:
-<span class="fc" id="L93">                return &quot;interface&quot;;</span>
+<span class="fc" id="L94">                return &quot;interface&quot;;</span>
             default:
-<span class="nc" id="L95">                return &quot;class&quot;;</span>
+<span class="nc" id="L96">                return &quot;class&quot;;</span>
         }
     }
 
     public String getBinaryName() {
-<span class="fc" id="L100">        return binaryName;</span>
+<span class="fc" id="L101">        return binaryName;</span>
     }
 
     public String getCanonicalName() {
-<span class="fc" id="L104">        return canonicalName;</span>
+<span class="fc" id="L105">        return canonicalName;</span>
     }
 
     @Override public boolean isInAPI() {
-<span class="fc" id="L108">        return inApi;</span>
+<span class="fc" id="L109">        return inApi;</span>
     }
 
     @Override public boolean isInApiThroughUse() {
-<span class="fc" id="L112">        return inApiThroughUse;</span>
+<span class="fc" id="L113">        return inApiThroughUse;</span>
     }
 
     @Override public Set&lt;UseSite&gt; getUseSites() {
-<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (useSites == null) {</span>
-<span class="pc bpc" id="L117" title="1 of 2 branches missed.">            if (rawUseSites == null) {</span>
-<span class="nc" id="L118">                useSites = Collections.emptySet();</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (useSites == null) {</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if (rawUseSites == null) {</span>
+<span class="nc" id="L119">                useSites = Collections.emptySet();</span>
             } else {
-<span class="fc" id="L120">                useSites = rawUseSites.stream()</span>
-<span class="fc" id="L121">                        .map(u -&gt; new UseSite(u.useType, getModel(u.site, u.indexInParent)))</span>
-<span class="fc" id="L122">                        .collect(Collectors.toSet());</span>
+<span class="fc" id="L121">                useSites = rawUseSites.stream()</span>
+<span class="fc" id="L122">                        .map(u -&gt; {</span>
+<span class="fc" id="L123">                            JavaModelElement model = getModel(u.site, u.indexInParent);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                            return model == null ? null : new UseSite(u.useType, model);</span>
+<span class="fc" id="L125">                        }).filter(Objects::nonNull)</span>
+<span class="fc" id="L126">                        .collect(Collectors.toSet());</span>
             }
-<span class="fc" id="L124">            rawUseSites = null;</span>
+<span class="fc" id="L128">            rawUseSites = null;</span>
         }
 
-<span class="fc" id="L127">        return useSites;</span>
+<span class="fc" id="L131">        return useSites;</span>
     }
 
     public void setInApi(boolean inApi) {
-<span class="fc" id="L131">        this.inApi = inApi;</span>
-<span class="fc" id="L132">    }</span>
-
-    public void setInApiThroughUse(boolean inApiThroughUse) {
-<span class="fc" id="L135">        this.inApiThroughUse = inApiThroughUse;</span>
+<span class="fc" id="L135">        this.inApi = inApi;</span>
 <span class="fc" id="L136">    }</span>
 
-    public void setRawUseSites(Set&lt;ClassPathUseSite&gt; rawUseSites) {
-<span class="fc" id="L139">        this.rawUseSites = rawUseSites;</span>
+    public void setInApiThroughUse(boolean inApiThroughUse) {
+<span class="fc" id="L139">        this.inApiThroughUse = inApiThroughUse;</span>
 <span class="fc" id="L140">    }</span>
+
+    public void setRawUseSites(Set&lt;ClassPathUseSite&gt; rawUseSites) {
+<span class="fc" id="L143">        this.rawUseSites = rawUseSites;</span>
+<span class="fc" id="L144">    }</span>
 
     @Override
     public int compareTo(@Nonnull org.revapi.Element o) {
-<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (!(o.getClass().equals(TypeElement.class))) {</span>
-<span class="fc" id="L145">            return JavaElementFactory.compareByType(this, o);</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (!(o.getClass().equals(TypeElement.class))) {</span>
+<span class="fc" id="L149">            return JavaElementFactory.compareByType(this, o);</span>
         }
 
-<span class="fc" id="L148">        return binaryName.compareTo(((TypeElement) o).binaryName);</span>
+<span class="fc" id="L152">        return binaryName.compareTo(((TypeElement) o).binaryName);</span>
     }
 
     @Override protected String createFullHumanReadableString() {
-<span class="fc" id="L152">        TypeMirror rep = getModelRepresentation();</span>
-<span class="pc bpc" id="L153" title="1 of 2 branches missed.">        return getHumanReadableElementType() + &quot; &quot; + (rep == null ? canonicalName : Util.toHumanReadableString(rep));</span>
+<span class="fc" id="L156">        TypeMirror rep = getModelRepresentation();</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        return getHumanReadableElementType() + &quot; &quot; + (rep == null ? canonicalName : Util.toHumanReadableString(rep));</span>
     }
 
     @Override
     protected String createComparableSignature() {
         //this isn't used, because compareTo is implemented differently
-<span class="nc" id="L159">        return null;</span>
+<span class="nc" id="L163">        return null;</span>
     }
 
     private JavaModelElement getModel(Element element, int indexInParent) {
-<span class="fc" id="L163">        return element.accept(new SimpleElementVisitor8&lt;JavaModelElement, Void&gt;() {</span>
+<span class="fc" id="L167">        return element.accept(new SimpleElementVisitor8&lt;JavaModelElement, Void&gt;() {</span>
             @Override public JavaModelElement visitVariable(VariableElement e, Void ignored) {
-<span class="pc bpc" id="L165" title="1 of 2 branches missed.">                if (e.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                if (e.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
                     //this is a field
-<span class="fc" id="L167">                    TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
-<span class="fc" id="L168">                    List&lt;FieldElement&gt; fs = type.searchChildren(FieldElement.class, false,</span>
-<span class="fc" id="L169">                            FlatFilter.by(f -&gt; f.getDeclaringElement().equals(e)));</span>
-<span class="fc" id="L170">                    return fs.get(0);</span>
-<span class="nc bnc" id="L171" title="All 2 branches missed.">                } else if (e.getEnclosingElement() instanceof javax.lang.model.element.ExecutableElement) {</span>
-                    //this is a method parameter
-<span class="nc" id="L173">                    Element methodEl = e.getEnclosingElement();</span>
-<span class="nc" id="L174">                    TypeElement type = environment.getTypeMap().get(methodEl.getEnclosingElement());</span>
-<span class="nc" id="L175">                    List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
-<span class="nc" id="L176">                            FlatFilter.by(m -&gt; m.getDeclaringElement().equals(methodEl)));</span>
+<span class="fc" id="L171">                    TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">                    if (type == null) {</span>
+<span class="nc" id="L173">                        return null;</span>
+                    }
 
-<span class="nc" id="L178">                    MethodElement method = ms.get(0);</span>
+<span class="fc" id="L176">                    List&lt;FieldElement&gt; fs = type.searchChildren(FieldElement.class, false,</span>
+<span class="fc" id="L177">                            FlatFilter.by(f -&gt; f.getDeclaringElement().equals(e)));</span>
+<span class="fc" id="L178">                    return fs.get(0);</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                } else if (e.getEnclosingElement() instanceof javax.lang.model.element.ExecutableElement) {</span>
+                    //this is a method parameter
+<span class="nc" id="L181">                    Element methodEl = e.getEnclosingElement();</span>
+<span class="nc" id="L182">                    TypeElement type = environment.getTypeMap().get(methodEl.getEnclosingElement());</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                    if (type == null) {</span>
+<span class="nc" id="L184">                        return null;</span>
+                    }
+
+<span class="nc" id="L187">                    List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
+<span class="nc" id="L188">                            FlatFilter.by(m -&gt; m.getDeclaringElement().equals(methodEl)));</span>
+
+<span class="nc" id="L190">                    MethodElement method = ms.get(0);</span>
 
                     //now look for the parameter
-<span class="nc" id="L181">                    List&lt;MethodParameterElement&gt; params =</span>
-<span class="nc" id="L182">                            method.searchChildren(MethodParameterElement.class, false, FlatFilter.by(p -&gt; true));</span>
+<span class="nc" id="L193">                    List&lt;MethodParameterElement&gt; params =</span>
+<span class="nc" id="L194">                            method.searchChildren(MethodParameterElement.class, false, FlatFilter.by(p -&gt; true));</span>
 
-<span class="nc" id="L184">                    return params.get(indexInParent);</span>
+<span class="nc" id="L196">                    return params.get(indexInParent);</span>
                 } else {
-<span class="nc" id="L186">                    return null;</span>
+<span class="nc" id="L198">                    return null;</span>
                 }
             }
 
             @Override public JavaModelElement visitType(javax.lang.model.element.TypeElement e, Void ignored) {
-<span class="fc" id="L191">                return environment.getTypeMap().get(e);</span>
+<span class="fc" id="L203">                return environment.getTypeMap().get(e);</span>
             }
 
             @Override public JavaModelElement visitExecutable(ExecutableElement e, Void ignored) {
-<span class="fc" id="L195">                TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
-<span class="fc" id="L196">                List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
-<span class="fc" id="L197">                        FlatFilter.by(m -&gt; m.getDeclaringElement().equals(e)));</span>
+<span class="fc" id="L207">                TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">                if (type == null) {</span>
+<span class="nc" id="L209">                    return null;</span>
+                }
 
-<span class="fc" id="L199">                return ms.get(0);</span>
+<span class="fc" id="L212">                List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
+<span class="fc" id="L213">                        FlatFilter.by(m -&gt; m.getDeclaringElement().equals(e)));</span>
+
+<span class="fc" id="L215">                return ms.get(0);</span>
             }
         }, null);
     }
