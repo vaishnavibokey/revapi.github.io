@@ -32,7 +32,7 @@ import org.jboss.dmr.ModelNode;
  * A generic difference transform that can ignore differences based on the difference code ({@link
  * org.revapi.Difference#code}) and on the old or new elements' full human representations
  * ({@link org.revapi.Element#getFullHumanReadableString()}).
- * 
+ *
  * &lt;p&gt;The transform is configured using properties in the general form of:
  * &lt;pre&gt;&lt;code&gt;
  *  {
@@ -75,40 +75,30 @@ public class IgnoreDifferenceTransform
     }
 
     public IgnoreDifferenceTransform() {
-<span class="fc" id="L78">        super(&quot;revapi&quot;, &quot;ignore&quot;);</span>
+<span class="fc" id="L78">        super(&quot;revapi.ignore&quot;);</span>
 <span class="fc" id="L79">    }</span>
 
     @Nullable
     @Override
-    public String[] getConfigurationRootPaths() {
-<span class="nc" id="L84">        return new String[]{&quot;revapi.ignore&quot;};</span>
-    }
-
-    @Nullable
-    @Override
-    public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (&quot;revapi.ignore&quot;.equals(configurationRootPath)) {</span>
-<span class="nc" id="L91">            return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/ignore-schema.json&quot;),</span>
-<span class="nc" id="L92">                    Charset.forName(&quot;UTF-8&quot;));</span>
-        } else {
-<span class="nc" id="L94">            return null;</span>
-        }
+    public Reader getJSONSchema() {
+<span class="nc" id="L84">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/ignore-schema.json&quot;),</span>
+<span class="nc" id="L85">                Charset.forName(&quot;UTF-8&quot;));</span>
     }
 
     @Nullable
     @Override
     protected Void initConfiguration() {
-<span class="fc" id="L101">        return null;</span>
+<span class="fc" id="L91">        return null;</span>
     }
 
     @Nonnull
     @Override
     protected IgnoreRecipe newRecipe(Void context, ModelNode config) {
-<span class="fc" id="L107">        return new IgnoreRecipe(config);</span>
+<span class="fc" id="L97">        return new IgnoreRecipe(config);</span>
     }
 
     @Override
     public void close() {
-<span class="fc" id="L112">    }</span>
+<span class="fc" id="L102">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

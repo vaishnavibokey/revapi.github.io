@@ -91,95 +91,91 @@ import org.revapi.Element;
     @Override public void close() throws Exception {
 <span class="nc" id="L92">    }</span>
 
-    @Nullable @Override public String[] getConfigurationRootPaths() {
-<span class="nc" id="L95">        return new String[]{&quot;revapi.semver.ignore&quot;};</span>
+    @Nullable @Override public String getExtensionId() {
+<span class="fc" id="L95">        return &quot;revapi.semver.ignore&quot;;</span>
     }
 
-    @Nullable @Override public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (&quot;revapi.semver.ignore&quot;.equals(configurationRootPath)) {</span>
-<span class="nc" id="L100">            return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/semver-ignore-schema.json&quot;),</span>
-<span class="nc" id="L101">                    Charset.forName(&quot;UTF-8&quot;));</span>
-        } else {
-<span class="nc" id="L103">            return null;</span>
-        }
+    @Nullable @Override public Reader getJSONSchema() {
+<span class="nc" id="L99">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/semver-ignore-schema.json&quot;),</span>
+<span class="nc" id="L100">                Charset.forName(&quot;UTF-8&quot;));</span>
     }
 
     @Override public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L108">        ModelNode node = analysisContext.getConfiguration().get(&quot;revapi&quot;, &quot;semver&quot;, &quot;ignore&quot;);</span>
+<span class="fc" id="L104">        ModelNode node = analysisContext.getConfiguration();</span>
 
-<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (hasMultipleElements(analysisContext.getOldApi().getArchives())</span>
-<span class="pc bpc" id="L111" title="1 of 2 branches missed.">                || hasMultipleElements(analysisContext.getNewApi().getArchives())) {</span>
-<span class="nc" id="L112">            throw new IllegalArgumentException(</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (hasMultipleElements(analysisContext.getOldApi().getArchives())</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                || hasMultipleElements(analysisContext.getNewApi().getArchives())) {</span>
+<span class="nc" id="L108">            throw new IllegalArgumentException(</span>
                     &quot;The semver extension doesn't handle changes in multiple archives at once.&quot;);
         }
 
-<span class="pc bpc" id="L116" title="1 of 4 branches missed.">        enabled = node.get(&quot;enabled&quot;).isDefined() &amp;&amp; node.get(&quot;enabled&quot;).asBoolean();</span>
+<span class="pc bpc" id="L112" title="1 of 4 branches missed.">        enabled = node.get(&quot;enabled&quot;).isDefined() &amp;&amp; node.get(&quot;enabled&quot;).asBoolean();</span>
 
-<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (enabled) {</span>
-<span class="fc" id="L119">            Archive oldArchive = analysisContext.getOldApi().getArchives().iterator().next();</span>
-<span class="fc" id="L120">            Archive newArchive = analysisContext.getNewApi().getArchives().iterator().next();</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (enabled) {</span>
+<span class="fc" id="L115">            Archive oldArchive = analysisContext.getOldApi().getArchives().iterator().next();</span>
+<span class="fc" id="L116">            Archive newArchive = analysisContext.getNewApi().getArchives().iterator().next();</span>
 
-<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if (!(oldArchive instanceof Archive.Versioned)) {</span>
-<span class="nc" id="L123">                throw new IllegalArgumentException(&quot;Old archive doesn't support extracting the version.&quot;);</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if (!(oldArchive instanceof Archive.Versioned)) {</span>
+<span class="nc" id="L119">                throw new IllegalArgumentException(&quot;Old archive doesn't support extracting the version.&quot;);</span>
             }
 
-<span class="pc bpc" id="L126" title="1 of 2 branches missed.">            if (!(newArchive instanceof Archive.Versioned)) {</span>
-<span class="nc" id="L127">                throw new IllegalArgumentException(&quot;New archive doesn't support extracting the version.&quot;);</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if (!(newArchive instanceof Archive.Versioned)) {</span>
+<span class="nc" id="L123">                throw new IllegalArgumentException(&quot;New archive doesn't support extracting the version.&quot;);</span>
             }
 
-<span class="fc" id="L130">            String oldVersionString = ((Archive.Versioned) oldArchive).getVersion();</span>
-<span class="fc" id="L131">            String newVersionString = ((Archive.Versioned) newArchive).getVersion();</span>
+<span class="fc" id="L126">            String oldVersionString = ((Archive.Versioned) oldArchive).getVersion();</span>
+<span class="fc" id="L127">            String newVersionString = ((Archive.Versioned) newArchive).getVersion();</span>
 
-<span class="fc" id="L133">            Version oldVersion = Version.parse(oldVersionString);</span>
-<span class="fc" id="L134">            Version newVersion = Version.parse(newVersionString);</span>
+<span class="fc" id="L129">            Version oldVersion = Version.parse(oldVersionString);</span>
+<span class="fc" id="L130">            Version newVersion = Version.parse(newVersionString);</span>
 
-<span class="pc bpc" id="L136" title="1 of 6 branches missed.">            if (newVersion.major == 0 &amp;&amp; oldVersion.major == 0 &amp;&amp; !node.get(&quot;versionIncreaseAllows&quot;).isDefined()) {</span>
-<span class="fc" id="L137">                DifferenceSeverity minorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;minor&quot;), DifferenceSeverity.BREAKING);</span>
-<span class="fc" id="L138">                DifferenceSeverity patchVersionAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;patch&quot;), DifferenceSeverity.NON_BREAKING);</span>
+<span class="pc bpc" id="L132" title="1 of 6 branches missed.">            if (newVersion.major == 0 &amp;&amp; oldVersion.major == 0 &amp;&amp; !node.get(&quot;versionIncreaseAllows&quot;).isDefined()) {</span>
+<span class="fc" id="L133">                DifferenceSeverity minorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;minor&quot;), DifferenceSeverity.BREAKING);</span>
+<span class="fc" id="L134">                DifferenceSeverity patchVersionAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;patch&quot;), DifferenceSeverity.NON_BREAKING);</span>
 
-<span class="fc bfc" id="L140" title="All 2 branches covered.">                if (newVersion.minor &gt; oldVersion.minor) {</span>
-<span class="fc" id="L141">                    allowedSeverity = minorChangeAllowed;</span>
-<span class="pc bpc" id="L142" title="2 of 4 branches missed.">                } else if (newVersion.minor == oldVersion.minor &amp;&amp; newVersion.patch &gt; oldVersion.patch) {</span>
-<span class="fc" id="L143">                    allowedSeverity = patchVersionAllowed;</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                if (newVersion.minor &gt; oldVersion.minor) {</span>
+<span class="fc" id="L137">                    allowedSeverity = minorChangeAllowed;</span>
+<span class="pc bpc" id="L138" title="2 of 4 branches missed.">                } else if (newVersion.minor == oldVersion.minor &amp;&amp; newVersion.patch &gt; oldVersion.patch) {</span>
+<span class="fc" id="L139">                    allowedSeverity = patchVersionAllowed;</span>
                 } else {
-<span class="nc" id="L145">                    allowedSeverity = null;</span>
+<span class="nc" id="L141">                    allowedSeverity = null;</span>
                 }
-<span class="fc" id="L147">            } else {</span>
-<span class="fc" id="L148">                DifferenceSeverity majorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;major&quot;), DifferenceSeverity.BREAKING);</span>
-<span class="fc" id="L149">                DifferenceSeverity minorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;minor&quot;), DifferenceSeverity.NON_BREAKING);</span>
-<span class="fc" id="L150">                DifferenceSeverity patchVersionAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;patch&quot;), DifferenceSeverity.EQUIVALENT);</span>
+<span class="fc" id="L143">            } else {</span>
+<span class="fc" id="L144">                DifferenceSeverity majorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;major&quot;), DifferenceSeverity.BREAKING);</span>
+<span class="fc" id="L145">                DifferenceSeverity minorChangeAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;minor&quot;), DifferenceSeverity.NON_BREAKING);</span>
+<span class="fc" id="L146">                DifferenceSeverity patchVersionAllowed = asSeverity(node.get(&quot;versionIncreaseAllows&quot;, &quot;patch&quot;), DifferenceSeverity.EQUIVALENT);</span>
 
-<span class="fc bfc" id="L152" title="All 2 branches covered.">                if (newVersion.major &gt; oldVersion.major) {</span>
-<span class="fc" id="L153">                    allowedSeverity = majorChangeAllowed;</span>
-<span class="pc bpc" id="L154" title="1 of 4 branches missed.">                } else if (newVersion.major == oldVersion.major &amp;&amp; newVersion.minor &gt; oldVersion.minor) {</span>
-<span class="fc" id="L155">                    allowedSeverity = minorChangeAllowed;</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                if (newVersion.major &gt; oldVersion.major) {</span>
+<span class="fc" id="L149">                    allowedSeverity = majorChangeAllowed;</span>
+<span class="pc bpc" id="L150" title="1 of 4 branches missed.">                } else if (newVersion.major == oldVersion.major &amp;&amp; newVersion.minor &gt; oldVersion.minor) {</span>
+<span class="fc" id="L151">                    allowedSeverity = minorChangeAllowed;</span>
                 } else {
-<span class="fc" id="L157">                    allowedSeverity = patchVersionAllowed;</span>
+<span class="fc" id="L153">                    allowedSeverity = patchVersionAllowed;</span>
                 }
             }
 
-<span class="fc" id="L161">            passThroughDifferences = Collections.emptyList();</span>
-<span class="fc bfc" id="L162" title="All 2 branches covered.">            if (node.get(&quot;passThroughDifferences&quot;).isDefined()) {</span>
-<span class="fc" id="L163">                passThroughDifferences =</span>
-<span class="fc" id="L164">                        node.get(&quot;passThroughDifferences&quot;).asList().stream().map(ModelNode::asString).collect(toList());</span>
+<span class="fc" id="L157">            passThroughDifferences = Collections.emptyList();</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            if (node.get(&quot;passThroughDifferences&quot;).isDefined()) {</span>
+<span class="fc" id="L159">                passThroughDifferences =</span>
+<span class="fc" id="L160">                        node.get(&quot;passThroughDifferences&quot;).asList().stream().map(ModelNode::asString).collect(toList());</span>
             }
         }
-<span class="fc" id="L167">    }</span>
+<span class="fc" id="L163">    }</span>
 
     private boolean hasMultipleElements(Iterable&lt;?&gt; it) {
-<span class="fc" id="L170">        Iterator&lt;?&gt; i = it.iterator();</span>
-<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        if (!i.hasNext()) {</span>
-<span class="nc" id="L172">            return false;</span>
+<span class="fc" id="L166">        Iterator&lt;?&gt; i = it.iterator();</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (!i.hasNext()) {</span>
+<span class="nc" id="L168">            return false;</span>
         }
 
-<span class="fc" id="L175">        i.next();</span>
+<span class="fc" id="L171">        i.next();</span>
 
-<span class="fc" id="L177">        return i.hasNext();</span>
+<span class="fc" id="L173">        return i.hasNext();</span>
     }
 
     private static final class Version {
-<span class="fc" id="L181">        private static final Pattern SEMVER_PATTERN =</span>
-<span class="fc" id="L182">                Pattern.compile(&quot;(\\d+)(\\.(\\d+)(?:\\.)?(\\d*))?(\\.|-|\\+)?([0-9A-Za-z-.]*)?&quot;);</span>
+<span class="fc" id="L177">        private static final Pattern SEMVER_PATTERN =</span>
+<span class="fc" id="L178">                Pattern.compile(&quot;(\\d+)(\\.(\\d+)(?:\\.)?(\\d*))?(\\.|-|\\+)?([0-9A-Za-z-.]*)?&quot;);</span>
 
         final int major;
         final int minor;
@@ -188,62 +184,62 @@ import org.revapi.Element;
         final String suffix;
 
         static Version parse(String version) {
-<span class="fc" id="L191">            Matcher m = SEMVER_PATTERN.matcher(version);</span>
-<span class="pc bpc" id="L192" title="1 of 2 branches missed.">            if (!m.matches()) {</span>
-<span class="nc" id="L193">                throw new IllegalArgumentException(&quot;Could not parse the version string '&quot; + version</span>
+<span class="fc" id="L187">            Matcher m = SEMVER_PATTERN.matcher(version);</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">            if (!m.matches()) {</span>
+<span class="nc" id="L189">                throw new IllegalArgumentException(&quot;Could not parse the version string '&quot; + version</span>
                         + &quot;'. It does not follow the semver schema.&quot;);
             }
 
-<span class="fc" id="L197">            int major = Integer.valueOf(m.group(1));</span>
-<span class="fc" id="L198">            String minorMatch = m.group(3);</span>
-<span class="pc bpc" id="L199" title="2 of 4 branches missed.">            int minor = minorMatch == null || minorMatch.isEmpty() ? 0 : Integer.valueOf(minorMatch);</span>
-<span class="fc" id="L200">            int patch = 0;</span>
-<span class="fc" id="L201">            String patchMatch = m.group(4);</span>
-<span class="pc bpc" id="L202" title="2 of 4 branches missed.">            if (patchMatch != null &amp;&amp; !patchMatch.isEmpty()) {</span>
-<span class="fc" id="L203">                patch = Integer.valueOf(patchMatch);</span>
+<span class="fc" id="L193">            int major = Integer.valueOf(m.group(1));</span>
+<span class="fc" id="L194">            String minorMatch = m.group(3);</span>
+<span class="pc bpc" id="L195" title="2 of 4 branches missed.">            int minor = minorMatch == null || minorMatch.isEmpty() ? 0 : Integer.valueOf(minorMatch);</span>
+<span class="fc" id="L196">            int patch = 0;</span>
+<span class="fc" id="L197">            String patchMatch = m.group(4);</span>
+<span class="pc bpc" id="L198" title="2 of 4 branches missed.">            if (patchMatch != null &amp;&amp; !patchMatch.isEmpty()) {</span>
+<span class="fc" id="L199">                patch = Integer.valueOf(patchMatch);</span>
             }
-<span class="fc" id="L205">            String sep = m.group(5);</span>
-<span class="fc" id="L206">            String suffix = m.group(6);</span>
+<span class="fc" id="L201">            String sep = m.group(5);</span>
+<span class="fc" id="L202">            String suffix = m.group(6);</span>
 
-<span class="pc bpc" id="L208" title="3 of 4 branches missed.">            if (sep != null &amp;&amp; sep.isEmpty()) {</span>
-<span class="nc" id="L209">                sep = null;</span>
-            }
-
-<span class="pc bpc" id="L212" title="2 of 4 branches missed.">            if (suffix != null &amp;&amp; suffix.isEmpty()) {</span>
-<span class="fc" id="L213">                suffix = null;</span>
+<span class="pc bpc" id="L204" title="3 of 4 branches missed.">            if (sep != null &amp;&amp; sep.isEmpty()) {</span>
+<span class="nc" id="L205">                sep = null;</span>
             }
 
-<span class="fc" id="L216">            return new Version(major, minor, patch, sep, suffix);</span>
+<span class="pc bpc" id="L208" title="2 of 4 branches missed.">            if (suffix != null &amp;&amp; suffix.isEmpty()) {</span>
+<span class="fc" id="L209">                suffix = null;</span>
+            }
+
+<span class="fc" id="L212">            return new Version(major, minor, patch, sep, suffix);</span>
         }
 
-<span class="fc" id="L219">        Version(int major, int minor, int patch, String sep, String suffix) {</span>
-<span class="fc" id="L220">            this.major = major;</span>
-<span class="fc" id="L221">            this.minor = minor;</span>
-<span class="fc" id="L222">            this.patch = patch;</span>
-<span class="fc" id="L223">            this.sep = sep;</span>
-<span class="fc" id="L224">            this.suffix = suffix;</span>
-<span class="fc" id="L225">        }</span>
+<span class="fc" id="L215">        Version(int major, int minor, int patch, String sep, String suffix) {</span>
+<span class="fc" id="L216">            this.major = major;</span>
+<span class="fc" id="L217">            this.minor = minor;</span>
+<span class="fc" id="L218">            this.patch = patch;</span>
+<span class="fc" id="L219">            this.sep = sep;</span>
+<span class="fc" id="L220">            this.suffix = suffix;</span>
+<span class="fc" id="L221">        }</span>
     }
 
     private static DifferenceSeverity asSeverity(ModelNode configNode, DifferenceSeverity defaultValue) {
-<span class="pc bpc" id="L229" title="1 of 4 branches missed.">        if (configNode == null || !configNode.isDefined()) {</span>
-<span class="fc" id="L230">            return defaultValue;</span>
+<span class="pc bpc" id="L225" title="1 of 4 branches missed.">        if (configNode == null || !configNode.isDefined()) {</span>
+<span class="fc" id="L226">            return defaultValue;</span>
         } else {
-<span class="pc bpc" id="L232" title="13 of 22 branches missed.">            switch (configNode.asString()) {</span>
+<span class="pc bpc" id="L228" title="13 of 22 branches missed.">            switch (configNode.asString()) {</span>
                 case &quot;none&quot;:
-<span class="fc" id="L234">                    return null;</span>
+<span class="fc" id="L230">                    return null;</span>
                 case &quot;equivalent&quot;:
-<span class="nc" id="L236">                    return DifferenceSeverity.EQUIVALENT;</span>
+<span class="nc" id="L232">                    return DifferenceSeverity.EQUIVALENT;</span>
                 case &quot;nonBreaking&quot;:
-<span class="fc" id="L238">                    return DifferenceSeverity.NON_BREAKING;</span>
+<span class="fc" id="L234">                    return DifferenceSeverity.NON_BREAKING;</span>
                 case &quot;potentiallyBreaking&quot;:
-<span class="fc" id="L240">                    return DifferenceSeverity.POTENTIALLY_BREAKING;</span>
+<span class="fc" id="L236">                    return DifferenceSeverity.POTENTIALLY_BREAKING;</span>
                 case &quot;breaking&quot;:
-<span class="nc" id="L242">                    return DifferenceSeverity.BREAKING;</span>
+<span class="nc" id="L238">                    return DifferenceSeverity.BREAKING;</span>
                 default:
-<span class="nc" id="L244">                    return defaultValue;</span>
+<span class="nc" id="L240">                    return defaultValue;</span>
             }
         }
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

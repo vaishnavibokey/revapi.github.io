@@ -53,7 +53,7 @@ import org.jboss.dmr.ModelNode;
  *      }
  * }
  * &lt;/code&gt;&lt;/pre&gt;
- * 
+ *
  * &lt;p&gt;If no include or exclude filters are defined, everything is included. If at least 1 include filter is defined, only
  * elements matching it are included. Out of the included elements, some may be further excluded by the exclude
  * filters.
@@ -71,117 +71,113 @@ import org.jboss.dmr.ModelNode;
 
     @Nullable
     @Override
-    public String[] getConfigurationRootPaths() {
-<span class="fc" id="L75">        return new String[]{&quot;revapi.filter&quot;};</span>
+    public String getExtensionId() {
+<span class="fc" id="L75">        return &quot;revapi.filter&quot;;</span>
     }
 
     @Nullable
     @Override
-    public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        if (&quot;revapi.filter&quot;.equals(configurationRootPath)) {</span>
-<span class="fc" id="L82">            return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/filter-schema.json&quot;),</span>
-<span class="fc" id="L83">                    Charset.forName(&quot;UTF-8&quot;));</span>
-        } else {
-<span class="nc" id="L85">            return null;</span>
-        }
+    public Reader getJSONSchema() {
+<span class="fc" id="L81">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/filter-schema.json&quot;),</span>
+<span class="fc" id="L82">                Charset.forName(&quot;UTF-8&quot;));</span>
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="nc" id="L91">        ModelNode root = analysisContext.getConfiguration().get(&quot;revapi&quot;, &quot;filter&quot;);</span>
-<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (!root.isDefined()) {</span>
-<span class="nc" id="L93">            doNothing = true;</span>
-<span class="nc" id="L94">            return;</span>
+<span class="nc" id="L87">        ModelNode root = analysisContext.getConfiguration();</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (!root.isDefined()) {</span>
+<span class="nc" id="L89">            doNothing = true;</span>
+<span class="nc" id="L90">            return;</span>
         }
 
-<span class="nc" id="L97">        ModelNode elements = root.get(&quot;elements&quot;);</span>
-<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (elements.isDefined()) {</span>
-<span class="nc" id="L99">            readFilter(elements, elementIncludes, elementExcludes);</span>
+<span class="nc" id="L93">        ModelNode elements = root.get(&quot;elements&quot;);</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (elements.isDefined()) {</span>
+<span class="nc" id="L95">            readFilter(elements, elementIncludes, elementExcludes);</span>
         }
 
-<span class="nc" id="L102">        ModelNode archives = root.get(&quot;archives&quot;);</span>
-<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (archives.isDefined()) {</span>
-<span class="nc" id="L104">            readFilter(archives, archiveIncludes, archiveExcludes);</span>
+<span class="nc" id="L98">        ModelNode archives = root.get(&quot;archives&quot;);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (archives.isDefined()) {</span>
+<span class="nc" id="L100">            readFilter(archives, archiveIncludes, archiveExcludes);</span>
         }
 
-<span class="nc bnc" id="L107" title="All 6 branches missed.">        doNothing = elementIncludes.isEmpty() &amp;&amp; elementExcludes.isEmpty() &amp;&amp; archiveIncludes.isEmpty() &amp;&amp;</span>
-<span class="nc bnc" id="L108" title="All 2 branches missed.">                archiveExcludes.isEmpty();</span>
-<span class="nc" id="L109">    }</span>
+<span class="nc bnc" id="L103" title="All 6 branches missed.">        doNothing = elementIncludes.isEmpty() &amp;&amp; elementExcludes.isEmpty() &amp;&amp; archiveIncludes.isEmpty() &amp;&amp;</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                archiveExcludes.isEmpty();</span>
+<span class="nc" id="L105">    }</span>
 
     @Override
     public boolean applies(@Nullable Element element) {
-<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (doNothing) {</span>
-<span class="nc" id="L114">            return true;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (doNothing) {</span>
+<span class="nc" id="L110">            return true;</span>
         }
 
-<span class="nc bnc" id="L117" title="All 4 branches missed.">        String archive = element == null ? null : (element.getArchive() == null ? null :</span>
-<span class="nc" id="L118">            element.getArchive().getName());</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        String archive = element == null ? null : (element.getArchive() == null ? null :</span>
+<span class="nc" id="L114">            element.getArchive().getName());</span>
 
-<span class="nc" id="L120">        boolean include = true;</span>
-<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (archive != null) {</span>
-<span class="nc" id="L122">            include = isIncluded(archive, archiveIncludes, archiveExcludes);</span>
+<span class="nc" id="L116">        boolean include = true;</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (archive != null) {</span>
+<span class="nc" id="L118">            include = isIncluded(archive, archiveIncludes, archiveExcludes);</span>
         }
 
-<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (include) {</span>
-<span class="nc bnc" id="L126" title="All 2 branches missed.">            String representation = element == null ? null : element.getFullHumanReadableString();</span>
-<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (representation != null) {</span>
-<span class="nc" id="L128">                include = isIncluded(representation, elementIncludes, elementExcludes);</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (include) {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            String representation = element == null ? null : element.getFullHumanReadableString();</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">            if (representation != null) {</span>
+<span class="nc" id="L124">                include = isIncluded(representation, elementIncludes, elementExcludes);</span>
             }
         }
 
-<span class="nc" id="L132">        return include;</span>
+<span class="nc" id="L128">        return include;</span>
     }
 
     @Override
     public boolean shouldDescendInto(@Nullable Object element) {
-<span class="nc" id="L137">        return true;</span>
+<span class="nc" id="L133">        return true;</span>
     }
 
     @Override
     public void close() {
-<span class="nc" id="L142">    }</span>
+<span class="nc" id="L138">    }</span>
 
     private static void readFilter(ModelNode root, List&lt;Pattern&gt; include, List&lt;Pattern&gt; exclude) {
-<span class="nc" id="L145">        ModelNode includeNode = root.get(&quot;include&quot;);</span>
+<span class="nc" id="L141">        ModelNode includeNode = root.get(&quot;include&quot;);</span>
 
-<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (includeNode.isDefined()) {</span>
-<span class="nc bnc" id="L148" title="All 2 branches missed.">            for (ModelNode inc : includeNode.asList()) {</span>
-<span class="nc" id="L149">                include.add(Pattern.compile(inc.asString()));</span>
-<span class="nc" id="L150">            }</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (includeNode.isDefined()) {</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            for (ModelNode inc : includeNode.asList()) {</span>
+<span class="nc" id="L145">                include.add(Pattern.compile(inc.asString()));</span>
+<span class="nc" id="L146">            }</span>
         }
 
-<span class="nc" id="L153">        ModelNode excludeNode = root.get(&quot;exclude&quot;);</span>
+<span class="nc" id="L149">        ModelNode excludeNode = root.get(&quot;exclude&quot;);</span>
 
-<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (excludeNode.isDefined()) {</span>
-<span class="nc bnc" id="L156" title="All 2 branches missed.">            for (ModelNode exc : excludeNode.asList()) {</span>
-<span class="nc" id="L157">                exclude.add(Pattern.compile(exc.asString()));</span>
-<span class="nc" id="L158">            }</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (excludeNode.isDefined()) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            for (ModelNode exc : excludeNode.asList()) {</span>
+<span class="nc" id="L153">                exclude.add(Pattern.compile(exc.asString()));</span>
+<span class="nc" id="L154">            }</span>
         }
-<span class="nc" id="L160">    }</span>
+<span class="nc" id="L156">    }</span>
 
     private static boolean isIncluded(String representation, List&lt;Pattern&gt; includePatterns, List&lt;Pattern&gt; excludePatterns) {
-<span class="nc" id="L163">        boolean include = true;</span>
+<span class="nc" id="L159">        boolean include = true;</span>
 
-<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (!includePatterns.isEmpty()) {</span>
-<span class="nc" id="L166">            include = false;</span>
-<span class="nc bnc" id="L167" title="All 2 branches missed.">            for (Pattern p : includePatterns) {</span>
-<span class="nc bnc" id="L168" title="All 2 branches missed.">                if (p.matcher(representation).matches()) {</span>
-<span class="nc" id="L169">                    include = true;</span>
-<span class="nc" id="L170">                    break;</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (!includePatterns.isEmpty()) {</span>
+<span class="nc" id="L162">            include = false;</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            for (Pattern p : includePatterns) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (p.matcher(representation).matches()) {</span>
+<span class="nc" id="L165">                    include = true;</span>
+<span class="nc" id="L166">                    break;</span>
                 }
-<span class="nc" id="L172">            }</span>
+<span class="nc" id="L168">            }</span>
         }
 
-<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (include) {</span>
-<span class="nc bnc" id="L176" title="All 2 branches missed.">            for (Pattern p : excludePatterns) {</span>
-<span class="nc bnc" id="L177" title="All 2 branches missed.">                if (p.matcher(representation).matches()) {</span>
-<span class="nc" id="L178">                    include = false;</span>
-<span class="nc" id="L179">                    break;</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (include) {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            for (Pattern p : excludePatterns) {</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                if (p.matcher(representation).matches()) {</span>
+<span class="nc" id="L174">                    include = false;</span>
+<span class="nc" id="L175">                    break;</span>
                 }
-<span class="nc" id="L181">            }</span>
+<span class="nc" id="L177">            }</span>
         }
 
-<span class="nc" id="L184">        return include;</span>
+<span class="nc" id="L180">        return include;</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
