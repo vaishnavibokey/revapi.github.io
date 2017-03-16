@@ -46,240 +46,234 @@ import org.revapi.java.spi.JavaModelElement;
  */
 abstract class AbstractIncludeExcludeFilter implements ElementFilter {
     private final String configurationRootPath;
-    private final String[] configurationRoot;
     private final String schemaPath;
-<span class="fc" id="L51">    private final IdentityHashMap&lt;Object, InclusionState&gt; elementResults = new IdentityHashMap&lt;&gt;();</span>
+<span class="fc" id="L50">    private final IdentityHashMap&lt;Object, InclusionState&gt; elementResults = new IdentityHashMap&lt;&gt;();</span>
     protected Predicate&lt;String&gt; includeTest;
     protected Predicate&lt;String&gt; excludeTest;
     protected boolean doNothing;
 
-<span class="fc" id="L56">    protected AbstractIncludeExcludeFilter(String configurationRootPath, String schemaPath) {</span>
-<span class="fc" id="L57">        this.configurationRootPath = configurationRootPath;</span>
-<span class="fc" id="L58">        this.configurationRoot = configurationRootPath.split(&quot;\\.&quot;);</span>
-<span class="fc" id="L59">        this.schemaPath = schemaPath;</span>
-<span class="fc" id="L60">    }</span>
+<span class="fc" id="L55">    protected AbstractIncludeExcludeFilter(String configurationRootPath, String schemaPath) {</span>
+<span class="fc" id="L56">        this.configurationRootPath = configurationRootPath;</span>
+<span class="fc" id="L57">        this.schemaPath = schemaPath;</span>
+<span class="fc" id="L58">    }</span>
 
     protected Predicate&lt;String&gt; composeTest(List&lt;String&gt; fullMatches, List&lt;Pattern&gt; patterns) {
-<span class="pc bpc" id="L63" title="1 of 4 branches missed.">        if (fullMatches != null &amp;&amp; fullMatches.size() &gt; 0) {</span>
-<span class="fc bfc" id="L64" title="All 2 branches covered.">            return s -&gt; Collections.binarySearch(fullMatches, s) &gt;= 0;</span>
-<span class="pc bpc" id="L65" title="1 of 4 branches missed.">        } else if (patterns != null &amp;&amp; patterns.size() &gt; 0) {</span>
-<span class="fc" id="L66">            return s -&gt; patterns.stream().anyMatch(p -&gt; p.matcher(s).matches());</span>
+<span class="pc bpc" id="L61" title="1 of 4 branches missed.">        if (fullMatches != null &amp;&amp; fullMatches.size() &gt; 0) {</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            return s -&gt; Collections.binarySearch(fullMatches, s) &gt;= 0;</span>
+<span class="pc bpc" id="L63" title="1 of 4 branches missed.">        } else if (patterns != null &amp;&amp; patterns.size() &gt; 0) {</span>
+<span class="fc" id="L64">            return s -&gt; patterns.stream().anyMatch(p -&gt; p.matcher(s).matches());</span>
         } else {
-<span class="fc" id="L68">            return null;</span>
+<span class="fc" id="L66">            return null;</span>
         }
     }
 
     @Override
     public void close() throws Exception {
-<span class="fc" id="L74">        elementResults.clear();</span>
-<span class="fc" id="L75">    }</span>
+<span class="fc" id="L72">        elementResults.clear();</span>
+<span class="fc" id="L73">    }</span>
 
     @Override
-    public @Nullable
-    String[] getConfigurationRootPaths() {
-<span class="fc" id="L80">        return new String[]{configurationRootPath};</span>
+    public @Nullable String getExtensionId() {
+<span class="fc" id="L77">        return configurationRootPath;</span>
     }
 
     @Override
-    public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (this.configurationRootPath.equals(configurationRootPath)) {</span>
-<span class="fc" id="L86">            return new InputStreamReader(getClass().getResourceAsStream(schemaPath), Charset.forName(&quot;UTF-8&quot;));</span>
-        } else {
-<span class="nc" id="L88">            return null;</span>
-        }
+    @Nullable
+    public Reader getJSONSchema() {
+<span class="fc" id="L83">        return new InputStreamReader(getClass().getResourceAsStream(schemaPath), Charset.forName(&quot;UTF-8&quot;));</span>
     }
 
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L95">        ModelNode root = analysisContext.getConfiguration().get(configurationRoot);</span>
-<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (!root.isDefined()) {</span>
-<span class="fc" id="L97">            doNothing = true;</span>
-<span class="fc" id="L98">            return;</span>
+<span class="fc" id="L89">        ModelNode root = analysisContext.getConfiguration();</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (!root.isDefined()) {</span>
+<span class="fc" id="L91">            doNothing = true;</span>
+<span class="fc" id="L92">            return;</span>
         }
 
-<span class="fc" id="L101">        ModelNode regex = root.get(&quot;regex&quot;);</span>
-<span class="pc bpc" id="L102" title="1 of 4 branches missed.">        boolean regexes = regex.isDefined() &amp;&amp; regex.asBoolean();</span>
+<span class="fc" id="L95">        ModelNode regex = root.get(&quot;regex&quot;);</span>
+<span class="pc bpc" id="L96" title="1 of 4 branches missed.">        boolean regexes = regex.isDefined() &amp;&amp; regex.asBoolean();</span>
 
-<span class="fc" id="L104">        List&lt;String&gt; fullMatches = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L105">        List&lt;Pattern&gt; patterns = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L98">        List&lt;String&gt; fullMatches = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L99">        List&lt;Pattern&gt; patterns = new ArrayList&lt;&gt;();</span>
 
-<span class="fc" id="L107">        readMatches(root.get(&quot;exclude&quot;), regexes, fullMatches, patterns);</span>
+<span class="fc" id="L101">        readMatches(root.get(&quot;exclude&quot;), regexes, fullMatches, patterns);</span>
 
-<span class="fc" id="L109">        validateConfiguration(true, fullMatches, patterns, regexes);</span>
+<span class="fc" id="L103">        validateConfiguration(true, fullMatches, patterns, regexes);</span>
 
-<span class="fc" id="L111">        this.excludeTest = composeTest(fullMatches, patterns);</span>
+<span class="fc" id="L105">        this.excludeTest = composeTest(fullMatches, patterns);</span>
 
-<span class="fc" id="L113">        fullMatches = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L114">        patterns = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L107">        fullMatches = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L108">        patterns = new ArrayList&lt;&gt;();</span>
 
-<span class="fc" id="L116">        readMatches(root.get(&quot;include&quot;), regexes, fullMatches, patterns);</span>
+<span class="fc" id="L110">        readMatches(root.get(&quot;include&quot;), regexes, fullMatches, patterns);</span>
 
-<span class="fc" id="L118">        validateConfiguration(false, fullMatches, patterns, regexes);</span>
+<span class="fc" id="L112">        validateConfiguration(false, fullMatches, patterns, regexes);</span>
 
-<span class="fc" id="L120">        this.includeTest = composeTest(fullMatches, patterns);</span>
+<span class="fc" id="L114">        this.includeTest = composeTest(fullMatches, patterns);</span>
 
-<span class="pc bpc" id="L122" title="1 of 4 branches missed.">        doNothing = includeTest == null &amp;&amp; excludeTest == null;</span>
-<span class="fc" id="L123">    }</span>
+<span class="pc bpc" id="L116" title="1 of 4 branches missed.">        doNothing = includeTest == null &amp;&amp; excludeTest == null;</span>
+<span class="fc" id="L117">    }</span>
 
     protected abstract void validateConfiguration(boolean excludes, List&lt;String&gt; fullMatches, List&lt;Pattern&gt; patterns,
             boolean regexes);
 
     private void readMatches(ModelNode array, boolean regexes, List&lt;String&gt; fullMatches, List&lt;Pattern&gt; patterns) {
-<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (!array.isDefined()) {</span>
-<span class="fc" id="L130">            return;</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (!array.isDefined()) {</span>
+<span class="fc" id="L124">            return;</span>
         }
 
-<span class="fc bfc" id="L133" title="All 2 branches covered.">        for (ModelNode ann : array.asList()) {</span>
-<span class="fc" id="L134">            String name = ann.asString();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        for (ModelNode ann : array.asList()) {</span>
+<span class="fc" id="L128">            String name = ann.asString();</span>
 
-<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (regexes) {</span>
-<span class="fc" id="L137">                patterns.add(Pattern.compile(name));</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (regexes) {</span>
+<span class="fc" id="L131">                patterns.add(Pattern.compile(name));</span>
             } else {
-<span class="fc" id="L139">                fullMatches.add(name);</span>
+<span class="fc" id="L133">                fullMatches.add(name);</span>
             }
-<span class="fc" id="L141">        }</span>
+<span class="fc" id="L135">        }</span>
 
-<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (!regexes) {</span>
-<span class="fc" id="L144">            Collections.sort(fullMatches);</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (!regexes) {</span>
+<span class="fc" id="L138">            Collections.sort(fullMatches);</span>
         }
-<span class="fc" id="L146">    }</span>
+<span class="fc" id="L140">    }</span>
 
 
     @Override
     public boolean applies(@Nullable Element element) {
-<span class="fc" id="L151">        return decide(element);</span>
+<span class="fc" id="L145">        return decide(element);</span>
     }
 
     @Override
     public boolean shouldDescendInto(@Nullable Object element) {
-<span class="fc" id="L156">        return true;</span>
+<span class="fc" id="L150">        return true;</span>
     }
 
     @SuppressWarnings(&quot;ConstantConditions&quot;)
     private boolean decide(@Nullable Object element) {
         //we don't exclude anything that we don't handle...
-<span class="pc bpc" id="L162" title="1 of 4 branches missed.">        if (doNothing || !(element instanceof JavaElement)) {</span>
-<span class="fc" id="L163">            return true;</span>
+<span class="pc bpc" id="L156" title="1 of 4 branches missed.">        if (doNothing || !(element instanceof JavaElement)) {</span>
+<span class="fc" id="L157">            return true;</span>
         }
 
-<span class="fc" id="L166">        InclusionState ret = elementResults.get(element);</span>
-<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (ret != null) {</span>
-<span class="nc" id="L168">            return ret.toBoolean();</span>
+<span class="fc" id="L160">        InclusionState ret = elementResults.get(element);</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (ret != null) {</span>
+<span class="nc" id="L162">            return ret.toBoolean();</span>
         }
 
-<span class="fc" id="L171">        JavaElement el = (JavaElement) element;</span>
+<span class="fc" id="L165">        JavaElement el = (JavaElement) element;</span>
 
         //exploit the fact that parent elements are always filtered before the children
-<span class="fc" id="L174">        Element parent = el.getParent();</span>
-<span class="fc bfc" id="L175" title="All 2 branches covered.">        InclusionState parentInclusionState = parent == null ? InclusionState.UNDECIDED</span>
-<span class="fc" id="L176">                : elementResults.get(parent);</span>
+<span class="fc" id="L168">        Element parent = el.getParent();</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        InclusionState parentInclusionState = parent == null ? InclusionState.UNDECIDED</span>
+<span class="fc" id="L170">                : elementResults.get(parent);</span>
 
         //if we have no record of the parent inclusion, then this is a top-level class. Assume it wants to be included.
-<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (parentInclusionState == null) {</span>
-<span class="fc" id="L180">            parentInclusionState = InclusionState.UNDECIDED;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (parentInclusionState == null) {</span>
+<span class="fc" id="L174">            parentInclusionState = InclusionState.UNDECIDED;</span>
         }
 
         //this is a java element, but not a model-based element - i.e. this is an annotation.
-<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (!(element instanceof JavaModelElement)) {</span>
-<span class="fc" id="L185">            return decideAnnotation((JavaAnnotationElement) element, parentInclusionState);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (!(element instanceof JavaModelElement)) {</span>
+<span class="fc" id="L179">            return decideAnnotation((JavaAnnotationElement) element, parentInclusionState);</span>
         }
 
-<span class="fc" id="L188">        JavaModelElement javaElement = (JavaModelElement) element;</span>
+<span class="fc" id="L182">        JavaModelElement javaElement = (JavaModelElement) element;</span>
 
-<span class="fc" id="L190">        Stream&lt;String&gt; tested = getTestedElementRepresentations(javaElement);</span>
+<span class="fc" id="L184">        Stream&lt;String&gt; tested = getTestedElementRepresentations(javaElement);</span>
 
         //let's first assume we're going to inherit the parent's inclusion state
-<span class="fc" id="L193">        ret = parentInclusionState;</span>
+<span class="fc" id="L187">        ret = parentInclusionState;</span>
 
         //now see if we need to change that assumption
-<span class="pc bpc" id="L196" title="1 of 4 branches missed.">        switch (parentInclusionState) {</span>
+<span class="pc bpc" id="L190" title="1 of 4 branches missed.">        switch (parentInclusionState) {</span>
         case INCLUDED:
             //the parent was explicitly included in the results. We therefore only need to check if the annotations
             //on this element should be excluded
-<span class="fc bfc" id="L200" title="All 2 branches covered.">            if (excludeTest != null) {</span>
-<span class="fc bfc" id="L201" title="All 2 branches covered.">                if (tested.anyMatch(s -&gt; excludeTest.test(s))) {</span>
-<span class="fc" id="L202">                    ret = InclusionState.EXCLUDED;</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">            if (excludeTest != null) {</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">                if (tested.anyMatch(s -&gt; excludeTest.test(s))) {</span>
+<span class="fc" id="L196">                    ret = InclusionState.EXCLUDED;</span>
                 }
             }
             break;
         case EXCLUDED:
-<span class="pc bpc" id="L207" title="1 of 2 branches missed.">            if (!canBeReIncluded(javaElement)) {</span>
-<span class="nc" id="L208">                break;</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">            if (!canBeReIncluded(javaElement)) {</span>
+<span class="nc" id="L202">                break;</span>
             }
             //the child element can be re-included, so the full suite of tests need to be run.
             //i.e. this fall-through is intentional.
         case UNDECIDED:
             //ok, the parent is undecided. This means we have to do the full checks on this element.
-<span class="fc" id="L214">            List&lt;String&gt; testedList = null;</span>
-<span class="fc bfc" id="L215" title="All 4 branches covered.">            if (includeTest != null &amp;&amp; excludeTest != null) {</span>
-<span class="fc" id="L216">                testedList = tested.collect(toList());</span>
-<span class="fc" id="L217">                tested = testedList.stream();</span>
+<span class="fc" id="L208">            List&lt;String&gt; testedList = null;</span>
+<span class="fc bfc" id="L209" title="All 4 branches covered.">            if (includeTest != null &amp;&amp; excludeTest != null) {</span>
+<span class="fc" id="L210">                testedList = tested.collect(toList());</span>
+<span class="fc" id="L211">                tested = testedList.stream();</span>
             }
 
-<span class="fc bfc" id="L220" title="All 2 branches covered.">            if (includeTest != null) {</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            if (includeTest != null) {</span>
                 //ok, there is an include test but the parent is undecided. This means that the parent actually
                 //didn't match the include test. Let's check with this element.
-<span class="fc bfc" id="L223" title="All 2 branches covered.">                ret = tested.anyMatch(s -&gt; includeTest.test(s))</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">                ret = tested.anyMatch(s -&gt; includeTest.test(s))</span>
                         ? InclusionState.INCLUDED
                         : InclusionState.EXCLUDED;
             }
 
-<span class="fc bfc" id="L228" title="All 2 branches covered.">            if (excludeTest != null) {</span>
-<span class="fc bfc" id="L229" title="All 2 branches covered.">                if (testedList != null) {</span>
-<span class="fc" id="L230">                    tested = testedList.stream();</span>
+<span class="fc bfc" id="L222" title="All 2 branches covered.">            if (excludeTest != null) {</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">                if (testedList != null) {</span>
+<span class="fc" id="L224">                    tested = testedList.stream();</span>
                 }
 
                 //there is an exclude test but the parent is undecided. This means that the exclude check didn't
                 //match the parent. Let's check again with this element.
 
-<span class="fc bfc" id="L236" title="All 2 branches covered.">                if (tested.anyMatch(s -&gt; excludeTest.test(s))) {</span>
-<span class="fc" id="L237">                    ret = InclusionState.EXCLUDED;</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">                if (tested.anyMatch(s -&gt; excludeTest.test(s))) {</span>
+<span class="fc" id="L231">                    ret = InclusionState.EXCLUDED;</span>
                 }
             }
             break;
         }
 
-<span class="fc" id="L243">        elementResults.put(element, ret);</span>
-<span class="fc" id="L244">        return ret.toBoolean();</span>
+<span class="fc" id="L237">        elementResults.put(element, ret);</span>
+<span class="fc" id="L238">        return ret.toBoolean();</span>
     }
 
     boolean decideAnnotation(JavaAnnotationElement annotation, InclusionState parentInclusionState) {
         //annotations cannot be annotated but it would also be awkward to check a method and NOT its annotations...
         //therefore we just include the annotations based on the inclusion state of the annotated element.
-<span class="fc" id="L250">        return parentInclusionState.toBoolean();</span>
+<span class="fc" id="L244">        return parentInclusionState.toBoolean();</span>
     }
 
     protected abstract boolean canBeReIncluded(JavaModelElement element);
 
     protected abstract Stream&lt;String&gt; getTestedElementRepresentations(JavaModelElement element);
 
-<span class="pc" id="L257">    protected enum InclusionState {</span>
+<span class="pc" id="L251">    protected enum InclusionState {</span>
         /**
          * The element was explicitly determined to be included
          */
-<span class="fc" id="L261">        INCLUDED,</span>
+<span class="fc" id="L255">        INCLUDED,</span>
 
         /**
          * The element was explicitly determined to be excluded
          */
-<span class="fc" id="L266">        EXCLUDED,</span>
+<span class="fc" id="L260">        EXCLUDED,</span>
 
         /**
          * There was no precise decision possible on the element
          */
-<span class="fc" id="L271">        UNDECIDED;</span>
+<span class="fc" id="L265">        UNDECIDED;</span>
 
 
         boolean toBoolean() {
-<span class="fc bfc" id="L275" title="All 2 branches covered.">            switch (this) {</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">            switch (this) {</span>
             case INCLUDED:
             case UNDECIDED:
-<span class="fc" id="L278">                return true;</span>
+<span class="fc" id="L272">                return true;</span>
             default:
-<span class="fc" id="L280">                return false;</span>
+<span class="fc" id="L274">                return false;</span>
             }
         }
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

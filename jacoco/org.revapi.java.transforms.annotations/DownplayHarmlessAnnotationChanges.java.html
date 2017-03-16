@@ -62,17 +62,17 @@ import org.revapi.java.spi.JavaModelElement;
     @Override public void close() throws Exception {
 <span class="fc" id="L63">    }</span>
 
-    @Nullable @Override public String[] getConfigurationRootPaths() {
-<span class="fc" id="L66">        return new String[] {&quot;revapi.java.downplayHarmlessAnnotationChanges&quot;};</span>
+    @Nullable @Override public String getExtensionId() {
+<span class="fc" id="L66">        return &quot;revapi.java.downplayHarmlessAnnotationChanges&quot;;</span>
     }
 
-    @Nullable @Override public Reader getJSONSchema(@Nonnull String configurationRootPath) {
-<span class="nc" id="L70">        return new StringReader(&quot;{\&quot;type\&quot;: \&quot;boolean\&quot;}&quot;);</span>
+    @Nullable @Override public Reader getJSONSchema() {
+<span class="fc" id="L70">        return new StringReader(&quot;{\&quot;type\&quot;: \&quot;boolean\&quot;}&quot;);</span>
     }
 
     @Override public void initialize(@Nonnull AnalysisContext analysisContext) {
 <span class="fc" id="L74">        ModelNode conf = analysisContext.getConfiguration()</span>
-<span class="fc" id="L75">                .get(&quot;revapi&quot;, &quot;java&quot;, &quot;downplayHarmlessAnnotationChanges&quot;);</span>
+<span class="fc" id="L75">                .get(&quot;downplayHarmlessAnnotationChanges&quot;);</span>
 
 <span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (conf.isDefined()) {</span>
 <span class="nc bnc" id="L78" title="All 2 branches missed.">            skip = !conf.asBoolean();</span>
@@ -88,4 +88,4 @@ import org.revapi.java.spi.JavaModelElement;
 <span class="fc" id="L88">                .collect(Collectors.toMap(Function.identity(), v -&gt; DifferenceSeverity.EQUIVALENT));</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

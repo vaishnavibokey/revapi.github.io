@@ -57,16 +57,16 @@ public final class AnalysisConfiguration {
 <span class="fc" id="L57">        Set&lt;String&gt; useReportingCodes = readUseReportingCodes(node);</span>
 <span class="fc" id="L58">        boolean ignoreMissingAnnotations = readIgnoreMissingAnnotations(node);</span>
 
-<span class="fc" id="L60">        ModelNode classesRegex = node.get(&quot;revapi&quot;, &quot;java&quot;, &quot;filter&quot;, &quot;classes&quot;, &quot;regex&quot;);</span>
-<span class="fc" id="L61">        ModelNode packagesRegex = node.get(&quot;revapi&quot;, &quot;java&quot;, &quot;filter&quot;, &quot;packages&quot;, &quot;regex&quot;);</span>
+<span class="fc" id="L60">        ModelNode classesRegex = node.get(&quot;filter&quot;, &quot;classes&quot;, &quot;regex&quot;);</span>
+<span class="fc" id="L61">        ModelNode packagesRegex = node.get(&quot;filter&quot;, &quot;packages&quot;, &quot;regex&quot;);</span>
 
-<span class="fc" id="L63">        Set&lt;Pattern&gt; classInclusionFilters = readFilter(node.get(&quot;revapi&quot;, &quot;java&quot;, &quot;filter&quot;, &quot;classes&quot;, &quot;include&quot;),</span>
+<span class="fc" id="L63">        Set&lt;Pattern&gt; classInclusionFilters = readFilter(node.get(&quot;filter&quot;, &quot;classes&quot;, &quot;include&quot;),</span>
                 classesRegex);
-<span class="fc" id="L65">        Set&lt;Pattern&gt; classExclusionFilters = readFilter(node.get(&quot;revapi&quot;, &quot;java&quot;, &quot;filter&quot;, &quot;classes&quot;, &quot;exclude&quot;),</span>
+<span class="fc" id="L65">        Set&lt;Pattern&gt; classExclusionFilters = readFilter(node.get(&quot;filter&quot;, &quot;classes&quot;, &quot;exclude&quot;),</span>
                 classesRegex);
-<span class="fc" id="L67">        Set&lt;Pattern&gt; packageInclusionFilters = readFilter(node.get(&quot;revapi&quot;, &quot;java&quot;, &quot;filter&quot;, &quot;packages&quot;, &quot;include&quot;),</span>
+<span class="fc" id="L67">        Set&lt;Pattern&gt; packageInclusionFilters = readFilter(node.get(&quot;filter&quot;, &quot;packages&quot;, &quot;include&quot;),</span>
                 packagesRegex);
-<span class="fc" id="L69">        Set&lt;Pattern&gt; packageExclusionFilters = readFilter(node.get(&quot;revapi&quot;, &quot;java&quot;, &quot;filter&quot;, &quot;packages&quot;, &quot;exclude&quot;),</span>
+<span class="fc" id="L69">        Set&lt;Pattern&gt; packageExclusionFilters = readFilter(node.get(&quot;filter&quot;, &quot;packages&quot;, &quot;exclude&quot;),</span>
                 packagesRegex);
 
 <span class="fc" id="L72">        return new AnalysisConfiguration(reporting, useReportingCodes,</span>
@@ -103,7 +103,7 @@ public final class AnalysisConfiguration {
     }
 
     private static MissingClassReporting readMissingClassReporting(ModelNode analysisConfig) {
-<span class="fc" id="L106">        ModelNode config = analysisConfig.get(&quot;revapi&quot;, &quot;java&quot;, &quot;missing-classes&quot;, &quot;behavior&quot;);</span>
+<span class="fc" id="L106">        ModelNode config = analysisConfig.get(&quot;missing-classes&quot;, &quot;behavior&quot;);</span>
 <span class="fc bfc" id="L107" title="All 2 branches covered.">        if (config.isDefined()) {</span>
 <span class="pc bpc" id="L108" title="8 of 14 branches missed.">            switch (config.asString()) {</span>
             case &quot;report&quot;:
@@ -122,7 +122,7 @@ public final class AnalysisConfiguration {
     }
 
     private static boolean readIgnoreMissingAnnotations(ModelNode analysisConfig) {
-<span class="fc" id="L125">        ModelNode config = analysisConfig.get(&quot;revapi&quot;, &quot;java&quot;, &quot;missing-classes&quot;, &quot;ignoreMissingAnnotations&quot;);</span>
+<span class="fc" id="L125">        ModelNode config = analysisConfig.get(&quot;missing-classes&quot;, &quot;ignoreMissingAnnotations&quot;);</span>
 <span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (config.isDefined()) {</span>
 <span class="nc" id="L127">            return config.asBoolean();</span>
         }
@@ -132,7 +132,7 @@ public final class AnalysisConfiguration {
 
     private static Set&lt;String&gt; readUseReportingCodes(ModelNode analysisConfig) {
 <span class="fc" id="L134">        Set&lt;String&gt; ret = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L135">        ModelNode config = analysisConfig.get(&quot;revapi&quot;, &quot;java&quot;, &quot;reportUsesFor&quot;);</span>
+<span class="fc" id="L135">        ModelNode config = analysisConfig.get(&quot;reportUsesFor&quot;);</span>
 <span class="fc bfc" id="L136" title="All 2 branches covered.">        if (config.isDefined()) {</span>
 <span class="fc bfc" id="L137" title="All 2 branches covered.">            for (ModelNode code : config.asList()) {</span>
 <span class="fc" id="L138">                ret.add(code.asString());</span>
@@ -170,4 +170,4 @@ public final class AnalysisConfiguration {
 <span class="fc" id="L170">        IGNORE, ERROR, REPORT</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
