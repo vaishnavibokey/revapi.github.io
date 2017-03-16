@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServiceTypeLoader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">ServiceTypeLoader.java</span></div><h1>ServiceTypeLoader.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2017 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceConfigurationError;
+
+/**
+ * Because Revapi manages the lifecycle of instances of its extensions, it cannot unfortunately use the
+ * {@link java.util.ServiceLoader} directly (before Java 9 which enhances it to support the use case Revapi needs).
+ *
+ * &lt;p&gt;This class is similar to {@link java.util.ServiceLoader} but instead of providing instances of the service
+ * implementations, it provides &lt;b&gt;types&lt;/b&gt; of the service implementations. Users of this class are then responsible
+ * for using these types anyway they want (instantiate them or whatever).
+ *
+ * @author Lukas Krejci
+ * @since 0.8.0
+ */
+public final class ServiceTypeLoader&lt;T&gt; implements Iterable&lt;Class&lt;? extends T&gt;&gt; {
+    private static final String PREFIX = &quot;META-INF/services/&quot;;
+
+    private final ClassLoader classLoader;
+    private final Class&lt;T&gt; serviceType;
+    private List&lt;Class&lt;? extends T&gt;&gt; cache;
+
+<span class="nc" id="L47">    private ServiceTypeLoader(ClassLoader classLoader, Class&lt;T&gt; serviceType) {</span>
+<span class="nc" id="L48">        this.classLoader = classLoader;</span>
+<span class="nc" id="L49">        this.serviceType = serviceType;</span>
+<span class="nc" id="L50">    }</span>
+
+    public static &lt;X&gt; ServiceTypeLoader&lt;X&gt; load(Class&lt;X&gt; serviceType, ClassLoader cl) {
+<span class="nc" id="L53">        return new ServiceTypeLoader&lt;&gt;(cl, serviceType);</span>
+    }
+
+    /**
+     * Locates the services in the context classloader of the current thread.
+     *
+     * @param serviceType the type of the services to locate
+     * @param &lt;X&gt; the type of the service
+     * @return the service type loader
+     */
+    public static &lt;X&gt; ServiceTypeLoader&lt;X&gt; load(Class&lt;X&gt; serviceType) {
+<span class="nc" id="L64">        return load(serviceType, Thread.currentThread().getContextClassLoader());</span>
+    }
+
+    public void reload() {
+<span class="nc" id="L68">        cache = null;</span>
+<span class="nc" id="L69">    }</span>
+
+    @Override public Iterator&lt;Class&lt;? extends T&gt;&gt; iterator() {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (cache == null) {</span>
+<span class="nc" id="L73">            load();</span>
+        }
+
+<span class="nc" id="L76">        return cache.iterator();</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;) private void load() throws ServiceConfigurationError {
+<span class="nc" id="L80">        cache = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L82">        String serviceFileLocation = PREFIX + serviceType.getName();</span>
+        Enumeration&lt;URL&gt; resources;
+
+        try {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            resources = classLoader == null</span>
+<span class="nc" id="L87">                    ? ClassLoader.getSystemResources(serviceFileLocation)</span>
+<span class="nc" id="L88">                    : classLoader.getResources(serviceFileLocation);</span>
+<span class="nc" id="L89">        } catch (IOException e) {</span>
+<span class="nc" id="L90">            throw new ServiceConfigurationError(serviceType.getName() + &quot;: Failed to load service configuration file.&quot;);</span>
+<span class="nc" id="L91">        }</span>
+
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        while (resources.hasMoreElements()) {</span>
+<span class="nc" id="L94">            URL resourceFile = resources.nextElement();</span>
+
+<span class="nc" id="L96">            String line = null;</span>
+<span class="nc" id="L97">            int lineNum = 0;</span>
+<span class="nc" id="L98">            try (BufferedReader in = new BufferedReader(new InputStreamReader(resourceFile.openStream()))) {</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                while ((line = in.readLine()) != null) {</span>
+<span class="nc" id="L100">                    lineNum++;</span>
+
+<span class="nc" id="L102">                    int hashIdx = line.indexOf('#');</span>
+
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                    if (hashIdx &gt;= 0) {</span>
+<span class="nc" id="L105">                        line = line.substring(0, hashIdx);</span>
+                    }
+
+<span class="nc" id="L108">                    line = line.trim();</span>
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                    if (line.isEmpty()) {</span>
+<span class="nc" id="L111">                        continue;</span>
+                    }
+
+<span class="nc" id="L114">                    cache.add((Class&lt;? extends T&gt;) Class.forName(line, false, classLoader));</span>
+<span class="nc" id="L115">                }</span>
+<span class="nc bnc" id="L116" title="All 8 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L117">                throw new ServiceConfigurationError(</span>
+<span class="nc" id="L118">                        serviceType.getName() + &quot;: &quot; + resourceFile + &quot;Failed to read service configuration file.&quot;, e);</span>
+<span class="nc" id="L119">            } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L120">                throw new ServiceConfigurationError(</span>
+<span class="nc" id="L121">                        serviceType.getName() + &quot;: &quot; + resourceFile + &quot;:&quot; + lineNum + &quot;: Class not found: &quot; + line, e);</span>
+<span class="nc" id="L122">            } catch (ClassCastException e) {</span>
+<span class="nc" id="L123">                throw new ServiceConfigurationError(</span>
+<span class="nc" id="L124">                        serviceType.getName() + &quot;: &quot; + resourceFile + &quot;:&quot; + lineNum +</span>
+                                &quot;: Class doesn't implement service interface: &quot; + line, e);
+<span class="nc" id="L126">            }</span>
+<span class="nc" id="L127">        }</span>
+<span class="nc" id="L128">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

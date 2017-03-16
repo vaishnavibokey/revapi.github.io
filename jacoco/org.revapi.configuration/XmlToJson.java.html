@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlToJson.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.configuration</a> &gt; <span class="el_source">XmlToJson.java</span></div><h1>XmlToJson.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2017 Lukas Krejci
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
+ */
+
+package org.revapi.configuration;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.revapi.Revapi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * A tool to convert some XML representation of the Revapi configuration to {@link ModelNode} used by Revapi.
+ *
+ * @param &lt;Xml&gt; The type of the xml representation used by the calling code.
+ *
+ * @author Lukas Krejci
+ * @since 0.8.0
+ */
+public final class XmlToJson&lt;Xml&gt; {
+<span class="fc" id="L49">    private static final Logger LOG = LoggerFactory.getLogger(XmlToJson.class);</span>
+
+    private final Function&lt;Xml, String&gt; getName;
+    private final BiFunction&lt;Xml, String, String&gt; getAttributeValue;
+    private final Function&lt;Xml, String&gt; getValue;
+    private final Function&lt;Xml, List&lt;Xml&gt;&gt; getChildren;
+    private final Map&lt;String, ModelNode&gt; knownExtensionSchemas;
+
+    public XmlToJson(Revapi revapi, Function&lt;Xml, String&gt; getName, Function&lt;Xml, String&gt; getValue,
+                     BiFunction&lt;Xml, String, String&gt; getAttributeValue, Function&lt;Xml, List&lt;Xml&gt;&gt; getChildren) {
+<span class="nc" id="L59">        this(getKnownExtensionSchemas(revapi), getName, getValue, getAttributeValue, getChildren);</span>
+<span class="nc" id="L60">    }</span>
+
+    //for testing only
+    XmlToJson(Map&lt;String, ModelNode&gt; knownExtensionSchemas, Function&lt;Xml, String&gt; getName,
+              Function&lt;Xml, String&gt; getValue, BiFunction&lt;Xml, String, String&gt; getAttributeValue,
+<span class="fc" id="L65">              Function&lt;Xml, List&lt;Xml&gt;&gt; getChildren) {</span>
+<span class="fc" id="L66">        this.getName = getName;</span>
+<span class="fc" id="L67">        this.getValue = getValue;</span>
+<span class="fc" id="L68">        this.getAttributeValue = getAttributeValue;</span>
+<span class="fc" id="L69">        this.getChildren = getChildren;</span>
+<span class="fc" id="L70">        this.knownExtensionSchemas = knownExtensionSchemas;</span>
+<span class="fc" id="L71">    }</span>
+
+    public ModelNode convert(Xml xml) {
+<span class="fc" id="L74">        ModelNode fullConfiguration = new ModelNode();</span>
+<span class="fc" id="L75">        fullConfiguration.setEmptyList();</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        for (Xml c : getChildren.apply(xml)) {</span>
+
+<span class="fc" id="L79">            String extensionId = getName.apply(c);</span>
+<span class="fc" id="L80">            String id = getAttributeValue.apply(c, &quot;id&quot;);</span>
+<span class="fc" id="L81">            ModelNode schema = knownExtensionSchemas.get(extensionId);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (schema == null) {</span>
+<span class="nc" id="L83">                LOG.warn(&quot;Extension '&quot; + extensionId +</span>
+                        &quot;' doesn't declare a JSON schema but XML contains its configuration. Cannot convert it into&quot; +
+                        &quot; JSON and will ignore it!&quot;);
+<span class="nc" id="L86">                continue;</span>
+            }
+
+<span class="fc" id="L89">            ModelNode config = convert(c, schema);</span>
+
+<span class="fc" id="L91">            ModelNode instanceConfig = new ModelNode();</span>
+<span class="fc" id="L92">            instanceConfig.get(&quot;extension&quot;).set(extensionId);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            if (id != null) {</span>
+<span class="fc" id="L94">                instanceConfig.get(&quot;id&quot;).set(id);</span>
+            }
+<span class="fc" id="L96">            instanceConfig.get(&quot;configuration&quot;).set(config);</span>
+
+<span class="fc" id="L98">            fullConfiguration.add(instanceConfig);</span>
+<span class="fc" id="L99">        }</span>
+
+<span class="fc" id="L101">        return fullConfiguration;</span>
+    }
+
+    private ModelNode convert(Xml configuration, ModelNode jsonSchema) {
+<span class="fc" id="L105">        return convert(configuration, jsonSchema, jsonSchema);</span>
+    }
+
+    private ModelNode convert(Xml configuration, ModelNode jsonSchema, ModelNode rootSchema) {
+<span class="fc" id="L109">        ModelNode type = jsonSchema.get(&quot;type&quot;);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (!type.isDefined()) {</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (jsonSchema.get(&quot;enum&quot;).isDefined()) {</span>
+<span class="fc" id="L112">                return convertByEnum(configuration, jsonSchema.get(&quot;enum&quot;));</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">            } else if (jsonSchema.get(&quot;$ref&quot;).isDefined()) {</span>
+<span class="fc" id="L114">                jsonSchema = findRef(rootSchema, jsonSchema.get(&quot;$ref&quot;).asString());</span>
+<span class="fc" id="L115">                return convert(configuration, jsonSchema, rootSchema);</span>
+            }
+        }
+
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        if (type.getType() != ModelType.STRING) {</span>
+<span class="nc" id="L120">            throw new IllegalArgumentException(</span>
+                    &quot;JSON schema allows for multiple possible types. &quot; +
+                            &quot;This is not supported by the XML-to-JSON conversion yet.&quot;);
+        }
+
+<span class="fc" id="L125">        String valueType = type.asString();</span>
+
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (valueType == null) {</span>
+<span class="nc" id="L128">            throw new IllegalArgumentException(</span>
+                    &quot;JSON schema type deduction and 'oneOf', 'anyOf' or 'allOf' not supported.&quot;);
+        }
+
+<span class="pc bpc" id="L132" title="8 of 26 branches missed.">        switch (valueType) {</span>
+            case &quot;boolean&quot;:
+<span class="fc" id="L134">                return convertBoolean(configuration);</span>
+            case &quot;integer&quot;:
+<span class="fc" id="L136">                return convertInteger(configuration);</span>
+            case &quot;number&quot;:
+<span class="fc" id="L138">                return convertNumber(configuration);</span>
+            case &quot;string&quot;:
+<span class="fc" id="L140">                return convertString(configuration);</span>
+            case &quot;array&quot;:
+<span class="fc" id="L142">                return convertArray(configuration, jsonSchema, rootSchema);</span>
+            case &quot;object&quot;:
+<span class="fc" id="L144">                return convertObject(configuration, jsonSchema, rootSchema);</span>
+            default:
+<span class="nc" id="L146">                throw new IllegalArgumentException(&quot;Unsupported json value type: &quot; + valueType);</span>
+        }
+    }
+
+    private static ModelNode findRef(ModelNode rootSchema, String ref) {
+<span class="fc" id="L151">        return JSONPointer.parse(ref).navigate(rootSchema);</span>
+    }
+
+    private ModelNode convertByEnum(Xml configuration, ModelNode enumValues) {
+<span class="fc" id="L155">        String xmlValue = getValue.apply(configuration);</span>
+<span class="fc" id="L156">        Map&lt;String, ModelType&gt; jsonValues = enumValues.asList().stream()</span>
+<span class="fc" id="L157">                .collect(Collectors.toMap(ModelNode::asString, ModelNode::getType));</span>
+
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        for (Map.Entry&lt;String, ModelType&gt; e : jsonValues.entrySet()) {</span>
+<span class="fc" id="L160">            String jsonValue = e.getKey();</span>
+<span class="fc" id="L161">            ModelType jsonType = e.getValue();</span>
+
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            if (Objects.equals(xmlValue, jsonValue)) {</span>
+<span class="pc bpc" id="L164" title="1 of 5 branches missed.">                switch (jsonType) {</span>
+                    case BIG_INTEGER:
+                    case INT:
+                    case LONG:
+<span class="fc" id="L168">                        return new ModelNode(Long.parseLong(xmlValue));</span>
+                    case BIG_DECIMAL:
+                    case DOUBLE:
+<span class="fc" id="L171">                        return new ModelNode(Double.parseDouble(xmlValue));</span>
+                    case BOOLEAN:
+<span class="fc" id="L173">                        return new ModelNode(Boolean.parseBoolean(xmlValue));</span>
+                    case STRING:
+<span class="fc" id="L175">                        return new ModelNode(xmlValue);</span>
+                    default:
+<span class="nc" id="L177">                        throw new IllegalArgumentException(</span>
+                                &quot;Unsupported type of enum value defined in schema: &quot; + jsonValue);
+                }
+            }
+<span class="fc" id="L181">        }</span>
+
+<span class="fc" id="L183">        throw new IllegalArgumentException(</span>
+<span class="fc" id="L184">                &quot;XML value '&quot; + xmlValue + &quot; doesn't match any of the allowed: &quot; + jsonValues.keySet());</span>
+    }
+
+    private ModelNode convertObject(Xml configuration, ModelNode jsonSchema, ModelNode rootSchema) {
+<span class="fc" id="L188">        ModelNode object = new ModelNode();</span>
+<span class="fc" id="L189">        object.setEmptyObject();</span>
+<span class="fc" id="L190">        ModelNode propertySchemas = jsonSchema.get(&quot;properties&quot;);</span>
+<span class="fc" id="L191">        ModelNode additionalPropSchemas = jsonSchema.get(&quot;additionalProperties&quot;);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        for (Xml childConfig : getChildren.apply(configuration)) {</span>
+<span class="fc" id="L193">            String name = getName.apply(childConfig);</span>
+<span class="fc" id="L194">            ModelNode childSchema = propertySchemas.get(name);</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">            if (!childSchema.isDefined()) {</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">                if (additionalPropSchemas.getType() == ModelType.BOOLEAN) {</span>
+<span class="nc" id="L197">                    throw new IllegalArgumentException(&quot;Cannot determine the format for the '&quot; + name +</span>
+                            &quot;' XML tag during the XML-to-JSON conversion.&quot;);
+                }
+<span class="fc" id="L200">                childSchema = additionalPropSchemas;</span>
+            }
+
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">            if (!childSchema.isDefined()) {</span>
+<span class="nc" id="L204">                throw new IllegalArgumentException(&quot;Could not determine the format for the '&quot; + name +</span>
+                        &quot;' XML tag during the XML-to-JSON conversion.&quot;);
+            }
+<span class="fc" id="L207">            ModelNode jsonChild = convert(childConfig, childSchema, rootSchema);</span>
+<span class="fc" id="L208">            object.get(name).set(jsonChild);</span>
+<span class="fc" id="L209">        }</span>
+<span class="fc" id="L210">        return object;</span>
+    }
+
+    private ModelNode convertArray(Xml configuration, ModelNode jsonSchema, ModelNode rootSchema) {
+<span class="fc" id="L214">        ModelNode itemsSchema = jsonSchema.get(&quot;items&quot;);</span>
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">        if (!itemsSchema.isDefined()) {</span>
+<span class="nc" id="L216">            throw new IllegalArgumentException(</span>
+                    &quot;No schema found for items of a list. Cannot continue with XML-to-JSON conversion.&quot;);
+        }
+<span class="fc" id="L219">        ModelNode list = new ModelNode();</span>
+<span class="fc" id="L220">        list.setEmptyList();</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        for (Xml childConfig : getChildren.apply(configuration)) {</span>
+<span class="fc" id="L222">            ModelNode child = convert(childConfig, itemsSchema, rootSchema);</span>
+<span class="fc" id="L223">            list.add(child);</span>
+<span class="fc" id="L224">        }</span>
+<span class="fc" id="L225">        return list;</span>
+    }
+
+    private ModelNode convertString(Xml configuration) {
+<span class="fc" id="L229">        return new ModelNode(getValue.apply(configuration));</span>
+    }
+
+    private ModelNode convertNumber(Xml configuration) {
+        try {
+<span class="fc" id="L234">            double floatVal = Double.parseDouble(getValue.apply(configuration));</span>
+<span class="fc" id="L235">            return new ModelNode(floatVal);</span>
+<span class="fc" id="L236">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L237">            throw new IllegalArgumentException(&quot;Invalid value.&quot;, e);</span>
+        }
+    }
+
+    private ModelNode convertInteger(Xml configuration) {
+        try {
+<span class="fc" id="L243">            long intVal = Long.parseLong(getValue.apply(configuration));</span>
+<span class="fc" id="L244">            return new ModelNode(intVal);</span>
+<span class="fc" id="L245">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L246">            throw new IllegalArgumentException(&quot;Invalid value.&quot;, e);</span>
+        }
+    }
+
+    private ModelNode convertBoolean(Xml configuration) {
+<span class="fc" id="L251">        String v = getValue.apply(configuration);</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        Boolean boolVal = &quot;true&quot;.equalsIgnoreCase(v)</span>
+                ? Boolean.TRUE
+<span class="fc bfc" id="L254" title="All 2 branches covered.">                : (&quot;false&quot;.equalsIgnoreCase(v) ? Boolean.FALSE : null);</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">        if (boolVal == null) {</span>
+<span class="fc" id="L256">            throw new IllegalArgumentException(&quot;'true' or 'false' expected as a boolean value.&quot;);</span>
+        }
+<span class="fc" id="L258">        return new ModelNode(boolVal);</span>
+    }
+
+    //heavily inspired by the implementation in org.json.JSONPointer
+    public static final class JSONPointer {
+        private final List&lt;String&gt; tokens;
+
+        public static JSONPointer parse(String pointer) {
+<span class="pc bpc" id="L266" title="2 of 4 branches missed.">            if (pointer.isEmpty() || pointer.equals(&quot;#&quot;)) {</span>
+<span class="nc" id="L267">                return new JSONPointer(Collections.emptyList());</span>
+            }
+
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">            if (pointer.startsWith(&quot;#/&quot;)) {</span>
+<span class="fc" id="L271">                pointer = pointer.substring(2);</span>
+                try {
+<span class="fc" id="L273">                    pointer = URLDecoder.decode(pointer, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L274">                } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L275">                    throw new IllegalStateException(&quot;UTF-8 not supported. What?&quot;);</span>
+<span class="fc" id="L276">                }</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">            } else if (pointer.startsWith(&quot;/&quot;)) {</span>
+<span class="nc" id="L278">                pointer = pointer.substring(1);</span>
+            } else {
+<span class="nc" id="L280">                throw new IllegalArgumentException(&quot;a JSON pointer should start with '/' or '#/'&quot;);</span>
+            }
+
+<span class="fc" id="L283">            List&lt;String&gt; tokens = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">            for (String token : pointer.split(&quot;/&quot;)) {</span>
+<span class="fc" id="L285">                tokens.add(unescape(token));</span>
+            }
+
+<span class="fc" id="L288">            return new JSONPointer(tokens);</span>
+        }
+
+<span class="fc" id="L291">        private JSONPointer(List&lt;String&gt; tokens) {</span>
+<span class="fc" id="L292">            this.tokens = tokens;</span>
+<span class="fc" id="L293">        }</span>
+
+        public ModelNode navigate(ModelNode root) {
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">            if (tokens.isEmpty()) {</span>
+<span class="nc" id="L297">                return root;</span>
+            }
+
+<span class="fc" id="L300">            ModelNode current = root;</span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">            for (String token : tokens) {</span>
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">                if (current.getType() == ModelType.OBJECT) {</span>
+<span class="fc" id="L303">                    current = current.get(unescape(token));</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">                } else if (current.getType() == ModelType.LIST) {</span>
+<span class="nc" id="L305">                    int idx = Integer.parseInt(token);</span>
+<span class="nc" id="L306">                    current = current.get(idx);</span>
+<span class="nc" id="L307">                } else {</span>
+<span class="nc" id="L308">                    throw new IllegalArgumentException(&quot;Cannot navigate to '&quot; + this + &quot;' in &quot; + root);</span>
+                }
+<span class="fc" id="L310">            }</span>
+<span class="fc" id="L311">            return current;</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L316">            StringBuilder ret = new StringBuilder();</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">            for (String token: tokens) {</span>
+<span class="nc" id="L318">                ret.append('/').append(escape(token));</span>
+<span class="nc" id="L319">            }</span>
+<span class="nc" id="L320">            return ret.toString();</span>
+        }
+
+        private static String unescape(String token) {
+<span class="fc" id="L324">            return token</span>
+<span class="fc" id="L325">                    .replace(&quot;~1&quot;, &quot;/&quot;)</span>
+<span class="fc" id="L326">                    .replace(&quot;~0&quot;, &quot;~&quot;)</span>
+<span class="fc" id="L327">                    .replace(&quot;\\\&quot;&quot;, &quot;\&quot;&quot;)</span>
+<span class="fc" id="L328">                    .replace(&quot;\\\\&quot;, &quot;\\&quot;);</span>
+        }
+
+        private static String escape(String token) {
+<span class="nc" id="L332">            return token</span>
+<span class="nc" id="L333">                    .replace(&quot;~&quot;, &quot;~0&quot;)</span>
+<span class="nc" id="L334">                    .replace(&quot;/&quot;, &quot;~1&quot;)</span>
+<span class="nc" id="L335">                    .replace(&quot;\\&quot;, &quot;\\\\&quot;)</span>
+<span class="nc" id="L336">                    .replace(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;);</span>
+        }
+    }
+
+    private static Map&lt;String, ModelNode&gt; getKnownExtensionSchemas(Revapi revapi) {
+<span class="nc" id="L341">        Map&lt;String, ModelNode&gt; knownSchemas = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L342">        extractKnownSchemas(knownSchemas, revapi.getApiAnalyzerTypes());</span>
+<span class="nc" id="L343">        extractKnownSchemas(knownSchemas, revapi.getDifferenceTransformTypes());</span>
+<span class="nc" id="L344">        extractKnownSchemas(knownSchemas, revapi.getElementFilterTypes());</span>
+<span class="nc" id="L345">        extractKnownSchemas(knownSchemas, revapi.getReporterTypes());</span>
+
+<span class="nc" id="L347">        return knownSchemas;</span>
+    }
+
+    private static &lt;T extends Configurable&gt;
+    void extractKnownSchemas(Map&lt;String, ModelNode&gt; schemaByExtensionId, Set&lt;Class&lt;? extends T&gt;&gt; types) {
+<span class="nc bnc" id="L352" title="All 2 branches missed.">        for (Class&lt;? extends T&gt; extensionType : types) {</span>
+            try {
+<span class="nc" id="L354">                Configurable c = extensionType.newInstance();</span>
+<span class="nc" id="L355">                String extensionId = c.getExtensionId();</span>
+<span class="nc bnc" id="L356" title="All 2 branches missed.">                if (extensionId == null) {</span>
+<span class="nc" id="L357">                    continue;</span>
+                }
+
+<span class="nc" id="L360">                Reader schema = c.getJSONSchema();</span>
+<span class="nc bnc" id="L361" title="All 2 branches missed.">                if (schema == null) {</span>
+<span class="nc" id="L362">                    continue;</span>
+                }
+
+<span class="nc" id="L365">                String schemaString = readFull(schema);</span>
+<span class="nc" id="L366">                ModelNode schemaNode = ModelNode.fromJSONString(schemaString);</span>
+
+<span class="nc" id="L368">                schemaByExtensionId.put(extensionId, schemaNode);</span>
+<span class="nc" id="L369">            } catch (InstantiationException | IllegalAccessException e) {</span>
+<span class="nc" id="L370">                throw new IllegalStateException(&quot;Extension &quot; + extensionType + &quot; is not default-constructable.&quot;);</span>
+<span class="nc" id="L371">            } catch (IOException e) {</span>
+<span class="nc" id="L372">                throw new IllegalArgumentException(&quot;Failed to read the schema of extension &quot; + extensionType);</span>
+<span class="nc" id="L373">            }</span>
+<span class="nc" id="L374">        }</span>
+<span class="nc" id="L375">    }</span>
+
+    private static String readFull(Reader reader) throws IOException {
+<span class="nc" id="L378">        char[] buffer = new char[512];</span>
+<span class="nc" id="L379">        StringBuilder bld = new StringBuilder();</span>
+        int cnt;
+<span class="nc bnc" id="L381" title="All 2 branches missed.">        while ((cnt = reader.read(buffer)) != -1) {</span>
+<span class="nc" id="L382">            bld.append(buffer, 0, cnt);</span>
+        }
+
+<span class="nc" id="L385">        return bld.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

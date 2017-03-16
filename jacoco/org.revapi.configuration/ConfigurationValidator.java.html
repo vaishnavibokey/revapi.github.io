@@ -70,147 +70,167 @@ import org.jboss.dmr.ModelNode;
     public ValidationResult validate(@Nonnull ModelNode fullConfiguration, @Nonnull Configurable configurable)
         throws ConfigurationException {
         try {
-<span class="fc" id="L73">            String[] rootPaths = configurable.getConfigurationRootPaths();</span>
-<span class="pc bpc" id="L74" title="2 of 4 branches missed.">            if (rootPaths == null || rootPaths.length == 0) {</span>
-<span class="nc" id="L75">                return ValidationResult.success();</span>
+<span class="pc bpc" id="L73" title="2 of 3 branches missed.">            switch (fullConfiguration.getType()) {</span>
+                case LIST:
+<span class="fc" id="L75">                    return _validate(fullConfiguration, configurable);</span>
+                case UNDEFINED:
+<span class="nc" id="L77">                    return ValidationResult.success();</span>
+                default:
+<span class="nc" id="L79">                    throw new ConfigurationException(&quot;Expecting a JSON array as the configuration object.&quot;);</span>
             }
-
-<span class="fc" id="L78">            StringWriter output = new StringWriter();</span>
-
-<span class="fc" id="L80">            ScriptEngine js = getJsEngine(output);</span>
-
-<span class="fc" id="L82">            List&lt;PartialValidationResult&gt; validationResults = new ArrayList&lt;&gt;();</span>
-
-<span class="fc bfc" id="L84" title="All 2 branches covered.">            for (String rootPath : rootPaths) {</span>
-<span class="fc" id="L85">                String[] path = rootPath.split(&quot;\\.&quot;);</span>
-<span class="fc" id="L86">                ModelNode configNode = fullConfiguration.get(path);</span>
-
-<span class="pc bpc" id="L88" title="1 of 2 branches missed.">                if (!configNode.isDefined()) {</span>
-<span class="nc" id="L89">                    continue;</span>
-                }
-
-<span class="pc" id="L92">                try (Reader schemaReader = configurable.getJSONSchema(rootPath)) {</span>
-<span class="pc bpc" id="L93" title="1 of 2 branches missed.">                    if (schemaReader == null) {</span>
-                        continue;
-                    }
-
-<span class="fc" id="L97">                    String schema = read(schemaReader);</span>
-
-<span class="fc" id="L99">                    StringWriter configJSONWrt = new StringWriter();</span>
-<span class="fc" id="L100">                    PrintWriter wrt = new PrintWriter(configJSONWrt);</span>
-<span class="fc" id="L101">                    configNode.writeJSONString(wrt, true);</span>
-
-<span class="fc" id="L103">                    String config = configJSONWrt.toString();</span>
-
-<span class="fc" id="L105">                    Bindings variables = js.createBindings();</span>
-
-<span class="fc" id="L107">                    js.eval(&quot;var data = &quot; + config + &quot;;&quot;, variables);</span>
-                    try {
-<span class="fc" id="L109">                        js.eval(&quot;var schema = &quot; + schema + &quot;;&quot;, variables);</span>
-<span class="nc" id="L110">                    } catch (ScriptException e) {</span>
-<span class="nc" id="L111">                        throw new IllegalArgumentException(&quot;Failed to parse the schema: &quot; + schema, e);</span>
-<span class="fc" id="L112">                    }</span>
-
-<span class="fc" id="L114">                    variables.put(&quot;tv4&quot;, js.getContext().getAttribute(&quot;tv4&quot;, ScriptContext.GLOBAL_SCOPE));</span>
-
-<span class="fc" id="L116">                    Object resultObject = js.eval(&quot;tv4.validateMultiple(data, schema)&quot;, variables);</span>
-<span class="fc" id="L117">                    ModelNode result = JSONUtil.toModelNode(resultObject);</span>
-
-<span class="fc" id="L119">                    PartialValidationResult r = new PartialValidationResult(rootPath, result);</span>
-
-<span class="fc" id="L121">                    validationResults.add(r);</span>
-<span class="pc bpc" id="L122" title="10 of 12 branches missed.">                }</span>
-            }
-
-<span class="fc" id="L125">            return convert(validationResults);</span>
-<span class="nc" id="L126">        } catch (IOException | ScriptException e) {</span>
-<span class="nc" id="L127">            throw new ConfigurationException(&quot;Failed to validate configuration.&quot;, e);</span>
+<span class="nc" id="L81">        } catch (IOException | ScriptException e) {</span>
+<span class="nc" id="L82">            throw new ConfigurationException(&quot;Failed to validate configuration.&quot;, e);</span>
         }
+    }
+
+    private ValidationResult _validate(ModelNode fullConfiguration, Configurable configurable)
+            throws IOException, ScriptException {
+<span class="fc" id="L88">        String extensionId = configurable.getExtensionId();</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (extensionId == null) {</span>
+<span class="fc" id="L90">            return ValidationResult.success();</span>
+        }
+
+<span class="fc" id="L93">        StringWriter output = new StringWriter();</span>
+
+<span class="fc" id="L95">        ScriptEngine js = getJsEngine(output);</span>
+
+<span class="fc" id="L97">        List&lt;PartialValidationResult&gt; validationResults = new ArrayList&lt;&gt;();</span>
+
+        String schema;
+<span class="pc" id="L100">        try (Reader rdr = configurable.getJSONSchema()) {</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            if (rdr == null) {</span>
+<span class="nc" id="L102">                return ValidationResult.success();</span>
+            }
+<span class="fc" id="L104">            schema = read(rdr);</span>
+<span class="pc bpc" id="L105" title="10 of 12 branches missed.">        }</span>
+
+<span class="fc" id="L107">        int idx = 0;</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        for (ModelNode extensionConfig : fullConfiguration.asList()) {</span>
+<span class="fc" id="L109">            ModelNode currentExtensionId = extensionConfig.get(&quot;extension&quot;);</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (!currentExtensionId.isDefined()) {</span>
+<span class="nc" id="L111">                throw new ConfigurationException(</span>
+                        &quot;Found invalid configuration object without \&quot;extension\&quot; identifier.&quot;);
+            }
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            if (!extensionId.equals(currentExtensionId.asString())) {</span>
+<span class="fc" id="L116">                idx++;</span>
+<span class="fc" id="L117">                continue;</span>
+            }
+
+<span class="fc" id="L120">            ModelNode currentConfig = extensionConfig.get(&quot;configuration&quot;);</span>
+
+<span class="fc" id="L122">            StringWriter configJSONWrt = new StringWriter();</span>
+<span class="fc" id="L123">            PrintWriter wrt = new PrintWriter(configJSONWrt);</span>
+<span class="fc" id="L124">            currentConfig.writeJSONString(wrt, true);</span>
+
+<span class="fc" id="L126">            String config = configJSONWrt.toString();</span>
+
+<span class="fc" id="L128">            Bindings variables = js.createBindings();</span>
+
+<span class="fc" id="L130">            js.eval(&quot;var data = &quot; + config + &quot;;&quot;, variables);</span>
+            try {
+<span class="fc" id="L132">                js.eval(&quot;var schema = &quot; + schema + &quot;;&quot;, variables);</span>
+<span class="nc" id="L133">            } catch (ScriptException e) {</span>
+<span class="nc" id="L134">                throw new IllegalArgumentException(&quot;Failed to parse the schema: &quot; + schema, e);</span>
+<span class="fc" id="L135">            }</span>
+
+<span class="fc" id="L137">            variables.put(&quot;tv4&quot;, js.getContext().getAttribute(&quot;tv4&quot;, ScriptContext.GLOBAL_SCOPE));</span>
+
+<span class="fc" id="L139">            Object resultObject = js.eval(&quot;tv4.validateMultiple(data, schema)&quot;, variables);</span>
+<span class="fc" id="L140">            ModelNode result = JSONUtil.toModelNode(resultObject);</span>
+
+<span class="fc" id="L142">            PartialValidationResult r = new PartialValidationResult(&quot;[&quot; + idx + &quot;].configuration&quot;, result);</span>
+
+<span class="fc" id="L144">            validationResults.add(r);</span>
+<span class="fc" id="L145">            idx++;</span>
+<span class="fc" id="L146">        }</span>
+
+<span class="fc" id="L148">        return convert(validationResults);</span>
     }
 
     private ValidationResult convert(List&lt;PartialValidationResult&gt; results) {
-<span class="fc" id="L132">        ModelNode result = new ModelNode();</span>
+<span class="fc" id="L152">        ModelNode result = new ModelNode();</span>
 
-<span class="fc bfc" id="L134" title="All 2 branches covered.">        for (PartialValidationResult r : results) {</span>
-<span class="pc bpc" id="L135" title="1 of 2 branches missed.">            if (r.results.has(&quot;errors&quot;)) {</span>
-<span class="fc" id="L136">                List&lt;ModelNode&gt; errors = r.results.get(&quot;errors&quot;).asList();</span>
-<span class="fc bfc" id="L137" title="All 2 branches covered.">                for (ModelNode error : errors) {</span>
-<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                    if (error.has(&quot;dataPath&quot;)) {</span>
-<span class="fc" id="L139">                        error.get(&quot;dataPath&quot;)</span>
-<span class="fc" id="L140">                            .set(&quot;/&quot; + r.rootPath.replace(&quot;.&quot;, &quot;/&quot;) + error.get(&quot;dataPath&quot;).asString());</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        for (PartialValidationResult r : results) {</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (r.results.has(&quot;errors&quot;)) {</span>
+<span class="fc" id="L156">                List&lt;ModelNode&gt; errors = r.results.get(&quot;errors&quot;).asList();</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                for (ModelNode error : errors) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">                    if (error.has(&quot;dataPath&quot;)) {</span>
+<span class="fc" id="L159">                        error.get(&quot;dataPath&quot;)</span>
+<span class="fc" id="L160">                            .set(&quot;/&quot; + r.rootPath.replace(&quot;.&quot;, &quot;/&quot;) + error.get(&quot;dataPath&quot;).asString());</span>
                     }
-<span class="fc" id="L142">                }</span>
+<span class="fc" id="L162">                }</span>
             }
 
-<span class="fc" id="L145">            boolean valid =</span>
-<span class="pc bpc" id="L146" title="3 of 6 branches missed.">                r.results.get(&quot;valid&quot;).asBoolean() &amp;&amp; ((!result.has(&quot;valid&quot;)) || result.get(&quot;valid&quot;).asBoolean());</span>
+<span class="fc" id="L165">            boolean valid =</span>
+<span class="pc bpc" id="L166" title="1 of 6 branches missed.">                r.results.get(&quot;valid&quot;).asBoolean() &amp;&amp; ((!result.has(&quot;valid&quot;)) || result.get(&quot;valid&quot;).asBoolean());</span>
 
-<span class="fc" id="L148">            result.get(&quot;valid&quot;).set(valid);</span>
+<span class="fc" id="L168">            result.get(&quot;valid&quot;).set(valid);</span>
 
-<span class="pc bpc" id="L150" title="1 of 2 branches missed.">            if (result.has(&quot;errors&quot;)) {</span>
-<span class="nc bnc" id="L151" title="All 2 branches missed.">                for (ModelNode e : r.results.get(&quot;errors&quot;).asList()) {</span>
-<span class="nc" id="L152">                    result.get(&quot;errors&quot;).add(e);</span>
-<span class="nc" id="L153">                }</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">            if (result.has(&quot;errors&quot;)) {</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                for (ModelNode e : r.results.get(&quot;errors&quot;).asList()) {</span>
+<span class="nc" id="L172">                    result.get(&quot;errors&quot;).add(e);</span>
+<span class="pc" id="L173">                }</span>
             } else {
-<span class="fc" id="L155">                result.get(&quot;errors&quot;).set(r.results.get(&quot;errors&quot;));</span>
+<span class="fc" id="L175">                result.get(&quot;errors&quot;).set(r.results.get(&quot;errors&quot;));</span>
             }
 
-<span class="pc bpc" id="L158" title="1 of 2 branches missed.">            if (result.has(&quot;missing&quot;)) {</span>
-<span class="nc bnc" id="L159" title="All 2 branches missed.">                for (ModelNode m : r.results.get(&quot;missing&quot;).asList()) {</span>
-<span class="nc" id="L160">                    result.get(&quot;missing&quot;).add(m.asString());</span>
-<span class="nc" id="L161">                }</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            if (result.has(&quot;missing&quot;)) {</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">                for (ModelNode m : r.results.get(&quot;missing&quot;).asList()) {</span>
+<span class="nc" id="L180">                    result.get(&quot;missing&quot;).add(m.asString());</span>
+<span class="pc" id="L181">                }</span>
             } else {
-<span class="fc" id="L163">                result.get(&quot;missing&quot;).set(r.results.get(&quot;missing&quot;));</span>
+<span class="fc" id="L183">                result.get(&quot;missing&quot;).set(r.results.get(&quot;missing&quot;));</span>
             }
-<span class="fc" id="L165">        }</span>
+<span class="fc" id="L185">        }</span>
 
-<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        return result.isDefined() ? ValidationResult.fromTv4Results(result) : new ValidationResult(null, null);</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        return result.isDefined() ? ValidationResult.fromTv4Results(result) : new ValidationResult(null, null);</span>
     }
 
     private ScriptEngine getJsEngine(Writer output) throws IOException, ScriptException {
-<span class="fc" id="L171">        ScriptEngine ret = null;</span>
+<span class="fc" id="L191">        ScriptEngine ret = null;</span>
 
-<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (jsEngine != null) {</span>
-<span class="nc" id="L174">            ret = jsEngine.get();</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        if (jsEngine != null) {</span>
+<span class="fc" id="L194">            ret = jsEngine.get();</span>
         }
 
-<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (ret == null) {</span>
-<span class="fc" id="L178">            ret = new ScriptEngineManager().getEngineByName(&quot;javascript&quot;);</span>
-<span class="fc" id="L179">            ScriptContext ctx = new SimpleScriptContext();</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (ret == null) {</span>
+<span class="fc" id="L198">            ret = new ScriptEngineManager().getEngineByName(&quot;javascript&quot;);</span>
+<span class="fc" id="L199">            ScriptContext ctx = new SimpleScriptContext();</span>
 
-<span class="fc" id="L181">            Bindings globalScope = ret.createBindings();</span>
-<span class="fc" id="L182">            ctx.setBindings(globalScope, ScriptContext.GLOBAL_SCOPE);</span>
+<span class="fc" id="L201">            Bindings globalScope = ret.createBindings();</span>
+<span class="fc" id="L202">            ctx.setBindings(globalScope, ScriptContext.GLOBAL_SCOPE);</span>
 
-<span class="fc" id="L184">            initTv4(ret, globalScope);</span>
+<span class="fc" id="L204">            initTv4(ret, globalScope);</span>
 
-<span class="fc" id="L186">            ret.setContext(ctx);</span>
+<span class="fc" id="L206">            ret.setContext(ctx);</span>
 
-<span class="fc" id="L188">            jsEngine = new WeakReference&lt;&gt;(ret);</span>
+<span class="fc" id="L208">            jsEngine = new WeakReference&lt;&gt;(ret);</span>
         }
 
-<span class="fc" id="L191">        ret.getContext().setWriter(output);</span>
-<span class="fc" id="L192">        ret.getContext().setErrorWriter(output);</span>
+<span class="fc" id="L211">        ret.getContext().setWriter(output);</span>
+<span class="fc" id="L212">        ret.getContext().setErrorWriter(output);</span>
 
-<span class="fc" id="L194">        return ret;</span>
+<span class="fc" id="L214">        return ret;</span>
     }
 
     private void initTv4(ScriptEngine engine, Bindings bindings) throws IOException, ScriptException {
-<span class="pc" id="L198">        try (Reader rdr = new InputStreamReader(getClass().getResourceAsStream(&quot;/tv4.min.js&quot;),</span>
-<span class="fc" id="L199">                Charset.forName(&quot;UTF-8&quot;))) {</span>
-<span class="fc" id="L200">            engine.eval(rdr, bindings);</span>
-<span class="pc bpc" id="L201" title="6 of 8 branches missed.">        }</span>
-<span class="fc" id="L202">    }</span>
+<span class="pc" id="L218">        try (Reader rdr = new InputStreamReader(getClass().getResourceAsStream(&quot;/tv4.min.js&quot;),</span>
+<span class="fc" id="L219">                Charset.forName(&quot;UTF-8&quot;))) {</span>
+<span class="fc" id="L220">            engine.eval(rdr, bindings);</span>
+<span class="pc bpc" id="L221" title="6 of 8 branches missed.">        }</span>
+<span class="fc" id="L222">    }</span>
 
     private static String read(Reader rdr) throws IOException {
-<span class="fc" id="L205">        StringBuilder bld = new StringBuilder();</span>
-<span class="fc" id="L206">        char[] buffer = new char[4096];</span>
+<span class="fc" id="L225">        StringBuilder bld = new StringBuilder();</span>
+<span class="fc" id="L226">        char[] buffer = new char[4096];</span>
 
         int cnt;
-<span class="fc bfc" id="L209" title="All 2 branches covered.">        while ((cnt = rdr.read(buffer)) != -1) {</span>
-<span class="fc" id="L210">            bld.append(buffer, 0, cnt);</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        while ((cnt = rdr.read(buffer)) != -1) {</span>
+<span class="fc" id="L230">            bld.append(buffer, 0, cnt);</span>
         }
 
-<span class="fc" id="L213">        return bld.toString();</span>
+<span class="fc" id="L233">        return bld.toString();</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
