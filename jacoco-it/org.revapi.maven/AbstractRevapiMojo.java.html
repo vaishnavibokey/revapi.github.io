@@ -16,7 +16,9 @@
  */
 package org.revapi.maven;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -24,23 +26,26 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.revapi.AnalysisResult;
 import org.revapi.Reporter;
 
 /**
  * @author Lukas Krejci
  * @since 0.3.11
  */
-<span class="fc" id="L35">abstract class AbstractRevapiMojo extends AbstractMojo {</span>
+<span class="fc" id="L39">abstract class AbstractRevapiMojo extends AbstractMojo {</span>
     /**
-     * The JSON configuration of various analysis options. The available options depend on what
-     * analyzers are present on the plugins classpath through the {@code &amp;lt;dependencies&amp;gt;}.
+     * The JSON or XML configuration of various analysis options. The available options depend on what
+     * analyzers are present on the plugin classpath through the {@code &amp;lt;dependencies&amp;gt;}.
+     * Consult &lt;a href=&quot;examples/configuration.html&quot;&gt;configuration documentation&lt;/a&gt; for more details.
      *
      * &lt;p&gt;These settings take precedence over the configuration loaded from {@code analysisConfigurationFiles}.
      */
     @Parameter(property = Props.analysisConfiguration.NAME, defaultValue = Props.analysisConfiguration.DEFAULT_VALUE)
-    protected String analysisConfiguration;
+    protected PlexusConfiguration analysisConfiguration;
 
     /**
      * Set to false if you want to tolerate files referenced in the {@code analysisConfigurationFiles} missing on the
@@ -63,6 +68,7 @@ import org.revapi.Reporter;
      *    &amp;lt;analysisConfigurationFiles&amp;gt;
      *        &amp;lt;configurationFile&amp;gt;
      *            &amp;lt;path&amp;gt;path/to/the/file/relative/to/project/base/dir&amp;lt;/path&amp;gt;
+     *            &amp;lt;resource&amp;gt;path/to/the/file/in/one/of/the/dependencies&amp;lt;/resource&amp;gt;
      *            &amp;lt;roots&amp;gt;
      *                &amp;lt;root&amp;gt;configuration/root1&amp;lt;/root&amp;gt;
      *                &amp;lt;root&amp;gt;configuration/root2&amp;lt;/root&amp;gt;
@@ -75,21 +81,24 @@ import org.revapi.Reporter;
      *
      * where
      * &lt;ul&gt;
-     *     &lt;li&gt;{@code path} is mandatory,&lt;/li&gt;
-     *     &lt;li&gt;{@code roots} is optional and specifies the subtrees of the JSON config that should be used for
+     *     &lt;li&gt;{@code path} is the path on the filesystem,&lt;/li&gt;
+     *     &lt;li&gt;{@code resource} is the path to the resource file in one of the artifacts the plugin depends on&lt;/li&gt;
+     *     &lt;li&gt;{@code roots} is optional and specifies the subtrees of the JSON/XML config that should be used for
      *     configuration. If not specified, the whole file is taken into account.&lt;/li&gt;
      * &lt;/ul&gt;
-     * The {@code configuration/root1} and {@code configuration/root2} are JSON paths to the roots of the
-     * configuration inside that JSON config file. This might be used in cases where multiple configurations are stored
-     * within a single file and you want to use a particular one.
+     * Either {@code path} or {@code resource} has to be specified but not both. The {@code configuration/root1} and
+     * {@code configuration/root2} are paths to the roots of the configuration inside that JSON/XML config file. This
+     * might be used in cases where multiple configurations are stored within a single file and you want to use
+     * a particular one.
      *
      * &lt;p&gt;An example of this might be a config file which contains API changes to be ignored in all past versions of a
      * library. The classes to be ignored are specified in a configuration that is specific for each version:
      * &lt;pre&gt;&lt;code&gt;
      *     {
-     *         &quot;0.1.0&quot; : {
-     *             &quot;revapi&quot; : {
-     *                 &quot;ignore&quot; : [
+     *         &quot;0.1.0&quot; : [
+     *             {
+     *                 &quot;extension&quot;: &quot;revapi.ignore&quot;,
+     *                 &quot;configuration&quot;: [
      *                     {
      *                         &quot;code&quot; : &quot;java.method.addedToInterface&quot;,
      *                         &quot;new&quot; : &quot;method void com.example.MyInterface::newMethod()&quot;,
@@ -98,10 +107,10 @@ import org.revapi.Reporter;
      *                     ...
      *                 ]
      *             }
-     *         },
-     *         &quot;0.2.0&quot; : {
+     *         ],
+     *         &quot;0.2.0&quot; : [
      *             ...
-     *         }
+     *         ]
      *     }
      * &lt;/code&gt;&lt;/pre&gt;
      */
@@ -249,93 +258,121 @@ import org.revapi.Reporter;
     @Parameter(property = Props.disallowedExtensions.NAME, defaultValue = Props.disallowedExtensions.DEFAULT_VALUE)
     protected String disallowedExtensions;
 
-    protected void analyze(Reporter reporter) throws MojoExecutionException, MojoFailureException {
-<span class="pc" id="L253">        try (Analyzer analyzer = prepareAnalyzer(project, reporter)) {</span>
-<span class="fc bfc" id="L254" title="All 2 branches covered.">            if (analyzer != null) {</span>
-<span class="fc" id="L255">                analyzer.analyze();</span>
-            }
-<span class="pc bpc" id="L257" title="5 of 8 branches missed.">        } catch (MojoExecutionException e) {</span>
-<span class="nc" id="L258">            throw e;</span>
-<span class="nc" id="L259">        } catch (Exception e) {</span>
-<span class="nc" id="L260">            throw new MojoExecutionException(&quot;Failed to close the API analyzer.&quot;, e);</span>
-<span class="fc" id="L261">        }</span>
-<span class="fc" id="L262">    }</span>
+    protected AnalysisResult analyze(Class&lt;? extends Reporter&gt; reporter, Object... contextDataKeyValues)
+            throws MojoExecutionException, MojoFailureException {
 
-    protected Analyzer prepareAnalyzer(MavenProject project, Reporter reporter) {
-<span class="fc" id="L265">        AnalyzerBuilder.Result res = AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
-<span class="fc" id="L266">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
-<span class="fc" id="L267">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
-<span class="fc" id="L268">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
-<span class="fc" id="L269">                .withCheckDependencies(this.checkDependencies)</span>
-<span class="fc" id="L270">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
-<span class="fc" id="L271">                .withDisallowedExtensions(this.disallowedExtensions)</span>
-<span class="fc" id="L272">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
-<span class="fc" id="L273">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
-<span class="fc" id="L274">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
-<span class="fc" id="L275">                .withLocale(Locale.getDefault())</span>
-<span class="fc" id="L276">                .withLog(getLog())</span>
-<span class="fc" id="L277">                .withNewVersion(this.newVersion)</span>
-<span class="fc" id="L278">                .withOldVersion(this.oldVersion)</span>
-<span class="fc" id="L279">                .withProject(project)</span>
-<span class="fc" id="L280">                .withReporter(reporter)</span>
-<span class="fc" id="L281">                .withRepositorySystem(this.repositorySystem)</span>
-<span class="fc" id="L282">                .withRepositorySystemSession(this.repositorySystemSession)</span>
-<span class="fc" id="L283">                .withSkip(this.skip)</span>
-<span class="fc" id="L284">                .withVersionFormat(this.versionFormat)</span>
-<span class="fc" id="L285">                .build();</span>
+<span class="fc" id="L264">        Analyzer analyzer = prepareAnalyzer(project, reporter, toContextData(contextDataKeyValues));</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        if (analyzer != null) {</span>
+<span class="fc" id="L266">            return analyzer.analyze();</span>
+        } else {
+            //a null analyzer means the current module doesn't have a jar output
+<span class="fc" id="L269">            return AnalysisResult.fakeSuccess();</span>
+        }
+    }
 
-<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        if (res.skip) {</span>
-<span class="nc" id="L288">            this.skip = true;</span>
+    protected Analyzer prepareAnalyzer(MavenProject project, Class&lt;? extends Reporter&gt; reporter,
+                                       Map&lt;String, Object&gt; contextData) {
+<span class="fc" id="L275">        AnalyzerBuilder.Result res = AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
+<span class="fc" id="L276">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
+<span class="fc" id="L277">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
+<span class="fc" id="L278">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
+<span class="fc" id="L279">                .withCheckDependencies(this.checkDependencies)</span>
+<span class="fc" id="L280">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
+<span class="fc" id="L281">                .withDisallowedExtensions(this.disallowedExtensions)</span>
+<span class="fc" id="L282">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
+<span class="fc" id="L283">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
+<span class="fc" id="L284">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
+<span class="fc" id="L285">                .withLocale(Locale.getDefault())</span>
+<span class="fc" id="L286">                .withLog(getLog())</span>
+<span class="fc" id="L287">                .withNewVersion(this.newVersion)</span>
+<span class="fc" id="L288">                .withOldVersion(this.oldVersion)</span>
+<span class="fc" id="L289">                .withProject(project)</span>
+<span class="fc" id="L290">                .withReporter(reporter)</span>
+<span class="fc" id="L291">                .withRepositorySystem(this.repositorySystem)</span>
+<span class="fc" id="L292">                .withRepositorySystemSession(this.repositorySystemSession)</span>
+<span class="fc" id="L293">                .withSkip(this.skip)</span>
+<span class="fc" id="L294">                .withVersionFormat(this.versionFormat)</span>
+<span class="fc" id="L295">                .withContextData(contextData)</span>
+<span class="fc" id="L296">                .build();</span>
+
+<span class="pc bpc" id="L298" title="1 of 2 branches missed.">        if (res.skip) {</span>
+<span class="nc" id="L299">            this.skip = true;</span>
         }
 
-<span class="fc" id="L291">        this.oldArtifacts = res.oldArtifacts;</span>
-<span class="fc" id="L292">        this.newArtifacts = res.newArtifacts;</span>
+<span class="fc" id="L302">        this.oldArtifacts = res.oldArtifacts;</span>
+<span class="fc" id="L303">        this.newArtifacts = res.newArtifacts;</span>
 
-<span class="fc bfc" id="L294" title="All 2 branches covered.">        return res.isOnClasspath ? res.analyzer : null;</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        return res.isOnClasspath ? res.analyzer : null;</span>
     }
 
     /**
      * @return true if artifacts are initialized, false if not and the analysis should not proceed
      */
     protected boolean initializeComparisonArtifacts() {
-<span class="pc bpc" id="L301" title="4 of 6 branches missed.">        if (newArtifacts != null &amp;&amp; newArtifacts.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newArtifacts[0])) {</span>
-<span class="nc" id="L302">            getLog().warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
+<span class="pc bpc" id="L312" title="4 of 6 branches missed.">        if (newArtifacts != null &amp;&amp; newArtifacts.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newArtifacts[0])) {</span>
+<span class="nc" id="L313">            getLog().warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
                     &quot; \&quot;${project.version}\&quot; as the value for \&quot;newVersion\&quot; (which is the default, so you don't&quot; +
                     &quot; actually have to do that either).&quot;);
-<span class="nc" id="L305">            oldArtifacts = null;</span>
+<span class="nc" id="L316">            oldArtifacts = null;</span>
         }
 
-<span class="pc bpc" id="L308" title="2 of 4 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0) {</span>
+<span class="pc bpc" id="L319" title="2 of 4 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0) {</span>
             //non-intuitively, we need to initialize the artifacts even if we will not proceed with the analysis itself
             //that's because we need know the versions when figuring out the version modifications -
             //see AbstractVersionModifyingMojo
-<span class="fc" id="L312">            oldArtifacts = new String[]{</span>
-<span class="fc" id="L313">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
+<span class="fc" id="L323">            oldArtifacts = new String[]{</span>
+<span class="fc" id="L324">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
 
             //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
             //analyze there
             //only do it here, because oldArtifacts might point to another artifact.
             //if we end up here in this branch, we know we'll be comparing the current artifact with something.
-<span class="fc bfc" id="L319" title="All 2 branches covered.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="fc" id="L320">                return false;</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="fc" id="L331">                return false;</span>
             }
         }
 
-<span class="pc bpc" id="L324" title="2 of 4 branches missed.">        if (newArtifacts == null || newArtifacts.length == 0) {</span>
-<span class="fc" id="L325">            newArtifacts = new String[]{</span>
-<span class="fc" id="L326">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
+<span class="pc bpc" id="L335" title="2 of 4 branches missed.">        if (newArtifacts == null || newArtifacts.length == 0) {</span>
+<span class="fc" id="L336">            newArtifacts = new String[]{</span>
+<span class="fc" id="L337">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
 
             //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
             //analyze there
             //again, do this check only here, because oldArtifact might point elsewhere. But if we end up here, it
             //means that oldArtifacts would be compared against the current artifact (in some version). Comparing
             //against a POM artifact is always no-op.
-<span class="pc bpc" id="L333" title="1 of 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="nc" id="L334">                return false;</span>
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="nc" id="L345">                return false;</span>
             }
         }
 
-<span class="fc" id="L338">        return true;</span>
+<span class="fc" id="L349">        return true;</span>
+    }
+
+    private Map&lt;String, Object&gt; toContextData(Object... contextDataKeyValues) {
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">        if (contextDataKeyValues.length % 2 != 0) {</span>
+<span class="nc" id="L354">            throw new IllegalArgumentException(&quot;Key-value pairs not balanced.&quot;);</span>
+        }
+
+<span class="fc" id="L357">        Map&lt;String, Object&gt; ret = new HashMap&lt;&gt;(contextDataKeyValues.length / 2);</span>
+
+<span class="fc" id="L359">        boolean isKey = true;</span>
+<span class="fc" id="L360">        String key = null;</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        for(Object kv : contextDataKeyValues) {</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">            if (isKey) {</span>
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">                if (!(kv instanceof String)) {</span>
+<span class="nc" id="L364">                    throw new IllegalArgumentException(&quot;Found non-string key.&quot;);</span>
+                }
+
+<span class="fc" id="L367">                key = (String) kv;</span>
+<span class="fc" id="L368">                isKey = false;</span>
+            } else {
+<span class="fc" id="L370">                ret.put(key, kv);</span>
+<span class="fc" id="L371">                isKey = true;</span>
+            }
+        }
+
+<span class="fc" id="L375">        return ret;</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

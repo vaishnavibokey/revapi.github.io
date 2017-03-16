@@ -21,6 +21,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.revapi.AnalysisResult;
 
 /**
  * Runs the API check of old and new artifacts using the specified configuration of extensions declared as dependencies
@@ -31,27 +32,36 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
  */
 @Mojo(name = &quot;check&quot;, defaultPhase = LifecyclePhase.VERIFY, threadSafe = true,
         requiresDependencyCollection = ResolutionScope.COMPILE_PLUS_RUNTIME)
-<span class="fc" id="L34">public class CheckMojo extends AbstractRevapiMojo {</span>
+<span class="fc" id="L35">public class CheckMojo extends AbstractRevapiMojo {</span>
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (skip) {</span>
-<span class="nc" id="L39">            return;</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L40">            return;</span>
         }
 
-<span class="fc" id="L42">        BuildTimeReporter reporter = new BuildTimeReporter(failSeverity.asDifferenceSeverity());</span>
+<span class="pc" id="L43">        try (AnalysisResult res = analyze(BuildTimeReporter.class,</span>
+<span class="fc" id="L44">                BuildTimeReporter.BREAKING_SEVERITY_KEY, failSeverity.asDifferenceSeverity())) {</span>
 
-<span class="fc" id="L44">        analyze(reporter);</span>
+<span class="fc" id="L46">            res.throwIfFailed();</span>
 
-<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (reporter.hasBreakingProblems()) {</span>
-<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (failBuildOnProblemsFound) {</span>
-<span class="nc" id="L48">                throw new MojoFailureException(reporter.getAllProblemsMessage());</span>
+<span class="fc" id="L48">            BuildTimeReporter reporter = res.getExtensions().getFirstExtension(BuildTimeReporter.class, null);</span>
+
+<span class="pc bpc" id="L50" title="1 of 4 branches missed.">            if (reporter != null &amp;&amp; reporter.hasBreakingProblems()) {</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">                if (failBuildOnProblemsFound) {</span>
+<span class="nc" id="L52">                    throw new MojoFailureException(reporter.getAllProblemsMessage());</span>
+                } else {
+<span class="nc" id="L54">                    getLog().info(&quot;API problems found but letting the build pass as configured.&quot;);</span>
+                }
             } else {
-<span class="nc" id="L50">                getLog().info(&quot;API problems found but letting the build pass as configured.&quot;);</span>
+<span class="fc" id="L57">                getLog().info(&quot;API checks completed without failures.&quot;);</span>
             }
-        } else {
-<span class="fc" id="L53">            getLog().info(&quot;API checks completed without failures.&quot;);</span>
-        }
-<span class="fc" id="L55">    }</span>
+
+<span class="pc bpc" id="L60" title="6 of 8 branches missed.">        } catch (MojoFailureException e) {</span>
+<span class="nc" id="L61">            throw e;</span>
+<span class="nc" id="L62">        } catch (Exception e) {</span>
+<span class="nc" id="L63">            throw new MojoExecutionException(&quot;Failed to execute the API analysis.&quot;, e);</span>
+<span class="fc" id="L64">        }</span>
+<span class="fc" id="L65">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.7.201606060606</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
