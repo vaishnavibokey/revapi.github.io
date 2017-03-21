@@ -48,6 +48,7 @@ import org.revapi.AnalysisContext;
 import org.revapi.AnalysisResult;
 import org.revapi.Revapi;
 import org.revapi.configuration.Configurable;
+import org.revapi.configuration.JSONUtil;
 import org.revapi.simple.SimpleReporter;
 
 import com.ximpleware.AutoPilot;
@@ -69,7 +70,7 @@ import com.ximpleware.XMLModifier;
  * @since 0.9.0
  */
 @Mojo(name = &quot;convert-config-to-xml&quot;, requiresDirectInvocation = true, defaultPhase = LifecyclePhase.VALIDATE)
-<span class="nc" id="L72">public class ConvertToXmlConfigMojo extends AbstractRevapiMojo {</span>
+<span class="nc" id="L73">public class ConvertToXmlConfigMojo extends AbstractRevapiMojo {</span>
 
     /**
      * Whether to convert the {@code analysisConfiguration} elements in pom.xml from JSON to XML or not.
@@ -93,238 +94,240 @@ import com.ximpleware.XMLModifier;
     private boolean convertAnalysisConfigurationFiles;
 
     @Override public void execute() throws MojoExecutionException, MojoFailureException {
-<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (skip) {</span>
-<span class="nc" id="L97">            return;</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L98">            return;</span>
         }
 
-<span class="nc" id="L100">        Analyzer analyzer = prepareAnalyzer(project, SimpleReporter.class, Collections.emptyMap());</span>
+<span class="nc" id="L101">        AnalyzerBuilder.Result res = buildAnalyzer(project, SimpleReporter.class, Collections.emptyMap());</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (res.skip) {</span>
+<span class="nc" id="L103">            return;</span>
+        }
 
-<span class="nc" id="L102">        Revapi revapi = analyzer.getRevapi();</span>
+<span class="nc" id="L106">        Revapi revapi = res.analyzer.getRevapi();</span>
 
-<span class="nc" id="L104">        AnalysisContext ctx =</span>
-<span class="nc" id="L105">                AnalysisContext.builder(revapi).withConfigurationFromJSON(analysisConfiguration.getValue()).build();</span>
+<span class="nc" id="L108">        AnalysisContext ctx = AnalysisContext.builder(revapi).build();</span>
 
-<span class="nc" id="L107">        AnalysisResult.Extensions extensions = revapi.prepareAnalysis(ctx);</span>
+<span class="nc" id="L110">        AnalysisResult.Extensions extensions = revapi.prepareAnalysis(ctx);</span>
 
         Map&lt;String, ModelNode&gt; knownExtensionSchemas;
         try {
-<span class="nc" id="L111">            knownExtensionSchemas = getKnownExtensionSchemas(extensions);</span>
-<span class="nc" id="L112">        } catch (IOException e) {</span>
-<span class="nc" id="L113">            throw new MojoExecutionException(</span>
+<span class="nc" id="L114">            knownExtensionSchemas = getKnownExtensionSchemas(extensions);</span>
+<span class="nc" id="L115">        } catch (IOException e) {</span>
+<span class="nc" id="L116">            throw new MojoExecutionException(</span>
                     &quot;Failed to extract the extension schemas from the configured Revapi extensions.&quot;, e);
-<span class="nc" id="L115">        }</span>
+<span class="nc" id="L118">        }</span>
 
         int indentationSize;
-<span class="nc" id="L118">        try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
-<span class="nc" id="L119">            indentationSize = XmlUtil.estimateIndentationSize(rdr);</span>
-<span class="nc bnc" id="L120" title="All 8 branches missed.">        } catch (IOException e) {</span>
-<span class="nc" id="L121">            throw new MojoExecutionException(&quot;Failed to read pom.xml&quot;, e);</span>
-<span class="nc" id="L122">        }</span>
+<span class="nc" id="L121">        try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
+<span class="nc" id="L122">            indentationSize = XmlUtil.estimateIndentationSize(rdr);</span>
+<span class="nc bnc" id="L123" title="All 8 branches missed.">        } catch (IOException e) {</span>
+<span class="nc" id="L124">            throw new MojoExecutionException(&quot;Failed to read pom.xml&quot;, e);</span>
+<span class="nc" id="L125">        }</span>
 
-<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (convertPomXml) {</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (convertPomXml) {</span>
             try {
-<span class="nc" id="L126">                updateAllConfigurations(project.getFile(), knownExtensionSchemas, indentationSize);</span>
-<span class="nc" id="L127">            } catch (Exception e) {</span>
-<span class="nc" id="L128">                throw new MojoExecutionException(&quot;Failed to convert the JSON configuration in pom.xml to XML format.&quot;,</span>
+<span class="nc" id="L129">                updateAllConfigurations(project.getFile(), knownExtensionSchemas, indentationSize);</span>
+<span class="nc" id="L130">            } catch (Exception e) {</span>
+<span class="nc" id="L131">                throw new MojoExecutionException(&quot;Failed to convert the JSON configuration in pom.xml to XML format.&quot;,</span>
                         e);
-<span class="nc" id="L130">            }</span>
+<span class="nc" id="L133">            }</span>
         }
 
-<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (convertAnalysisConfigurationFiles) {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (convertAnalysisConfigurationFiles) {</span>
             try {
-<span class="nc" id="L135">                updateAllConfigurationFiles(project, knownExtensionSchemas, indentationSize);</span>
-<span class="nc" id="L136">            } catch (Exception e) {</span>
-<span class="nc" id="L137">                throw new MojoExecutionException(&quot;Failed to update the configuration files.&quot;, e);</span>
-<span class="nc" id="L138">            }</span>
+<span class="nc" id="L138">                updateAllConfigurationFiles(project, knownExtensionSchemas, indentationSize);</span>
+<span class="nc" id="L139">            } catch (Exception e) {</span>
+<span class="nc" id="L140">                throw new MojoExecutionException(&quot;Failed to update the configuration files.&quot;, e);</span>
+<span class="nc" id="L141">            }</span>
         }
-<span class="nc" id="L140">    }</span>
+<span class="nc" id="L143">    }</span>
 
     private void updateAllConfigurationFiles(MavenProject project, Map&lt;String, ModelNode&gt; extensionSchemas,
                                              int indentationSize) throws Exception {
-<span class="nc" id="L144">        VTDGen gen = new VTDGen();</span>
-<span class="nc" id="L145">        gen.enableIgnoredWhiteSpace(true);</span>
-<span class="nc" id="L146">        gen.parseFile(project.getFile().getAbsolutePath(), true);</span>
+<span class="nc" id="L147">        VTDGen gen = new VTDGen();</span>
+<span class="nc" id="L148">        gen.enableIgnoredWhiteSpace(true);</span>
+<span class="nc" id="L149">        gen.parseFile(project.getFile().getAbsolutePath(), true);</span>
 
-<span class="nc" id="L148">        VTDNav nav = gen.getNav();</span>
-<span class="nc" id="L149">        XMLModifier mod = new XMLModifier(nav);</span>
+<span class="nc" id="L151">        VTDNav nav = gen.getNav();</span>
+<span class="nc" id="L152">        XMLModifier mod = new XMLModifier(nav);</span>
 
-<span class="nc" id="L151">        AutoPilot ap = new AutoPilot(nav);</span>
+<span class="nc" id="L154">        AutoPilot ap = new AutoPilot(nav);</span>
 
-<span class="nc" id="L153">        ThrowingConsumer&lt;String&gt; update = xpath -&gt; {</span>
-<span class="nc" id="L154">            ap.resetXPath();</span>
-<span class="nc" id="L155">            ap.selectXPath(xpath);</span>
+<span class="nc" id="L156">        ThrowingConsumer&lt;String&gt; update = xpath -&gt; {</span>
+<span class="nc" id="L157">            ap.resetXPath();</span>
+<span class="nc" id="L158">            ap.selectXPath(xpath);</span>
 
-<span class="nc bnc" id="L157" title="All 2 branches missed.">            while (ap.evalXPath() != -1) {</span>
-<span class="nc" id="L158">                int textPos = nav.getText();</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            while (ap.evalXPath() != -1) {</span>
+<span class="nc" id="L161">                int textPos = nav.getText();</span>
 
-<span class="nc" id="L160">                String configFile = nav.toString(textPos);</span>
+<span class="nc" id="L163">                String configFile = nav.toString(textPos);</span>
 
-<span class="nc" id="L162">                File newFile = updateConfigurationFile(new File(configFile), extensionSchemas, indentationSize);</span>
-<span class="nc bnc" id="L163" title="All 2 branches missed.">                if (newFile == null) {</span>
-<span class="nc" id="L164">                    continue;</span>
+<span class="nc" id="L165">                File newFile = updateConfigurationFile(new File(configFile), extensionSchemas, indentationSize);</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                if (newFile == null) {</span>
+<span class="nc" id="L167">                    continue;</span>
                 }
 
-<span class="nc" id="L167">                mod.updateToken(textPos, newFile.getPath());</span>
-<span class="nc" id="L168">            }</span>
-<span class="nc" id="L169">        };</span>
+<span class="nc" id="L170">                mod.updateToken(textPos, newFile.getPath());</span>
+<span class="nc" id="L171">            }</span>
+<span class="nc" id="L172">        };</span>
 
-<span class="nc" id="L171">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
+<span class="nc" id="L174">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
                 &quot;/configuration/analysisConfigurationFiles/*[not(self::configurationFile)]&quot;);
-<span class="nc" id="L173">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
+<span class="nc" id="L176">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
                 &quot;/configuration/analysisConfigurationFiles/configurationFile[not(roots)]/path&quot;);
 
-<span class="nc" id="L176">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
+<span class="nc" id="L179">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
                 &quot;/executions/execution/configuration/analysisConfigurationFiles/*[not(self::configurationFile)]&quot;);
-<span class="nc" id="L178">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
+<span class="nc" id="L181">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
                 &quot;/executions/execution/configuration/analysisConfigurationFiles/configurationFile[not(roots)]/path&quot;);
 
-<span class="nc" id="L181">        try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
-<span class="nc" id="L182">            mod.output(out);</span>
-<span class="nc bnc" id="L183" title="All 8 branches missed.">        }</span>
-<span class="nc" id="L184">    }</span>
+<span class="nc" id="L184">        try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
+<span class="nc" id="L185">            mod.output(out);</span>
+<span class="nc bnc" id="L186" title="All 8 branches missed.">        }</span>
+<span class="nc" id="L187">    }</span>
 
     private File updateConfigurationFile(File configFile, Map&lt;String, ModelNode&gt; extensionSchemas, int indentationSize)
             throws Exception {
 
         ModelNode jsonConfig;
-<span class="nc" id="L190">        try (InputStream is = new FileInputStream(configFile)) {</span>
-<span class="nc" id="L191">            jsonConfig = ModelNode.fromJSONStream(is);</span>
-<span class="nc bnc" id="L192" title="All 8 branches missed.">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L193">        try (InputStream is = new FileInputStream(configFile)) {</span>
+<span class="nc" id="L194">            jsonConfig = ModelNode.fromJSONStream(is);</span>
+<span class="nc bnc" id="L195" title="All 8 branches missed.">        } catch (IllegalArgumentException e) {</span>
             //k, probably XML already
-<span class="nc" id="L194">            return null;</span>
-<span class="nc" id="L195">        }</span>
+<span class="nc" id="L197">            return null;</span>
+<span class="nc" id="L198">        }</span>
 
-<span class="nc" id="L197">        PlexusConfiguration xml = SchemaDrivenJSONToXmlConverter.convertToXml(extensionSchemas, jsonConfig);</span>
+<span class="nc" id="L200">        PlexusConfiguration xml = SchemaDrivenJSONToXmlConverter.convertToXml(extensionSchemas, jsonConfig);</span>
 
-<span class="nc" id="L199">        File newFile = configFile;</span>
+<span class="nc" id="L202">        File newFile = configFile;</span>
 
-<span class="nc" id="L201">        String fileExtension = getFileExtension(newFile);</span>
-<span class="nc bnc" id="L202" title="All 4 branches missed.">        if (fileExtension != null &amp;&amp; fileExtension.equalsIgnoreCase(&quot;json&quot;)) {</span>
-<span class="nc" id="L203">            String newFilePath = newFile.getPath().substring(0, newFile.getPath().length() - fileExtension.length())</span>
+<span class="nc" id="L204">        String fileExtension = getFileExtension(newFile);</span>
+<span class="nc bnc" id="L205" title="All 4 branches missed.">        if (fileExtension != null &amp;&amp; fileExtension.equalsIgnoreCase(&quot;json&quot;)) {</span>
+<span class="nc" id="L206">            String newFilePath = newFile.getPath().substring(0, newFile.getPath().length() - fileExtension.length())</span>
                     + &quot;xml&quot;;
-<span class="nc" id="L205">            newFile = new File(newFilePath);</span>
+<span class="nc" id="L208">            newFile = new File(newFilePath);</span>
         }
 
-<span class="nc" id="L208">        try (Writer wrt = new FileWriter(newFile)) {</span>
-<span class="nc" id="L209">            StringWriter pretty = new StringWriter();</span>
-<span class="nc" id="L210">            XmlUtil.toIndentedString(xml, indentationSize, 0, pretty);</span>
-<span class="nc" id="L211">            wrt.write(pretty.toString());</span>
-<span class="nc bnc" id="L212" title="All 8 branches missed.">        }</span>
+<span class="nc" id="L211">        try (Writer wrt = new FileWriter(newFile)) {</span>
+<span class="nc" id="L212">            StringWriter pretty = new StringWriter();</span>
+<span class="nc" id="L213">            XmlUtil.toIndentedString(xml, indentationSize, 0, pretty);</span>
+<span class="nc" id="L214">            wrt.write(pretty.toString());</span>
+<span class="nc bnc" id="L215" title="All 8 branches missed.">        }</span>
 
-<span class="nc" id="L214">        return newFile;</span>
+<span class="nc" id="L217">        return newFile;</span>
     }
 
     private static PlexusConfiguration convertToXml(Map&lt;String, ModelNode&gt; extensionSchemas, String xmlOrJson)
             throws IOException, XmlPullParserException {
         ModelNode jsonConfig;
         try {
-<span class="nc" id="L221">            jsonConfig = ModelNode.fromJSONString(xmlOrJson);</span>
-<span class="nc" id="L222">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L224">            jsonConfig = ModelNode.fromJSONString(JSONUtil.stripComments(xmlOrJson));</span>
+<span class="nc" id="L225">        } catch (IllegalArgumentException e) {</span>
             //ok, this already is XML
-<span class="nc" id="L224">            return null;</span>
-<span class="nc" id="L225">        }</span>
-<span class="nc" id="L226">        return SchemaDrivenJSONToXmlConverter.convertToXml(extensionSchemas, jsonConfig);</span>
+<span class="nc" id="L227">            return null;</span>
+<span class="nc" id="L228">        }</span>
+<span class="nc" id="L229">        return SchemaDrivenJSONToXmlConverter.convertToXml(extensionSchemas, jsonConfig);</span>
     }
 
     private static void updateAllConfigurations(File pomXml, Map&lt;String, ModelNode&gt; extensionSchemas,
                                                 int indentationSize) throws Exception {
-<span class="nc" id="L231">        VTDGen gen = new VTDGen();</span>
-<span class="nc" id="L232">        gen.enableIgnoredWhiteSpace(true);</span>
-<span class="nc" id="L233">        gen.parseFile(pomXml.getAbsolutePath(), true);</span>
+<span class="nc" id="L234">        VTDGen gen = new VTDGen();</span>
+<span class="nc" id="L235">        gen.enableIgnoredWhiteSpace(true);</span>
+<span class="nc" id="L236">        gen.parseFile(pomXml.getAbsolutePath(), true);</span>
 
-<span class="nc" id="L235">        VTDNav nav = gen.getNav();</span>
-<span class="nc" id="L236">        XMLModifier mod = new XMLModifier(nav);</span>
+<span class="nc" id="L238">        VTDNav nav = gen.getNav();</span>
+<span class="nc" id="L239">        XMLModifier mod = new XMLModifier(nav);</span>
 
-<span class="nc" id="L238">        Callable&lt;Void&gt; update = () -&gt; {</span>
-<span class="nc" id="L239">            int textPos = nav.getText();</span>
-<span class="nc" id="L240">            String jsonConfig = nav.toRawString(textPos);</span>
+<span class="nc" id="L241">        Callable&lt;Void&gt; update = () -&gt; {</span>
+<span class="nc" id="L242">            int textPos = nav.getText();</span>
+<span class="nc" id="L243">            String jsonConfig = nav.toRawString(textPos);</span>
 
-<span class="nc" id="L242">            PlexusConfiguration xml = convertToXml(extensionSchemas, jsonConfig);</span>
-<span class="nc bnc" id="L243" title="All 2 branches missed.">            if (xml == null) {</span>
-<span class="nc" id="L244">                return null;</span>
+<span class="nc" id="L245">            PlexusConfiguration xml = convertToXml(extensionSchemas, jsonConfig);</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (xml == null) {</span>
+<span class="nc" id="L247">                return null;</span>
             }
 
-<span class="nc" id="L247">            StringWriter pretty = new StringWriter();</span>
-<span class="nc" id="L248">            XmlUtil.toIndentedString(xml, indentationSize, nav.getTokenDepth(textPos), pretty);</span>
+<span class="nc" id="L250">            StringWriter pretty = new StringWriter();</span>
+<span class="nc" id="L251">            XmlUtil.toIndentedString(xml, indentationSize, nav.getTokenDepth(textPos), pretty);</span>
 
             //remove the first indentation, because text is already indented
-<span class="nc" id="L251">            String prettyXml = pretty.toString().substring(indentationSize * nav.getTokenDepth(textPos));</span>
+<span class="nc" id="L254">            String prettyXml = pretty.toString().substring(indentationSize * nav.getTokenDepth(textPos));</span>
 
-<span class="nc" id="L253">            mod.insertAfterElement(prettyXml);</span>
-<span class="nc" id="L254">            mod.remove();</span>
+<span class="nc" id="L256">            mod.insertAfterElement(prettyXml);</span>
+<span class="nc" id="L257">            mod.remove();</span>
 
-<span class="nc" id="L256">            return null;</span>
+<span class="nc" id="L259">            return null;</span>
         };
 
-<span class="nc" id="L259">        AutoPilot ap = new AutoPilot(nav);</span>
+<span class="nc" id="L262">        AutoPilot ap = new AutoPilot(nav);</span>
 
-<span class="nc" id="L261">        ap.selectXPath(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']/configuration/analysisConfiguration&quot;);</span>
-<span class="nc bnc" id="L262" title="All 2 branches missed.">        while (ap.evalXPath() != -1) {</span>
-<span class="nc" id="L263">            update.call();</span>
+<span class="nc" id="L264">        ap.selectXPath(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']/configuration/analysisConfiguration&quot;);</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        while (ap.evalXPath() != -1) {</span>
+<span class="nc" id="L266">            update.call();</span>
         }
 
-<span class="nc" id="L266">        ap.resetXPath();</span>
+<span class="nc" id="L269">        ap.resetXPath();</span>
 
-<span class="nc" id="L268">        ap.selectXPath(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']/executions/execution/configuration/analysisConfiguration&quot;);</span>
-<span class="nc bnc" id="L269" title="All 2 branches missed.">        while (ap.evalXPath() != -1) {</span>
-<span class="nc" id="L270">            update.call();</span>
+<span class="nc" id="L271">        ap.selectXPath(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']/executions/execution/configuration/analysisConfiguration&quot;);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        while (ap.evalXPath() != -1) {</span>
+<span class="nc" id="L273">            update.call();</span>
         }
 
-<span class="nc" id="L273">        try (OutputStream out = new FileOutputStream(pomXml)) {</span>
-<span class="nc" id="L274">            mod.output(out);</span>
-<span class="nc bnc" id="L275" title="All 8 branches missed.">        }</span>
-<span class="nc" id="L276">    }</span>
+<span class="nc" id="L276">        try (OutputStream out = new FileOutputStream(pomXml)) {</span>
+<span class="nc" id="L277">            mod.output(out);</span>
+<span class="nc bnc" id="L278" title="All 8 branches missed.">        }</span>
+<span class="nc" id="L279">    }</span>
 
     private static String readFull(Reader rdr) throws IOException {
-<span class="nc" id="L279">        char[] buf = new char[512];</span>
+<span class="nc" id="L282">        char[] buf = new char[512];</span>
         int cnt;
 
-<span class="nc" id="L282">        StringBuilder bld = new StringBuilder();</span>
-<span class="nc bnc" id="L283" title="All 2 branches missed.">        while ((cnt = rdr.read(buf)) != -1) {</span>
-<span class="nc" id="L284">            bld.append(buf, 0, cnt);</span>
+<span class="nc" id="L285">        StringBuilder bld = new StringBuilder();</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        while ((cnt = rdr.read(buf)) != -1) {</span>
+<span class="nc" id="L287">            bld.append(buf, 0, cnt);</span>
         }
 
-<span class="nc" id="L287">        return bld.toString();</span>
+<span class="nc" id="L290">        return bld.toString();</span>
     }
 
     private static Map&lt;String, ModelNode&gt; getKnownExtensionSchemas(AnalysisResult.Extensions extensions)
             throws IOException {
-<span class="nc" id="L292">        List&lt;Configurable&gt; exts = extensions.stream().map(e -&gt; (Configurable) e.getKey()).collect(Collectors.toList());</span>
+<span class="nc" id="L295">        List&lt;Configurable&gt; exts = extensions.stream().map(e -&gt; (Configurable) e.getKey()).collect(Collectors.toList());</span>
 
-<span class="nc" id="L294">        Map&lt;String, ModelNode&gt; extensionSchemas = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L295" title="All 2 branches missed.">        for (Configurable ext : exts) {</span>
-<span class="nc" id="L296">            String extensionId = ext.getExtensionId();</span>
-<span class="nc bnc" id="L297" title="All 4 branches missed.">            if (extensionId == null || extensionSchemas.containsKey(extensionId)) {</span>
-<span class="nc" id="L298">                continue;</span>
+<span class="nc" id="L297">        Map&lt;String, ModelNode&gt; extensionSchemas = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">        for (Configurable ext : exts) {</span>
+<span class="nc" id="L299">            String extensionId = ext.getExtensionId();</span>
+<span class="nc bnc" id="L300" title="All 4 branches missed.">            if (extensionId == null || extensionSchemas.containsKey(extensionId)) {</span>
+<span class="nc" id="L301">                continue;</span>
             }
 
-<span class="nc" id="L301">            try (Reader schemaRdr = ext.getJSONSchema()) {</span>
-<span class="nc bnc" id="L302" title="All 2 branches missed.">                if (schemaRdr == null) {</span>
+<span class="nc" id="L304">            try (Reader schemaRdr = ext.getJSONSchema()) {</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                if (schemaRdr == null) {</span>
                     continue;
                 }
 
-<span class="nc" id="L306">                ModelNode schema = ModelNode.fromJSONString(readFull(schemaRdr));</span>
+<span class="nc" id="L309">                ModelNode schema = ModelNode.fromJSONString(readFull(schemaRdr));</span>
 
-<span class="nc" id="L308">                extensionSchemas.put(extensionId, schema);</span>
-<span class="nc bnc" id="L309" title="All 12 branches missed.">            }</span>
-<span class="nc" id="L310">        }</span>
+<span class="nc" id="L311">                extensionSchemas.put(extensionId, schema);</span>
+<span class="nc bnc" id="L312" title="All 12 branches missed.">            }</span>
+<span class="nc" id="L313">        }</span>
 
-<span class="nc" id="L312">        return extensionSchemas;</span>
+<span class="nc" id="L315">        return extensionSchemas;</span>
     }
 
     private static String getFileExtension(File f) {
-<span class="nc" id="L316">        String extension = null;</span>
+<span class="nc" id="L319">        String extension = null;</span>
 
-<span class="nc" id="L318">        String path = f.getPath();</span>
+<span class="nc" id="L321">        String path = f.getPath();</span>
 
-<span class="nc" id="L320">        int i = path.lastIndexOf('.');</span>
-<span class="nc" id="L321">        int p = path.lastIndexOf(File.separator);</span>
+<span class="nc" id="L323">        int i = path.lastIndexOf('.');</span>
+<span class="nc" id="L324">        int p = path.lastIndexOf(File.separator);</span>
 
-<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (i &gt; p) {</span>
-<span class="nc" id="L324">            extension = path.substring(i + 1);</span>
+<span class="nc bnc" id="L326" title="All 2 branches missed.">        if (i &gt; p) {</span>
+<span class="nc" id="L327">            extension = path.substring(i + 1);</span>
         }
 
-<span class="nc" id="L327">        return extension;</span>
+<span class="nc" id="L330">        return extension;</span>
     }
 
     @FunctionalInterface
