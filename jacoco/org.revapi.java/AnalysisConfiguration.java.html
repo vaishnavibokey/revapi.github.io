@@ -78,96 +78,109 @@ public final class AnalysisConfiguration {
 <span class="fc" id="L78">        return missingClassReporting;</span>
     }
 
+    public boolean reportUseForAllDifferences() {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        return useReportingCodes == null;</span>
+    }
+
     public Set&lt;String&gt; getUseReportingCodes() {
-<span class="fc" id="L82">        return useReportingCodes;</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        return useReportingCodes == null ? Collections.emptySet() : useReportingCodes;</span>
     }
 
     public boolean isIgnoreMissingAnnotations() {
-<span class="fc" id="L86">        return ignoreMissingAnnotations;</span>
+<span class="fc" id="L90">        return ignoreMissingAnnotations;</span>
     }
 
     public Set&lt;Pattern&gt; getClassExclusionFilters() {
-<span class="fc" id="L90">        return classExclusionFilters;</span>
+<span class="fc" id="L94">        return classExclusionFilters;</span>
     }
 
     public Set&lt;Pattern&gt; getClassInclusionFilters() {
-<span class="fc" id="L94">        return classInclusionFilters;</span>
+<span class="fc" id="L98">        return classInclusionFilters;</span>
     }
 
     public Set&lt;Pattern&gt; getPackageExclusionFilters() {
-<span class="fc" id="L98">        return packageExclusionFilters;</span>
+<span class="fc" id="L102">        return packageExclusionFilters;</span>
     }
 
     public Set&lt;Pattern&gt; getPackageInclusionFilters() {
-<span class="fc" id="L102">        return packageInclusionFilters;</span>
+<span class="fc" id="L106">        return packageInclusionFilters;</span>
     }
 
     private static MissingClassReporting readMissingClassReporting(ModelNode analysisConfig) {
-<span class="fc" id="L106">        ModelNode config = analysisConfig.get(&quot;missing-classes&quot;, &quot;behavior&quot;);</span>
-<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (config.isDefined()) {</span>
-<span class="pc bpc" id="L108" title="8 of 14 branches missed.">            switch (config.asString()) {</span>
+<span class="fc" id="L110">        ModelNode config = analysisConfig.get(&quot;missing-classes&quot;, &quot;behavior&quot;);</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (config.isDefined()) {</span>
+<span class="pc bpc" id="L112" title="8 of 14 branches missed.">            switch (config.asString()) {</span>
             case &quot;report&quot;:
-<span class="fc" id="L110">                return MissingClassReporting.REPORT;</span>
+<span class="fc" id="L114">                return MissingClassReporting.REPORT;</span>
             case &quot;ignore&quot;:
-<span class="fc" id="L112">                return MissingClassReporting.IGNORE;</span>
+<span class="fc" id="L116">                return MissingClassReporting.IGNORE;</span>
             case &quot;error&quot;:
-<span class="nc" id="L114">                return MissingClassReporting.ERROR;</span>
+<span class="nc" id="L118">                return MissingClassReporting.ERROR;</span>
             default:
-<span class="nc" id="L116">                throw new IllegalArgumentException(&quot;Unsupported value of revapi.java.missing-classes.behavior: '&quot; +</span>
-<span class="nc" id="L117">                        config.asString() + &quot;'. Only 'report', 'ignore' and 'error' are recognized.&quot;);</span>
+<span class="nc" id="L120">                throw new IllegalArgumentException(&quot;Unsupported value of revapi.java.missing-classes.behavior: '&quot; +</span>
+<span class="nc" id="L121">                        config.asString() + &quot;'. Only 'report', 'ignore' and 'error' are recognized.&quot;);</span>
             }
         }
 
-<span class="fc" id="L121">        return MissingClassReporting.REPORT;</span>
+<span class="fc" id="L125">        return MissingClassReporting.REPORT;</span>
     }
 
     private static boolean readIgnoreMissingAnnotations(ModelNode analysisConfig) {
-<span class="fc" id="L125">        ModelNode config = analysisConfig.get(&quot;missing-classes&quot;, &quot;ignoreMissingAnnotations&quot;);</span>
-<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (config.isDefined()) {</span>
-<span class="nc" id="L127">            return config.asBoolean();</span>
+<span class="fc" id="L129">        ModelNode config = analysisConfig.get(&quot;missing-classes&quot;, &quot;ignoreMissingAnnotations&quot;);</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if (config.isDefined()) {</span>
+<span class="nc" id="L131">            return config.asBoolean();</span>
         }
 
-<span class="fc" id="L130">        return false;</span>
+<span class="fc" id="L134">        return false;</span>
     }
 
     private static Set&lt;String&gt; readUseReportingCodes(ModelNode analysisConfig) {
-<span class="fc" id="L134">        Set&lt;String&gt; ret = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L135">        ModelNode config = analysisConfig.get(&quot;reportUsesFor&quot;);</span>
-<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (config.isDefined()) {</span>
-<span class="fc bfc" id="L137" title="All 2 branches covered.">            for (ModelNode code : config.asList()) {</span>
-<span class="fc" id="L138">                ret.add(code.asString());</span>
-<span class="fc" id="L139">            }</span>
+<span class="fc" id="L138">        Set&lt;String&gt; ret = new HashSet&lt;&gt;(5);</span>
+<span class="fc" id="L139">        ModelNode config = analysisConfig.get(&quot;reportUsesFor&quot;);</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        if (config.isDefined()) {</span>
+<span class="pc bpc" id="L141" title="2 of 3 branches missed.">            switch (config.getType()) {</span>
+                case LIST:
+<span class="fc bfc" id="L143" title="All 2 branches covered.">                    for (ModelNode code : config.asList()) {</span>
+<span class="fc" id="L144">                        ret.add(code.asString());</span>
+<span class="fc" id="L145">                    }</span>
+<span class="fc" id="L146">                    break;</span>
+                case STRING:
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                    if (&quot;all-differences&quot;.equals(config.asString())) {</span>
+<span class="nc" id="L149">                        ret = null;</span>
+                    }
+<span class="fc" id="L151">                    break;</span>
+            }
         } else {
-<span class="fc" id="L141">            ret.add(&quot;java.missing.oldClass&quot;);</span>
-<span class="fc" id="L142">            ret.add(&quot;java.missing.newClass&quot;);</span>
-<span class="fc" id="L143">            ret.add(&quot;java.class.nonPublicPartOfAPI&quot;);</span>
-<span class="fc" id="L144">            ret.add(&quot;java.class.externalClassExposedInAPI&quot;);</span>
-<span class="fc" id="L145">            ret.add(&quot;java.class.externalClassNoLongerExposedInAPI&quot;);</span>
+<span class="fc" id="L154">            ret.add(&quot;java.missing.oldClass&quot;);</span>
+<span class="fc" id="L155">            ret.add(&quot;java.missing.newClass&quot;);</span>
+<span class="fc" id="L156">            ret.add(&quot;java.class.nonPublicPartOfAPI&quot;);</span>
+<span class="fc" id="L157">            ret.add(&quot;java.class.externalClassExposedInAPI&quot;);</span>
+<span class="fc" id="L158">            ret.add(&quot;java.class.externalClassNoLongerExposedInAPI&quot;);</span>
         }
 
-<span class="fc" id="L148">        return ret;</span>
+<span class="fc" id="L161">        return ret;</span>
     }
 
     private static Set&lt;Pattern&gt; readFilter(ModelNode filterNode, ModelNode regexNode) {
-<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (!filterNode.isDefined()) {</span>
-<span class="fc" id="L153">            return Collections.emptySet();</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (!filterNode.isDefined()) {</span>
+<span class="fc" id="L166">            return Collections.emptySet();</span>
         }
 
-<span class="pc bpc" id="L156" title="1 of 4 branches missed.">        boolean isRegex = regexNode.isDefined() &amp;&amp; regexNode.asBoolean();</span>
+<span class="pc bpc" id="L169" title="1 of 4 branches missed.">        boolean isRegex = regexNode.isDefined() &amp;&amp; regexNode.asBoolean();</span>
 
-<span class="fc" id="L158">        return filterNode.asList().stream()</span>
-<span class="fc" id="L159">                .map(filter -&gt; {</span>
-<span class="fc bfc" id="L160" title="All 2 branches covered.">                    if (isRegex) {</span>
-<span class="fc" id="L161">                        return Pattern.compile(filter.asString());</span>
+<span class="fc" id="L171">        return filterNode.asList().stream()</span>
+<span class="fc" id="L172">                .map(filter -&gt; {</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                    if (isRegex) {</span>
+<span class="fc" id="L174">                        return Pattern.compile(filter.asString());</span>
                     } else {
-<span class="fc" id="L163">                        return Pattern.compile(Pattern.quote(filter.asString()));</span>
+<span class="fc" id="L176">                        return Pattern.compile(Pattern.quote(filter.asString()));</span>
                     }
                 })
-<span class="fc" id="L166">                .collect(Collectors.toSet());</span>
+<span class="fc" id="L179">                .collect(Collectors.toSet());</span>
     }
 
-<span class="pc" id="L169">    public enum MissingClassReporting {</span>
-<span class="fc" id="L170">        IGNORE, ERROR, REPORT</span>
+<span class="pc" id="L182">    public enum MissingClassReporting {</span>
+<span class="fc" id="L183">        IGNORE, ERROR, REPORT</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
