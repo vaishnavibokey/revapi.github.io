@@ -64,9 +64,9 @@ public abstract class AbstractDifferenceReferringTransform&lt;Recipe extends Dif
 
 <span class="fc bfc" id="L65" title="All 2 branches covered.">        for (ModelNode config : myNode.asList()) {</span>
 <span class="fc" id="L66">            Recipe recipe = newRecipe(ctx, config);</span>
-<span class="fc bfc" id="L67" title="All 2 branches covered.">            codes.add(</span>
-<span class="fc" id="L68">                recipe.codeRegex == null ? Pattern.compile(&quot;^&quot; + Pattern.quote(recipe.code) + &quot;$&quot;) :</span>
-                    recipe.codeRegex);
+<span class="fc" id="L67">            codes.add(</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">                recipe.codeRegex == null ? Pattern.compile(&quot;^&quot; + Pattern.quote(recipe.code) + &quot;$&quot;) :</span>
+<span class="fc" id="L69">                    recipe.codeRegex);</span>
 <span class="fc" id="L70">            configuredRecipes.add(recipe);</span>
 <span class="fc" id="L71">        }</span>
 <span class="fc" id="L72">        this.codes = codes.toArray(new Pattern[codes.size()]);</span>
