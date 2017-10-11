@@ -224,90 +224,93 @@ public final class XmlToJson&lt;Xml&gt; {
 <span class="nc" id="L224">            throw new IllegalArgumentException(</span>
                     &quot;No schema found for items of a list. Cannot continue with XML-to-JSON conversion.&quot;);
         }
-<span class="fc" id="L227">        ModelNode list = new ModelNode();</span>
-<span class="fc" id="L228">        list.setEmptyList();</span>
-<span class="fc bfc" id="L229" title="All 2 branches covered.">        for (Xml childConfig : getChildren.apply(configuration)) {</span>
-<span class="fc" id="L230">            ModelNode child = convert(childConfig, itemsSchema, rootSchema);</span>
-<span class="fc" id="L231">            list.add(child);</span>
-<span class="fc" id="L232">        }</span>
-<span class="fc" id="L233">        return list;</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (getValue.apply( configuration ) != null) {</span>
+<span class="fc" id="L228">            throw new IllegalArgumentException(&quot;Array is not allowed to have a text node&quot;);</span>
+        }
+<span class="fc" id="L230">        ModelNode list = new ModelNode();</span>
+<span class="fc" id="L231">        list.setEmptyList();</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        for (Xml childConfig : getChildren.apply(configuration)) {</span>
+<span class="fc" id="L233">            ModelNode child = convert(childConfig, itemsSchema, rootSchema);</span>
+<span class="fc" id="L234">            list.add(child);</span>
+<span class="fc" id="L235">        }</span>
+<span class="fc" id="L236">        return list;</span>
     }
 
     private ModelNode convertString(Xml configuration) {
-<span class="fc" id="L237">        return new ModelNode(getValue.apply(configuration));</span>
+<span class="fc" id="L240">        return new ModelNode(getValue.apply(configuration));</span>
     }
 
     private ModelNode convertNumber(Xml configuration) {
         try {
-<span class="fc" id="L242">            double floatVal = Double.parseDouble(getValue.apply(configuration));</span>
-<span class="fc" id="L243">            return new ModelNode(floatVal);</span>
-<span class="fc" id="L244">        } catch (NumberFormatException e) {</span>
-<span class="fc" id="L245">            throw new IllegalArgumentException(&quot;Invalid value.&quot;, e);</span>
+<span class="fc" id="L245">            double floatVal = Double.parseDouble(getValue.apply(configuration));</span>
+<span class="fc" id="L246">            return new ModelNode(floatVal);</span>
+<span class="fc" id="L247">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L248">            throw new IllegalArgumentException(&quot;Invalid value.&quot;, e);</span>
         }
     }
 
     private ModelNode convertInteger(Xml configuration) {
         try {
-<span class="fc" id="L251">            long intVal = Long.parseLong(getValue.apply(configuration));</span>
-<span class="fc" id="L252">            return new ModelNode(intVal);</span>
-<span class="fc" id="L253">        } catch (NumberFormatException e) {</span>
-<span class="fc" id="L254">            throw new IllegalArgumentException(&quot;Invalid value.&quot;, e);</span>
+<span class="fc" id="L254">            long intVal = Long.parseLong(getValue.apply(configuration));</span>
+<span class="fc" id="L255">            return new ModelNode(intVal);</span>
+<span class="fc" id="L256">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L257">            throw new IllegalArgumentException(&quot;Invalid value.&quot;, e);</span>
         }
     }
 
     private ModelNode convertBoolean(Xml configuration) {
-<span class="fc" id="L259">        String v = getValue.apply(configuration);</span>
-<span class="fc bfc" id="L260" title="All 2 branches covered.">        Boolean boolVal = &quot;true&quot;.equalsIgnoreCase(v)</span>
-                ? Boolean.TRUE
-<span class="fc bfc" id="L262" title="All 2 branches covered.">                : (&quot;false&quot;.equalsIgnoreCase(v) ? Boolean.FALSE : null);</span>
-<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (boolVal == null) {</span>
-<span class="fc" id="L264">            throw new IllegalArgumentException(&quot;'true' or 'false' expected as a boolean value.&quot;);</span>
+<span class="fc" id="L262">        String v = getValue.apply(configuration);</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        Boolean boolVal = &quot;true&quot;.equalsIgnoreCase(v)</span>
+<span class="fc" id="L264">                ? Boolean.TRUE</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">                : (&quot;false&quot;.equalsIgnoreCase(v) ? Boolean.FALSE : null);</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        if (boolVal == null) {</span>
+<span class="fc" id="L267">            throw new IllegalArgumentException(&quot;'true' or 'false' expected as a boolean value.&quot;);</span>
         }
-<span class="fc" id="L266">        return new ModelNode(boolVal);</span>
+<span class="fc" id="L269">        return new ModelNode(boolVal);</span>
     }
 
     private ModelNode convertByOneOf(Xml configuration, Iterable&lt;ModelNode&gt; candidateSchemas) {
-<span class="fc" id="L270">        boolean matched = false;</span>
-<span class="fc" id="L271">        ModelNode parsed = null;</span>
-<span class="fc bfc" id="L272" title="All 2 branches covered.">        for (ModelNode candidateSchema : candidateSchemas) {</span>
+<span class="fc" id="L273">        boolean matched = false;</span>
+<span class="fc" id="L274">        ModelNode parsed = null;</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">        for (ModelNode candidateSchema : candidateSchemas) {</span>
             try {
-<span class="fc" id="L274">                parsed = convert(configuration, candidateSchema);</span>
-<span class="fc bfc" id="L275" title="All 2 branches covered.">                if (matched) {</span>
-<span class="fc" id="L276">                    return null;</span>
+<span class="fc" id="L277">                parsed = convert(configuration, candidateSchema);</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">                if (matched) {</span>
+<span class="fc" id="L279">                    return null;</span>
                 } else {
-<span class="fc" id="L278">                    matched = true;</span>
+<span class="fc" id="L281">                    matched = true;</span>
                 }
-<span class="fc" id="L280">            } catch (IllegalArgumentException __) {</span>
+<span class="fc" id="L283">            } catch (IllegalArgumentException __) {</span>
                 //continue
-<span class="fc" id="L282">            }</span>
-<span class="fc" id="L283">        }</span>
+<span class="fc" id="L285">            }</span>
+<span class="fc" id="L286">        }</span>
 
-<span class="fc" id="L285">        return parsed;</span>
+<span class="fc" id="L288">        return parsed;</span>
     }
 
     private ModelNode convertByAnyOf(Xml configuration, Iterable&lt;ModelNode&gt; candidateSchemas) {
-<span class="fc bfc" id="L289" title="All 2 branches covered.">        for (ModelNode candidateSchema : candidateSchemas) {</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        for (ModelNode candidateSchema : candidateSchemas) {</span>
             try {
-<span class="fc" id="L291">                return convert(configuration, candidateSchema);</span>
-<span class="fc" id="L292">            } catch (IllegalArgumentException __) {</span>
+<span class="fc" id="L294">                return convert(configuration, candidateSchema);</span>
+<span class="fc" id="L295">            } catch (IllegalArgumentException __) {</span>
                 //continue
             }
-<span class="fc" id="L295">        }</span>
+<span class="fc" id="L298">        }</span>
 
-<span class="fc" id="L297">        return null;</span>
+<span class="fc" id="L300">        return null;</span>
     }
 
     private ModelNode convertByAllOf(Xml configuration, Iterable&lt;ModelNode&gt; candidateSchemas) {
-<span class="fc" id="L301">        ModelNode parsed = null;</span>
-<span class="fc bfc" id="L302" title="All 2 branches covered.">        for (ModelNode candidateSchema : candidateSchemas) {</span>
+<span class="fc" id="L304">        ModelNode parsed = null;</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        for (ModelNode candidateSchema : candidateSchemas) {</span>
             try {
-<span class="fc" id="L304">                parsed = convert(configuration, candidateSchema);</span>
-<span class="nc" id="L305">            } catch (IllegalArgumentException __) {</span>
-<span class="nc" id="L306">                return null;</span>
-<span class="fc" id="L307">            }</span>
-<span class="fc" id="L308">        }</span>
+<span class="fc" id="L307">                parsed = convert(configuration, candidateSchema);</span>
+<span class="nc" id="L308">            } catch (IllegalArgumentException __) {</span>
+<span class="nc" id="L309">                return null;</span>
+<span class="fc" id="L310">            }</span>
+<span class="fc" id="L311">        }</span>
 
-<span class="fc" id="L310">        return parsed;</span>
+<span class="fc" id="L313">        return parsed;</span>
     }
 
     //heavily inspired by the implementation in org.json.JSONPointer
@@ -315,126 +318,126 @@ public final class XmlToJson&lt;Xml&gt; {
         private final List&lt;String&gt; tokens;
 
         public static JSONPointer parse(String pointer) {
-<span class="pc bpc" id="L318" title="2 of 4 branches missed.">            if (pointer.isEmpty() || pointer.equals(&quot;#&quot;)) {</span>
-<span class="nc" id="L319">                return new JSONPointer(Collections.emptyList());</span>
+<span class="pc bpc" id="L321" title="2 of 4 branches missed.">            if (pointer.isEmpty() || pointer.equals(&quot;#&quot;)) {</span>
+<span class="nc" id="L322">                return new JSONPointer(Collections.emptyList());</span>
             }
 
-<span class="pc bpc" id="L322" title="1 of 2 branches missed.">            if (pointer.startsWith(&quot;#/&quot;)) {</span>
-<span class="fc" id="L323">                pointer = pointer.substring(2);</span>
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">            if (pointer.startsWith(&quot;#/&quot;)) {</span>
+<span class="fc" id="L326">                pointer = pointer.substring(2);</span>
                 try {
-<span class="fc" id="L325">                    pointer = URLDecoder.decode(pointer, &quot;UTF-8&quot;);</span>
-<span class="nc" id="L326">                } catch (UnsupportedEncodingException e) {</span>
-<span class="nc" id="L327">                    throw new IllegalStateException(&quot;UTF-8 not supported. What?&quot;);</span>
-<span class="fc" id="L328">                }</span>
-<span class="nc bnc" id="L329" title="All 2 branches missed.">            } else if (pointer.startsWith(&quot;/&quot;)) {</span>
-<span class="nc" id="L330">                pointer = pointer.substring(1);</span>
+<span class="fc" id="L328">                    pointer = URLDecoder.decode(pointer, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L329">                } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L330">                    throw new IllegalStateException(&quot;UTF-8 not supported. What?&quot;);</span>
+<span class="fc" id="L331">                }</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">            } else if (pointer.startsWith(&quot;/&quot;)) {</span>
+<span class="nc" id="L333">                pointer = pointer.substring(1);</span>
             } else {
-<span class="nc" id="L332">                throw new IllegalArgumentException(&quot;a JSON pointer should start with '/' or '#/'&quot;);</span>
+<span class="nc" id="L335">                throw new IllegalArgumentException(&quot;a JSON pointer should start with '/' or '#/'&quot;);</span>
             }
 
-<span class="fc" id="L335">            List&lt;String&gt; tokens = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L336" title="All 2 branches covered.">            for (String token : pointer.split(&quot;/&quot;)) {</span>
-<span class="fc" id="L337">                tokens.add(unescape(token));</span>
+<span class="fc" id="L338">            List&lt;String&gt; tokens = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">            for (String token : pointer.split(&quot;/&quot;)) {</span>
+<span class="fc" id="L340">                tokens.add(unescape(token));</span>
             }
 
-<span class="fc" id="L340">            return new JSONPointer(tokens);</span>
+<span class="fc" id="L343">            return new JSONPointer(tokens);</span>
         }
 
-<span class="fc" id="L343">        private JSONPointer(List&lt;String&gt; tokens) {</span>
-<span class="fc" id="L344">            this.tokens = tokens;</span>
-<span class="fc" id="L345">        }</span>
+<span class="fc" id="L346">        private JSONPointer(List&lt;String&gt; tokens) {</span>
+<span class="fc" id="L347">            this.tokens = tokens;</span>
+<span class="fc" id="L348">        }</span>
 
         public ModelNode navigate(ModelNode root) {
-<span class="pc bpc" id="L348" title="1 of 2 branches missed.">            if (tokens.isEmpty()) {</span>
-<span class="nc" id="L349">                return root;</span>
+<span class="pc bpc" id="L351" title="1 of 2 branches missed.">            if (tokens.isEmpty()) {</span>
+<span class="nc" id="L352">                return root;</span>
             }
 
-<span class="fc" id="L352">            ModelNode current = root;</span>
-<span class="fc bfc" id="L353" title="All 2 branches covered.">            for (String token : tokens) {</span>
-<span class="pc bpc" id="L354" title="1 of 2 branches missed.">                if (current.getType() == ModelType.OBJECT) {</span>
-<span class="fc" id="L355">                    current = current.get(unescape(token));</span>
-<span class="nc bnc" id="L356" title="All 2 branches missed.">                } else if (current.getType() == ModelType.LIST) {</span>
-<span class="nc" id="L357">                    int idx = Integer.parseInt(token);</span>
-<span class="nc" id="L358">                    current = current.get(idx);</span>
-<span class="nc" id="L359">                } else {</span>
-<span class="nc" id="L360">                    throw new IllegalArgumentException(&quot;Cannot navigate to '&quot; + this + &quot;' in &quot; + root);</span>
+<span class="fc" id="L355">            ModelNode current = root;</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">            for (String token : tokens) {</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">                if (current.getType() == ModelType.OBJECT) {</span>
+<span class="fc" id="L358">                    current = current.get(unescape(token));</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">                } else if (current.getType() == ModelType.LIST) {</span>
+<span class="nc" id="L360">                    int idx = Integer.parseInt(token);</span>
+<span class="nc" id="L361">                    current = current.get(idx);</span>
+<span class="nc" id="L362">                } else {</span>
+<span class="nc" id="L363">                    throw new IllegalArgumentException(&quot;Cannot navigate to '&quot; + this + &quot;' in &quot; + root);</span>
                 }
-<span class="fc" id="L362">            }</span>
-<span class="fc" id="L363">            return current;</span>
+<span class="fc" id="L365">            }</span>
+<span class="fc" id="L366">            return current;</span>
         }
 
         @Override
         public String toString() {
-<span class="nc" id="L368">            StringBuilder ret = new StringBuilder();</span>
-<span class="nc bnc" id="L369" title="All 2 branches missed.">            for (String token: tokens) {</span>
-<span class="nc" id="L370">                ret.append('/').append(escape(token));</span>
-<span class="nc" id="L371">            }</span>
-<span class="nc" id="L372">            return ret.toString();</span>
+<span class="nc" id="L371">            StringBuilder ret = new StringBuilder();</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">            for (String token: tokens) {</span>
+<span class="nc" id="L373">                ret.append('/').append(escape(token));</span>
+<span class="nc" id="L374">            }</span>
+<span class="nc" id="L375">            return ret.toString();</span>
         }
 
         private static String unescape(String token) {
-<span class="fc" id="L376">            return token</span>
-<span class="fc" id="L377">                    .replace(&quot;~1&quot;, &quot;/&quot;)</span>
-<span class="fc" id="L378">                    .replace(&quot;~0&quot;, &quot;~&quot;)</span>
-<span class="fc" id="L379">                    .replace(&quot;\\\&quot;&quot;, &quot;\&quot;&quot;)</span>
-<span class="fc" id="L380">                    .replace(&quot;\\\\&quot;, &quot;\\&quot;);</span>
+<span class="fc" id="L379">            return token</span>
+<span class="fc" id="L380">                    .replace(&quot;~1&quot;, &quot;/&quot;)</span>
+<span class="fc" id="L381">                    .replace(&quot;~0&quot;, &quot;~&quot;)</span>
+<span class="fc" id="L382">                    .replace(&quot;\\\&quot;&quot;, &quot;\&quot;&quot;)</span>
+<span class="fc" id="L383">                    .replace(&quot;\\\\&quot;, &quot;\\&quot;);</span>
         }
 
         private static String escape(String token) {
-<span class="nc" id="L384">            return token</span>
-<span class="nc" id="L385">                    .replace(&quot;~&quot;, &quot;~0&quot;)</span>
-<span class="nc" id="L386">                    .replace(&quot;/&quot;, &quot;~1&quot;)</span>
-<span class="nc" id="L387">                    .replace(&quot;\\&quot;, &quot;\\\\&quot;)</span>
-<span class="nc" id="L388">                    .replace(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;);</span>
+<span class="nc" id="L387">            return token</span>
+<span class="nc" id="L388">                    .replace(&quot;~&quot;, &quot;~0&quot;)</span>
+<span class="nc" id="L389">                    .replace(&quot;/&quot;, &quot;~1&quot;)</span>
+<span class="nc" id="L390">                    .replace(&quot;\\&quot;, &quot;\\\\&quot;)</span>
+<span class="nc" id="L391">                    .replace(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;);</span>
         }
     }
 
     private static Map&lt;String, ModelNode&gt; getKnownExtensionSchemas(Revapi revapi) {
-<span class="nc" id="L393">        Map&lt;String, ModelNode&gt; knownSchemas = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L394">        extractKnownSchemas(knownSchemas, revapi.getApiAnalyzerTypes());</span>
-<span class="nc" id="L395">        extractKnownSchemas(knownSchemas, revapi.getDifferenceTransformTypes());</span>
-<span class="nc" id="L396">        extractKnownSchemas(knownSchemas, revapi.getElementFilterTypes());</span>
-<span class="nc" id="L397">        extractKnownSchemas(knownSchemas, revapi.getReporterTypes());</span>
+<span class="nc" id="L396">        Map&lt;String, ModelNode&gt; knownSchemas = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L397">        extractKnownSchemas(knownSchemas, revapi.getApiAnalyzerTypes());</span>
+<span class="nc" id="L398">        extractKnownSchemas(knownSchemas, revapi.getDifferenceTransformTypes());</span>
+<span class="nc" id="L399">        extractKnownSchemas(knownSchemas, revapi.getElementFilterTypes());</span>
+<span class="nc" id="L400">        extractKnownSchemas(knownSchemas, revapi.getReporterTypes());</span>
 
-<span class="nc" id="L399">        return knownSchemas;</span>
+<span class="nc" id="L402">        return knownSchemas;</span>
     }
 
     private static &lt;T extends Configurable&gt;
     void extractKnownSchemas(Map&lt;String, ModelNode&gt; schemaByExtensionId, Set&lt;Class&lt;? extends T&gt;&gt; types) {
-<span class="nc bnc" id="L404" title="All 2 branches missed.">        for (Class&lt;? extends T&gt; extensionType : types) {</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">        for (Class&lt;? extends T&gt; extensionType : types) {</span>
             try {
-<span class="nc" id="L406">                Configurable c = extensionType.newInstance();</span>
-<span class="nc" id="L407">                String extensionId = c.getExtensionId();</span>
-<span class="nc bnc" id="L408" title="All 2 branches missed.">                if (extensionId == null) {</span>
-<span class="nc" id="L409">                    continue;</span>
+<span class="nc" id="L409">                Configurable c = extensionType.newInstance();</span>
+<span class="nc" id="L410">                String extensionId = c.getExtensionId();</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">                if (extensionId == null) {</span>
+<span class="nc" id="L412">                    continue;</span>
                 }
 
-<span class="nc" id="L412">                Reader schema = c.getJSONSchema();</span>
-<span class="nc bnc" id="L413" title="All 2 branches missed.">                if (schema == null) {</span>
-<span class="nc" id="L414">                    continue;</span>
+<span class="nc" id="L415">                Reader schema = c.getJSONSchema();</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                if (schema == null) {</span>
+<span class="nc" id="L417">                    continue;</span>
                 }
 
-<span class="nc" id="L417">                String schemaString = readFull(schema);</span>
-<span class="nc" id="L418">                ModelNode schemaNode = ModelNode.fromJSONString(schemaString);</span>
+<span class="nc" id="L420">                String schemaString = readFull(schema);</span>
+<span class="nc" id="L421">                ModelNode schemaNode = ModelNode.fromJSONString(schemaString);</span>
 
-<span class="nc" id="L420">                schemaByExtensionId.put(extensionId, schemaNode);</span>
-<span class="nc" id="L421">            } catch (InstantiationException | IllegalAccessException e) {</span>
-<span class="nc" id="L422">                throw new IllegalStateException(&quot;Extension &quot; + extensionType + &quot; is not default-constructable.&quot;);</span>
-<span class="nc" id="L423">            } catch (IOException e) {</span>
-<span class="nc" id="L424">                throw new IllegalArgumentException(&quot;Failed to read the schema of extension &quot; + extensionType);</span>
-<span class="nc" id="L425">            }</span>
-<span class="nc" id="L426">        }</span>
-<span class="nc" id="L427">    }</span>
+<span class="nc" id="L423">                schemaByExtensionId.put(extensionId, schemaNode);</span>
+<span class="nc" id="L424">            } catch (InstantiationException | IllegalAccessException e) {</span>
+<span class="nc" id="L425">                throw new IllegalStateException(&quot;Extension &quot; + extensionType + &quot; is not default-constructable.&quot;);</span>
+<span class="nc" id="L426">            } catch (IOException e) {</span>
+<span class="nc" id="L427">                throw new IllegalArgumentException(&quot;Failed to read the schema of extension &quot; + extensionType);</span>
+<span class="nc" id="L428">            }</span>
+<span class="nc" id="L429">        }</span>
+<span class="nc" id="L430">    }</span>
 
     private static String readFull(Reader reader) throws IOException {
-<span class="nc" id="L430">        char[] buffer = new char[512];</span>
-<span class="nc" id="L431">        StringBuilder bld = new StringBuilder();</span>
+<span class="nc" id="L433">        char[] buffer = new char[512];</span>
+<span class="nc" id="L434">        StringBuilder bld = new StringBuilder();</span>
         int cnt;
-<span class="nc bnc" id="L433" title="All 2 branches missed.">        while ((cnt = reader.read(buffer)) != -1) {</span>
-<span class="nc" id="L434">            bld.append(buffer, 0, cnt);</span>
+<span class="nc bnc" id="L436" title="All 2 branches missed.">        while ((cnt = reader.read(buffer)) != -1) {</span>
+<span class="nc" id="L437">            bld.append(buffer, 0, cnt);</span>
         }
 
-<span class="nc" id="L437">        return bld.toString();</span>
+<span class="nc" id="L440">        return bld.toString();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
