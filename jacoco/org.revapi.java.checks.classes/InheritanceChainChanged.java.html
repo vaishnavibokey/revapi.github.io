@@ -113,8 +113,8 @@ import org.revapi.java.spi.Util;
 <span class="fc bfc" id="L113" title="All 2 branches covered.">            for (TypeMirror t : addedSuperClasses) {</span>
 <span class="fc" id="L114">                String str = Util.toHumanReadableString(t);</span>
 <span class="pc bpc" id="L115" title="1 of 2 branches missed.">                Code code = types.oldElement.getDeclaringElement().getModifiers().contains(Modifier.FINAL)</span>
-                    ? Code.CLASS_FINAL_CLASS_INHERITS_FROM_NEW_CLASS
-                    : Code.CLASS_NON_FINAL_CLASS_INHERITS_FROM_NEW_CLASS;
+<span class="nc" id="L116">                    ? Code.CLASS_FINAL_CLASS_INHERITS_FROM_NEW_CLASS</span>
+<span class="fc" id="L117">                    : Code.CLASS_NON_FINAL_CLASS_INHERITS_FROM_NEW_CLASS;</span>
 
 <span class="fc" id="L119">                ret.add(createDifference(code, Code.attachmentsFor(types.oldElement, types.newElement, &quot;superClass&quot;, str)));</span>
 
