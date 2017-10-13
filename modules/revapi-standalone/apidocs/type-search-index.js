@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"org.revapi.standalone","l":"Main"}]
