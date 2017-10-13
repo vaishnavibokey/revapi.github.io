@@ -131,7 +131,7 @@ import com.ximpleware.XPathParseException;
 
 <span class="nc" id="L132">            try (PrintWriter out = new PrintWriter(new FileOutputStream(changesFile, true))) {</span>
 <span class="nc" id="L133">                out.println(project.getArtifact().toString() + &quot;=&quot; + changeLevel + &quot;,&quot; + analysisResults.baseVersion);</span>
-<span class="nc bnc" id="L134" title="All 8 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L134">            } catch (IOException e) {</span>
 <span class="nc" id="L135">                throw new MojoExecutionException(&quot;Failure while updating the changes tracking file.&quot;, e);</span>
 <span class="nc" id="L136">            }</span>
 <span class="nc" id="L137">        } else {</span>
@@ -208,7 +208,7 @@ import com.ximpleware.XPathParseException;
                         }
 <span class="nc" id="L209">                    }</span>
 <span class="nc" id="L210">                }</span>
-<span class="nc bnc" id="L211" title="All 8 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L211">            } catch (IOException e) {</span>
 <span class="nc" id="L212">                throw new MojoExecutionException(&quot;Failure while reading the changes tracking file.&quot;, e);</span>
 <span class="nc" id="L213">            }</span>
         }
@@ -234,7 +234,7 @@ import com.ximpleware.XPathParseException;
             int indentationSize;
 <span class="nc" id="L235">            try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
 <span class="nc" id="L236">                indentationSize = XmlUtil.estimateIndentationSize(rdr);</span>
-<span class="nc bnc" id="L237" title="All 8 branches missed.">            }</span>
+<span class="nc" id="L237">            }</span>
 
 <span class="nc" id="L239">            VTDGen gen = new VTDGen();</span>
 <span class="nc" id="L240">            gen.enableIgnoredWhiteSpace(true);</span>
@@ -268,7 +268,7 @@ import com.ximpleware.XPathParseException;
 
 <span class="nc" id="L269">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="nc" id="L270">                mod.output(out);</span>
-<span class="nc bnc" id="L271" title="All 8 branches missed.">            }</span>
+<span class="nc" id="L271">            }</span>
 <span class="nc" id="L272">        } catch (IOException | ModifyException | NavException | XPathParseException | XPathEvalException | TranscodeException e) {</span>
 <span class="nc" id="L273">            throw new MojoExecutionException(&quot;Failed to update the version of project &quot; + project, e);</span>
 <span class="nc" id="L274">        }</span>
@@ -294,7 +294,7 @@ import com.ximpleware.XPathParseException;
 
 <span class="nc" id="L295">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="nc" id="L296">                mod.output(out);</span>
-<span class="nc bnc" id="L297" title="All 8 branches missed.">            }</span>
+<span class="nc" id="L297">            }</span>
 <span class="nc" id="L298">        } catch (IOException | ModifyException | NavException | XPathParseException | TranscodeException e) {</span>
 <span class="nc" id="L299">            throw new MojoExecutionException(&quot;Failed to update the parent version of project &quot; + project, e);</span>
 <span class="nc" id="L300">        }</span>
@@ -363,7 +363,7 @@ import com.ximpleware.XPathParseException;
 <span class="nc" id="L363">                            .getVersion();</span>
 
 <span class="nc" id="L365">                    return new AnalysisResults(level, baseVersion);</span>
-<span class="nc bnc" id="L366" title="All 8 branches missed.">                }</span>
+<span class="nc bnc" id="L366" title="All 4 branches missed.">                }</span>
 
             }
 <span class="nc" id="L369">        } catch (Exception e) {</span>

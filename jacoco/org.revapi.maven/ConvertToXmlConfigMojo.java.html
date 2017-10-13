@@ -120,7 +120,7 @@ import com.ximpleware.XMLModifier;
         int indentationSize;
 <span class="nc" id="L121">        try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
 <span class="nc" id="L122">            indentationSize = XmlUtil.estimateIndentationSize(rdr);</span>
-<span class="nc bnc" id="L123" title="All 8 branches missed.">        } catch (IOException e) {</span>
+<span class="nc" id="L123">        } catch (IOException e) {</span>
 <span class="nc" id="L124">            throw new MojoExecutionException(&quot;Failed to read pom.xml&quot;, e);</span>
 <span class="nc" id="L125">        }</span>
 
@@ -183,7 +183,7 @@ import com.ximpleware.XMLModifier;
 
 <span class="nc" id="L184">        try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="nc" id="L185">            mod.output(out);</span>
-<span class="nc bnc" id="L186" title="All 8 branches missed.">        }</span>
+<span class="nc" id="L186">        }</span>
 <span class="nc" id="L187">    }</span>
 
     private File updateConfigurationFile(File configFile, Map&lt;String, ModelNode&gt; extensionSchemas, int indentationSize)
@@ -192,7 +192,7 @@ import com.ximpleware.XMLModifier;
         ModelNode jsonConfig;
 <span class="nc" id="L193">        try (InputStream is = new FileInputStream(configFile)) {</span>
 <span class="nc" id="L194">            jsonConfig = ModelNode.fromJSONStream(is);</span>
-<span class="nc bnc" id="L195" title="All 8 branches missed.">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L195">        } catch (IllegalArgumentException e) {</span>
             //k, probably XML already
 <span class="nc" id="L197">            return null;</span>
 <span class="nc" id="L198">        }</span>
@@ -212,7 +212,7 @@ import com.ximpleware.XMLModifier;
 <span class="nc" id="L212">            StringWriter pretty = new StringWriter();</span>
 <span class="nc" id="L213">            XmlUtil.toIndentedString(xml, indentationSize, 0, pretty);</span>
 <span class="nc" id="L214">            wrt.write(pretty.toString());</span>
-<span class="nc bnc" id="L215" title="All 8 branches missed.">        }</span>
+<span class="nc" id="L215">        }</span>
 
 <span class="nc" id="L217">        return newFile;</span>
     }
@@ -275,7 +275,7 @@ import com.ximpleware.XMLModifier;
 
 <span class="nc" id="L276">        try (OutputStream out = new FileOutputStream(pomXml)) {</span>
 <span class="nc" id="L277">            mod.output(out);</span>
-<span class="nc bnc" id="L278" title="All 8 branches missed.">        }</span>
+<span class="nc" id="L278">        }</span>
 <span class="nc" id="L279">    }</span>
 
     private static String readFull(Reader rdr) throws IOException {
@@ -309,7 +309,7 @@ import com.ximpleware.XMLModifier;
 <span class="nc" id="L309">                ModelNode schema = ModelNode.fromJSONString(readFull(schemaRdr));</span>
 
 <span class="nc" id="L311">                extensionSchemas.put(extensionId, schema);</span>
-<span class="nc bnc" id="L312" title="All 12 branches missed.">            }</span>
+<span class="nc bnc" id="L312" title="All 6 branches missed.">            }</span>
 <span class="nc" id="L313">        }</span>
 
 <span class="nc" id="L315">        return extensionSchemas;</span>
