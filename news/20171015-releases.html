@@ -45,7 +45,7 @@
 <link rel="alternate" href="https://revapi.org/news.atom" type="application/rss+xml" title="Revapi News"/>
 	</head>
 
-	<body class="page-news-20170712-releases project-revapi-site" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
+	<body class="page-news-20171015-releases project-revapi-site" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
 
 		<header class="navbar navbar-default navbar-fixed-top">
 			<div class="container">
@@ -118,14 +118,38 @@
  </div> 
  <div class="sectionbody"> 
   <div class="paragraph"> 
-   <p>After a couple of silent weeks I’ve finally managed to release new versions of the Revapi components. There are exactly 2 fixes, one new feature and many improvements to the site.</p> 
+   <p>There hasn’t been much public progress on Revapi lately but it nevertheless slowly crawls forward in its quest to become the best programming API checking tool in the multiverse :)</p> 
+  </div> 
+  <div class="paragraph"> 
+   <p>A couple of days ago, I released new versions of all the Revapi components to define their module names marking the beginnings of making them fully modularized Java libraries.</p> 
+  </div> 
+  <div class="paragraph"> 
+   <p>The following were released:</p> 
+  </div> 
+  <div class="ulist"> 
+   <ul> 
+    <li> <p>Revapi API 0.8.3</p> </li> 
+    <li> <p>Revapi Basic Features 0.6.2</p> </li> 
+    <li> <p>Revapi Ant Task 0.6.2</p> </li> 
+    <li> <p>Revapi Java SPI 0.13.2</p> </li> 
+    <li> <p>Revapi Java Extension 0.14.2</p> </li> 
+    <li> <p>Revapi Text Reporter 0.8.1</p> </li> 
+    <li> <p>Revapi Standalone 0.6.3</p> </li> 
+    <li> <p>Revapi Maven Plugin 0.9.3</p> </li> 
+   </ul> 
   </div> 
   <div class="sect2"> 
    <h3 id="a_fixes">Fixes</h3> 
+   <div class="paragraph"> 
+    <p>In addition to every above mentioned module defining the <code>Automatic-Module-Name</code> (to "claim" its module name for the future), there also were some important fixes.</p> 
+   </div> 
    <div class="ulist"> 
     <ul> 
-     <li> <p>The analysis doesn’t break on archives that contain member classes anymore (i.e. classes defined inside the methods).</p> </li> 
-     <li> <p>The Ant task now assumes Ant being provided by the runtime as it should.</p> </li> 
+     <li> <p>Configuration doesn’t get confused when an element that can contain a list contains a textual value.</p> </li> 
+     <li> <p>An NPE could be thrown when encountering a missing type while analyzing Java archives.</p> </li> 
+     <li> <p>Ant extension should finally work properly (issue <a href="https://github.com/revapi/revapi/issues/94">#94</a>)</p> </li> 
+     <li> <p>Failure to construct the element tree when javac fails to analyze some classes should now be fixed</p> </li> 
+     <li> <p>Revapi now should work without warnings under Java 9 (when put on the classpath, NOT modulepath) (issue <a href="https://github.com/revapi/revapi/issues/69">#69</a>).</p> </li> 
     </ul> 
    </div> 
   </div> 
@@ -135,10 +159,15 @@
  <h2 id="a_new_features">New Features</h2> 
  <div class="sectionbody"> 
   <div class="paragraph"> 
-   <p>It is now possible for the Java checks to be configured (none of the present java checks requires a configuration but that may change in the future).</p> 
+   <p>The detection of <a href="../modules/revapi-java/differences.html#a_field_code_serialversionuid_code_unchanged"><code>java.class.serialVersionUIDUnchanged</code></a> switched from using the strict "class digest" used by the JVM to determine a default serialVersionUID to a more meaningful (for the purpose of API change tracking) class structural changes. The difference will now only be reported when the types or number of fields in a class changes (this is configurable by <code>revapi.java.checks.serialVersionUID.changeDetection</code> configuration property which defaults to <code>structural</code> but can be set to <code>jvm</code> to revert to the original behavior).</p> 
   </div> 
+ </div> 
+</div> 
+<div class="sect1"> 
+ <h2 id="a_thanks">Thanks</h2> 
+ <div class="sectionbody"> 
   <div class="paragraph"> 
-   <p>Many thanks go out to Martin Montperrus and Christian Dietrich for updates to the site and to twogee github user for the fix of the ant task.</p> 
+   <p>Many thanks go out to Anton Klaren for fixing the XML-to-JSON list conversion bug.</p> 
   </div> 
  </div> 
 </div> 
@@ -146,10 +175,10 @@
  <h2 id="a_future">Future</h2> 
  <div class="sectionbody"> 
   <div class="paragraph"> 
-   <p>I’ve been working on the <a href="https://github.com/revapi/revapi/issues/17">element matching</a> issue which should greatly improve the ability to define what constitutes an API by being able to define advanced filters using "literate DSL" like: <code>is not in package /.*\.impl/ or is annotated by '@my.annos.Public'</code> which would only consider classes that are not in a package ending in ".impl" or which are annotated by "@my.annos.Public" annotation.</p> 
+   <p>Due to limited time available I am still not finished with the greatly enhanced element matching mentioned in the last <a href="20170712-releases.html">release notes</a>.</p> 
   </div> 
   <div class="paragraph"> 
-   <p>Even though I think the above is a great and much needed improvement, Revapi still has many other <a href="https://github.com/revapi/revapi/issues">areas to improve in</a>. Your help of any kind is greatly appreciated.</p> 
+   <p>Revapi still has many other <a href="https://github.com/revapi/revapi/issues">areas to improve in</a>. Your help of any kind is greatly appreciated.</p> 
   </div> 
  </div> 
 </div>
@@ -166,6 +195,7 @@
 			</ul>
 		</li>
 		<li><a href="#a_new_features" title="New Features">New Features</a>
+		<li><a href="#a_thanks" title="Thanks">Thanks</a>
 		<li><a href="#a_future" title="Future">Future</a>
 					</ul>
 				</div>
