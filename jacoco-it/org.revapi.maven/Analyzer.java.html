@@ -321,10 +321,10 @@ public final class Analyzer {
 <span class="fc" id="L321">            Set&lt;MavenArchive&gt; newTransitiveDeps = new HashSet&lt;&gt;();</span>
 
 <span class="fc bfc" id="L323" title="All 2 branches covered.">            if (resolveDependencies) {</span>
-<span class="fc" id="L324">                oldTransitiveDeps.addAll(collectDeps(&quot;old&quot;, resolver, oldGavs));</span>
-<span class="fc" id="L325">                oldTransitiveDeps.addAll(collectDeps(&quot;old&quot;, resolver, oldArtifacts));</span>
-<span class="fc" id="L326">                newTransitiveDeps.addAll(collectDeps(&quot;new&quot;, resolver, newGavs));</span>
-<span class="fc" id="L327">                newTransitiveDeps.addAll(collectDeps(&quot;new&quot;, resolver, newArtifacts));</span>
+<span class="fc" id="L324">                String[] resolvedOld = oldArchives.stream().map(MavenArchive::getName).toArray(String[]::new);</span>
+<span class="fc" id="L325">                String[] resolvedNew = newArchives.stream().map(MavenArchive::getName).toArray(String[]::new);</span>
+<span class="fc" id="L326">                oldTransitiveDeps.addAll(collectDeps(&quot;old&quot;, resolver, resolvedOld));</span>
+<span class="fc" id="L327">                newTransitiveDeps.addAll(collectDeps(&quot;new&quot;, resolver, resolvedNew));</span>
             }
 
 <span class="fc" id="L330">            resolvedOldApi = API.of(oldArchives).supportedBy(oldTransitiveDeps).build();</span>
@@ -334,8 +334,8 @@ public final class Analyzer {
 
     private Set&lt;MavenArchive&gt; collectDeps(String depDescription, ArtifactResolver resolver, String... gavs) {
         try {
-<span class="fc bfc" id="L337" title="All 2 branches covered.">            if (gavs == null) {</span>
-<span class="fc" id="L338">                return Collections.emptySet();</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">            if (gavs == null) {</span>
+<span class="nc" id="L338">                return Collections.emptySet();</span>
             }
 <span class="fc" id="L340">            ArtifactResolver.CollectionResult res = resolver.collectTransitiveDeps(gavs);</span>
 <span class="fc" id="L341">            return collectDeps(depDescription, res);</span>
@@ -346,12 +346,12 @@ public final class Analyzer {
 
     private Set&lt;MavenArchive&gt; collectDeps(String depDescription, ArtifactResolver resolver, Artifact... gavs) {
         try {
-<span class="fc bfc" id="L349" title="All 2 branches covered.">            if (gavs == null) {</span>
-<span class="fc" id="L350">                return Collections.emptySet();</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">            if (gavs == null) {</span>
+<span class="nc" id="L350">                return Collections.emptySet();</span>
             }
-<span class="fc" id="L352">            ArtifactResolver.CollectionResult res = resolver.collectTransitiveDeps(Stream.of(gavs).map(Object::toString)</span>
-<span class="fc" id="L353">                    .toArray(String[]::new));</span>
-<span class="fc" id="L354">            return collectDeps(depDescription, res);</span>
+<span class="nc" id="L352">            ArtifactResolver.CollectionResult res = resolver.collectTransitiveDeps(Stream.of(gavs).map(Object::toString)</span>
+<span class="nc" id="L353">                    .toArray(String[]::new));</span>
+<span class="nc" id="L354">            return collectDeps(depDescription, res);</span>
 <span class="nc" id="L355">        } catch (RepositoryException e) {</span>
 <span class="nc" id="L356">            return handleResolutionError(e, depDescription, null);</span>
         }
