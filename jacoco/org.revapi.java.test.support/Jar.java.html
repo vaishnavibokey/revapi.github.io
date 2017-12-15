@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Jar.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java-based extensions test support</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.test.support</a> &gt; <span class="el_source">Jar.java</span></div><h1>Jar.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2015 Lukas Krejci
+ * Copyright 2014-2017 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License
+ * limitations under the License.
  */
-
 package org.revapi.java.test.support;
 
 import static java.util.Collections.singletonList;
@@ -30,13 +30,13 @@ import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,6 +61,8 @@ import javax.tools.ToolProvider;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class can be used in tests to make it easy to compile custom source code into jars and then use the Java
@@ -91,88 +93,90 @@ import org.junit.runners.model.Statement;
  * @author Lukas Krejci
  * @since 0.1.0
  */
-<span class="fc" id="L94">public class Jar implements TestRule {</span>
-<span class="fc" id="L95">    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();</span>
+<span class="fc" id="L96">public class Jar implements TestRule {</span>
+<span class="fc" id="L97">    private static final Logger LOG = LoggerFactory.getLogger(Jar.class);</span>
 
-<span class="fc" id="L97">    private Map&lt;File, Semaphore&gt; compiledStuff = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L99">    private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();</span>
 
-<span class="fc" id="L99">    private ExecutorService compileProcess = Executors.newCachedThreadPool();</span>
+<span class="fc" id="L101">    private Map&lt;File, Semaphore&gt; compiledStuff = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L103">    private ExecutorService compileProcess = Executors.newCachedThreadPool();</span>
 
     /**
      * Applies a jar rule to a test method. Don't call directly but instead let JUnit handle it.
      */
     @Override
     public Statement apply(final Statement base, Description description) {
-<span class="fc" id="L106">        return new Statement() {</span>
+<span class="fc" id="L110">        return new Statement() {</span>
             @Override
             public void evaluate() throws Throwable {
-<span class="fc" id="L109">                compiledStuff.clear();</span>
+<span class="fc" id="L113">                compiledStuff.clear();</span>
                 try {
-<span class="fc" id="L111">                    base.evaluate();</span>
+<span class="fc" id="L115">                    base.evaluate();</span>
                 } finally {
-<span class="pc" id="L113">                    cleanUp();</span>
-<span class="fc" id="L114">                }</span>
-<span class="fc" id="L115">            }</span>
+<span class="pc" id="L117">                    cleanUp();</span>
+<span class="fc" id="L118">                }</span>
+<span class="fc" id="L119">            }</span>
         };
     }
 
     /**
      * Instantiates a builder using which the contents of a compiled jar file can be composed.
+     *
      * @return a builder to gather sources and resources to compile and compose a jar file
      */
     public Builder from() {
-<span class="fc" id="L124">        return new Builder();</span>
+<span class="fc" id="L129">        return new Builder();</span>
     }
 
     public final class Builder {
-<span class="fc" id="L128">        private Map&lt;URI, JavaFileObject&gt; sources = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L129">        private Map&lt;URI, InputStream&gt; resources = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L133">        private Map&lt;URI, JavaFileObject&gt; sources = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L134">        private Map&lt;URI, InputStream&gt; resources = new HashMap&lt;&gt;();</span>
 
-<span class="fc" id="L131">        private Builder() {</span>
-<span class="fc" id="L132">        }</span>
+<span class="fc" id="L136">        private Builder() {</span>
+<span class="fc" id="L137">        }</span>
 
         /**
          * Finds given sources under given root in the classpath. The resulting jar file will contain the compiled
          * classes on the same relatives paths as the provided sources.
          *
-         * @param root the root path in the classloader to resolve the sources against
+         * @param root    the root path in the classloader to resolve the sources against
          * @param sources the list of relative paths on which the source files are located in the classloader
          * @return this instance
          */
         public Builder classPathSources(String root, String... sources) {
-<span class="fc" id="L143">            URI rootUri = toUri(root);</span>
+<span class="fc" id="L148">            URI rootUri = toUri(root);</span>
 
-<span class="fc bfc" id="L145" title="All 2 branches covered.">            for (String source : sources) {</span>
-<span class="fc" id="L146">                URI sourceUri = URI.create(source);</span>
-<span class="fc" id="L147">                URI location = rootUri.resolve(sourceUri);</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            for (String source : sources) {</span>
+<span class="fc" id="L151">                URI sourceUri = URI.create(source);</span>
+<span class="fc" id="L152">                URI location = rootUri.resolve(sourceUri);</span>
 
-<span class="fc" id="L149">                this.sources.put(sourceUri, new SourceInClassLoader(sourceUri, location));</span>
+<span class="fc" id="L154">                this.sources.put(sourceUri, new SourceInClassLoader(sourceUri, location));</span>
             }
 
-<span class="fc" id="L152">            return this;</span>
+<span class="fc" id="L157">            return this;</span>
         }
 
         /**
          * Adds given resources to the compiled jar file. The paths to the resources are resolved in the same way
          * as with sources.
          *
-         * @param root the root against which to resolve the resource paths in the classloader
+         * @param root      the root against which to resolve the resource paths in the classloader
          * @param resources the relative paths of the resources
          * @return this instance
-         *
          * @see #classPathSources(String, String...)
          */
         public Builder classPathResources(String root, String... resources) {
-<span class="fc" id="L166">            URI rootUri = toUri(root);</span>
+<span class="fc" id="L170">            URI rootUri = toUri(root);</span>
 
-<span class="fc bfc" id="L168" title="All 2 branches covered.">            for (String resource : resources) {</span>
-<span class="fc" id="L169">                URI resourceUri = URI.create(resource);</span>
-<span class="fc" id="L170">                URI location = rootUri.resolve(resourceUri);</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">            for (String resource : resources) {</span>
+<span class="fc" id="L173">                URI resourceUri = URI.create(resource);</span>
+<span class="fc" id="L174">                URI location = rootUri.resolve(resourceUri);</span>
 
-<span class="fc" id="L172">                this.resources.put(resourceUri, getClass().getResourceAsStream(location.getPath()));</span>
+<span class="fc" id="L176">                this.resources.put(resourceUri, getClass().getResourceAsStream(location.getPath()));</span>
             }
 
-<span class="fc" id="L175">            return this;</span>
+<span class="fc" id="L179">            return this;</span>
         }
 
         /**
@@ -180,16 +184,16 @@ import org.junit.runners.model.Statement;
          * files.
          */
         public Builder fileSources(File root, File... sources) {
-<span class="fc" id="L183">            URI rootUri = root.toURI();</span>
+<span class="fc" id="L187">            URI rootUri = root.toURI();</span>
 
-<span class="fc bfc" id="L185" title="All 2 branches covered.">            for (File source : sources) {</span>
-<span class="fc" id="L186">                URI sourceUri = URI.create(source.getPath());</span>
-<span class="fc" id="L187">                URI location = rootUri.resolve(sourceUri);</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">            for (File source : sources) {</span>
+<span class="fc" id="L190">                URI sourceUri = URI.create(source.getPath());</span>
+<span class="fc" id="L191">                URI location = rootUri.resolve(sourceUri);</span>
 
-<span class="fc" id="L189">                this.sources.put(sourceUri, new FileJavaFileObject(sourceUri, new File(location.getPath())));</span>
+<span class="fc" id="L193">                this.sources.put(sourceUri, new FileJavaFileObject(sourceUri, new File(location.getPath())));</span>
             }
 
-<span class="fc" id="L192">            return this;</span>
+<span class="fc" id="L196">            return this;</span>
         }
 
         /**
@@ -197,20 +201,20 @@ import org.junit.runners.model.Statement;
          * files.
          */
         public Builder fileResources(File root, File... resources) {
-<span class="fc" id="L200">            URI rootUri = root.toURI();</span>
+<span class="fc" id="L204">            URI rootUri = root.toURI();</span>
 
-<span class="fc bfc" id="L202" title="All 2 branches covered.">            for (File resource : resources) {</span>
-<span class="fc" id="L203">                URI resourceUri = URI.create(resource.getPath());</span>
-<span class="fc" id="L204">                URI location = rootUri.resolve(resourceUri);</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">            for (File resource : resources) {</span>
+<span class="fc" id="L207">                URI resourceUri = URI.create(resource.getPath());</span>
+<span class="fc" id="L208">                URI location = rootUri.resolve(resourceUri);</span>
 
                 try {
-<span class="fc" id="L207">                    this.resources.put(resourceUri, new FileInputStream(location.getPath()));</span>
-<span class="nc" id="L208">                } catch (FileNotFoundException e) {</span>
-<span class="nc" id="L209">                    throw new IllegalArgumentException(e);</span>
-<span class="fc" id="L210">                }</span>
+<span class="fc" id="L211">                    this.resources.put(resourceUri, new FileInputStream(location.getPath()));</span>
+<span class="nc" id="L212">                } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L213">                    throw new IllegalArgumentException(e);</span>
+<span class="fc" id="L214">                }</span>
             }
 
-<span class="fc" id="L213">            return this;</span>
+<span class="fc" id="L217">            return this;</span>
         }
 
         /**
@@ -222,55 +226,81 @@ import org.junit.runners.model.Statement;
          * @throws IOException on error
          */
         public BuildOutput build() throws IOException {
-<span class="fc" id="L225">            File dir = Files.createTempDirectory(&quot;revapi-java-spi&quot;).toFile();</span>
+<span class="fc" id="L229">            File dir = Files.createTempDirectory(&quot;revapi-java-spi&quot;).toFile();</span>
 
-<span class="fc" id="L227">            File compiledSourcesOutput = new File(dir, &quot;sources&quot;);</span>
-<span class="pc bpc" id="L228" title="1 of 2 branches missed.">            if (!compiledSourcesOutput.mkdirs()) {</span>
-<span class="nc" id="L229">                throw new IllegalStateException(&quot;Could not create output location for compiling test sources.&quot;);</span>
+<span class="fc" id="L231">            File compiledSourcesOutput = new File(dir, &quot;sources&quot;);</span>
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">            if (!compiledSourcesOutput.mkdirs()) {</span>
+<span class="nc" id="L233">                throw new IllegalStateException(&quot;Could not create output location for compiling test sources.&quot;);</span>
             }
 
-<span class="fc" id="L232">            List&lt;JavaFileObject&gt; sourceObjects = new ArrayList&lt;&gt;(sources.values());</span>
+<span class="fc" id="L236">            List&lt;JavaFileObject&gt; sourceObjects = new ArrayList&lt;&gt;(sources.values());</span>
 
-<span class="fc" id="L234">            List&lt;String&gt; options = Arrays.asList(&quot;-d&quot;, compiledSourcesOutput.getAbsolutePath());</span>
+<span class="fc" id="L238">            List&lt;String&gt; options = Arrays.asList(&quot;-d&quot;, compiledSourcesOutput.getAbsolutePath());</span>
 
-<span class="fc" id="L236">            JavaCompiler.CompilationTask firstCompilation = compiler.getTask(null, null, null, options, null, sourceObjects);</span>
-<span class="pc bpc" id="L237" title="1 of 2 branches missed.">            if (!firstCompilation.call()) {</span>
-<span class="nc" id="L238">                throw new IllegalStateException(&quot;Failed to compile the sources&quot;);</span>
+<span class="fc" id="L240">            JavaCompiler.CompilationTask firstCompilation = compiler.getTask(null, null, null, options, null, sourceObjects);</span>
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">            if (!firstCompilation.call()) {</span>
+<span class="nc" id="L242">                throw new IllegalStateException(&quot;Failed to compile the sources&quot;);</span>
             }
 
-<span class="fc bfc" id="L241" title="All 2 branches covered.">            for (Map.Entry&lt;URI, InputStream&gt; e : resources.entrySet()) {</span>
-<span class="fc" id="L242">                File target = new File(compiledSourcesOutput, e.getKey().getPath());</span>
-<span class="pc bpc" id="L243" title="1 of 2 branches missed.">                if (!target.getParentFile().mkdirs()) {</span>
-<span class="nc" id="L244">                    throw new IllegalStateException(&quot;Failed to create directory &quot; + target.getParentFile().getAbsolutePath());</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">            for (Map.Entry&lt;URI, InputStream&gt; e : resources.entrySet()) {</span>
+<span class="fc" id="L246">                File target = new File(compiledSourcesOutput, e.getKey().getPath());</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">                if (!target.getParentFile().mkdirs()) {</span>
+<span class="nc" id="L248">                    throw new IllegalStateException(&quot;Failed to create directory &quot; + target.getParentFile().getAbsolutePath());</span>
                 }
-<span class="fc" id="L246">                Files.copy(e.getValue(), target.toPath());</span>
-<span class="fc" id="L247">            }</span>
+<span class="fc" id="L250">                Files.copy(e.getValue(), target.toPath());</span>
+<span class="fc" id="L251">            }</span>
 
-<span class="fc" id="L249">            File compiledJar = new File(dir, &quot;compiled.jar&quot;);</span>
-<span class="pc" id="L250">            try (JarOutputStream out = new JarOutputStream(new FileOutputStream(compiledJar))) {</span>
-<span class="fc" id="L251">                Path root = compiledSourcesOutput.toPath();</span>
-<span class="fc" id="L252">                Files.walkFileTree(root, new SimpleFileVisitor&lt;Path&gt;() {</span>
+<span class="fc" id="L253">            File compiledJar = new File(dir, &quot;compiled.jar&quot;);</span>
+<span class="pc" id="L254">            try (JarOutputStream out = new JarOutputStream(new FileOutputStream(compiledJar))) {</span>
+<span class="fc" id="L255">                Path root = compiledSourcesOutput.toPath();</span>
+<span class="fc" id="L256">                HashSet&lt;String&gt; added = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L257">                Files.walkFileTree(root, new SimpleFileVisitor&lt;Path&gt;() {</span>
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-<span class="fc" id="L255">                        ZipEntry entry = new ZipEntry(root.relativize(file).toFile().getPath());</span>
-<span class="fc" id="L256">                        out.putNextEntry(entry);</span>
-<span class="fc" id="L257">                        Files.copy(file, out);</span>
-<span class="fc" id="L258">                        out.closeEntry();</span>
-<span class="fc" id="L259">                        return FileVisitResult.CONTINUE;</span>
+<span class="fc" id="L260">                        StringBuilder path = new StringBuilder();</span>
+<span class="fc" id="L261">                        Iterator&lt;Path&gt; it = root.relativize(file).iterator();</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">                        while (it.hasNext()) {</span>
+<span class="fc" id="L263">                            Path p = it.next();</span>
+<span class="fc" id="L264">                            boolean isDir = it.hasNext();</span>
+
+<span class="fc" id="L266">                            path.append(p.toString());</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">                            if (isDir) {</span>
+<span class="fc" id="L268">                                path.append(&quot;/&quot;);</span>
+                            }
+
+<span class="fc" id="L271">                            String currentPath = path.toString();</span>
+
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">                            if (added.contains(currentPath)) {</span>
+<span class="nc" id="L274">                                continue;</span>
+                            }
+
+<span class="fc" id="L277">                            ZipEntry entry = new ZipEntry(currentPath);</span>
+<span class="fc" id="L278">                            out.putNextEntry(entry);</span>
+
+<span class="fc bfc" id="L280" title="All 2 branches covered.">                            if (!isDir) {</span>
+<span class="fc" id="L281">                                Files.copy(file, out);</span>
+                            }
+
+<span class="fc" id="L284">                            out.closeEntry();</span>
+
+<span class="fc" id="L286">                            added.add(currentPath);</span>
+<span class="fc" id="L287">                        }</span>
+
+<span class="fc" id="L289">                        return FileVisitResult.CONTINUE;</span>
                     }
                 });
-<span class="pc bpc" id="L262" title="3 of 4 branches missed.">            }</span>
+<span class="pc bpc" id="L292" title="3 of 4 branches missed.">            }</span>
 
-<span class="fc" id="L264">            compiledStuff.put(dir, null);</span>
+<span class="fc" id="L294">            compiledStuff.put(dir, null);</span>
 
-<span class="fc" id="L266">            return new BuildOutput(compiledJar);</span>
+<span class="fc" id="L296">            return new BuildOutput(compiledJar);</span>
         }
 
         private URI toUri(String path) {
-<span class="pc bpc" id="L270" title="1 of 4 branches missed.">            if (path == null || path.isEmpty()) {</span>
-<span class="fc" id="L271">                return URI.create(&quot;/&quot;);</span>
+<span class="pc bpc" id="L300" title="1 of 4 branches missed.">            if (path == null || path.isEmpty()) {</span>
+<span class="fc" id="L301">                return URI.create(&quot;/&quot;);</span>
             } else {
-<span class="fc" id="L273">                return URI.create(path);</span>
+<span class="fc" id="L303">                return URI.create(path);</span>
             }
         }
     }
@@ -281,15 +311,15 @@ import org.junit.runners.model.Statement;
     public final class BuildOutput {
         private final File jarFile;
 
-<span class="fc" id="L284">        public BuildOutput(File jarFile) {</span>
-<span class="fc" id="L285">            this.jarFile = jarFile;</span>
-<span class="fc" id="L286">        }</span>
+<span class="fc" id="L314">        public BuildOutput(File jarFile) {</span>
+<span class="fc" id="L315">            this.jarFile = jarFile;</span>
+<span class="fc" id="L316">        }</span>
 
         /**
          * @return the compiled jar file
          */
         public File jarFile() {
-<span class="fc" id="L292">            return jarFile;</span>
+<span class="fc" id="L322">            return jarFile;</span>
         }
 
         /**
@@ -297,105 +327,107 @@ import org.junit.runners.model.Statement;
          * {@link Elements} and {@link Types} instances that can be used to analyze the compiled classes.
          */
         public Environment analyze() {
-<span class="fc" id="L300">            File dir = new File(jarFile.getParent(), &quot;probe&quot;);</span>
-<span class="pc bpc" id="L301" title="1 of 2 branches missed.">            if (!dir.mkdirs()) {</span>
-<span class="nc" id="L302">                throw new IllegalArgumentException(&quot;Failed to create directory &quot; + dir.getAbsolutePath());</span>
+<span class="fc" id="L330">            File dir = new File(jarFile.getParent(), &quot;probe&quot;);</span>
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            if (!dir.mkdirs()) {</span>
+<span class="nc" id="L332">                throw new IllegalArgumentException(&quot;Failed to create directory &quot; + dir.getAbsolutePath());</span>
             }
 
-<span class="fc" id="L305">            List&lt;String&gt; options = Arrays.asList(&quot;-cp&quot;, jarFile.getAbsolutePath(),</span>
-<span class="fc" id="L306">                    &quot;-d&quot;, dir.getAbsolutePath());</span>
+<span class="fc" id="L335">            List&lt;String&gt; options = Arrays.asList(&quot;-cp&quot;, jarFile.getAbsolutePath(),</span>
+<span class="fc" id="L336">                    &quot;-d&quot;, dir.getAbsolutePath());</span>
 
-<span class="fc" id="L308">            List&lt;JavaFileObject&gt; sourceObjects = new ArrayList&lt;&gt;(2);</span>
-<span class="fc" id="L309">            sourceObjects.add(new MarkerAnnotationObject());</span>
-<span class="fc" id="L310">            sourceObjects.add(new ArchiveProbeObject());</span>
+<span class="fc" id="L338">            List&lt;JavaFileObject&gt; sourceObjects = new ArrayList&lt;&gt;(2);</span>
+<span class="fc" id="L339">            sourceObjects.add(new MarkerAnnotationObject());</span>
+<span class="fc" id="L340">            sourceObjects.add(new ArchiveProbeObject());</span>
 
-<span class="fc" id="L312">            StandardJavaFileManager fileManager = compiler</span>
-<span class="fc" id="L313">                    .getStandardFileManager(null, Locale.getDefault(), Charset.forName(&quot;UTF-8&quot;));</span>
+<span class="fc" id="L342">            StandardJavaFileManager fileManager = compiler</span>
+<span class="fc" id="L343">                    .getStandardFileManager(null, Locale.getDefault(), Charset.forName(&quot;UTF-8&quot;));</span>
 
-<span class="fc" id="L315">            JavaCompiler.CompilationTask task = compiler</span>
-<span class="fc" id="L316">                    .getTask(new PrintWriter(System.out), fileManager, null, options, singletonList(ArchiveProbeObject.CLASS_NAME), sourceObjects);</span>
+<span class="fc" id="L345">            JavaCompiler.CompilationTask task = compiler</span>
+<span class="fc" id="L346">                    .getTask(new PrintWriter(System.out), fileManager, null, options, singletonList(ArchiveProbeObject.CLASS_NAME), sourceObjects);</span>
 
 
-<span class="fc" id="L319">            final Semaphore cleanUpSemaphore = new Semaphore(0);</span>
-<span class="fc" id="L320">            final Semaphore initSemaphore = new Semaphore(0);</span>
+<span class="fc" id="L349">            final Semaphore cleanUpSemaphore = new Semaphore(0);</span>
+<span class="fc" id="L350">            final Semaphore initSemaphore = new Semaphore(0);</span>
 
-<span class="fc" id="L322">            final EnvironmentImpl ret = new EnvironmentImpl();</span>
+<span class="fc" id="L352">            final EnvironmentImpl ret = new EnvironmentImpl();</span>
 
-<span class="fc" id="L324">            task.setProcessors(singletonList(new AbstractProcessor() {</span>
+<span class="fc" id="L354">            task.setProcessors(singletonList(new AbstractProcessor() {</span>
                 @Override
                 public SourceVersion getSupportedSourceVersion() {
-<span class="fc" id="L327">                    return SourceVersion.latest();</span>
+<span class="fc" id="L357">                    return SourceVersion.latest();</span>
                 }
 
                 @Override
                 public Set&lt;String&gt; getSupportedAnnotationTypes() {
-<span class="fc" id="L332">                    return new HashSet&lt;&gt;(singletonList(MarkerAnnotationObject.CLASS_NAME));</span>
+<span class="fc" id="L362">                    return new HashSet&lt;&gt;(singletonList(MarkerAnnotationObject.CLASS_NAME));</span>
                 }
 
                 @Override
                 public boolean process(Set&lt;? extends TypeElement&gt; annotations, RoundEnvironment roundEnv) {
-<span class="fc bfc" id="L337" title="All 2 branches covered.">                    if (roundEnv.processingOver()) {</span>
-<span class="fc" id="L338">                        ret.elements = processingEnv.getElementUtils();</span>
-<span class="fc" id="L339">                        ret.types = processingEnv.getTypeUtils();</span>
+<span class="fc bfc" id="L367" title="All 2 branches covered.">                    if (roundEnv.processingOver()) {</span>
+<span class="fc" id="L368">                        ret.elements = processingEnv.getElementUtils();</span>
+<span class="fc" id="L369">                        ret.types = processingEnv.getTypeUtils();</span>
 
-<span class="fc" id="L341">                        initSemaphore.release();</span>
+<span class="fc" id="L371">                        initSemaphore.release();</span>
 
                         try {
-<span class="fc" id="L344">                            cleanUpSemaphore.acquire();</span>
-<span class="nc" id="L345">                        } catch (InterruptedException e) {</span>
-<span class="nc" id="L346">                            Thread.currentThread().interrupt();</span>
-<span class="fc" id="L347">                        }</span>
+<span class="fc" id="L374">                            cleanUpSemaphore.acquire();</span>
+<span class="nc" id="L375">                        } catch (InterruptedException e) {</span>
+<span class="nc" id="L376">                            Thread.currentThread().interrupt();</span>
+<span class="fc" id="L377">                        }</span>
 
-<span class="fc" id="L349">                        return true;</span>
+<span class="fc" id="L379">                        return true;</span>
                     }
 
-<span class="fc" id="L352">                    return false;</span>
+<span class="fc" id="L382">                    return false;</span>
                 }
             }));
 
-<span class="fc" id="L356">            compileProcess.submit(task);</span>
+<span class="fc" id="L386">            compileProcess.submit(task);</span>
 
             try {
-<span class="fc" id="L359">                initSemaphore.acquire();</span>
-<span class="nc" id="L360">            } catch (InterruptedException e) {</span>
-<span class="nc" id="L361">                Thread.currentThread().interrupt();</span>
-<span class="nc" id="L362">                throw new IllegalStateException(&quot;Thread interrupted&quot;);</span>
-<span class="fc" id="L363">            }</span>
+<span class="fc" id="L389">                initSemaphore.acquire();</span>
+<span class="nc" id="L390">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L391">                Thread.currentThread().interrupt();</span>
+<span class="nc" id="L392">                throw new IllegalStateException(&quot;Thread interrupted&quot;);</span>
+<span class="fc" id="L393">            }</span>
 
-<span class="fc" id="L365">            compiledStuff.put(jarFile.getParentFile(), cleanUpSemaphore);</span>
+<span class="fc" id="L395">            compiledStuff.put(jarFile.getParentFile(), cleanUpSemaphore);</span>
 
-<span class="fc" id="L367">            return ret;</span>
+<span class="fc" id="L397">            return ret;</span>
         }
     }
 
     /**
      * If you're using the Jar instance as a JUnit rule, you don't have to call this method. Otherwise this can be used
      * to remove the compiled jar files from the filesystem.
-     *
-     * @throws IOException on error
      */
     @SuppressWarnings({&quot;ResultOfMethodCallIgnored&quot;, &quot;ConstantConditions&quot;})
-    public void cleanUp() throws IOException {
-<span class="fc bfc" id="L379" title="All 2 branches covered.">        for (Map.Entry&lt;File, Semaphore&gt; e : compiledStuff.entrySet()) {</span>
-<span class="fc bfc" id="L380" title="All 2 branches covered.">            if (e.getValue() != null) {</span>
-<span class="fc" id="L381">                e.getValue().release();</span>
+    public void cleanUp() {
+<span class="fc bfc" id="L407" title="All 2 branches covered.">        for (Map.Entry&lt;File, Semaphore&gt; e : compiledStuff.entrySet()) {</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">            if (e.getValue() != null) {</span>
+<span class="fc" id="L409">                e.getValue().release();</span>
             }
 
-<span class="fc" id="L384">            Files.walkFileTree(e.getKey().toPath(), new SimpleFileVisitor&lt;Path&gt;() {</span>
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-<span class="fc" id="L387">                    Files.delete(file);</span>
-<span class="fc" id="L388">                    return FileVisitResult.CONTINUE;</span>
-                }
+            try {
+<span class="fc" id="L413">                Files.walkFileTree(e.getKey().toPath(), new SimpleFileVisitor&lt;Path&gt;() {</span>
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+<span class="fc" id="L416">                        Files.delete(file);</span>
+<span class="fc" id="L417">                        return FileVisitResult.CONTINUE;</span>
+                    }
 
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-<span class="fc" id="L393">                    Files.delete(dir);</span>
-<span class="fc" id="L394">                    return FileVisitResult.CONTINUE;</span>
-                }
-            });
-<span class="fc" id="L397">        }</span>
-<span class="fc" id="L398">    }</span>
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+<span class="fc" id="L422">                        Files.delete(dir);</span>
+<span class="fc" id="L423">                        return FileVisitResult.CONTINUE;</span>
+                    }
+                });
+<span class="nc" id="L426">            } catch (IOException ex) {</span>
+<span class="nc" id="L427">                LOG.warn(&quot;Failed to clean up directory &quot; + e.getKey().getAbsolutePath(), ex);</span>
+<span class="fc" id="L428">            }</span>
+<span class="fc" id="L429">        }</span>
+<span class="fc" id="L430">    }</span>
 
     public interface Environment {
         Elements elements();
@@ -403,18 +435,18 @@ import org.junit.runners.model.Statement;
         Types types();
     }
 
-<span class="fc" id="L406">    private static final class EnvironmentImpl implements Environment {</span>
+<span class="fc" id="L438">    private static final class EnvironmentImpl implements Environment {</span>
         private Elements elements;
         private Types types;
 
         @Override
         public Elements elements() {
-<span class="fc" id="L412">            return elements;</span>
+<span class="fc" id="L444">            return elements;</span>
         }
 
         @Override
         public Types types() {
-<span class="nc" id="L417">            return types;</span>
+<span class="nc" id="L449">            return types;</span>
         }
     }
 }
