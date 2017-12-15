@@ -254,53 +254,79 @@ import org.slf4j.LoggerFactory;
 <span class="pc" id="L254">            try (JarOutputStream out = new JarOutputStream(new FileOutputStream(compiledJar))) {</span>
 <span class="fc" id="L255">                Path root = compiledSourcesOutput.toPath();</span>
 <span class="fc" id="L256">                HashSet&lt;String&gt; added = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L257">                Files.walkFileTree(root, new SimpleFileVisitor&lt;Path&gt;() {</span>
+
+                // The JAR file spec assumes that the MANIFEST.MF is the first or the second entry in the jar file.
+                // Because we don't know what we're putting in, we have to manually scan what we were instructed to
+                // put in the jar file and try to find the MANIFEST.MF.
+<span class="fc" id="L261">                Files.walkFileTree(root, new SimpleFileVisitor&lt;Path&gt;() {</span>
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-<span class="fc" id="L260">                        StringBuilder path = new StringBuilder();</span>
-<span class="fc" id="L261">                        Iterator&lt;Path&gt; it = root.relativize(file).iterator();</span>
-<span class="fc bfc" id="L262" title="All 2 branches covered.">                        while (it.hasNext()) {</span>
-<span class="fc" id="L263">                            Path p = it.next();</span>
-<span class="fc" id="L264">                            boolean isDir = it.hasNext();</span>
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">                        if (&quot;MANIFEST.MF&quot;.equals(file.getFileName().toString())</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                                &amp;&amp; &quot;META-INF&quot;.equals(file.getParent().getFileName().toString())) {</span>
 
-<span class="fc" id="L266">                            path.append(p.toString());</span>
-<span class="fc bfc" id="L267" title="All 2 branches covered.">                            if (isDir) {</span>
-<span class="fc" id="L268">                                path.append(&quot;/&quot;);</span>
-                            }
+<span class="nc" id="L267">                            ZipEntry entry = new ZipEntry(&quot;META-INF/&quot;);</span>
+<span class="nc" id="L268">                            out.putNextEntry(entry);</span>
+<span class="nc" id="L269">                            out.closeEntry();</span>
 
-<span class="fc" id="L271">                            String currentPath = path.toString();</span>
+<span class="nc" id="L271">                            entry = new ZipEntry(&quot;META-INF/MANIFEST.MF&quot;);</span>
+<span class="nc" id="L272">                            out.putNextEntry(entry);</span>
+<span class="nc" id="L273">                            Files.copy(file, out);</span>
+<span class="nc" id="L274">                            out.closeEntry();</span>
 
-<span class="pc bpc" id="L273" title="1 of 2 branches missed.">                            if (added.contains(currentPath)) {</span>
-<span class="nc" id="L274">                                continue;</span>
-                            }
-
-<span class="fc" id="L277">                            ZipEntry entry = new ZipEntry(currentPath);</span>
-<span class="fc" id="L278">                            out.putNextEntry(entry);</span>
-
-<span class="fc bfc" id="L280" title="All 2 branches covered.">                            if (!isDir) {</span>
-<span class="fc" id="L281">                                Files.copy(file, out);</span>
-                            }
-
-<span class="fc" id="L284">                            out.closeEntry();</span>
-
-<span class="fc" id="L286">                            added.add(currentPath);</span>
-<span class="fc" id="L287">                        }</span>
-
-<span class="fc" id="L289">                        return FileVisitResult.CONTINUE;</span>
+<span class="nc" id="L276">                            added.add(&quot;META-INF/&quot;);</span>
+<span class="nc" id="L277">                            added.add(&quot;META-INF/MANIFEST.MF&quot;);</span>
+                        }
+<span class="fc" id="L279">                        return super.visitFile(file, attrs);</span>
                     }
                 });
-<span class="pc bpc" id="L292" title="3 of 4 branches missed.">            }</span>
 
-<span class="fc" id="L294">            compiledStuff.put(dir, null);</span>
+<span class="fc" id="L283">                Files.walkFileTree(root, new SimpleFileVisitor&lt;Path&gt;() {</span>
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+<span class="fc" id="L286">                        StringBuilder path = new StringBuilder();</span>
+<span class="fc" id="L287">                        Iterator&lt;Path&gt; it = root.relativize(file).iterator();</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">                        while (it.hasNext()) {</span>
+<span class="fc" id="L289">                            Path p = it.next();</span>
+<span class="fc" id="L290">                            boolean isDir = it.hasNext();</span>
 
-<span class="fc" id="L296">            return new BuildOutput(compiledJar);</span>
+<span class="fc" id="L292">                            path.append(p.toString());</span>
+<span class="fc bfc" id="L293" title="All 2 branches covered.">                            if (isDir) {</span>
+<span class="fc" id="L294">                                path.append(&quot;/&quot;);</span>
+                            }
+
+<span class="fc" id="L297">                            String currentPath = path.toString();</span>
+
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">                            if (added.contains(currentPath)) {</span>
+<span class="nc" id="L300">                                continue;</span>
+                            }
+
+<span class="fc" id="L303">                            ZipEntry entry = new ZipEntry(currentPath);</span>
+<span class="fc" id="L304">                            out.putNextEntry(entry);</span>
+
+<span class="fc bfc" id="L306" title="All 2 branches covered.">                            if (!isDir) {</span>
+<span class="fc" id="L307">                                Files.copy(file, out);</span>
+                            }
+
+<span class="fc" id="L310">                            out.closeEntry();</span>
+
+<span class="fc" id="L312">                            added.add(currentPath);</span>
+<span class="fc" id="L313">                        }</span>
+
+<span class="fc" id="L315">                        return FileVisitResult.CONTINUE;</span>
+                    }
+                });
+<span class="pc bpc" id="L318" title="3 of 4 branches missed.">            }</span>
+
+<span class="fc" id="L320">            compiledStuff.put(dir, null);</span>
+
+<span class="fc" id="L322">            return new BuildOutput(compiledJar);</span>
         }
 
         private URI toUri(String path) {
-<span class="pc bpc" id="L300" title="1 of 4 branches missed.">            if (path == null || path.isEmpty()) {</span>
-<span class="fc" id="L301">                return URI.create(&quot;/&quot;);</span>
+<span class="pc bpc" id="L326" title="1 of 4 branches missed.">            if (path == null || path.isEmpty()) {</span>
+<span class="fc" id="L327">                return URI.create(&quot;/&quot;);</span>
             } else {
-<span class="fc" id="L303">                return URI.create(path);</span>
+<span class="fc" id="L329">                return URI.create(path);</span>
             }
         }
     }
@@ -311,15 +337,15 @@ import org.slf4j.LoggerFactory;
     public final class BuildOutput {
         private final File jarFile;
 
-<span class="fc" id="L314">        public BuildOutput(File jarFile) {</span>
-<span class="fc" id="L315">            this.jarFile = jarFile;</span>
-<span class="fc" id="L316">        }</span>
+<span class="fc" id="L340">        public BuildOutput(File jarFile) {</span>
+<span class="fc" id="L341">            this.jarFile = jarFile;</span>
+<span class="fc" id="L342">        }</span>
 
         /**
          * @return the compiled jar file
          */
         public File jarFile() {
-<span class="fc" id="L322">            return jarFile;</span>
+<span class="fc" id="L348">            return jarFile;</span>
         }
 
         /**
@@ -327,74 +353,74 @@ import org.slf4j.LoggerFactory;
          * {@link Elements} and {@link Types} instances that can be used to analyze the compiled classes.
          */
         public Environment analyze() {
-<span class="fc" id="L330">            File dir = new File(jarFile.getParent(), &quot;probe&quot;);</span>
-<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            if (!dir.mkdirs()) {</span>
-<span class="nc" id="L332">                throw new IllegalArgumentException(&quot;Failed to create directory &quot; + dir.getAbsolutePath());</span>
+<span class="fc" id="L356">            File dir = new File(jarFile.getParent(), &quot;probe&quot;);</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">            if (!dir.mkdirs()) {</span>
+<span class="nc" id="L358">                throw new IllegalArgumentException(&quot;Failed to create directory &quot; + dir.getAbsolutePath());</span>
             }
 
-<span class="fc" id="L335">            List&lt;String&gt; options = Arrays.asList(&quot;-cp&quot;, jarFile.getAbsolutePath(),</span>
-<span class="fc" id="L336">                    &quot;-d&quot;, dir.getAbsolutePath());</span>
+<span class="fc" id="L361">            List&lt;String&gt; options = Arrays.asList(&quot;-cp&quot;, jarFile.getAbsolutePath(),</span>
+<span class="fc" id="L362">                    &quot;-d&quot;, dir.getAbsolutePath());</span>
 
-<span class="fc" id="L338">            List&lt;JavaFileObject&gt; sourceObjects = new ArrayList&lt;&gt;(2);</span>
-<span class="fc" id="L339">            sourceObjects.add(new MarkerAnnotationObject());</span>
-<span class="fc" id="L340">            sourceObjects.add(new ArchiveProbeObject());</span>
+<span class="fc" id="L364">            List&lt;JavaFileObject&gt; sourceObjects = new ArrayList&lt;&gt;(2);</span>
+<span class="fc" id="L365">            sourceObjects.add(new MarkerAnnotationObject());</span>
+<span class="fc" id="L366">            sourceObjects.add(new ArchiveProbeObject());</span>
 
-<span class="fc" id="L342">            StandardJavaFileManager fileManager = compiler</span>
-<span class="fc" id="L343">                    .getStandardFileManager(null, Locale.getDefault(), Charset.forName(&quot;UTF-8&quot;));</span>
+<span class="fc" id="L368">            StandardJavaFileManager fileManager = compiler</span>
+<span class="fc" id="L369">                    .getStandardFileManager(null, Locale.getDefault(), Charset.forName(&quot;UTF-8&quot;));</span>
 
-<span class="fc" id="L345">            JavaCompiler.CompilationTask task = compiler</span>
-<span class="fc" id="L346">                    .getTask(new PrintWriter(System.out), fileManager, null, options, singletonList(ArchiveProbeObject.CLASS_NAME), sourceObjects);</span>
+<span class="fc" id="L371">            JavaCompiler.CompilationTask task = compiler</span>
+<span class="fc" id="L372">                    .getTask(new PrintWriter(System.out), fileManager, null, options, singletonList(ArchiveProbeObject.CLASS_NAME), sourceObjects);</span>
 
 
-<span class="fc" id="L349">            final Semaphore cleanUpSemaphore = new Semaphore(0);</span>
-<span class="fc" id="L350">            final Semaphore initSemaphore = new Semaphore(0);</span>
+<span class="fc" id="L375">            final Semaphore cleanUpSemaphore = new Semaphore(0);</span>
+<span class="fc" id="L376">            final Semaphore initSemaphore = new Semaphore(0);</span>
 
-<span class="fc" id="L352">            final EnvironmentImpl ret = new EnvironmentImpl();</span>
+<span class="fc" id="L378">            final EnvironmentImpl ret = new EnvironmentImpl();</span>
 
-<span class="fc" id="L354">            task.setProcessors(singletonList(new AbstractProcessor() {</span>
+<span class="fc" id="L380">            task.setProcessors(singletonList(new AbstractProcessor() {</span>
                 @Override
                 public SourceVersion getSupportedSourceVersion() {
-<span class="fc" id="L357">                    return SourceVersion.latest();</span>
+<span class="fc" id="L383">                    return SourceVersion.latest();</span>
                 }
 
                 @Override
                 public Set&lt;String&gt; getSupportedAnnotationTypes() {
-<span class="fc" id="L362">                    return new HashSet&lt;&gt;(singletonList(MarkerAnnotationObject.CLASS_NAME));</span>
+<span class="fc" id="L388">                    return new HashSet&lt;&gt;(singletonList(MarkerAnnotationObject.CLASS_NAME));</span>
                 }
 
                 @Override
                 public boolean process(Set&lt;? extends TypeElement&gt; annotations, RoundEnvironment roundEnv) {
-<span class="fc bfc" id="L367" title="All 2 branches covered.">                    if (roundEnv.processingOver()) {</span>
-<span class="fc" id="L368">                        ret.elements = processingEnv.getElementUtils();</span>
-<span class="fc" id="L369">                        ret.types = processingEnv.getTypeUtils();</span>
+<span class="fc bfc" id="L393" title="All 2 branches covered.">                    if (roundEnv.processingOver()) {</span>
+<span class="fc" id="L394">                        ret.elements = processingEnv.getElementUtils();</span>
+<span class="fc" id="L395">                        ret.types = processingEnv.getTypeUtils();</span>
 
-<span class="fc" id="L371">                        initSemaphore.release();</span>
+<span class="fc" id="L397">                        initSemaphore.release();</span>
 
                         try {
-<span class="fc" id="L374">                            cleanUpSemaphore.acquire();</span>
-<span class="nc" id="L375">                        } catch (InterruptedException e) {</span>
-<span class="nc" id="L376">                            Thread.currentThread().interrupt();</span>
-<span class="fc" id="L377">                        }</span>
+<span class="fc" id="L400">                            cleanUpSemaphore.acquire();</span>
+<span class="nc" id="L401">                        } catch (InterruptedException e) {</span>
+<span class="nc" id="L402">                            Thread.currentThread().interrupt();</span>
+<span class="fc" id="L403">                        }</span>
 
-<span class="fc" id="L379">                        return true;</span>
+<span class="fc" id="L405">                        return true;</span>
                     }
 
-<span class="fc" id="L382">                    return false;</span>
+<span class="fc" id="L408">                    return false;</span>
                 }
             }));
 
-<span class="fc" id="L386">            compileProcess.submit(task);</span>
+<span class="fc" id="L412">            compileProcess.submit(task);</span>
 
             try {
-<span class="fc" id="L389">                initSemaphore.acquire();</span>
-<span class="nc" id="L390">            } catch (InterruptedException e) {</span>
-<span class="nc" id="L391">                Thread.currentThread().interrupt();</span>
-<span class="nc" id="L392">                throw new IllegalStateException(&quot;Thread interrupted&quot;);</span>
-<span class="fc" id="L393">            }</span>
+<span class="fc" id="L415">                initSemaphore.acquire();</span>
+<span class="nc" id="L416">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L417">                Thread.currentThread().interrupt();</span>
+<span class="nc" id="L418">                throw new IllegalStateException(&quot;Thread interrupted&quot;);</span>
+<span class="fc" id="L419">            }</span>
 
-<span class="fc" id="L395">            compiledStuff.put(jarFile.getParentFile(), cleanUpSemaphore);</span>
+<span class="fc" id="L421">            compiledStuff.put(jarFile.getParentFile(), cleanUpSemaphore);</span>
 
-<span class="fc" id="L397">            return ret;</span>
+<span class="fc" id="L423">            return ret;</span>
         }
     }
 
@@ -404,30 +430,30 @@ import org.slf4j.LoggerFactory;
      */
     @SuppressWarnings({&quot;ResultOfMethodCallIgnored&quot;, &quot;ConstantConditions&quot;})
     public void cleanUp() {
-<span class="fc bfc" id="L407" title="All 2 branches covered.">        for (Map.Entry&lt;File, Semaphore&gt; e : compiledStuff.entrySet()) {</span>
-<span class="fc bfc" id="L408" title="All 2 branches covered.">            if (e.getValue() != null) {</span>
-<span class="fc" id="L409">                e.getValue().release();</span>
+<span class="fc bfc" id="L433" title="All 2 branches covered.">        for (Map.Entry&lt;File, Semaphore&gt; e : compiledStuff.entrySet()) {</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">            if (e.getValue() != null) {</span>
+<span class="fc" id="L435">                e.getValue().release();</span>
             }
 
             try {
-<span class="fc" id="L413">                Files.walkFileTree(e.getKey().toPath(), new SimpleFileVisitor&lt;Path&gt;() {</span>
+<span class="fc" id="L439">                Files.walkFileTree(e.getKey().toPath(), new SimpleFileVisitor&lt;Path&gt;() {</span>
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-<span class="fc" id="L416">                        Files.delete(file);</span>
-<span class="fc" id="L417">                        return FileVisitResult.CONTINUE;</span>
+<span class="fc" id="L442">                        Files.delete(file);</span>
+<span class="fc" id="L443">                        return FileVisitResult.CONTINUE;</span>
                     }
 
                     @Override
                     public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-<span class="fc" id="L422">                        Files.delete(dir);</span>
-<span class="fc" id="L423">                        return FileVisitResult.CONTINUE;</span>
+<span class="fc" id="L448">                        Files.delete(dir);</span>
+<span class="fc" id="L449">                        return FileVisitResult.CONTINUE;</span>
                     }
                 });
-<span class="nc" id="L426">            } catch (IOException ex) {</span>
-<span class="nc" id="L427">                LOG.warn(&quot;Failed to clean up directory &quot; + e.getKey().getAbsolutePath(), ex);</span>
-<span class="fc" id="L428">            }</span>
-<span class="fc" id="L429">        }</span>
-<span class="fc" id="L430">    }</span>
+<span class="nc" id="L452">            } catch (IOException ex) {</span>
+<span class="nc" id="L453">                LOG.warn(&quot;Failed to clean up directory &quot; + e.getKey().getAbsolutePath(), ex);</span>
+<span class="fc" id="L454">            }</span>
+<span class="fc" id="L455">        }</span>
+<span class="fc" id="L456">    }</span>
 
     public interface Environment {
         Elements elements();
@@ -435,18 +461,18 @@ import org.slf4j.LoggerFactory;
         Types types();
     }
 
-<span class="fc" id="L438">    private static final class EnvironmentImpl implements Environment {</span>
+<span class="fc" id="L464">    private static final class EnvironmentImpl implements Environment {</span>
         private Elements elements;
         private Types types;
 
         @Override
         public Elements elements() {
-<span class="fc" id="L444">            return elements;</span>
+<span class="fc" id="L470">            return elements;</span>
         }
 
         @Override
         public Types types() {
-<span class="nc" id="L449">            return types;</span>
+<span class="nc" id="L475">            return types;</span>
         }
     }
 }
