@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BuildTimeReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">BuildTimeReporter.java</span></div><h1>BuildTimeReporter.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014 Lukas Krejci
+ * Copyright 2014-2017 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License
+ * limitations under the License.
  */
-
 package org.revapi.maven;
 
 import java.io.IOException;
@@ -45,62 +45,62 @@ import org.revapi.Reporter;
     private List&lt;Archive&gt; newApi;
 
     public boolean hasBreakingProblems() {
-<span class="pc bpc" id="L48" title="2 of 4 branches missed.">        return allProblems != null &amp;&amp; !allProblems.isEmpty();</span>
+<span class="pc bpc" id="L48" title="1 of 4 branches missed.">        return allProblems != null &amp;&amp; !allProblems.isEmpty();</span>
     }
 
     public String getAllProblemsMessage() {
-<span class="nc" id="L52">        StringBuilder errors = new StringBuilder(&quot;The following API problems caused the build to fail:\n&quot;);</span>
-<span class="nc" id="L53">        StringBuilder ignores = new StringBuilder();</span>
-<span class="nc bnc" id="L54" title="All 2 branches missed.">        for (Report r : allProblems) {</span>
-<span class="nc" id="L55">            Element element = r.getNewElement();</span>
+<span class="fc" id="L52">        StringBuilder errors = new StringBuilder(&quot;The following API problems caused the build to fail:\n&quot;);</span>
+<span class="fc" id="L53">        StringBuilder ignores = new StringBuilder();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        for (Report r : allProblems) {</span>
+<span class="fc" id="L55">            Element element = r.getNewElement();</span>
             Archive archive;
-<span class="nc bnc" id="L57" title="All 2 branches missed.">            if (element == null) {</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            if (element == null) {</span>
 <span class="nc" id="L58">                element = r.getOldElement();</span>
 <span class="nc bnc" id="L59" title="All 4 branches missed.">                assert element != null;</span>
 <span class="nc bnc" id="L60" title="All 2 branches missed.">                archive = shouldOutputArchive(oldApi, element.getArchive()) ? element.getArchive() : null;</span>
             } else {
-<span class="nc bnc" id="L62" title="All 2 branches missed.">                archive = shouldOutputArchive(newApi, element.getArchive()) ? element.getArchive() : null;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                archive = shouldOutputArchive(newApi, element.getArchive()) ? element.getArchive() : null;</span>
             }
 
-<span class="nc bnc" id="L65" title="All 2 branches missed.">            for (Difference d : r.getDifferences()) {</span>
-<span class="nc bnc" id="L66" title="All 2 branches missed.">                if (isReportable(d)) {</span>
-<span class="nc" id="L67">                    errors.append(d.code).append(&quot;: &quot;).append(element.getFullHumanReadableString()).append(&quot;: &quot;)</span>
-<span class="nc" id="L68">                            .append(d.description);</span>
-<span class="nc bnc" id="L69" title="All 2 branches missed.">                    if (archive != null) {</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            for (Difference d : r.getDifferences()) {</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                if (isReportable(d)) {</span>
+<span class="fc" id="L67">                    errors.append(d.code).append(&quot;: &quot;).append(element.getFullHumanReadableString()).append(&quot;: &quot;)</span>
+<span class="fc" id="L68">                            .append(d.description);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                    if (archive != null) {</span>
 <span class="nc" id="L70">                        errors.append(&quot; [&quot;).append(archive.getName()).append(&quot;]&quot;);</span>
                     }
-<span class="nc" id="L72">                    errors.append(&quot;\n&quot;);</span>
+<span class="fc" id="L72">                    errors.append(&quot;\n&quot;);</span>
 
-<span class="nc" id="L74">                    ignores.append(&quot;{\n&quot;);</span>
-<span class="nc" id="L75">                    ignores.append(&quot;  \&quot;code\&quot;: \&quot;&quot;).append(escape(d.code)).append(&quot;\&quot;,\n&quot;);</span>
-<span class="nc bnc" id="L76" title="All 2 branches missed.">                    if (r.getOldElement() != null) {</span>
+<span class="fc" id="L74">                    ignores.append(&quot;{\n&quot;);</span>
+<span class="fc" id="L75">                    ignores.append(&quot;  \&quot;code\&quot;: \&quot;&quot;).append(escape(d.code)).append(&quot;\&quot;,\n&quot;);</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">                    if (r.getOldElement() != null) {</span>
 <span class="nc" id="L77">                        ignores.append(&quot;  \&quot;old\&quot;: \&quot;&quot;).append(escape(r.getOldElement())).append(&quot;\&quot;,\n&quot;);</span>
                     }
-<span class="nc bnc" id="L79" title="All 2 branches missed.">                    if (r.getNewElement() != null) {</span>
-<span class="nc" id="L80">                        ignores.append(&quot;  \&quot;new\&quot;: \&quot;&quot;).append(escape(r.getNewElement())).append(&quot;\&quot;,\n&quot;);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">                    if (r.getNewElement() != null) {</span>
+<span class="fc" id="L80">                        ignores.append(&quot;  \&quot;new\&quot;: \&quot;&quot;).append(escape(r.getNewElement())).append(&quot;\&quot;,\n&quot;);</span>
                     }
 
-<span class="nc bnc" id="L83" title="All 2 branches missed.">                    for (Map.Entry&lt;String, String&gt; e : d.attachments.entrySet()) {</span>
-<span class="nc" id="L84">                        ignores.append(&quot;  \&quot;&quot;).append(escape(e.getKey())).append(&quot;\&quot;: \&quot;&quot;).append(escape(e.getValue()))</span>
-<span class="nc" id="L85">                                .append(&quot;\&quot;,\n&quot;);</span>
-<span class="nc" id="L86">                    }</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                    for (Map.Entry&lt;String, String&gt; e : d.attachments.entrySet()) {</span>
+<span class="fc" id="L84">                        ignores.append(&quot;  \&quot;&quot;).append(escape(e.getKey())).append(&quot;\&quot;: \&quot;&quot;).append(escape(e.getValue()))</span>
+<span class="fc" id="L85">                                .append(&quot;\&quot;,\n&quot;);</span>
+<span class="fc" id="L86">                    }</span>
 
-<span class="nc" id="L88">                    ignores.append(&quot;  \&quot;justification\&quot;: &lt;&lt;&lt;&lt;&lt; ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE&quot; +</span>
+<span class="fc" id="L88">                    ignores.append(&quot;  \&quot;justification\&quot;: &lt;&lt;&lt;&lt;&lt; ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE&quot; +</span>
                             &quot; &gt;&gt;&gt;&gt;&gt;\n&quot;);
-<span class="nc" id="L90">                    ignores.append(&quot;},\n&quot;);</span>
+<span class="fc" id="L90">                    ignores.append(&quot;},\n&quot;);</span>
                 }
-<span class="nc" id="L92">            }</span>
-<span class="nc" id="L93">        }</span>
+<span class="fc" id="L92">            }</span>
+<span class="fc" id="L93">        }</span>
 
-<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (errors.length() == 0) {</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (errors.length() == 0) {</span>
 <span class="nc" id="L96">            return null;</span>
         } else {
-<span class="nc" id="L98">            ignores.replace(ignores.length() - 2, ignores.length(), &quot;&quot;);</span>
-<span class="nc" id="L99">            return errors.toString() +</span>
+<span class="fc" id="L98">            ignores.replace(ignores.length() - 2, ignores.length(), &quot;&quot;);</span>
+<span class="fc" id="L99">            return errors.toString() +</span>
                     &quot;\nIf you're using the semver-ignore extension, update your module's version to one compatible &quot; +
                     &quot;with the current changes (e.g. mvn package revapi:update-versions). If you want to &quot; +
                     &quot;explicitly ignore this change and provide a justification for it, add the following JSON snippet &quot; +
-<span class="nc" id="L103">                    &quot;to your Revapi configuration under \&quot;revapi.ignore\&quot; path:\n&quot; + ignores.toString();</span>
+<span class="fc" id="L103">                    &quot;to your Revapi configuration under \&quot;revapi.ignore\&quot; path:\n&quot; + ignores.toString();</span>
         }
     }
 
@@ -139,9 +139,9 @@ import org.revapi.Reporter;
         }
 
 <span class="fc bfc" id="L141" title="All 2 branches covered.">        for (Difference d : report.getDifferences()) {</span>
-<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            if (isReportable(d)) {</span>
-<span class="nc" id="L143">                allProblems.add(report);</span>
-<span class="nc" id="L144">                break;</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            if (isReportable(d)) {</span>
+<span class="fc" id="L143">                allProblems.add(report);</span>
+<span class="fc" id="L144">                break;</span>
             }
 <span class="fc" id="L146">        }</span>
 <span class="fc" id="L147">    }</span>
@@ -149,16 +149,16 @@ import org.revapi.Reporter;
     private boolean isReportable(Difference d) {
 <span class="fc" id="L150">        DifferenceSeverity maxSeverity = DifferenceSeverity.NON_BREAKING;</span>
 <span class="fc bfc" id="L151" title="All 2 branches covered.">        for (DifferenceSeverity s : d.classification.values()) {</span>
-<span class="pc bpc" id="L152" title="1 of 2 branches missed.">            if (maxSeverity.compareTo(s) &lt; 0) {</span>
-<span class="nc" id="L153">                maxSeverity = s;</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if (maxSeverity.compareTo(s) &lt; 0) {</span>
+<span class="fc" id="L153">                maxSeverity = s;</span>
             }
 <span class="fc" id="L155">        }</span>
 
-<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        return maxSeverity.compareTo(breakingSeverity) &gt;= 0;</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        return maxSeverity.compareTo(breakingSeverity) &gt;= 0;</span>
     }
 
     private boolean shouldOutputArchive(List&lt;Archive&gt; primaryApi, Archive archive) {
-<span class="nc bnc" id="L161" title="All 4 branches missed.">        return !primaryApi.contains(archive) || primaryApi.size() &gt; 1;</span>
+<span class="pc bpc" id="L161" title="2 of 4 branches missed.">        return !primaryApi.contains(archive) || primaryApi.size() &gt; 1;</span>
     }
 
     @Override
@@ -166,21 +166,21 @@ import org.revapi.Reporter;
 <span class="fc" id="L166">    }</span>
 
     private static String escape(Object obj) {
-<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (obj == null) {</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        if (obj == null) {</span>
 <span class="nc" id="L170">            return &quot;null&quot;;</span>
         }
 
-<span class="nc" id="L173">        String string = obj.toString();</span>
+<span class="fc" id="L173">        String string = obj.toString();</span>
 
         char c;
         int i;
-<span class="nc" id="L177">        int len = string.length();</span>
-<span class="nc" id="L178">        StringBuilder sb = new StringBuilder(len);</span>
+<span class="fc" id="L177">        int len = string.length();</span>
+<span class="fc" id="L178">        StringBuilder sb = new StringBuilder(len);</span>
         String t;
 
-<span class="nc bnc" id="L181" title="All 2 branches missed.">        for (i = 0; i &lt; len; i += 1) {</span>
-<span class="nc" id="L182">            c = string.charAt(i);</span>
-<span class="nc bnc" id="L183" title="All 8 branches missed.">            switch (c) {</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        for (i = 0; i &lt; len; i += 1) {</span>
+<span class="fc" id="L182">            c = string.charAt(i);</span>
+<span class="pc bpc" id="L183" title="7 of 8 branches missed.">            switch (c) {</span>
                 case '\\':
                 case '&quot;':
 <span class="nc" id="L186">                    sb.append('\\');</span>
@@ -206,15 +206,15 @@ import org.revapi.Reporter;
 <span class="nc" id="L206">                    sb.append(&quot;\\r&quot;);</span>
 <span class="nc" id="L207">                    break;</span>
                 default:
-<span class="nc bnc" id="L209" title="All 2 branches missed.">                    if (c &lt; ' ') {</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">                    if (c &lt; ' ') {</span>
 <span class="nc" id="L210">                        t = &quot;000&quot; + Integer.toHexString(c);</span>
 <span class="nc" id="L211">                        sb.append(&quot;\\u&quot;).append(t.substring(t.length() - 4));</span>
                     } else {
-<span class="nc" id="L213">                        sb.append(c);</span>
+<span class="fc" id="L213">                        sb.append(c);</span>
                     }
             }
         }
-<span class="nc" id="L217">        return sb.toString();</span>
+<span class="fc" id="L217">        return sb.toString();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
