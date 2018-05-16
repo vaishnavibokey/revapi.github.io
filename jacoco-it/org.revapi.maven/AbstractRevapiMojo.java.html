@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractRevapiMojo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">AbstractRevapiMojo.java</span></div><h1>AbstractRevapiMojo.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -229,9 +229,26 @@ import org.revapi.Reporter;
      * &lt;p&gt;In rare circumstances this is not a desired behavior though. It is undesired if for example the classes from
      * the provided dependency are used only for establishing desired build order or when they are used in some
      * non-standard scenarios during the build and actually not needed at runtime.
+     *
+     * &lt;p&gt;Note that this property only influences the resolution of provided dependencies of the main artifacts, not
+     * the transitively reachable provided dependencies. For those, use the {@link #resolveTransitiveProvidedDependencies}
+     * parameter.
      */
     @Parameter(property = Props.resolveProvidedDependencies.NAME, defaultValue = Props.resolveProvidedDependencies.DEFAULT_VALUE)
     protected boolean resolveProvidedDependencies;
+
+    /**
+     * In addition to {@link #resolveProvidedDependencies} this property further controls how provided dependencies
+     * are resolved. Using this property you can control how the indirect, transitively reachable, provided dependencies
+     * are treated. The default is to not consider them, which is almost always the right thing to do. It might be
+     * necessary to set this property to {@code true} in the rare circumstances where the API of the main artifacts
+     * includes types from such transitively included provided dependencies. Such occurrence will manifest itself by
+     * Revapi considering such types as missing (which is by default reported as a potentially breaking change). When
+     * you then resolve the transitive provided dependencies (by setting this parameter to true), Revapi will be able to
+     * find such types and do a proper analysis of them.
+     */
+    @Parameter(property = Props.resolveTransitiveProvidedDependencies.NAME, defaultValue = Props.resolveTransitiveProvidedDependencies.DEFAULT_VALUE)
+    protected boolean resolveTransitiveProvidedDependencies;
 
     /**
      * If set, this property demands a format of the version string when the {@link #oldVersion} or {@link #newVersion}
@@ -261,123 +278,124 @@ import org.revapi.Reporter;
     protected AnalysisResult analyze(Class&lt;? extends Reporter&gt; reporter, Object... contextDataKeyValues)
             throws MojoExecutionException, MojoFailureException {
 
-<span class="fc" id="L264">        Analyzer analyzer = prepareAnalyzer(project, reporter, toContextData(contextDataKeyValues));</span>
-<span class="fc bfc" id="L265" title="All 2 branches covered.">        if (analyzer != null) {</span>
-<span class="fc" id="L266">            return analyzer.analyze();</span>
+<span class="fc" id="L281">        Analyzer analyzer = prepareAnalyzer(project, reporter, toContextData(contextDataKeyValues));</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        if (analyzer != null) {</span>
+<span class="fc" id="L283">            return analyzer.analyze();</span>
         } else {
             //a null analyzer means the current module doesn't have a jar output
-<span class="fc" id="L269">            return AnalysisResult.fakeSuccess();</span>
+<span class="fc" id="L286">            return AnalysisResult.fakeSuccess();</span>
         }
     }
 
     protected Analyzer prepareAnalyzer(MavenProject project, Class&lt;? extends Reporter&gt; reporter,
                                        Map&lt;String, Object&gt; contextData) {
-<span class="fc" id="L275">        AnalyzerBuilder.Result res = buildAnalyzer(project, reporter, contextData);</span>
+<span class="fc" id="L292">        AnalyzerBuilder.Result res = buildAnalyzer(project, reporter, contextData);</span>
 
-<span class="pc bpc" id="L277" title="1 of 2 branches missed.">        if (res.skip) {</span>
-<span class="nc" id="L278">            this.skip = true;</span>
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">        if (res.skip) {</span>
+<span class="nc" id="L295">            this.skip = true;</span>
         }
 
-<span class="fc" id="L281">        this.oldArtifacts = res.oldArtifacts;</span>
-<span class="fc" id="L282">        this.newArtifacts = res.newArtifacts;</span>
+<span class="fc" id="L298">        this.oldArtifacts = res.oldArtifacts;</span>
+<span class="fc" id="L299">        this.newArtifacts = res.newArtifacts;</span>
 
-<span class="fc bfc" id="L284" title="All 2 branches covered.">        return res.isOnClasspath ? res.analyzer : null;</span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">        return res.isOnClasspath ? res.analyzer : null;</span>
     }
 
     AnalyzerBuilder.Result buildAnalyzer(MavenProject project, Class&lt;? extends Reporter&gt; reporter,
                                                    Map&lt;String, Object&gt; contextData) {
-<span class="fc" id="L289">        return AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
-<span class="fc" id="L290">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
-<span class="fc" id="L291">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
-<span class="fc" id="L292">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
-<span class="fc" id="L293">                .withCheckDependencies(this.checkDependencies)</span>
-<span class="fc" id="L294">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
-<span class="fc" id="L295">                .withDisallowedExtensions(this.disallowedExtensions)</span>
-<span class="fc" id="L296">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
-<span class="fc" id="L297">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
-<span class="fc" id="L298">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
-<span class="fc" id="L299">                .withLocale(Locale.getDefault())</span>
-<span class="fc" id="L300">                .withLog(getLog())</span>
-<span class="fc" id="L301">                .withNewVersion(this.newVersion)</span>
-<span class="fc" id="L302">                .withOldVersion(this.oldVersion)</span>
-<span class="fc" id="L303">                .withProject(project)</span>
-<span class="fc" id="L304">                .withReporter(reporter)</span>
-<span class="fc" id="L305">                .withRepositorySystem(this.repositorySystem)</span>
-<span class="fc" id="L306">                .withRepositorySystemSession(this.repositorySystemSession)</span>
-<span class="fc" id="L307">                .withSkip(this.skip)</span>
-<span class="fc" id="L308">                .withVersionFormat(this.versionFormat)</span>
-<span class="fc" id="L309">                .withContextData(contextData)</span>
-<span class="fc" id="L310">                .build();</span>
+<span class="fc" id="L306">        return AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
+<span class="fc" id="L307">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
+<span class="fc" id="L308">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
+<span class="fc" id="L309">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
+<span class="fc" id="L310">                .withCheckDependencies(this.checkDependencies)</span>
+<span class="fc" id="L311">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
+<span class="fc" id="L312">                .withResolveTransitiveProvidedDependencies(this.resolveTransitiveProvidedDependencies)</span>
+<span class="fc" id="L313">                .withDisallowedExtensions(this.disallowedExtensions)</span>
+<span class="fc" id="L314">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
+<span class="fc" id="L315">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
+<span class="fc" id="L316">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
+<span class="fc" id="L317">                .withLocale(Locale.getDefault())</span>
+<span class="fc" id="L318">                .withLog(getLog())</span>
+<span class="fc" id="L319">                .withNewVersion(this.newVersion)</span>
+<span class="fc" id="L320">                .withOldVersion(this.oldVersion)</span>
+<span class="fc" id="L321">                .withProject(project)</span>
+<span class="fc" id="L322">                .withReporter(reporter)</span>
+<span class="fc" id="L323">                .withRepositorySystem(this.repositorySystem)</span>
+<span class="fc" id="L324">                .withRepositorySystemSession(this.repositorySystemSession)</span>
+<span class="fc" id="L325">                .withSkip(this.skip)</span>
+<span class="fc" id="L326">                .withVersionFormat(this.versionFormat)</span>
+<span class="fc" id="L327">                .withContextData(contextData)</span>
+<span class="fc" id="L328">                .build();</span>
     }
 
     /**
      * @return true if artifacts are initialized, false if not and the analysis should not proceed
      */
     protected boolean initializeComparisonArtifacts() {
-<span class="pc bpc" id="L317" title="4 of 6 branches missed.">        if (newArtifacts != null &amp;&amp; newArtifacts.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newArtifacts[0])) {</span>
-<span class="nc" id="L318">            getLog().warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
+<span class="pc bpc" id="L335" title="4 of 6 branches missed.">        if (newArtifacts != null &amp;&amp; newArtifacts.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newArtifacts[0])) {</span>
+<span class="nc" id="L336">            getLog().warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
                     &quot; \&quot;${project.version}\&quot; as the value for \&quot;newVersion\&quot; (which is the default, so you don't&quot; +
                     &quot; actually have to do that either).&quot;);
-<span class="nc" id="L321">            oldArtifacts = null;</span>
+<span class="nc" id="L339">            oldArtifacts = null;</span>
         }
 
-<span class="pc bpc" id="L324" title="2 of 4 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0) {</span>
+<span class="pc bpc" id="L342" title="2 of 4 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0) {</span>
             //non-intuitively, we need to initialize the artifacts even if we will not proceed with the analysis itself
             //that's because we need know the versions when figuring out the version modifications -
             //see AbstractVersionModifyingMojo
-<span class="fc" id="L328">            oldArtifacts = new String[]{</span>
-<span class="fc" id="L329">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
+<span class="fc" id="L346">            oldArtifacts = new String[]{</span>
+<span class="fc" id="L347">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
 
             //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
             //analyze there
             //only do it here, because oldArtifacts might point to another artifact.
             //if we end up here in this branch, we know we'll be comparing the current artifact with something.
-<span class="fc bfc" id="L335" title="All 2 branches covered.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="fc" id="L336">                return false;</span>
+<span class="fc bfc" id="L353" title="All 2 branches covered.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="fc" id="L354">                return false;</span>
             }
         }
 
-<span class="pc bpc" id="L340" title="2 of 4 branches missed.">        if (newArtifacts == null || newArtifacts.length == 0) {</span>
-<span class="fc" id="L341">            newArtifacts = new String[]{</span>
-<span class="fc" id="L342">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
+<span class="pc bpc" id="L358" title="2 of 4 branches missed.">        if (newArtifacts == null || newArtifacts.length == 0) {</span>
+<span class="fc" id="L359">            newArtifacts = new String[]{</span>
+<span class="fc" id="L360">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
 
             //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
             //analyze there
             //again, do this check only here, because oldArtifact might point elsewhere. But if we end up here, it
             //means that oldArtifacts would be compared against the current artifact (in some version). Comparing
             //against a POM artifact is always no-op.
-<span class="pc bpc" id="L349" title="1 of 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="nc" id="L350">                return false;</span>
+<span class="pc bpc" id="L367" title="1 of 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="nc" id="L368">                return false;</span>
             }
         }
 
-<span class="fc" id="L354">        return true;</span>
+<span class="fc" id="L372">        return true;</span>
     }
 
     private Map&lt;String, Object&gt; toContextData(Object... contextDataKeyValues) {
-<span class="pc bpc" id="L358" title="1 of 2 branches missed.">        if (contextDataKeyValues.length % 2 != 0) {</span>
-<span class="nc" id="L359">            throw new IllegalArgumentException(&quot;Key-value pairs not balanced.&quot;);</span>
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">        if (contextDataKeyValues.length % 2 != 0) {</span>
+<span class="nc" id="L377">            throw new IllegalArgumentException(&quot;Key-value pairs not balanced.&quot;);</span>
         }
 
-<span class="fc" id="L362">        Map&lt;String, Object&gt; ret = new HashMap&lt;&gt;(contextDataKeyValues.length / 2);</span>
+<span class="fc" id="L380">        Map&lt;String, Object&gt; ret = new HashMap&lt;&gt;(contextDataKeyValues.length / 2);</span>
 
-<span class="fc" id="L364">        boolean isKey = true;</span>
-<span class="fc" id="L365">        String key = null;</span>
-<span class="fc bfc" id="L366" title="All 2 branches covered.">        for(Object kv : contextDataKeyValues) {</span>
-<span class="fc bfc" id="L367" title="All 2 branches covered.">            if (isKey) {</span>
-<span class="pc bpc" id="L368" title="1 of 2 branches missed.">                if (!(kv instanceof String)) {</span>
-<span class="nc" id="L369">                    throw new IllegalArgumentException(&quot;Found non-string key.&quot;);</span>
+<span class="fc" id="L382">        boolean isKey = true;</span>
+<span class="fc" id="L383">        String key = null;</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        for(Object kv : contextDataKeyValues) {</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">            if (isKey) {</span>
+<span class="pc bpc" id="L386" title="1 of 2 branches missed.">                if (!(kv instanceof String)) {</span>
+<span class="nc" id="L387">                    throw new IllegalArgumentException(&quot;Found non-string key.&quot;);</span>
                 }
 
-<span class="fc" id="L372">                key = (String) kv;</span>
-<span class="fc" id="L373">                isKey = false;</span>
+<span class="fc" id="L390">                key = (String) kv;</span>
+<span class="fc" id="L391">                isKey = false;</span>
             } else {
-<span class="fc" id="L375">                ret.put(key, kv);</span>
-<span class="fc" id="L376">                isKey = true;</span>
+<span class="fc" id="L393">                ret.put(key, kv);</span>
+<span class="fc" id="L394">                isKey = true;</span>
             }
         }
 
-<span class="fc" id="L380">        return ret;</span>
+<span class="fc" id="L398">        return ret;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportMojo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">ReportMojo.java</span></div><h1>ReportMojo.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -205,9 +205,26 @@ import org.revapi.Element;
      * &lt;p&gt;In rare circumstances this is not a desired behavior though. It is undesired if for example the classes from
      * the provided dependency are used only for establishing desired build order or when they are used in some
      * non-standard scenarios during the build and actually not needed at runtime.
+     *
+     * &lt;p&gt;Note that this property only influences the resolution of provided dependencies of the main artifacts, not
+     * the transitively reachable provided dependencies. For those, use the {@link #resolveTransitiveProvidedDependencies}
+     * parameter.
      */
     @Parameter(property = Props.resolveProvidedDependencies.NAME, defaultValue = Props.resolveProvidedDependencies.DEFAULT_VALUE)
     protected boolean resolveProvidedDependencies;
+
+    /**
+     * In addition to {@link #resolveProvidedDependencies} this property further controls how provided dependencies
+     * are resolved. Using this property you can control how the indirect, transitively reachable, provided dependencies
+     * are treated. The default is to not consider them, which is almost always the right thing to do. It might be
+     * necessary to set this property to {@code true} in the rare circumstances where the API of the main artifacts
+     * includes types from such transitively included provided dependencies. Such occurrence will manifest itself by
+     * Revapi considering such types as missing (which is by default reported as a potentially breaking change). When
+     * you then resolve the transitive provided dependencies (by setting this parameter to true), Revapi will be able to
+     * find such types and do a proper analysis of them.
+     */
+    @Parameter(property = Props.resolveTransitiveProvidedDependencies.NAME, defaultValue = Props.resolveTransitiveProvidedDependencies.DEFAULT_VALUE)
+    protected boolean resolveTransitiveProvidedDependencies;
 
     /**
      * If set, this property demands a format of the version string when the {@link #oldVersion} or {@link #newVersion}
@@ -274,293 +291,294 @@ import org.revapi.Element;
 
     @Override
     protected String getOutputDirectory() {
-<span class="nc" id="L277">        return outputDirectory;</span>
+<span class="nc" id="L294">        return outputDirectory;</span>
     }
 
     @Override
     protected MavenProject getProject() {
-<span class="nc" id="L282">        return project;</span>
+<span class="nc" id="L299">        return project;</span>
     }
 
     @Override public boolean canGenerateReport() {
-<span class="nc" id="L286">        return project.getArtifact().getArtifactHandler().isAddedToClasspath();</span>
+<span class="nc" id="L303">        return project.getArtifact().getArtifactHandler().isAddedToClasspath();</span>
     }
 
     @Override
     protected void executeReport(Locale locale) throws MavenReportException {
-<span class="nc" id="L291">        ensureAnalyzed(locale);</span>
+<span class="nc" id="L308">        ensureAnalyzed(locale);</span>
 
-<span class="nc bnc" id="L293" title="All 2 branches missed.">        if (skip) {</span>
-<span class="nc" id="L294">            return;</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L311">            return;</span>
         }
 
-<span class="nc bnc" id="L297" title="All 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
-<span class="nc" id="L298">            getLog().warn(&quot;Could not determine the artifacts to compare. If you're comparing the&quot; +</span>
+<span class="nc bnc" id="L314" title="All 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
+<span class="nc" id="L315">            getLog().warn(&quot;Could not determine the artifacts to compare. If you're comparing the&quot; +</span>
                     &quot; currently built version, have you run the package goal?&quot;);
-<span class="nc" id="L300">            return;</span>
+<span class="nc" id="L317">            return;</span>
         }
 
-<span class="nc bnc" id="L303" title="All 2 branches missed.">        if (generateSiteReport) {</span>
-<span class="nc" id="L304">            Sink sink = getSink();</span>
-<span class="nc" id="L305">            ResourceBundle bundle = getBundle(locale);</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (generateSiteReport) {</span>
+<span class="nc" id="L321">            Sink sink = getSink();</span>
+<span class="nc" id="L322">            ResourceBundle bundle = getBundle(locale);</span>
 
-<span class="nc" id="L307">            ReportTimeReporter reporter =</span>
-<span class="nc" id="L308">                    analysisResult.getExtensions().getFirstExtension(ReportTimeReporter.class, null);</span>
+<span class="nc" id="L324">            ReportTimeReporter reporter =</span>
+<span class="nc" id="L325">                    analysisResult.getExtensions().getFirstExtension(ReportTimeReporter.class, null);</span>
 
-<span class="nc" id="L310">            startReport(sink, bundle);</span>
-<span class="nc" id="L311">            reportBody(reporter, oldAPI, newAPI, sink, bundle);</span>
-<span class="nc" id="L312">            endReport(sink);</span>
+<span class="nc" id="L327">            startReport(sink, bundle);</span>
+<span class="nc" id="L328">            reportBody(reporter, oldAPI, newAPI, sink, bundle);</span>
+<span class="nc" id="L329">            endReport(sink);</span>
         }
-<span class="nc" id="L314">    }</span>
+<span class="nc" id="L331">    }</span>
 
     protected void startReport(Sink sink, ResourceBundle messages) {
-<span class="nc" id="L317">        sink.head();</span>
-<span class="nc" id="L318">        sink.title();</span>
-<span class="nc" id="L319">        sink.text(messages.getString(&quot;report.revapi.title&quot;));</span>
-<span class="nc" id="L320">        sink.title_();</span>
-<span class="nc" id="L321">        sink.head_();</span>
+<span class="nc" id="L334">        sink.head();</span>
+<span class="nc" id="L335">        sink.title();</span>
+<span class="nc" id="L336">        sink.text(messages.getString(&quot;report.revapi.title&quot;));</span>
+<span class="nc" id="L337">        sink.title_();</span>
+<span class="nc" id="L338">        sink.head_();</span>
 
-<span class="nc" id="L323">        sink.body();</span>
+<span class="nc" id="L340">        sink.body();</span>
 
-<span class="nc" id="L325">        sink.section1();</span>
-<span class="nc" id="L326">        sink.sectionTitle1();</span>
-<span class="nc" id="L327">        sink.rawText(messages.getString(&quot;report.revapi.title&quot;));</span>
-<span class="nc" id="L328">        sink.sectionTitle1_();</span>
-<span class="nc" id="L329">    }</span>
+<span class="nc" id="L342">        sink.section1();</span>
+<span class="nc" id="L343">        sink.sectionTitle1();</span>
+<span class="nc" id="L344">        sink.rawText(messages.getString(&quot;report.revapi.title&quot;));</span>
+<span class="nc" id="L345">        sink.sectionTitle1_();</span>
+<span class="nc" id="L346">    }</span>
 
     protected void endReport(Sink sink) {
-<span class="nc" id="L332">        sink.section1_();</span>
-<span class="nc" id="L333">        sink.body_();</span>
-<span class="nc" id="L334">    }</span>
+<span class="nc" id="L349">        sink.section1_();</span>
+<span class="nc" id="L350">        sink.body_();</span>
+<span class="nc" id="L351">    }</span>
 
     protected void reportBody(ReportTimeReporter reporterWithResults, API oldAPI, API newAPI, Sink sink,
             ResourceBundle messages) {
-<span class="nc" id="L338">        sink.paragraph();</span>
-<span class="nc" id="L339">        sink.text(getDescription(messages, oldAPI, newAPI));</span>
-<span class="nc" id="L340">        sink.paragraph_();</span>
+<span class="nc" id="L355">        sink.paragraph();</span>
+<span class="nc" id="L356">        sink.text(getDescription(messages, oldAPI, newAPI));</span>
+<span class="nc" id="L357">        sink.paragraph_();</span>
 
-<span class="nc" id="L342">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.BREAKING), sink, messages,</span>
+<span class="nc" id="L359">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.BREAKING), sink, messages,</span>
                 &quot;report.revapi.changes.breaking&quot;);
-<span class="nc" id="L344">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.POTENTIALLY_BREAKING), sink,</span>
+<span class="nc" id="L361">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.POTENTIALLY_BREAKING), sink,</span>
                 messages, &quot;report.revapi.changes.potentiallyBreaking&quot;);
-<span class="nc" id="L346">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.NON_BREAKING), sink, messages,</span>
+<span class="nc" id="L363">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.NON_BREAKING), sink, messages,</span>
                 &quot;report.revapi.changes.nonBreaking&quot;);
-<span class="nc" id="L348">    }</span>
+<span class="nc" id="L365">    }</span>
 
     @Override
     public String getOutputName() {
-<span class="nc" id="L352">        return &quot;revapi-report&quot;;</span>
+<span class="nc" id="L369">        return &quot;revapi-report&quot;;</span>
     }
 
     @Override
     public String getName(Locale locale) {
-<span class="nc" id="L357">        return getBundle(locale).getString(&quot;report.revapi.name&quot;);</span>
+<span class="nc" id="L374">        return getBundle(locale).getString(&quot;report.revapi.name&quot;);</span>
     }
 
     @Override
     public String getDescription(Locale locale) {
-<span class="nc" id="L362">        ensureAnalyzed(locale);</span>
+<span class="nc" id="L379">        ensureAnalyzed(locale);</span>
 
-<span class="nc bnc" id="L364" title="All 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
-<span class="nc" id="L365">            getLog().debug(&quot;Was unable to determine the old and new artifacts to compare while determining&quot; +</span>
+<span class="nc bnc" id="L381" title="All 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
+<span class="nc" id="L382">            getLog().debug(&quot;Was unable to determine the old and new artifacts to compare while determining&quot; +</span>
                     &quot; the report description.&quot;);
-<span class="nc" id="L367">            return null;</span>
+<span class="nc" id="L384">            return null;</span>
         } else {
-<span class="nc" id="L369">            return getDescription(getBundle(locale), oldAPI, newAPI);</span>
+<span class="nc" id="L386">            return getDescription(getBundle(locale), oldAPI, newAPI);</span>
         }
     }
 
     private String getDescription(ResourceBundle messages, API oldAPI, API newAPI) {
-<span class="nc" id="L374">        String message = messages.getString(&quot;report.revapi.description&quot;);</span>
-<span class="nc" id="L375">        return MessageFormat.format(message, niceList(oldAPI.getArchives()), niceList(newAPI.getArchives()));</span>
+<span class="nc" id="L391">        String message = messages.getString(&quot;report.revapi.description&quot;);</span>
+<span class="nc" id="L392">        return MessageFormat.format(message, niceList(oldAPI.getArchives()), niceList(newAPI.getArchives()));</span>
     }
 
     protected Analyzer prepareAnalyzer(Locale locale) {
-<span class="nc" id="L379">        Map&lt;String, Object&gt; contextData = null;</span>
-<span class="nc bnc" id="L380" title="All 2 branches missed.">        if (generateSiteReport) {</span>
-<span class="nc" id="L381">            contextData = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L382">            contextData.put(ReportTimeReporter.MIN_SEVERITY_KEY, reportSeverity.asDifferenceSeverity());</span>
+<span class="nc" id="L396">        Map&lt;String, Object&gt; contextData = null;</span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">        if (generateSiteReport) {</span>
+<span class="nc" id="L398">            contextData = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L399">            contextData.put(ReportTimeReporter.MIN_SEVERITY_KEY, reportSeverity.asDifferenceSeverity());</span>
         }
 
-<span class="nc" id="L385">        AnalyzerBuilder.Result res = AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
-<span class="nc" id="L386">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
-<span class="nc" id="L387">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
-<span class="nc" id="L388">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
-<span class="nc" id="L389">                .withCheckDependencies(this.checkDependencies)</span>
-<span class="nc" id="L390">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
-<span class="nc" id="L391">                .withDisallowedExtensions(this.disallowedExtensions)</span>
-<span class="nc" id="L392">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
-<span class="nc" id="L393">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
-<span class="nc" id="L394">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
-<span class="nc" id="L395">                .withLocale(locale)</span>
-<span class="nc" id="L396">                .withLog(getLog())</span>
-<span class="nc" id="L397">                .withNewVersion(this.newVersion)</span>
-<span class="nc" id="L398">                .withOldVersion(this.oldVersion)</span>
-<span class="nc" id="L399">                .withProject(this.project)</span>
-<span class="nc bnc" id="L400" title="All 2 branches missed.">                .withReporter(generateSiteReport ? ReportTimeReporter.class : null)</span>
-<span class="nc" id="L401">                .withRepositorySystem(this.repositorySystem)</span>
-<span class="nc" id="L402">                .withRepositorySystemSession(this.repositorySystemSession)</span>
-<span class="nc" id="L403">                .withSkip(this.skip)</span>
-<span class="nc" id="L404">                .withVersionFormat(this.versionFormat)</span>
-<span class="nc" id="L405">                .withContextData(contextData)</span>
-<span class="nc" id="L406">                .build();</span>
+<span class="nc" id="L402">        AnalyzerBuilder.Result res = AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
+<span class="nc" id="L403">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
+<span class="nc" id="L404">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
+<span class="nc" id="L405">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
+<span class="nc" id="L406">                .withCheckDependencies(this.checkDependencies)</span>
+<span class="nc" id="L407">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
+<span class="nc" id="L408">                .withResolveTransitiveProvidedDependencies(this.resolveTransitiveProvidedDependencies)</span>
+<span class="nc" id="L409">                .withDisallowedExtensions(this.disallowedExtensions)</span>
+<span class="nc" id="L410">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
+<span class="nc" id="L411">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
+<span class="nc" id="L412">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
+<span class="nc" id="L413">                .withLocale(locale)</span>
+<span class="nc" id="L414">                .withLog(getLog())</span>
+<span class="nc" id="L415">                .withNewVersion(this.newVersion)</span>
+<span class="nc" id="L416">                .withOldVersion(this.oldVersion)</span>
+<span class="nc" id="L417">                .withProject(this.project)</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">                .withReporter(generateSiteReport ? ReportTimeReporter.class : null)</span>
+<span class="nc" id="L419">                .withRepositorySystem(this.repositorySystem)</span>
+<span class="nc" id="L420">                .withRepositorySystemSession(this.repositorySystemSession)</span>
+<span class="nc" id="L421">                .withSkip(this.skip)</span>
+<span class="nc" id="L422">                .withVersionFormat(this.versionFormat)</span>
+<span class="nc" id="L423">                .withContextData(contextData)</span>
+<span class="nc" id="L424">                .build();</span>
 
-<span class="nc bnc" id="L408" title="All 4 branches missed.">        if (res.skip || !res.isOnClasspath) {</span>
-<span class="nc" id="L409">            this.skip = true;</span>
+<span class="nc bnc" id="L426" title="All 4 branches missed.">        if (res.skip || !res.isOnClasspath) {</span>
+<span class="nc" id="L427">            this.skip = true;</span>
         }
 
-<span class="nc" id="L412">        this.oldArtifacts = res.oldArtifacts;</span>
-<span class="nc" id="L413">        this.newArtifacts = res.newArtifacts;</span>
+<span class="nc" id="L430">        this.oldArtifacts = res.oldArtifacts;</span>
+<span class="nc" id="L431">        this.newArtifacts = res.newArtifacts;</span>
 
-<span class="nc bnc" id="L415" title="All 2 branches missed.">        return res.isOnClasspath ? res.analyzer : null;</span>
+<span class="nc bnc" id="L433" title="All 2 branches missed.">        return res.isOnClasspath ? res.analyzer : null;</span>
     }
 
     private void ensureAnalyzed(Locale locale) {
-<span class="nc bnc" id="L419" title="All 4 branches missed.">        if (!skip &amp;&amp; analysisResult == null) {</span>
-<span class="nc" id="L420">            Analyzer analyzer = prepareAnalyzer(locale);</span>
-<span class="nc bnc" id="L421" title="All 2 branches missed.">            if (analyzer == null) {</span>
-<span class="nc" id="L422">                return;</span>
+<span class="nc bnc" id="L437" title="All 4 branches missed.">        if (!skip &amp;&amp; analysisResult == null) {</span>
+<span class="nc" id="L438">            Analyzer analyzer = prepareAnalyzer(locale);</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">            if (analyzer == null) {</span>
+<span class="nc" id="L440">                return;</span>
             }
 
-<span class="nc" id="L425">            try (AnalysisResult res = analyzer.analyze()) {</span>
-<span class="nc" id="L426">                res.throwIfFailed();</span>
+<span class="nc" id="L443">            try (AnalysisResult res = analyzer.analyze()) {</span>
+<span class="nc" id="L444">                res.throwIfFailed();</span>
 
-<span class="nc" id="L428">                oldAPI = analyzer.getResolvedOldApi();</span>
-<span class="nc" id="L429">                newAPI = analyzer.getResolvedNewApi();</span>
+<span class="nc" id="L446">                oldAPI = analyzer.getResolvedOldApi();</span>
+<span class="nc" id="L447">                newAPI = analyzer.getResolvedNewApi();</span>
 
-<span class="nc" id="L431">                analysisResult = res;</span>
-<span class="nc bnc" id="L432" title="All 8 branches missed.">            } catch (Exception e) {</span>
-<span class="nc" id="L433">                throw new IllegalStateException(&quot;Failed to generate report.&quot;, e);</span>
-<span class="nc" id="L434">            }</span>
+<span class="nc" id="L449">                analysisResult = res;</span>
+<span class="nc bnc" id="L450" title="All 8 branches missed.">            } catch (Exception e) {</span>
+<span class="nc" id="L451">                throw new IllegalStateException(&quot;Failed to generate report.&quot;, e);</span>
+<span class="nc" id="L452">            }</span>
         }
-<span class="nc" id="L436">    }</span>
+<span class="nc" id="L454">    }</span>
 
     protected ResourceBundle getBundle(Locale locale) {
-<span class="nc" id="L439">        return ResourceBundle.getBundle(&quot;revapi-report&quot;, locale, this.getClass().getClassLoader());</span>
+<span class="nc" id="L457">        return ResourceBundle.getBundle(&quot;revapi-report&quot;, locale, this.getClass().getClassLoader());</span>
     }
 
     protected String niceList(Iterable&lt;? extends Archive&gt; archives) {
-<span class="nc" id="L443">        StringBuilder bld = new StringBuilder();</span>
+<span class="nc" id="L461">        StringBuilder bld = new StringBuilder();</span>
 
-<span class="nc" id="L445">        Iterator&lt;? extends Archive&gt; it = archives.iterator();</span>
+<span class="nc" id="L463">        Iterator&lt;? extends Archive&gt; it = archives.iterator();</span>
 
-<span class="nc bnc" id="L447" title="All 2 branches missed.">        if (it.hasNext()) {</span>
-<span class="nc" id="L448">            bld.append(it.next().getName());</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">        if (it.hasNext()) {</span>
+<span class="nc" id="L466">            bld.append(it.next().getName());</span>
         } else {
-<span class="nc" id="L450">            return &quot;&quot;;</span>
+<span class="nc" id="L468">            return &quot;&quot;;</span>
         }
 
-<span class="nc bnc" id="L453" title="All 2 branches missed.">        while (it.hasNext()) {</span>
-<span class="nc" id="L454">            bld.append(&quot;, &quot;).append(it.next().getName());</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L472">            bld.append(&quot;, &quot;).append(it.next().getName());</span>
         }
 
-<span class="nc" id="L457">        return bld.toString();</span>
+<span class="nc" id="L475">        return bld.toString();</span>
     }
 
     private void reportDifferences(
         EnumMap&lt;CompatibilityType, List&lt;ReportTimeReporter.DifferenceReport&gt;&gt; diffsPerType, Sink sink,
         ResourceBundle bundle, String typeKey) {
 
-<span class="nc bnc" id="L464" title="All 4 branches missed.">        if (diffsPerType == null || diffsPerType.isEmpty()) {</span>
-<span class="nc" id="L465">            return;</span>
+<span class="nc bnc" id="L482" title="All 4 branches missed.">        if (diffsPerType == null || diffsPerType.isEmpty()) {</span>
+<span class="nc" id="L483">            return;</span>
         }
 
-<span class="nc" id="L468">        sink.section2();</span>
-<span class="nc" id="L469">        sink.sectionTitle2();</span>
-<span class="nc" id="L470">        sink.text(bundle.getString(typeKey));</span>
-<span class="nc" id="L471">        sink.sectionTitle2_();</span>
+<span class="nc" id="L486">        sink.section2();</span>
+<span class="nc" id="L487">        sink.sectionTitle2();</span>
+<span class="nc" id="L488">        sink.text(bundle.getString(typeKey));</span>
+<span class="nc" id="L489">        sink.sectionTitle2_();</span>
 
-<span class="nc" id="L473">        reportDifferences(diffsPerType.get(CompatibilityType.BINARY), sink, bundle,</span>
+<span class="nc" id="L491">        reportDifferences(diffsPerType.get(CompatibilityType.BINARY), sink, bundle,</span>
             &quot;report.revapi.compatibilityType.binary&quot;);
-<span class="nc" id="L475">        reportDifferences(diffsPerType.get(CompatibilityType.SOURCE), sink, bundle,</span>
+<span class="nc" id="L493">        reportDifferences(diffsPerType.get(CompatibilityType.SOURCE), sink, bundle,</span>
             &quot;report.revapi.compatibilityType.source&quot;);
-<span class="nc" id="L477">        reportDifferences(diffsPerType.get(CompatibilityType.SEMANTIC), sink, bundle,</span>
+<span class="nc" id="L495">        reportDifferences(diffsPerType.get(CompatibilityType.SEMANTIC), sink, bundle,</span>
             &quot;report.revapi.compatibilityType.semantic&quot;);
-<span class="nc" id="L479">        reportDifferences(diffsPerType.get(CompatibilityType.OTHER), sink, bundle,</span>
+<span class="nc" id="L497">        reportDifferences(diffsPerType.get(CompatibilityType.OTHER), sink, bundle,</span>
             &quot;report.revapi.compatibilityType.other&quot;);
 
-<span class="nc" id="L482">        sink.section2_();</span>
-<span class="nc" id="L483">    }</span>
+<span class="nc" id="L500">        sink.section2_();</span>
+<span class="nc" id="L501">    }</span>
 
     private void reportDifferences(List&lt;ReportTimeReporter.DifferenceReport&gt; diffs, Sink sink, ResourceBundle bundle,
         String typeKey) {
 
-<span class="nc bnc" id="L488" title="All 4 branches missed.">        if (diffs == null || diffs.isEmpty()) {</span>
-<span class="nc" id="L489">            return;</span>
+<span class="nc bnc" id="L506" title="All 4 branches missed.">        if (diffs == null || diffs.isEmpty()) {</span>
+<span class="nc" id="L507">            return;</span>
         }
 
-<span class="nc" id="L492">        sink.section3();</span>
-<span class="nc" id="L493">        sink.sectionTitle3();</span>
-<span class="nc" id="L494">        sink.text(bundle.getString(typeKey));</span>
-<span class="nc" id="L495">        sink.sectionTitle3_();</span>
+<span class="nc" id="L510">        sink.section3();</span>
+<span class="nc" id="L511">        sink.sectionTitle3();</span>
+<span class="nc" id="L512">        sink.text(bundle.getString(typeKey));</span>
+<span class="nc" id="L513">        sink.sectionTitle3_();</span>
 
-<span class="nc" id="L497">        sink.table();</span>
+<span class="nc" id="L515">        sink.table();</span>
 
-<span class="nc" id="L499">        sink.tableRow();</span>
+<span class="nc" id="L517">        sink.tableRow();</span>
 
-<span class="nc" id="L501">        sink.tableHeaderCell();</span>
-<span class="nc" id="L502">        sink.text(bundle.getString(&quot;report.revapi.difference.code&quot;));</span>
-<span class="nc" id="L503">        sink.tableHeaderCell_();</span>
+<span class="nc" id="L519">        sink.tableHeaderCell();</span>
+<span class="nc" id="L520">        sink.text(bundle.getString(&quot;report.revapi.difference.code&quot;));</span>
+<span class="nc" id="L521">        sink.tableHeaderCell_();</span>
 
-<span class="nc" id="L505">        sink.tableHeaderCell();</span>
-<span class="nc" id="L506">        sink.text(bundle.getString(&quot;report.revapi.difference.element&quot;));</span>
-<span class="nc" id="L507">        sink.tableHeaderCell_();</span>
+<span class="nc" id="L523">        sink.tableHeaderCell();</span>
+<span class="nc" id="L524">        sink.text(bundle.getString(&quot;report.revapi.difference.element&quot;));</span>
+<span class="nc" id="L525">        sink.tableHeaderCell_();</span>
 
-<span class="nc" id="L509">        sink.tableHeaderCell();</span>
-<span class="nc" id="L510">        sink.text(bundle.getString(&quot;report.revapi.difference.description&quot;));</span>
-<span class="nc" id="L511">        sink.tableHeaderCell_();</span>
+<span class="nc" id="L527">        sink.tableHeaderCell();</span>
+<span class="nc" id="L528">        sink.text(bundle.getString(&quot;report.revapi.difference.description&quot;));</span>
+<span class="nc" id="L529">        sink.tableHeaderCell_();</span>
 
-<span class="nc" id="L513">        sink.tableRow_();</span>
+<span class="nc" id="L531">        sink.tableRow_();</span>
 
-<span class="nc" id="L515">        diffs.sort((d1, d2) -&gt; {</span>
-<span class="nc" id="L516">            String c1 = d1.difference.code;</span>
-<span class="nc" id="L517">            String c2 = d2.difference.code;</span>
+<span class="nc" id="L533">        diffs.sort((d1, d2) -&gt; {</span>
+<span class="nc" id="L534">            String c1 = d1.difference.code;</span>
+<span class="nc" id="L535">            String c2 = d2.difference.code;</span>
 
-<span class="nc" id="L519">            int cmp = c1.compareTo(c2);</span>
-<span class="nc bnc" id="L520" title="All 2 branches missed.">            if (cmp != 0) {</span>
-<span class="nc" id="L521">                return cmp;</span>
+<span class="nc" id="L537">            int cmp = c1.compareTo(c2);</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">            if (cmp != 0) {</span>
+<span class="nc" id="L539">                return cmp;</span>
             }
 
-<span class="nc bnc" id="L524" title="All 2 branches missed.">            Element e1 = d1.newElement == null ? d1.oldElement : d1.newElement;</span>
-<span class="nc bnc" id="L525" title="All 2 branches missed.">            Element e2 = d2.newElement == null ? d2.oldElement : d2.newElement;</span>
+<span class="nc bnc" id="L542" title="All 2 branches missed.">            Element e1 = d1.newElement == null ? d1.oldElement : d1.newElement;</span>
+<span class="nc bnc" id="L543" title="All 2 branches missed.">            Element e2 = d2.newElement == null ? d2.oldElement : d2.newElement;</span>
 
-<span class="nc" id="L527">            cmp = e1.getClass().getName().compareTo(e2.getClass().getName());</span>
-<span class="nc bnc" id="L528" title="All 2 branches missed.">            if (cmp != 0) {</span>
-<span class="nc" id="L529">                return cmp;</span>
+<span class="nc" id="L545">            cmp = e1.getClass().getName().compareTo(e2.getClass().getName());</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">            if (cmp != 0) {</span>
+<span class="nc" id="L547">                return cmp;</span>
             }
 
-<span class="nc" id="L532">            return e1.getFullHumanReadableString().compareTo(e2.getFullHumanReadableString());</span>
+<span class="nc" id="L550">            return e1.getFullHumanReadableString().compareTo(e2.getFullHumanReadableString());</span>
         });
 
-<span class="nc bnc" id="L535" title="All 2 branches missed.">        for (ReportTimeReporter.DifferenceReport d : diffs) {</span>
-<span class="nc bnc" id="L536" title="All 2 branches missed.">            String element = d.oldElement == null ? (d.newElement.getFullHumanReadableString()) :</span>
-<span class="nc" id="L537">                d.oldElement.getFullHumanReadableString();</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">        for (ReportTimeReporter.DifferenceReport d : diffs) {</span>
+<span class="nc bnc" id="L554" title="All 2 branches missed.">            String element = d.oldElement == null ? (d.newElement.getFullHumanReadableString()) :</span>
+<span class="nc" id="L555">                d.oldElement.getFullHumanReadableString();</span>
 
-<span class="nc" id="L539">            sink.tableRow();</span>
+<span class="nc" id="L557">            sink.tableRow();</span>
 
-<span class="nc" id="L541">            sink.tableCell();</span>
-<span class="nc" id="L542">            sink.monospaced();</span>
-<span class="nc" id="L543">            sink.text(d.difference.code);</span>
-<span class="nc" id="L544">            sink.monospaced_();</span>
-<span class="nc" id="L545">            sink.tableCell_();</span>
+<span class="nc" id="L559">            sink.tableCell();</span>
+<span class="nc" id="L560">            sink.monospaced();</span>
+<span class="nc" id="L561">            sink.text(d.difference.code);</span>
+<span class="nc" id="L562">            sink.monospaced_();</span>
+<span class="nc" id="L563">            sink.tableCell_();</span>
 
-<span class="nc" id="L547">            sink.tableCell();</span>
-<span class="nc" id="L548">            sink.monospaced();</span>
-<span class="nc" id="L549">            sink.bold();</span>
-<span class="nc" id="L550">            sink.text(element);</span>
-<span class="nc" id="L551">            sink.bold_();</span>
-<span class="nc" id="L552">            sink.monospaced_();</span>
+<span class="nc" id="L565">            sink.tableCell();</span>
+<span class="nc" id="L566">            sink.monospaced();</span>
+<span class="nc" id="L567">            sink.bold();</span>
+<span class="nc" id="L568">            sink.text(element);</span>
+<span class="nc" id="L569">            sink.bold_();</span>
+<span class="nc" id="L570">            sink.monospaced_();</span>
 
-<span class="nc" id="L554">            sink.tableCell();</span>
-<span class="nc" id="L555">            sink.text(d.difference.description);</span>
-<span class="nc" id="L556">            sink.tableCell_();</span>
+<span class="nc" id="L572">            sink.tableCell();</span>
+<span class="nc" id="L573">            sink.text(d.difference.description);</span>
+<span class="nc" id="L574">            sink.tableCell_();</span>
 
-<span class="nc" id="L558">            sink.tableRow_();</span>
-<span class="nc" id="L559">        }</span>
+<span class="nc" id="L576">            sink.tableRow_();</span>
+<span class="nc" id="L577">        }</span>
 
-<span class="nc" id="L561">        sink.table_();</span>
+<span class="nc" id="L579">        sink.table_();</span>
 
-<span class="nc" id="L563">        sink.section3_();</span>
-<span class="nc" id="L564">    }</span>
+<span class="nc" id="L581">        sink.section3_();</span>
+<span class="nc" id="L582">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

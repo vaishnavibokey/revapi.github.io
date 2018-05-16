@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportAggregateMojo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">ReportAggregateMojo.java</span></div><h1>ReportAggregateMojo.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -217,114 +217,122 @@ import org.revapi.maven.utils.ScopeDependencyTraverser;
 <span class="nc" id="L217">        String versionRegexString = getValueOfChild(pluginConfig, &quot;versionFormat&quot;);</span>
 <span class="nc bnc" id="L218" title="All 2 branches missed.">        Pattern versionRegex = versionRegexString == null ? null : Pattern.compile(versionRegexString);</span>
 
-<span class="nc" id="L220">        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repositorySystemSession);</span>
-<span class="nc" id="L221">        session.setDependencySelector(new ScopeDependencySelector(&quot;compile&quot;, &quot;provided&quot;));</span>
-<span class="nc" id="L222">        session.setDependencyTraverser(new ScopeDependencyTraverser(&quot;compile&quot;, &quot;provided&quot;));</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        String[] topLevelScopes = resolveProvidedDependencies</span>
+<span class="nc" id="L221">                ? new String[] {&quot;compile&quot;, &quot;provided&quot;}</span>
+<span class="nc" id="L222">                : new String[] {&quot;compile&quot;};</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        String[] transitiveScopes = resolveTransitiveProvidedDependencies</span>
+<span class="nc" id="L224">            ? new String[]{&quot;compile&quot;, &quot;provided&quot;}</span>
+<span class="nc" id="L225">            : new String[]{&quot;compile&quot;};</span>
 
-<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (alwaysCheckForReleaseVersion) {</span>
-<span class="nc" id="L225">            session.setUpdatePolicy(RepositoryPolicy.UPDATE_POLICY_ALWAYS);</span>
+<span class="nc" id="L227">        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repositorySystemSession);</span>
+<span class="nc" id="L228">        session.setDependencySelector(new ScopeDependencySelector(topLevelScopes, transitiveScopes));</span>
+<span class="nc" id="L229">        session.setDependencyTraverser(new ScopeDependencyTraverser(topLevelScopes, transitiveScopes));</span>
+
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (alwaysCheckForReleaseVersion) {</span>
+<span class="nc" id="L232">            session.setUpdatePolicy(RepositoryPolicy.UPDATE_POLICY_ALWAYS);</span>
         }
 
-<span class="nc" id="L228">        ArtifactResolver resolver = new ArtifactResolver(repositorySystem, session,</span>
-<span class="nc" id="L229">                mavenSession.getCurrentProject().getRemoteProjectRepositories());</span>
+<span class="nc" id="L235">        ArtifactResolver resolver = new ArtifactResolver(repositorySystem, session,</span>
+<span class="nc" id="L236">                mavenSession.getCurrentProject().getRemoteProjectRepositories());</span>
 
-<span class="nc" id="L231">        Function&lt;String, Artifact&gt; resolve = gav -&gt; {</span>
+<span class="nc" id="L238">        Function&lt;String, Artifact&gt; resolve = gav -&gt; {</span>
             try {
-<span class="nc" id="L233">                return Analyzer.resolveConstrained(project, gav, versionRegex, resolver);</span>
-<span class="nc" id="L234">            } catch (VersionRangeResolutionException | ArtifactResolutionException e) {</span>
-<span class="nc" id="L235">                getLog().warn(&quot;Could not resolve artifact '&quot; + gav + &quot;' with message: &quot; + e.getMessage());</span>
-<span class="nc" id="L236">                return null;</span>
+<span class="nc" id="L240">                return Analyzer.resolveConstrained(project, gav, versionRegex, resolver);</span>
+<span class="nc" id="L241">            } catch (VersionRangeResolutionException | ArtifactResolutionException e) {</span>
+<span class="nc" id="L242">                getLog().warn(&quot;Could not resolve artifact '&quot; + gav + &quot;' with message: &quot; + e.getMessage());</span>
+<span class="nc" id="L243">                return null;</span>
             }
         };
 
-<span class="nc bnc" id="L240" title="All 2 branches missed.">        ret.oldGavs = Stream.of(oldArtifacts).map(resolve).filter(f -&gt; f != null).toArray(Artifact[]::new);</span>
-<span class="nc bnc" id="L241" title="All 2 branches missed.">        ret.newGavs = Stream.of(newArtifacts).map(resolve).filter(f -&gt; f != null).toArray(Artifact[]::new);</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        ret.oldGavs = Stream.of(oldArtifacts).map(resolve).filter(f -&gt; f != null).toArray(Artifact[]::new);</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">        ret.newGavs = Stream.of(newArtifacts).map(resolve).filter(f -&gt; f != null).toArray(Artifact[]::new);</span>
 
-<span class="nc" id="L243">        return ret;</span>
+<span class="nc" id="L250">        return ret;</span>
     }
 
     private Analyzer prepareAnalyzer(Revapi revapi, MavenProject project, Locale locale, ProjectVersions storedVersions) {
 
-<span class="nc" id="L248">        Plugin runPluginConfig = findRevapi(project);</span>
+<span class="nc" id="L255">        Plugin runPluginConfig = findRevapi(project);</span>
 
-<span class="nc bnc" id="L250" title="All 2 branches missed.">        if (runPluginConfig == null) {</span>
-<span class="nc" id="L251">            return null;</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (runPluginConfig == null) {</span>
+<span class="nc" id="L258">            return null;</span>
         }
 
-<span class="nc" id="L254">        Xpp3Dom runConfig = (Xpp3Dom) runPluginConfig.getConfiguration();</span>
+<span class="nc" id="L261">        Xpp3Dom runConfig = (Xpp3Dom) runPluginConfig.getConfiguration();</span>
 
-<span class="nc" id="L256">        Artifact[] oldArtifacts = storedVersions.oldGavs;</span>
-<span class="nc" id="L257">        Artifact[] newArtifacts = storedVersions.newGavs;</span>
+<span class="nc" id="L263">        Artifact[] oldArtifacts = storedVersions.oldGavs;</span>
+<span class="nc" id="L264">        Artifact[] newArtifacts = storedVersions.newGavs;</span>
 
-<span class="nc bnc" id="L259" title="All 8 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0 || newArtifacts == null || newArtifacts.length == 0) {</span>
-<span class="nc" id="L260">            return null;</span>
+<span class="nc bnc" id="L266" title="All 8 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0 || newArtifacts == null || newArtifacts.length == 0) {</span>
+<span class="nc" id="L267">            return null;</span>
         }
 
-<span class="nc" id="L263">        String versionRegex = getValueOfChild(runConfig, &quot;versionFormat&quot;);</span>
+<span class="nc" id="L270">        String versionRegex = getValueOfChild(runConfig, &quot;versionFormat&quot;);</span>
 
-<span class="nc" id="L265">        AnalyzerBuilder bld = AnalyzerBuilder.forArtifacts(oldArtifacts, newArtifacts)</span>
-<span class="nc" id="L266">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
-<span class="nc" id="L267">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
-<span class="nc" id="L268">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
-<span class="nc" id="L269">                .withCheckDependencies(this.checkDependencies)</span>
-<span class="nc" id="L270">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
-<span class="nc" id="L271">                .withDisallowedExtensions(disallowedExtensions)</span>
-<span class="nc" id="L272">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
-<span class="nc" id="L273">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
-<span class="nc" id="L274">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
-<span class="nc" id="L275">                .withLocale(locale)</span>
-<span class="nc" id="L276">                .withLog(getLog())</span>
-<span class="nc" id="L277">                .withProject(project)</span>
-<span class="nc" id="L278">                .withRepositorySystem(repositorySystem)</span>
-<span class="nc" id="L279">                .withRepositorySystemSession(repositorySystemSession)</span>
-<span class="nc" id="L280">                .withSkip(skip)</span>
-<span class="nc" id="L281">                .withVersionFormat(versionRegex);</span>
+<span class="nc" id="L272">        AnalyzerBuilder bld = AnalyzerBuilder.forArtifacts(oldArtifacts, newArtifacts)</span>
+<span class="nc" id="L273">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
+<span class="nc" id="L274">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
+<span class="nc" id="L275">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
+<span class="nc" id="L276">                .withCheckDependencies(this.checkDependencies)</span>
+<span class="nc" id="L277">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
+<span class="nc" id="L278">                .withResolveTransitiveProvidedDependencies(this.resolveTransitiveProvidedDependencies)</span>
+<span class="nc" id="L279">                .withDisallowedExtensions(disallowedExtensions)</span>
+<span class="nc" id="L280">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
+<span class="nc" id="L281">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
+<span class="nc" id="L282">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
+<span class="nc" id="L283">                .withLocale(locale)</span>
+<span class="nc" id="L284">                .withLog(getLog())</span>
+<span class="nc" id="L285">                .withProject(project)</span>
+<span class="nc" id="L286">                .withRepositorySystem(repositorySystem)</span>
+<span class="nc" id="L287">                .withRepositorySystemSession(repositorySystemSession)</span>
+<span class="nc" id="L288">                .withSkip(skip)</span>
+<span class="nc" id="L289">                .withVersionFormat(versionRegex);</span>
 
-<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (revapi == null) {</span>
-<span class="nc" id="L284">            bld = bld.withReporter(ReportTimeReporter.class);</span>
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        if (revapi == null) {</span>
+<span class="nc" id="L292">            bld = bld.withReporter(ReportTimeReporter.class);</span>
         } else {
-<span class="nc" id="L286">            bld = bld.withRevapiInstance(revapi);</span>
+<span class="nc" id="L294">            bld = bld.withRevapiInstance(revapi);</span>
         }
 
-<span class="nc" id="L289">        Map&lt;String, Object&gt; contextData = new HashMap&lt;&gt;(1);</span>
-<span class="nc" id="L290">        contextData.put(ReportTimeReporter.MIN_SEVERITY_KEY, reportSeverity.asDifferenceSeverity());</span>
-<span class="nc" id="L291">        bld.withContextData(contextData);</span>
+<span class="nc" id="L297">        Map&lt;String, Object&gt; contextData = new HashMap&lt;&gt;(1);</span>
+<span class="nc" id="L298">        contextData.put(ReportTimeReporter.MIN_SEVERITY_KEY, reportSeverity.asDifferenceSeverity());</span>
+<span class="nc" id="L299">        bld.withContextData(contextData);</span>
 
-<span class="nc" id="L293">        return bld.build().analyzer;</span>
+<span class="nc" id="L301">        return bld.build().analyzer;</span>
     }
 
     protected static Plugin findRevapi(MavenProject project) {
-<span class="nc" id="L297">        return project.getBuildPlugins().stream()</span>
-<span class="nc" id="L298">                .filter(p -&gt; &quot;org.revapi:revapi-maven-plugin&quot;.equals(p.getKey()))</span>
-<span class="nc" id="L299">                .findAny().orElse(null);</span>
+<span class="nc" id="L305">        return project.getBuildPlugins().stream()</span>
+<span class="nc" id="L306">                .filter(p -&gt; &quot;org.revapi:revapi-maven-plugin&quot;.equals(p.getKey()))</span>
+<span class="nc" id="L307">                .findAny().orElse(null);</span>
     }
 
     protected static String[] getArtifacts(Xpp3Dom config, String artifactTag) {
-<span class="nc bnc" id="L303" title="All 2 branches missed.">        Xpp3Dom oldArtifactsXml = config == null ? null : config.getChild(artifactTag);</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        Xpp3Dom oldArtifactsXml = config == null ? null : config.getChild(artifactTag);</span>
 
-<span class="nc bnc" id="L305" title="All 2 branches missed.">        if (oldArtifactsXml == null) {</span>
-<span class="nc" id="L306">            return new String[0];</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (oldArtifactsXml == null) {</span>
+<span class="nc" id="L314">            return new String[0];</span>
         }
 
-<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (oldArtifactsXml.getChildCount() == 0) {</span>
-<span class="nc" id="L310">            String artifact = oldArtifactsXml.getValue();</span>
-<span class="nc" id="L311">            return new String[]{artifact};</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">        if (oldArtifactsXml.getChildCount() == 0) {</span>
+<span class="nc" id="L318">            String artifact = oldArtifactsXml.getValue();</span>
+<span class="nc" id="L319">            return new String[]{artifact};</span>
         } else {
-<span class="nc" id="L313">            String[] ret = new String[oldArtifactsXml.getChildCount()];</span>
-<span class="nc bnc" id="L314" title="All 2 branches missed.">            for (int i = 0; i &lt; oldArtifactsXml.getChildCount(); ++i) {</span>
-<span class="nc" id="L315">                ret[i] = oldArtifactsXml.getChild(i).getValue();</span>
+<span class="nc" id="L321">            String[] ret = new String[oldArtifactsXml.getChildCount()];</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">            for (int i = 0; i &lt; oldArtifactsXml.getChildCount(); ++i) {</span>
+<span class="nc" id="L323">                ret[i] = oldArtifactsXml.getChild(i).getValue();</span>
             }
 
-<span class="nc" id="L318">            return ret;</span>
+<span class="nc" id="L326">            return ret;</span>
         }
     }
 
     private static String getValueOfChild(Xpp3Dom element, String childName) {
-<span class="nc bnc" id="L323" title="All 2 branches missed.">        Xpp3Dom child = element == null ? null : element.getChild(childName);</span>
-<span class="nc bnc" id="L324" title="All 2 branches missed.">        return child == null ? null : child.getValue();</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">        Xpp3Dom child = element == null ? null : element.getChild(childName);</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">        return child == null ? null : child.getValue();</span>
     }
 
-<span class="nc" id="L327">    private static final class ProjectVersions {</span>
+<span class="nc" id="L335">    private static final class ProjectVersions {</span>
         Artifact[] oldGavs;
         Artifact[] newGavs;
     }
