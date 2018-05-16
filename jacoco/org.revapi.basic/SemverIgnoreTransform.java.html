@@ -103,15 +103,15 @@ import org.revapi.Element;
     @Override public void initialize(@Nonnull AnalysisContext analysisContext) {
 <span class="fc" id="L104">        ModelNode node = analysisContext.getConfiguration();</span>
 
-<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (hasMultipleElements(analysisContext.getOldApi().getArchives())</span>
-<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                || hasMultipleElements(analysisContext.getNewApi().getArchives())) {</span>
-<span class="nc" id="L108">            throw new IllegalArgumentException(</span>
-                    &quot;The semver extension doesn't handle changes in multiple archives at once.&quot;);
-        }
+<span class="pc bpc" id="L106" title="1 of 4 branches missed.">        enabled = node.get(&quot;enabled&quot;).isDefined() &amp;&amp; node.get(&quot;enabled&quot;).asBoolean();</span>
 
-<span class="pc bpc" id="L112" title="1 of 4 branches missed.">        enabled = node.get(&quot;enabled&quot;).isDefined() &amp;&amp; node.get(&quot;enabled&quot;).asBoolean();</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (enabled) {</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (hasMultipleElements(analysisContext.getOldApi().getArchives())</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">                    || hasMultipleElements(analysisContext.getNewApi().getArchives())) {</span>
+<span class="nc" id="L111">                throw new IllegalArgumentException(</span>
+                        &quot;The semver extension doesn't handle changes in multiple archives at once.&quot;);
+            }
 
-<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (enabled) {</span>
 <span class="fc" id="L115">            Iterator&lt;? extends Archive&gt; oldArchives = analysisContext.getOldApi().getArchives().iterator();</span>
 <span class="fc" id="L116">            Iterator&lt;? extends Archive&gt; newArchives = analysisContext.getNewApi().getArchives().iterator();</span>
 
