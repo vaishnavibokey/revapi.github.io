@@ -156,555 +156,554 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="fc" id="L156">        this.descendingChecksByTypes = new HashMap&lt;&gt;();</span>
 
 <span class="fc bfc" id="L158" title="All 2 branches covered.">        for (Check c : checks) {</span>
-<span class="fc" id="L159">            c.initialize(analysisContext);</span>
-<span class="fc" id="L160">            c.setOldTypeEnvironment(oldEnvironment);</span>
-<span class="fc" id="L161">            c.setNewTypeEnvironment(newEnvironment);</span>
-<span class="fc bfc" id="L162" title="All 2 branches covered.">            if (c.isDescendingOnNonExisting()) {</span>
-<span class="fc" id="L163">                c.getInterest().forEach(t -&gt; descendingChecksByTypes.computeIfAbsent(t, __ -&gt; new HashSet&lt;&gt;()).add(c));</span>
+<span class="fc" id="L159">            c.setOldTypeEnvironment(oldEnvironment);</span>
+<span class="fc" id="L160">            c.setNewTypeEnvironment(newEnvironment);</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">            if (c.isDescendingOnNonExisting()) {</span>
+<span class="fc" id="L162">                c.getInterest().forEach(t -&gt; descendingChecksByTypes.computeIfAbsent(t, __ -&gt; new HashSet&lt;&gt;()).add(c));</span>
             }
-<span class="fc" id="L165">        }</span>
+<span class="fc" id="L164">        }</span>
 
-<span class="fc" id="L167">        this.analysisConfiguration = analysisConfiguration;</span>
+<span class="fc" id="L166">        this.analysisConfiguration = analysisConfiguration;</span>
 
-<span class="fc" id="L169">        messages = ResourceBundle.getBundle(&quot;org.revapi.java.messages&quot;, analysisContext.getLocale());</span>
+<span class="fc" id="L168">        messages = ResourceBundle.getBundle(&quot;org.revapi.java.messages&quot;, analysisContext.getLocale());</span>
 
-<span class="fc" id="L171">        this.oldEnvironment = oldEnvironment;</span>
-<span class="fc" id="L172">        this.newEnvironment = newEnvironment;</span>
+<span class="fc" id="L170">        this.oldEnvironment = oldEnvironment;</span>
+<span class="fc" id="L171">        this.newEnvironment = newEnvironment;</span>
 
-<span class="fc" id="L174">        this.checksByInterest = new EnumMap&lt;&gt;(Check.Type.class);</span>
-<span class="fc" id="L175">        checks.forEach(c -&gt;</span>
-<span class="fc" id="L176">                c.getInterest().forEach(i -&gt;</span>
-<span class="fc" id="L177">                        checksByInterest.computeIfAbsent(i, __ -&gt; new ArrayList&lt;&gt;()).add(c)</span>
+<span class="fc" id="L173">        this.checksByInterest = new EnumMap&lt;&gt;(Check.Type.class);</span>
+<span class="fc" id="L174">        checks.forEach(c -&gt;</span>
+<span class="fc" id="L175">                c.getInterest().forEach(i -&gt;</span>
+<span class="fc" id="L176">                        checksByInterest.computeIfAbsent(i, __ -&gt; new ArrayList&lt;&gt;()).add(c)</span>
                 ));
-<span class="fc" id="L179">    }</span>
+<span class="fc" id="L178">    }</span>
 
 
     @Override
     public void open() {
-<span class="fc" id="L184">        Timing.LOG.debug(&quot;Opening difference analyzer.&quot;);</span>
-<span class="fc" id="L185">    }</span>
+<span class="fc" id="L183">        Timing.LOG.debug(&quot;Opening difference analyzer.&quot;);</span>
+<span class="fc" id="L184">    }</span>
 
     @Override
     public void close() {
-<span class="fc" id="L189">        Timing.LOG.debug(&quot;About to close difference analyzer.&quot;);</span>
-<span class="fc" id="L190">        oldCompilationValve.removeCompiledResults();</span>
-<span class="fc" id="L191">        newCompilationValve.removeCompiledResults();</span>
+<span class="fc" id="L188">        Timing.LOG.debug(&quot;About to close difference analyzer.&quot;);</span>
+<span class="fc" id="L189">        oldCompilationValve.removeCompiledResults();</span>
+<span class="fc" id="L190">        newCompilationValve.removeCompiledResults();</span>
 
-<span class="fc" id="L193">        forceClearCompilerCache();</span>
+<span class="fc" id="L192">        forceClearCompilerCache();</span>
 
-<span class="fc" id="L195">        Timing.LOG.debug(&quot;Difference analyzer closed.&quot;);</span>
-<span class="fc" id="L196">    }</span>
+<span class="fc" id="L194">        Timing.LOG.debug(&quot;Difference analyzer closed.&quot;);</span>
+<span class="fc" id="L195">    }</span>
 
     @Override
     public void beginAnalysis(@Nullable Element oldElement, @Nullable Element newElement) {
-<span class="fc" id="L200">        Timing.LOG.trace(&quot;Beginning analysis of {} and {}.&quot;, oldElement, newElement);</span>
+<span class="fc" id="L199">        Timing.LOG.trace(&quot;Beginning analysis of {} and {}.&quot;, oldElement, newElement);</span>
 
-<span class="fc" id="L202">        Check.Type elementsType = getCheckType(oldElement, newElement);</span>
-<span class="fc bfc" id="L203" title="All 2 branches covered.">        Collection&lt;Check&gt; possibleChecks = nonExistenceMode</span>
-<span class="fc" id="L204">                ? descendingChecksByTypes.getOrDefault(elementsType, emptySet())</span>
-<span class="fc" id="L205">                : checksByInterest.get(elementsType);</span>
+<span class="fc" id="L201">        Check.Type elementsType = getCheckType(oldElement, newElement);</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        Collection&lt;Check&gt; possibleChecks = nonExistenceMode</span>
+<span class="fc" id="L203">                ? descendingChecksByTypes.getOrDefault(elementsType, emptySet())</span>
+<span class="fc" id="L204">                : checksByInterest.get(elementsType);</span>
 
-<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (conforms(oldElement, newElement, TypeElement.class)) {</span>
-<span class="fc" id="L208">            checkTypeStack.push(CheckType.CLASS);</span>
-<span class="fc" id="L209">            checksStack.push(possibleChecks);</span>
-<span class="fc" id="L210">            lastAnnotationResults = null;</span>
-<span class="fc bfc" id="L211" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
-<span class="fc" id="L212">                Stats.of(c.getClass().getName()).start();</span>
-<span class="fc bfc" id="L213" title="All 2 branches covered.">                c.visitClass(oldElement == null ? null : (TypeElement) oldElement,</span>
-<span class="fc bfc" id="L214" title="All 2 branches covered.">                    newElement == null ? null : (TypeElement) newElement);</span>
-<span class="fc" id="L215">                Stats.of(c.getClass().getName()).end(oldElement, newElement);</span>
-<span class="fc" id="L216">            }</span>
-<span class="fc bfc" id="L217" title="All 2 branches covered.">        } else if (conforms(oldElement, newElement, AnnotationElement.class)) {</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (conforms(oldElement, newElement, TypeElement.class)) {</span>
+<span class="fc" id="L207">            checkTypeStack.push(CheckType.CLASS);</span>
+<span class="fc" id="L208">            checksStack.push(possibleChecks);</span>
+<span class="fc" id="L209">            lastAnnotationResults = null;</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
+<span class="fc" id="L211">                Stats.of(c.getClass().getName()).start();</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">                c.visitClass(oldElement == null ? null : (TypeElement) oldElement,</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                    newElement == null ? null : (TypeElement) newElement);</span>
+<span class="fc" id="L214">                Stats.of(c.getClass().getName()).end(oldElement, newElement);</span>
+<span class="fc" id="L215">            }</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">        } else if (conforms(oldElement, newElement, AnnotationElement.class)) {</span>
             // annotation are always terminal elements and they also always sort as last elements amongst siblings, so
             // treat them a bit differently
-<span class="fc bfc" id="L220" title="All 2 branches covered.">            if (lastAnnotationResults == null) {</span>
-<span class="fc" id="L221">                lastAnnotationResults = new ArrayList&lt;&gt;(4);</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">            if (lastAnnotationResults == null) {</span>
+<span class="fc" id="L220">                lastAnnotationResults = new ArrayList&lt;&gt;(4);</span>
             }
             //DO NOT push the ANNOTATION type to the checkTypeStack nor push the applied checks to the checksStack.
             //Annotations are handled differently and this would lead to the stack corruption and missed problems!!!
-<span class="fc bfc" id="L225" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
-<span class="fc" id="L226">                Stats.of(c.getClass().getName()).start();</span>
-<span class="fc" id="L227">                List&lt;Difference&gt; cps = c</span>
-<span class="fc bfc" id="L228" title="All 2 branches covered.">                    .visitAnnotation(oldElement == null ? null : (AnnotationElement) oldElement,</span>
-<span class="fc bfc" id="L229" title="All 2 branches covered.">                        newElement == null ? null : (AnnotationElement) newElement);</span>
-<span class="fc bfc" id="L230" title="All 2 branches covered.">                if (cps != null) {</span>
-<span class="fc" id="L231">                    lastAnnotationResults.addAll(cps);</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
+<span class="fc" id="L225">                Stats.of(c.getClass().getName()).start();</span>
+<span class="fc" id="L226">                List&lt;Difference&gt; cps = c</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                    .visitAnnotation(oldElement == null ? null : (AnnotationElement) oldElement,</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                        newElement == null ? null : (AnnotationElement) newElement);</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">                if (cps != null) {</span>
+<span class="fc" id="L230">                    lastAnnotationResults.addAll(cps);</span>
                 }
-<span class="fc" id="L233">                Stats.of(c.getClass().getName()).end(oldElement, newElement);</span>
-<span class="fc" id="L234">            }</span>
-<span class="fc bfc" id="L235" title="All 2 branches covered.">        } else if (conforms(oldElement, newElement, FieldElement.class)) {</span>
-<span class="fc" id="L236">            doRestrictedCheck((FieldElement) oldElement, (FieldElement) newElement, CheckType.FIELD, possibleChecks);</span>
-<span class="fc bfc" id="L237" title="All 2 branches covered.">        } else if (conforms(oldElement, newElement, MethodElement.class)) {</span>
-<span class="fc" id="L238">            doRestrictedCheck((MethodElement) oldElement, (MethodElement) newElement, CheckType.METHOD, possibleChecks);</span>
-<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        } else if (conforms(oldElement, newElement, MethodParameterElement.class)) {</span>
-<span class="fc" id="L240">            doRestrictedCheck((MethodParameterElement) oldElement, (MethodParameterElement) newElement,</span>
+<span class="fc" id="L232">                Stats.of(c.getClass().getName()).end(oldElement, newElement);</span>
+<span class="fc" id="L233">            }</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        } else if (conforms(oldElement, newElement, FieldElement.class)) {</span>
+<span class="fc" id="L235">            doRestrictedCheck((FieldElement) oldElement, (FieldElement) newElement, CheckType.FIELD, possibleChecks);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        } else if (conforms(oldElement, newElement, MethodElement.class)) {</span>
+<span class="fc" id="L237">            doRestrictedCheck((MethodElement) oldElement, (MethodElement) newElement, CheckType.METHOD, possibleChecks);</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        } else if (conforms(oldElement, newElement, MethodParameterElement.class)) {</span>
+<span class="fc" id="L239">            doRestrictedCheck((MethodParameterElement) oldElement, (MethodParameterElement) newElement,</span>
                     CheckType.METHOD_PARAMETER, possibleChecks);
         }
 
-<span class="fc bfc" id="L244" title="All 6 branches covered.">        if (!nonExistenceMode &amp;&amp; (oldElement == null || newElement == null)) {</span>
-<span class="fc" id="L245">            nonExistenceMode = true;</span>
-<span class="fc" id="L246">            nonExistenceOldRoot = oldElement;</span>
-<span class="fc" id="L247">            nonExistenceNewRoot = newElement;</span>
+<span class="fc bfc" id="L243" title="All 6 branches covered.">        if (!nonExistenceMode &amp;&amp; (oldElement == null || newElement == null)) {</span>
+<span class="fc" id="L244">            nonExistenceMode = true;</span>
+<span class="fc" id="L245">            nonExistenceOldRoot = oldElement;</span>
+<span class="fc" id="L246">            nonExistenceNewRoot = newElement;</span>
         }
-<span class="fc" id="L249">    }</span>
+<span class="fc" id="L248">    }</span>
 
     @Override
     public boolean isDescendRequired(@Nullable Element oldElement, @Nullable Element newElement) {
-<span class="pc bpc" id="L253" title="1 of 4 branches missed.">        if (oldElement != null &amp;&amp; newElement != null) {</span>
-<span class="nc" id="L254">            return true;</span>
+<span class="pc bpc" id="L252" title="1 of 4 branches missed.">        if (oldElement != null &amp;&amp; newElement != null) {</span>
+<span class="nc" id="L253">            return true;</span>
         }
 
-<span class="fc" id="L257">        Check.Type type = getCheckType(oldElement, newElement);</span>
+<span class="fc" id="L256">        Check.Type type = getCheckType(oldElement, newElement);</span>
 
-<span class="pc bpc" id="L259" title="1 of 2 branches missed.">        if (type == null) {</span>
-<span class="nc" id="L260">            return false;</span>
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        if (type == null) {</span>
+<span class="nc" id="L259">            return false;</span>
         }
 
-<span class="fc" id="L263">        Set&lt;Check.Type&gt; possibleChildren = POSSIBLE_CHILDREN_TYPES.get(type);</span>
+<span class="fc" id="L262">        Set&lt;Check.Type&gt; possibleChildren = POSSIBLE_CHILDREN_TYPES.get(type);</span>
 
-<span class="fc" id="L265">        return descendingChecksByTypes.keySet().stream().anyMatch(possibleChildren::contains);</span>
+<span class="fc" id="L264">        return descendingChecksByTypes.keySet().stream().anyMatch(possibleChildren::contains);</span>
     }
 
     private &lt;T extends JavaModelElement&gt; void doRestrictedCheck(T oldElement, T newElement, CheckType interest, Collection&lt;Check&gt; possibleChecks) {
-<span class="fc" id="L269">        lastAnnotationResults = null;</span>
+<span class="fc" id="L268">        lastAnnotationResults = null;</span>
 
-<span class="fc bfc" id="L271" title="All 2 branches covered.">        if (!(isCheckedElsewhere(oldElement, oldEnvironment)</span>
-<span class="fc bfc" id="L272" title="All 2 branches covered.">                &amp;&amp; isCheckedElsewhere(newElement, newEnvironment))) {</span>
-<span class="fc" id="L273">            checkTypeStack.push(interest);</span>
-<span class="fc" id="L274">            checksStack.push(possibleChecks);</span>
-<span class="fc bfc" id="L275" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
-<span class="fc" id="L276">                Stats.of(c.getClass().getName()).start();</span>
-<span class="pc bpc" id="L277" title="1 of 4 branches missed.">                switch (interest) {</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        if (!(isCheckedElsewhere(oldElement, oldEnvironment)</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">                &amp;&amp; isCheckedElsewhere(newElement, newEnvironment))) {</span>
+<span class="fc" id="L272">            checkTypeStack.push(interest);</span>
+<span class="fc" id="L273">            checksStack.push(possibleChecks);</span>
+<span class="fc bfc" id="L274" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
+<span class="fc" id="L275">                Stats.of(c.getClass().getName()).start();</span>
+<span class="pc bpc" id="L276" title="1 of 4 branches missed.">                switch (interest) {</span>
                     case FIELD:
-<span class="fc" id="L279">                        c.visitField((FieldElement) oldElement, (FieldElement) newElement);</span>
-<span class="fc" id="L280">                        break;</span>
+<span class="fc" id="L278">                        c.visitField((FieldElement) oldElement, (FieldElement) newElement);</span>
+<span class="fc" id="L279">                        break;</span>
                     case METHOD:
-<span class="fc" id="L282">                        c.visitMethod((MethodElement) oldElement, (MethodElement) newElement);</span>
-<span class="fc" id="L283">                        break;</span>
+<span class="fc" id="L281">                        c.visitMethod((MethodElement) oldElement, (MethodElement) newElement);</span>
+<span class="fc" id="L282">                        break;</span>
                     case METHOD_PARAMETER:
-<span class="fc" id="L285">                        c.visitMethodParameter((MethodParameterElement) oldElement, (MethodParameterElement) newElement);</span>
+<span class="fc" id="L284">                        c.visitMethodParameter((MethodParameterElement) oldElement, (MethodParameterElement) newElement);</span>
                         break;
                 }
-<span class="fc" id="L288">                Stats.of(c.getClass().getName()).end(oldElement, newElement);</span>
-<span class="fc" id="L289">            }</span>
+<span class="fc" id="L287">                Stats.of(c.getClass().getName()).end(oldElement, newElement);</span>
+<span class="fc" id="L288">            }</span>
         } else {
             //&quot;ignore what's on the stack because no checks actually happened&quot;.
-<span class="fc" id="L292">            checkTypeStack.push(CheckType.NONE);</span>
-<span class="fc" id="L293">            checksStack.push(emptyList());</span>
+<span class="fc" id="L291">            checkTypeStack.push(CheckType.NONE);</span>
+<span class="fc" id="L292">            checksStack.push(emptyList());</span>
         }
-<span class="fc" id="L295">    }</span>
+<span class="fc" id="L294">    }</span>
 
     @Override
     public Report endAnalysis(@Nullable Element oldElement, @Nullable Element newElement) {
-<span class="fc bfc" id="L299" title="All 4 branches covered.">        if (oldElement == nonExistenceOldRoot &amp;&amp; newElement == nonExistenceNewRoot) {</span>
-<span class="fc" id="L300">            nonExistenceMode = false;</span>
-<span class="fc" id="L301">            nonExistenceOldRoot = null;</span>
-<span class="fc" id="L302">            nonExistenceNewRoot = null;</span>
+<span class="fc bfc" id="L298" title="All 4 branches covered.">        if (oldElement == nonExistenceOldRoot &amp;&amp; newElement == nonExistenceNewRoot) {</span>
+<span class="fc" id="L299">            nonExistenceMode = false;</span>
+<span class="fc" id="L300">            nonExistenceOldRoot = null;</span>
+<span class="fc" id="L301">            nonExistenceNewRoot = null;</span>
         }
 
-<span class="fc bfc" id="L305" title="All 2 branches covered.">        if (conforms(oldElement, newElement, AnnotationElement.class)) {</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">        if (conforms(oldElement, newElement, AnnotationElement.class)) {</span>
             //the annotations are always reported at the parent element
-<span class="fc" id="L307">            return new Report(Collections.emptyList(), oldElement, newElement);</span>
+<span class="fc" id="L306">            return new Report(Collections.emptyList(), oldElement, newElement);</span>
         }
 
-<span class="fc" id="L310">        List&lt;Difference&gt; differences = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L311">        CheckType lastInterest = checkTypeStack.pop();</span>
+<span class="fc" id="L309">        List&lt;Difference&gt; differences = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L310">        CheckType lastInterest = checkTypeStack.pop();</span>
 
-<span class="fc bfc" id="L313" title="All 2 branches covered.">        if (lastInterest.isConcrete()) {</span>
-<span class="fc bfc" id="L314" title="All 2 branches covered.">            for (Check c : checksStack.pop()) {</span>
-<span class="fc" id="L315">                List&lt;Difference&gt; p = c.visitEnd();</span>
-<span class="fc bfc" id="L316" title="All 2 branches covered.">                if (p != null) {</span>
-<span class="fc" id="L317">                    differences.addAll(p);</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">        if (lastInterest.isConcrete()) {</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">            for (Check c : checksStack.pop()) {</span>
+<span class="fc" id="L314">                List&lt;Difference&gt; p = c.visitEnd();</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">                if (p != null) {</span>
+<span class="fc" id="L316">                    differences.addAll(p);</span>
                 }
-<span class="fc" id="L319">            }</span>
+<span class="fc" id="L318">            }</span>
         }
 
-<span class="fc bfc" id="L322" title="All 4 branches covered.">        if (lastAnnotationResults != null &amp;&amp; !lastAnnotationResults.isEmpty()) {</span>
-<span class="fc" id="L323">            differences.addAll(lastAnnotationResults);</span>
-<span class="fc" id="L324">            lastAnnotationResults.clear();</span>
+<span class="fc bfc" id="L321" title="All 4 branches covered.">        if (lastAnnotationResults != null &amp;&amp; !lastAnnotationResults.isEmpty()) {</span>
+<span class="fc" id="L322">            differences.addAll(lastAnnotationResults);</span>
+<span class="fc" id="L323">            lastAnnotationResults.clear();</span>
         }
 
-<span class="fc bfc" id="L327" title="All 2 branches covered.">        if (!differences.isEmpty()) {</span>
-<span class="fc" id="L328">            LOG.trace(&quot;Detected following problems: {}&quot;, differences);</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        if (!differences.isEmpty()) {</span>
+<span class="fc" id="L327">            LOG.trace(&quot;Detected following problems: {}&quot;, differences);</span>
         }
-<span class="fc" id="L330">        Timing.LOG.trace(&quot;Ended analysis of {} and {}.&quot;, oldElement, newElement);</span>
+<span class="fc" id="L329">        Timing.LOG.trace(&quot;Ended analysis of {} and {}.&quot;, oldElement, newElement);</span>
 
-<span class="fc" id="L332">        ListIterator&lt;Difference&gt; it = differences.listIterator();</span>
-<span class="fc bfc" id="L333" title="All 2 branches covered.">        while (it.hasNext()) {</span>
-<span class="fc" id="L334">            Difference d = it.next();</span>
-<span class="pc bpc" id="L335" title="1 of 2 branches missed.">            if (analysisConfiguration.reportUseForAllDifferences()</span>
-<span class="fc bfc" id="L336" title="All 2 branches covered.">                    || analysisConfiguration.getUseReportingCodes().contains(d.code)) {</span>
-<span class="fc" id="L337">                StringBuilder oldUseChain = null;</span>
-<span class="fc" id="L338">                StringBuilder newUseChain = null;</span>
+<span class="fc" id="L331">        ListIterator&lt;Difference&gt; it = differences.listIterator();</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc" id="L333">            Difference d = it.next();</span>
+<span class="pc bpc" id="L334" title="1 of 2 branches missed.">            if (analysisConfiguration.reportUseForAllDifferences()</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">                    || analysisConfiguration.getUseReportingCodes().contains(d.code)) {</span>
+<span class="fc" id="L336">                StringBuilder oldUseChain = null;</span>
+<span class="fc" id="L337">                StringBuilder newUseChain = null;</span>
 
-<span class="fc bfc" id="L340" title="All 2 branches covered.">                if (oldElement != null) {</span>
-<span class="fc" id="L341">                    oldUseChain = new StringBuilder();</span>
-<span class="fc" id="L342">                    appendUses(oldEnvironment, oldElement, oldUseChain);</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">                if (oldElement != null) {</span>
+<span class="fc" id="L340">                    oldUseChain = new StringBuilder();</span>
+<span class="fc" id="L341">                    appendUses(oldEnvironment, oldElement, oldUseChain);</span>
                 }
 
-<span class="pc bpc" id="L345" title="1 of 2 branches missed.">                if (newElement != null) {</span>
-<span class="fc" id="L346">                    newUseChain = new StringBuilder();</span>
-<span class="fc" id="L347">                    appendUses(newEnvironment, newElement, newUseChain);</span>
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">                if (newElement != null) {</span>
+<span class="fc" id="L345">                    newUseChain = new StringBuilder();</span>
+<span class="fc" id="L346">                    appendUses(newEnvironment, newElement, newUseChain);</span>
                 }
 
-<span class="fc" id="L350">                Map&lt;String, String&gt; atts = new HashMap&lt;&gt;(d.attachments);</span>
-<span class="fc bfc" id="L351" title="All 2 branches covered.">                if (oldUseChain != null) {</span>
-<span class="fc" id="L352">                    atts.put(&quot;exampleUseChainInOldApi&quot;, oldUseChain.toString());</span>
+<span class="fc" id="L349">                Map&lt;String, String&gt; atts = new HashMap&lt;&gt;(d.attachments);</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">                if (oldUseChain != null) {</span>
+<span class="fc" id="L351">                    atts.put(&quot;exampleUseChainInOldApi&quot;, oldUseChain.toString());</span>
                 }
-<span class="pc bpc" id="L354" title="1 of 2 branches missed.">                if (newUseChain != null) {</span>
-<span class="fc" id="L355">                    atts.put(&quot;exampleUseChainInNewApi&quot;, newUseChain.toString());</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">                if (newUseChain != null) {</span>
+<span class="fc" id="L354">                    atts.put(&quot;exampleUseChainInNewApi&quot;, newUseChain.toString());</span>
                 }
 
-<span class="fc" id="L358">                d = Difference.builder().addAttachments(atts).addClassifications(d.classification)</span>
-<span class="fc" id="L359">                    .withCode(d.code).withName(d.name).withDescription(d.description).build();</span>
+<span class="fc" id="L357">                d = Difference.builder().addAttachments(atts).addClassifications(d.classification)</span>
+<span class="fc" id="L358">                    .withCode(d.code).withName(d.name).withDescription(d.description).build();</span>
             }
-<span class="fc" id="L361">            it.set(d);</span>
-<span class="fc" id="L362">        }</span>
+<span class="fc" id="L360">            it.set(d);</span>
+<span class="fc" id="L361">        }</span>
 
-<span class="fc" id="L364">        return new Report(differences, oldElement, newElement);</span>
+<span class="fc" id="L363">        return new Report(differences, oldElement, newElement);</span>
     }
 
     private &lt;T&gt; boolean conforms(Object a, Object b, Class&lt;T&gt; cls) {
-<span class="fc bfc" id="L368" title="All 4 branches covered.">        boolean ca = a == null || cls.isAssignableFrom(a.getClass());</span>
-<span class="fc bfc" id="L369" title="All 4 branches covered.">        boolean cb = b == null || cls.isAssignableFrom(b.getClass());</span>
+<span class="fc bfc" id="L367" title="All 4 branches covered.">        boolean ca = a == null || cls.isAssignableFrom(a.getClass());</span>
+<span class="fc bfc" id="L368" title="All 4 branches covered.">        boolean cb = b == null || cls.isAssignableFrom(b.getClass());</span>
 
-<span class="fc bfc" id="L371" title="All 4 branches covered.">        return ca &amp;&amp; cb;</span>
+<span class="fc bfc" id="L370" title="All 4 branches covered.">        return ca &amp;&amp; cb;</span>
     }
 
     private Check.Type getCheckType(Element a, Element b) {
-<span class="fc bfc" id="L375" title="All 2 branches covered.">        if (a != null) {</span>
-<span class="fc" id="L376">            return getCheckType(a);</span>
-<span class="pc bpc" id="L377" title="1 of 2 branches missed.">        } else if (b != null) {</span>
-<span class="fc" id="L378">            return getCheckType(b);</span>
+<span class="fc bfc" id="L374" title="All 2 branches covered.">        if (a != null) {</span>
+<span class="fc" id="L375">            return getCheckType(a);</span>
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">        } else if (b != null) {</span>
+<span class="fc" id="L377">            return getCheckType(b);</span>
         } else {
-<span class="nc" id="L380">            return null;</span>
+<span class="nc" id="L379">            return null;</span>
         }
     }
 
     private Check.Type getCheckType(Element e) {
-<span class="fc bfc" id="L385" title="All 2 branches covered.">        if (e instanceof TypeElement) {</span>
-<span class="fc" id="L386">            return Check.Type.CLASS;</span>
-<span class="fc bfc" id="L387" title="All 2 branches covered.">        } else if (e instanceof AnnotationElement) {</span>
-<span class="fc" id="L388">            return Check.Type.ANNOTATION;</span>
-<span class="fc bfc" id="L389" title="All 2 branches covered.">        } else if (e instanceof FieldElement) {</span>
-<span class="fc" id="L390">            return Check.Type.FIELD;</span>
-<span class="fc bfc" id="L391" title="All 2 branches covered.">        } else if (e instanceof MethodElement) {</span>
-<span class="fc" id="L392">            return Check.Type.METHOD;</span>
-<span class="pc bpc" id="L393" title="1 of 2 branches missed.">        } else if (e instanceof MethodParameterElement) {</span>
-<span class="fc" id="L394">            return Check.Type.METHOD_PARAMETER;</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        if (e instanceof TypeElement) {</span>
+<span class="fc" id="L385">            return Check.Type.CLASS;</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">        } else if (e instanceof AnnotationElement) {</span>
+<span class="fc" id="L387">            return Check.Type.ANNOTATION;</span>
+<span class="fc bfc" id="L388" title="All 2 branches covered.">        } else if (e instanceof FieldElement) {</span>
+<span class="fc" id="L389">            return Check.Type.FIELD;</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        } else if (e instanceof MethodElement) {</span>
+<span class="fc" id="L391">            return Check.Type.METHOD;</span>
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">        } else if (e instanceof MethodParameterElement) {</span>
+<span class="fc" id="L393">            return Check.Type.METHOD_PARAMETER;</span>
         } else {
-<span class="nc" id="L396">            return null;</span>
+<span class="nc" id="L395">            return null;</span>
         }
     }
 
     private void append(StringBuilder bld, TypeAndUseSite typeAndUseSite) {
         String message;
-<span class="pc bpc" id="L402" title="6 of 10 branches missed.">        switch (typeAndUseSite.useSite.getUseType()) {</span>
+<span class="pc bpc" id="L401" title="7 of 10 branches missed.">        switch (typeAndUseSite.useSite.getUseType()) {</span>
             case ANNOTATES:
-<span class="nc" id="L404">                message = &quot;revapi.java.uses.annotates&quot;;</span>
-<span class="nc" id="L405">                break;</span>
+<span class="nc" id="L403">                message = &quot;revapi.java.uses.annotates&quot;;</span>
+<span class="nc" id="L404">                break;</span>
             case HAS_TYPE:
-<span class="fc" id="L407">                message = &quot;revapi.java.uses.hasType&quot;;</span>
-<span class="fc" id="L408">                break;</span>
+<span class="fc" id="L406">                message = &quot;revapi.java.uses.hasType&quot;;</span>
+<span class="fc" id="L407">                break;</span>
             case IS_IMPLEMENTED:
-<span class="nc" id="L410">                message = &quot;revapi.java.uses.isImplemented&quot;;</span>
-<span class="nc" id="L411">                break;</span>
+<span class="nc" id="L409">                message = &quot;revapi.java.uses.isImplemented&quot;;</span>
+<span class="nc" id="L410">                break;</span>
             case IS_INHERITED:
-<span class="nc" id="L413">                message = &quot;revapi.java.uses.isInherited&quot;;</span>
-<span class="nc" id="L414">                break;</span>
+<span class="nc" id="L412">                message = &quot;revapi.java.uses.isInherited&quot;;</span>
+<span class="nc" id="L413">                break;</span>
             case IS_THROWN:
-<span class="fc" id="L416">                message = &quot;revapi.java.uses.isThrown&quot;;</span>
-<span class="fc" id="L417">                break;</span>
+<span class="nc" id="L415">                message = &quot;revapi.java.uses.isThrown&quot;;</span>
+<span class="nc" id="L416">                break;</span>
             case PARAMETER_TYPE:
-<span class="fc" id="L419">                message = &quot;revapi.java.uses.parameterType&quot;;</span>
-<span class="fc" id="L420">                break;</span>
+<span class="fc" id="L418">                message = &quot;revapi.java.uses.parameterType&quot;;</span>
+<span class="fc" id="L419">                break;</span>
             case RETURN_TYPE:
-<span class="fc" id="L422">                message = &quot;revapi.java.uses.returnType&quot;;</span>
-<span class="fc" id="L423">                break;</span>
+<span class="fc" id="L421">                message = &quot;revapi.java.uses.returnType&quot;;</span>
+<span class="fc" id="L422">                break;</span>
             case CONTAINS:
-<span class="nc" id="L425">                message = &quot;revapi.java.uses.contains&quot;;</span>
-<span class="nc" id="L426">                break;</span>
+<span class="nc" id="L424">                message = &quot;revapi.java.uses.contains&quot;;</span>
+<span class="nc" id="L425">                break;</span>
             case TYPE_PARAMETER_OR_BOUND:
-<span class="nc" id="L428">                message = &quot;revapi.java.uses.typeParameterOrBound&quot;;</span>
-<span class="nc" id="L429">                break;</span>
+<span class="nc" id="L427">                message = &quot;revapi.java.uses.typeParameterOrBound&quot;;</span>
+<span class="nc" id="L428">                break;</span>
             default:
-<span class="nc" id="L431">                throw new AssertionError(&quot;Invalid use type: &quot; + typeAndUseSite.useSite.getUseType());</span>
+<span class="nc" id="L430">                throw new AssertionError(&quot;Invalid use type: &quot; + typeAndUseSite.useSite.getUseType());</span>
         }
 
-<span class="fc" id="L434">        message = messages.getString(message);</span>
-<span class="fc" id="L435">        message = MessageFormat.format(message, typeAndUseSite.useSite.getSite().getFullHumanReadableString(),</span>
-<span class="fc" id="L436">                Util.toHumanReadableString(typeAndUseSite.type));</span>
+<span class="fc" id="L433">        message = messages.getString(message);</span>
+<span class="fc" id="L434">        message = MessageFormat.format(message, typeAndUseSite.useSite.getSite().getFullHumanReadableString(),</span>
+<span class="fc" id="L435">                Util.toHumanReadableString(typeAndUseSite.type));</span>
 
-<span class="fc" id="L438">        bld.append(message);</span>
-<span class="fc" id="L439">    }</span>
+<span class="fc" id="L437">        bld.append(message);</span>
+<span class="fc" id="L438">    }</span>
 
     private void appendUses(ProbingEnvironment env, Element element, final StringBuilder bld) {
-<span class="fc" id="L442">        LOG.trace(&quot;Reporting uses of {}&quot;, element);</span>
+<span class="fc" id="L441">        LOG.trace(&quot;Reporting uses of {}&quot;, element);</span>
 
-<span class="pc bpc" id="L444" title="1 of 2 branches missed.">        if (element == null) {</span>
-<span class="nc" id="L445">            bld.append(&quot;&lt;null&gt;&quot;);</span>
-<span class="nc" id="L446">            return;</span>
+<span class="pc bpc" id="L443" title="1 of 2 branches missed.">        if (element == null) {</span>
+<span class="nc" id="L444">            bld.append(&quot;&lt;null&gt;&quot;);</span>
+<span class="nc" id="L445">            return;</span>
         }
 
-<span class="pc bpc" id="L449" title="1 of 4 branches missed.">        while (element != null &amp;&amp; !(element instanceof JavaTypeElement)) {</span>
-<span class="fc" id="L450">            element = element.getParent();</span>
+<span class="pc bpc" id="L448" title="1 of 4 branches missed.">        while (element != null &amp;&amp; !(element instanceof JavaTypeElement)) {</span>
+<span class="fc" id="L449">            element = element.getParent();</span>
         }
 
-<span class="pc bpc" id="L453" title="1 of 2 branches missed.">        if (element == null) {</span>
-<span class="nc" id="L454">            return;</span>
+<span class="pc bpc" id="L452" title="1 of 2 branches missed.">        if (element == null) {</span>
+<span class="nc" id="L453">            return;</span>
         }
 
-<span class="fc" id="L457">        JavaTypeElement usedType = (JavaTypeElement) element;</span>
+<span class="fc" id="L456">        JavaTypeElement usedType = (JavaTypeElement) element;</span>
 
-<span class="pc bpc" id="L459" title="1 of 4 branches missed.">        if (usedType.isInAPI() &amp;&amp; !usedType.isInApiThroughUse()) {</span>
-<span class="fc" id="L460">            String message = MessageFormat.format(messages.getString(&quot;revapi.java.uses.partOfApi&quot;),</span>
-<span class="fc" id="L461">                    usedType.getFullHumanReadableString());</span>
-<span class="fc" id="L462">            bld.append(message);</span>
-<span class="fc" id="L463">            return;</span>
+<span class="pc bpc" id="L458" title="1 of 4 branches missed.">        if (usedType.isInAPI() &amp;&amp; !usedType.isInApiThroughUse()) {</span>
+<span class="fc" id="L459">            String message = MessageFormat.format(messages.getString(&quot;revapi.java.uses.partOfApi&quot;),</span>
+<span class="fc" id="L460">                    usedType.getFullHumanReadableString());</span>
+<span class="fc" id="L461">            bld.append(message);</span>
+<span class="fc" id="L462">            return;</span>
         }
 
-<span class="fc" id="L466">        usedType.visitUseSites(new UseSite.Visitor&lt;Object, Void&gt;() {</span>
+<span class="fc" id="L465">        usedType.visitUseSites(new UseSite.Visitor&lt;Object, Void&gt;() {</span>
             @Nullable
             @Override
             public Object visit(@Nonnull DeclaredType type, @Nonnull UseSite use,
                                 @Nullable Void parameter) {
-<span class="fc bfc" id="L471" title="All 2 branches covered.">                if (appendUse(env, usedType, bld, type, use)) {</span>
-<span class="fc" id="L472">                    return Boolean.TRUE; //just a non-null values</span>
+<span class="fc bfc" id="L470" title="All 2 branches covered.">                if (appendUse(env, usedType, bld, type, use)) {</span>
+<span class="fc" id="L471">                    return Boolean.TRUE; //just a non-null values</span>
                 }
 
-<span class="fc" id="L475">                return null;</span>
+<span class="fc" id="L474">                return null;</span>
             }
 
             @Nullable
             @Override
             public Object end(DeclaredType type, @Nullable Void parameter) {
-<span class="nc" id="L481">                return null;</span>
+<span class="nc" id="L480">                return null;</span>
             }
         }, null);
-<span class="fc" id="L484">    }</span>
+<span class="fc" id="L483">    }</span>
 
 
     private boolean appendUse(ProbingEnvironment env, JavaTypeElement usedType, StringBuilder bld, DeclaredType type,
                               UseSite use) {
 
-<span class="fc bfc" id="L490" title="All 2 branches covered.">        if (!use.getUseType().isMovingToApi()) {</span>
-<span class="fc" id="L491">            return false;</span>
+<span class="fc bfc" id="L489" title="All 2 branches covered.">        if (!use.getUseType().isMovingToApi()) {</span>
+<span class="fc" id="L490">            return false;</span>
         }
 
-<span class="fc" id="L494">        List&lt;TypeAndUseSite&gt; chain = getExamplePathToApiArchive(env, usedType, type, use);</span>
-<span class="fc" id="L495">        Iterator&lt;TypeAndUseSite&gt; chainIt = chain.iterator();</span>
+<span class="fc" id="L493">        List&lt;TypeAndUseSite&gt; chain = getExamplePathToApiArchive(env, usedType, type, use);</span>
+<span class="fc" id="L494">        Iterator&lt;TypeAndUseSite&gt; chainIt = chain.iterator();</span>
 
-<span class="pc bpc" id="L497" title="1 of 2 branches missed.">        if (chain.isEmpty()) {</span>
-<span class="nc bnc" id="L498" title="All 2 branches missed.">            if (LOG.isDebugEnabled()) {</span>
-<span class="nc" id="L499">                LOG.debug(&quot;Could not find example path to API element for type {} starting with use {}&quot;,</span>
-<span class="nc" id="L500">                        ((javax.lang.model.element.TypeElement) type.asElement()).getQualifiedName().toString(), use);</span>
+<span class="pc bpc" id="L496" title="1 of 2 branches missed.">        if (chain.isEmpty()) {</span>
+<span class="nc bnc" id="L497" title="All 2 branches missed.">            if (LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L498">                LOG.debug(&quot;Could not find example path to API element for type {} starting with use {}&quot;,</span>
+<span class="nc" id="L499">                        ((javax.lang.model.element.TypeElement) type.asElement()).getQualifiedName().toString(), use);</span>
             }
-<span class="nc" id="L502">            return false;</span>
+<span class="nc" id="L501">            return false;</span>
         }
 
-<span class="fc" id="L505">        TypeAndUseSite last = null;</span>
-<span class="pc bpc" id="L506" title="1 of 2 branches missed.">        if (chainIt.hasNext()) {</span>
-<span class="fc" id="L507">            last = chainIt.next();</span>
-<span class="fc" id="L508">            append(bld, last);</span>
+<span class="fc" id="L504">        TypeAndUseSite last = null;</span>
+<span class="pc bpc" id="L505" title="1 of 2 branches missed.">        if (chainIt.hasNext()) {</span>
+<span class="fc" id="L506">            last = chainIt.next();</span>
+<span class="fc" id="L507">            append(bld, last);</span>
         }
 
-<span class="fc bfc" id="L511" title="All 2 branches covered.">        while (chainIt.hasNext()) {</span>
-<span class="fc" id="L512">            bld.append(&quot; &lt;- &quot;);</span>
-<span class="fc" id="L513">            last = chainIt.next();</span>
-<span class="fc" id="L514">            append(bld, last);</span>
+<span class="fc bfc" id="L510" title="All 2 branches covered.">        while (chainIt.hasNext()) {</span>
+<span class="fc" id="L511">            bld.append(&quot; &lt;- &quot;);</span>
+<span class="fc" id="L512">            last = chainIt.next();</span>
+<span class="fc" id="L513">            append(bld, last);</span>
         }
 
-<span class="fc" id="L517">        String message = MessageFormat.format(messages.getString(&quot;revapi.java.uses.partOfApi&quot;),</span>
-<span class="fc" id="L518">            last.useSite.getSite().getFullHumanReadableString());</span>
+<span class="fc" id="L516">        String message = MessageFormat.format(messages.getString(&quot;revapi.java.uses.partOfApi&quot;),</span>
+<span class="fc" id="L517">            last.useSite.getSite().getFullHumanReadableString());</span>
 
-<span class="fc" id="L520">        bld.append(&quot; (&quot;).append(message).append(&quot;)&quot;);</span>
+<span class="fc" id="L519">        bld.append(&quot; (&quot;).append(message).append(&quot;)&quot;);</span>
 
-<span class="fc" id="L522">        return true;</span>
+<span class="fc" id="L521">        return true;</span>
     }
 
     private List&lt;TypeAndUseSite&gt; getExamplePathToApiArchive(ProbingEnvironment env, JavaTypeElement usedType,
                                                             DeclaredType type, UseSite bottomUse) {
 
-<span class="fc" id="L528">        ArrayList&lt;TypeAndUseSite&gt; ret = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L527">        ArrayList&lt;TypeAndUseSite&gt; ret = new ArrayList&lt;&gt;();</span>
 
-<span class="fc" id="L530">        traverseToApi(env, usedType, type, bottomUse, ret, new HashSet&lt;&gt;());</span>
+<span class="fc" id="L529">        traverseToApi(env, usedType, type, bottomUse, ret, new HashSet&lt;&gt;());</span>
 
-<span class="fc" id="L532">        return ret;</span>
+<span class="fc" id="L531">        return ret;</span>
     }
 
     private boolean traverseToApi(ProbingEnvironment env, final JavaTypeElement usedType, final DeclaredType type,
                                   final UseSite currentUse, final List&lt;TypeAndUseSite&gt; path, final
                                   Set&lt;javax.lang.model.element.TypeElement&gt; visitedTypes) {
 
-<span class="fc bfc" id="L539" title="All 2 branches covered.">        if (!currentUse.getUseType().isMovingToApi()) {</span>
-<span class="fc" id="L540">            return false;</span>
+<span class="fc bfc" id="L538" title="All 2 branches covered.">        if (!currentUse.getUseType().isMovingToApi()) {</span>
+<span class="fc" id="L539">            return false;</span>
         }
 
-<span class="fc" id="L543">        JavaTypeElement ut = findClassOf(currentUse.getSite());</span>
+<span class="fc" id="L542">        JavaTypeElement ut = findClassOf(currentUse.getSite());</span>
 
-<span class="fc" id="L545">        return appendUseType(env, ut, path, usedType, type, currentUse, visitedTypes);</span>
+<span class="fc" id="L544">        return appendUseType(env, ut, path, usedType, type, currentUse, visitedTypes);</span>
     }
 
     private boolean appendUseType(ProbingEnvironment env, JavaTypeElement ut, List&lt;TypeAndUseSite&gt; path,
                                JavaTypeElement usedType, DeclaredType type, UseSite currentUse,
                                Set&lt;javax.lang.model.element.TypeElement&gt; visitedTypes) {
 
-<span class="fc" id="L552">        javax.lang.model.element.TypeElement useType = ut.getDeclaringElement();</span>
+<span class="fc" id="L551">        javax.lang.model.element.TypeElement useType = ut.getDeclaringElement();</span>
 
-<span class="pc bpc" id="L554" title="1 of 2 branches missed.">        if (visitedTypes.contains(useType)) {</span>
-<span class="nc" id="L555">            return false;</span>
+<span class="pc bpc" id="L553" title="1 of 2 branches missed.">        if (visitedTypes.contains(useType)) {</span>
+<span class="nc" id="L554">            return false;</span>
         }
 
-<span class="fc" id="L558">        visitedTypes.add(useType);</span>
+<span class="fc" id="L557">        visitedTypes.add(useType);</span>
 
-<span class="pc bpc" id="L560" title="1 of 6 branches missed.">        if (ut.isInAPI() &amp;&amp; !ut.isInApiThroughUse() &amp;&amp; !ut.equals(usedType)) {</span>
+<span class="pc bpc" id="L559" title="1 of 6 branches missed.">        if (ut.isInAPI() &amp;&amp; !ut.isInApiThroughUse() &amp;&amp; !ut.equals(usedType)) {</span>
             //the class is in the primary API
-<span class="fc" id="L562">            path.add(0, new TypeAndUseSite(type, currentUse));</span>
-<span class="fc" id="L563">            return true;</span>
+<span class="fc" id="L561">            path.add(0, new TypeAndUseSite(type, currentUse));</span>
+<span class="fc" id="L562">            return true;</span>
         } else {
-<span class="fc" id="L565">            Boolean ret = ut.visitUseSites(new UseSite.Visitor&lt;Boolean, Void&gt;() {</span>
+<span class="fc" id="L564">            Boolean ret = ut.visitUseSites(new UseSite.Visitor&lt;Boolean, Void&gt;() {</span>
                 @Nullable
                 @Override
                 public Boolean visit(@Nonnull DeclaredType visitedType, @Nonnull UseSite use,
                                      @Nullable Void parameter) {
-<span class="fc bfc" id="L570" title="All 2 branches covered.">                    if (traverseToApi(env, usedType, visitedType, use, path, visitedTypes)) {</span>
-<span class="fc" id="L571">                        path.add(0, new TypeAndUseSite(type, currentUse));</span>
-<span class="fc" id="L572">                        return true;</span>
+<span class="fc bfc" id="L569" title="All 2 branches covered.">                    if (traverseToApi(env, usedType, visitedType, use, path, visitedTypes)) {</span>
+<span class="fc" id="L570">                        path.add(0, new TypeAndUseSite(type, currentUse));</span>
+<span class="fc" id="L571">                        return true;</span>
                     }
-<span class="fc" id="L574">                    return null;</span>
+<span class="fc" id="L573">                    return null;</span>
                 }
 
                 @Nullable
                 @Override
                 public Boolean end(DeclaredType type, @Nullable Void parameter) {
-<span class="fc" id="L580">                    return null;</span>
+<span class="fc" id="L579">                    return null;</span>
                 }
             }, null);
 
-<span class="fc bfc" id="L584" title="All 2 branches covered.">            if (ret == null) {</span>
-<span class="fc" id="L585">                Set&lt;javax.lang.model.element.TypeElement&gt; derivedUseTypes = env.getDerivedTypes(useType);</span>
+<span class="fc bfc" id="L583" title="All 2 branches covered.">            if (ret == null) {</span>
+<span class="fc" id="L584">                Set&lt;javax.lang.model.element.TypeElement&gt; derivedUseTypes = env.getDerivedTypes(useType);</span>
 
-<span class="pc bpc" id="L587" title="1 of 2 branches missed.">                for (javax.lang.model.element.TypeElement dut : derivedUseTypes) {</span>
-<span class="fc" id="L588">                    TypeElement model = env.getTypeMap().get(dut);</span>
-<span class="pc bpc" id="L589" title="1 of 2 branches missed.">                    if (model == null) {</span>
-<span class="nc" id="L590">                        continue;</span>
+<span class="pc bpc" id="L586" title="1 of 2 branches missed.">                for (javax.lang.model.element.TypeElement dut : derivedUseTypes) {</span>
+<span class="fc" id="L587">                    TypeElement model = env.getTypeMap().get(dut);</span>
+<span class="pc bpc" id="L588" title="1 of 2 branches missed.">                    if (model == null) {</span>
+<span class="nc" id="L589">                        continue;</span>
                     }
 
-<span class="fc" id="L593">                    JavaModelElement derivedUseElement = findSameDeclarationUnder(currentUse.getSite(), model);</span>
-<span class="pc bpc" id="L594" title="1 of 2 branches missed.">                    if (derivedUseElement == null) {</span>
-<span class="nc" id="L595">                        continue;</span>
+<span class="fc" id="L592">                    JavaModelElement derivedUseElement = findSameDeclarationUnder(currentUse.getSite(), model);</span>
+<span class="pc bpc" id="L593" title="1 of 2 branches missed.">                    if (derivedUseElement == null) {</span>
+<span class="nc" id="L594">                        continue;</span>
                     }
 
-<span class="fc" id="L598">                    UseSite derivedUse = new UseSite(currentUse.getUseType(), derivedUseElement);</span>
+<span class="fc" id="L597">                    UseSite derivedUse = new UseSite(currentUse.getUseType(), derivedUseElement);</span>
 
-<span class="pc bpc" id="L600" title="1 of 2 branches missed.">                    if (appendUseType(env, model, path, usedType, type, derivedUse, visitedTypes)) {</span>
+<span class="pc bpc" id="L599" title="1 of 2 branches missed.">                    if (appendUseType(env, model, path, usedType, type, derivedUse, visitedTypes)) {</span>
 
-<span class="fc" id="L602">                        ret = true;</span>
-<span class="fc" id="L603">                        break;</span>
+<span class="fc" id="L601">                        ret = true;</span>
+<span class="fc" id="L602">                        break;</span>
                     }
-<span class="nc" id="L605">                }</span>
+<span class="nc" id="L604">                }</span>
 
             }
 
-<span class="pc bpc" id="L609" title="1 of 2 branches missed.">            return ret == null ? false : ret;</span>
+<span class="pc bpc" id="L608" title="1 of 2 branches missed.">            return ret == null ? false : ret;</span>
         }
     }
 
     private JavaTypeElement findClassOf(JavaElement element) {
-<span class="pc bpc" id="L614" title="1 of 4 branches missed.">        while (element != null &amp;&amp; !(element instanceof JavaTypeElement)) {</span>
-<span class="fc" id="L615">            element = (JavaElement) element.getParent();</span>
+<span class="pc bpc" id="L613" title="1 of 4 branches missed.">        while (element != null &amp;&amp; !(element instanceof JavaTypeElement)) {</span>
+<span class="fc" id="L614">            element = (JavaElement) element.getParent();</span>
         }
 
-<span class="fc" id="L618">        return (JavaTypeElement) element;</span>
+<span class="fc" id="L617">        return (JavaTypeElement) element;</span>
     }
 
     private javax.lang.model.element.TypeElement findTypeOf(javax.lang.model.element.Element element) {
-<span class="pc bpc" id="L622" title="1 of 6 branches missed.">        while (element != null &amp;&amp; !(element.getKind().isClass() || element.getKind().isInterface())) {</span>
-<span class="fc" id="L623">            element = element.getEnclosingElement();</span>
+<span class="pc bpc" id="L621" title="1 of 6 branches missed.">        while (element != null &amp;&amp; !(element.getKind().isClass() || element.getKind().isInterface())) {</span>
+<span class="fc" id="L622">            element = element.getEnclosingElement();</span>
         }
 
-<span class="fc" id="L626">        return (javax.lang.model.element.TypeElement) element;</span>
+<span class="fc" id="L625">        return (javax.lang.model.element.TypeElement) element;</span>
     }
 
     private JavaModelElement findSameDeclarationUnder(JavaElement declaredElement, JavaTypeElement owningElement) {
-<span class="pc bpc" id="L630" title="1 of 2 branches missed.">        if (!(declaredElement instanceof JavaModelElement)) {</span>
-<span class="nc" id="L631">            return null;</span>
+<span class="pc bpc" id="L629" title="1 of 2 branches missed.">        if (!(declaredElement instanceof JavaModelElement)) {</span>
+<span class="nc" id="L630">            return null;</span>
         }
 
-<span class="fc" id="L634">        JavaModelElement dme = (JavaModelElement) declaredElement;</span>
-<span class="pc bpc" id="L635" title="1 of 2 branches missed.">        for (Element e : owningElement.getChildren()) {</span>
-<span class="pc bpc" id="L636" title="1 of 2 branches missed.">            if (e instanceof JavaModelElement</span>
-<span class="fc bfc" id="L637" title="All 2 branches covered.">                    &amp;&amp; ((JavaModelElement) e).getDeclaringElement().equals(dme.getDeclaringElement())) {</span>
-<span class="fc" id="L638">                return (JavaModelElement) e;</span>
+<span class="fc" id="L633">        JavaModelElement dme = (JavaModelElement) declaredElement;</span>
+<span class="pc bpc" id="L634" title="1 of 2 branches missed.">        for (Element e : owningElement.getChildren()) {</span>
+<span class="pc bpc" id="L635" title="1 of 2 branches missed.">            if (e instanceof JavaModelElement</span>
+<span class="fc bfc" id="L636" title="All 2 branches covered.">                    &amp;&amp; ((JavaModelElement) e).getDeclaringElement().equals(dme.getDeclaringElement())) {</span>
+<span class="fc" id="L637">                return (JavaModelElement) e;</span>
             }
-<span class="fc" id="L640">        }</span>
+<span class="fc" id="L639">        }</span>
 
-<span class="nc" id="L642">        return null;</span>
+<span class="nc" id="L641">        return null;</span>
     }
 
     private boolean isCheckedElsewhere(JavaModelElement element, ProbingEnvironment env) {
-<span class="fc bfc" id="L646" title="All 2 branches covered.">        if (element == null) {</span>
+<span class="fc bfc" id="L645" title="All 2 branches covered.">        if (element == null) {</span>
             //the other element will not be null and therefore we will determine the fact with the other element...
-<span class="fc" id="L648">            return true;</span>
+<span class="fc" id="L647">            return true;</span>
         }
 
-<span class="fc bfc" id="L651" title="All 2 branches covered.">        if (!element.isInherited()) {</span>
-<span class="fc" id="L652">            return false;</span>
+<span class="fc bfc" id="L650" title="All 2 branches covered.">        if (!element.isInherited()) {</span>
+<span class="fc" id="L651">            return false;</span>
         }
 
-<span class="fc" id="L655">        String elementSig = Util.toUniqueString(element.getModelRepresentation());</span>
-<span class="fc" id="L656">        String declSig = Util.toUniqueString(element.getDeclaringElement().asType());</span>
+<span class="fc" id="L654">        String elementSig = Util.toUniqueString(element.getModelRepresentation());</span>
+<span class="fc" id="L655">        String declSig = Util.toUniqueString(element.getDeclaringElement().asType());</span>
 
-<span class="fc bfc" id="L658" title="All 2 branches covered.">        if (!Objects.equals(elementSig, declSig)) {</span>
-<span class="fc" id="L659">            return false;</span>
+<span class="fc bfc" id="L657" title="All 2 branches covered.">        if (!Objects.equals(elementSig, declSig)) {</span>
+<span class="fc" id="L658">            return false;</span>
         }
 
-<span class="fc" id="L662">        javax.lang.model.element.TypeElement declaringType = findTypeOf(element.getDeclaringElement());</span>
+<span class="fc" id="L661">        javax.lang.model.element.TypeElement declaringType = findTypeOf(element.getDeclaringElement());</span>
 
-<span class="fc" id="L664">        JavaTypeElement declaringClass = env.getTypeMap().get(declaringType);</span>
+<span class="fc" id="L663">        JavaTypeElement declaringClass = env.getTypeMap().get(declaringType);</span>
 
-<span class="fc bfc" id="L666" title="All 4 branches covered.">        return declaringClass != null &amp;&amp; declaringClass.isInAPI();</span>
+<span class="fc bfc" id="L665" title="All 4 branches covered.">        return declaringClass != null &amp;&amp; declaringClass.isInAPI();</span>
     }
 
     //Javac's standard file manager is leaking resources across compilation tasks because it doesn't clear a shared
     //&quot;zip file index&quot; cache, when it is close()'d. We try to clear it by force.
     private static void forceClearCompilerCache() {
-<span class="pc bpc" id="L672" title="3 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
+<span class="pc bpc" id="L671" title="3 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
             try {
-<span class="nc" id="L674">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
-<span class="nc" id="L675">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
-<span class="nc" id="L676">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
+<span class="nc" id="L673">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
+<span class="nc" id="L674">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
+<span class="nc" id="L675">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
                                 &quot;This will probably leak memory&quot;, e);
-<span class="nc" id="L678">            }</span>
+<span class="nc" id="L677">            }</span>
         }
-<span class="fc" id="L680">    }</span>
+<span class="fc" id="L679">    }</span>
 
     private static class TypeAndUseSite {
         final DeclaredType type;
         final UseSite useSite;
 
-<span class="fc" id="L686">        public TypeAndUseSite(DeclaredType type, UseSite useSite) {</span>
-<span class="fc" id="L687">            this.type = type;</span>
-<span class="fc" id="L688">            this.useSite = useSite;</span>
-<span class="fc" id="L689">        }</span>
+<span class="fc" id="L685">        public TypeAndUseSite(DeclaredType type, UseSite useSite) {</span>
+<span class="fc" id="L686">            this.type = type;</span>
+<span class="fc" id="L687">            this.useSite = useSite;</span>
+<span class="fc" id="L688">        }</span>
     }
 
-<span class="pc" id="L692">    private enum CheckType {</span>
-<span class="fc" id="L693">        CLASS(Check.Type.CLASS), FIELD(Check.Type.FIELD), METHOD(Check.Type.METHOD),</span>
-<span class="fc" id="L694">        METHOD_PARAMETER(Check.Type.METHOD_PARAMETER), ANNOTATION(Check.Type.ANNOTATION), NONE(null);</span>
+<span class="pc" id="L691">    private enum CheckType {</span>
+<span class="fc" id="L692">        CLASS(Check.Type.CLASS), FIELD(Check.Type.FIELD), METHOD(Check.Type.METHOD),</span>
+<span class="fc" id="L693">        METHOD_PARAMETER(Check.Type.METHOD_PARAMETER), ANNOTATION(Check.Type.ANNOTATION), NONE(null);</span>
 
         private final Check.Type checkType;
 
-<span class="fc" id="L698">        CheckType(Check.Type checkType) {</span>
-<span class="fc" id="L699">            this.checkType = checkType;</span>
-<span class="fc" id="L700">        }</span>
+<span class="fc" id="L697">        CheckType(Check.Type checkType) {</span>
+<span class="fc" id="L698">            this.checkType = checkType;</span>
+<span class="fc" id="L699">        }</span>
 
         public Check.Type getCheckType() {
-<span class="nc" id="L703">            return checkType;</span>
+<span class="nc" id="L702">            return checkType;</span>
         }
 
         public boolean isConcrete() {
-<span class="fc bfc" id="L707" title="All 2 branches covered.">            return checkType != null;</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">            return checkType != null;</span>
         }
     }
 }

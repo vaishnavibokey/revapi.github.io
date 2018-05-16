@@ -89,12 +89,12 @@ public final class JavaElementForest extends SimpleElementForest {
 
     public &lt;T extends Element&gt; List&lt;T&gt; searchUnsafe(Class&lt;T&gt; resultType, boolean recurse, Filter&lt;? super T&gt; filter,
         Element root) {
-<span class="fc" id="L92">        boolean wasUnsafe = UNSAFE_MODE.get();</span>
+<span class="nc" id="L92">        boolean wasUnsafe = UNSAFE_MODE.get();</span>
         try {
-<span class="fc" id="L94">            UNSAFE_MODE.set(true);</span>
-<span class="fc" id="L95">            return super.search(resultType, recurse, filter, root);</span>
+<span class="nc" id="L94">            UNSAFE_MODE.set(true);</span>
+<span class="nc" id="L95">            return super.search(resultType, recurse, filter, root);</span>
         } finally {
-<span class="pc" id="L97">            UNSAFE_MODE.set(wasUnsafe);</span>
+<span class="nc" id="L97">            UNSAFE_MODE.set(wasUnsafe);</span>
         }
     }
 
@@ -111,7 +111,7 @@ public final class JavaElementForest extends SimpleElementForest {
 
     private void waitForCompilation() {
         try {
-<span class="fc bfc" id="L114" title="All 4 branches covered.">            if (compilation != null &amp;&amp; !UNSAFE_MODE.get()) {</span>
+<span class="pc bpc" id="L114" title="1 of 4 branches missed.">            if (compilation != null &amp;&amp; !UNSAFE_MODE.get()) {</span>
 <span class="fc" id="L115">                compilation.get();</span>
 <span class="fc" id="L116">                compilation = null;</span>
 <span class="pc bpc" id="L117" title="1 of 2 branches missed.">                if (Timing.LOG.isDebugEnabled()) {</span>

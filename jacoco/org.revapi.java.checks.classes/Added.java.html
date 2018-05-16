@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Added.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.classes</a> &gt; <span class="el_source">Added.java</span></div><h1>Added.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -18,6 +18,7 @@ package org.revapi.java.checks.classes;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.lang.model.element.TypeElement;
@@ -31,35 +32,35 @@ import org.revapi.java.spi.JavaTypeElement;
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L34">public final class Added extends CheckBase {</span>
+<span class="fc" id="L35">public final class Added extends CheckBase {</span>
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L37">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
-<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (types != null) {</span>
-<span class="fc" id="L39">            TypeElement typeInOld = getOldTypeEnvironment().getElementUtils()</span>
-<span class="fc" id="L40">                    .getTypeElement(types.newElement.getDeclaringElement().getQualifiedName());</span>
+<span class="fc" id="L38">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (types != null) {</span>
+<span class="fc" id="L40">            TypeElement typeInOld = getOldTypeEnvironment().getElementUtils()</span>
+<span class="fc" id="L41">                    .getTypeElement(types.newElement.getDeclaringElement().getQualifiedName());</span>
 
-<span class="fc" id="L42">            String[] attachments = Code.attachmentsFor(types.oldElement, types.newElement);</span>
-<span class="pc bpc" id="L43" title="1 of 2 branches missed.">            Difference difference = typeInOld == null</span>
-<span class="fc" id="L44">                    ? createDifference(Code.CLASS_ADDED, attachments)</span>
-<span class="pc" id="L45">                    : createDifference(Code.CLASS_EXTERNAL_CLASS_EXPOSED_IN_API, attachments);</span>
+<span class="fc" id="L43">            LinkedHashMap&lt;String, String&gt; attachments = Code.attachmentsFor(types.oldElement, types.newElement);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            Difference difference = typeInOld == null</span>
+<span class="fc" id="L45">                    ? createDifference(Code.CLASS_ADDED, attachments)</span>
+<span class="pc" id="L46">                    : createDifference(Code.CLASS_EXTERNAL_CLASS_EXPOSED_IN_API, attachments);</span>
 
-<span class="fc" id="L47">            return Collections.singletonList(difference);</span>
+<span class="fc" id="L48">            return Collections.singletonList(difference);</span>
         }
 
-<span class="fc" id="L50">        return null;</span>
+<span class="fc" id="L51">        return null;</span>
     }
 
     @Override
     protected void doVisitClass(JavaTypeElement oldType, JavaTypeElement newType) {
-<span class="pc bpc" id="L55" title="1 of 6 branches missed.">        if (oldType == null &amp;&amp; newType != null &amp;&amp; isAccessible(newType)) {</span>
-<span class="fc" id="L56">            pushActive(null, newType);</span>
+<span class="pc bpc" id="L56" title="1 of 6 branches missed.">        if (oldType == null &amp;&amp; newType != null &amp;&amp; isAccessible(newType)) {</span>
+<span class="fc" id="L57">            pushActive(null, newType);</span>
         }
-<span class="fc" id="L58">    }</span>
+<span class="fc" id="L59">    }</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L62">        return EnumSet.of(Type.CLASS);</span>
+<span class="fc" id="L63">        return EnumSet.of(Type.CLASS);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

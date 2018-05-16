@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaApiAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java</a> &gt; <span class="el_source">JavaApiAnalyzer.java</span></div><h1>JavaApiAnalyzer.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -455,17 +455,19 @@ public final class JavaApiAnalyzer implements ApiAnalyzer {
 <span class="fc" id="L455">                ModelNode checkConfig = analysisContext.getConfiguration().get(&quot;checks&quot;, c.getExtensionId());</span>
 <span class="fc" id="L456">                AnalysisContext checkCtx = analysisContext.copyWithConfiguration(checkConfig);</span>
 <span class="fc" id="L457">                c.initialize(checkCtx);</span>
+<span class="fc" id="L458">            } else {</span>
+<span class="fc" id="L459">                c.initialize(analysisContext.copyWithConfiguration(new ModelNode()));</span>
             }
-<span class="fc" id="L459">        }</span>
-<span class="fc" id="L460">    }</span>
+<span class="fc" id="L461">        }</span>
+<span class="fc" id="L462">    }</span>
 
     @Nonnull
     @Override
     public ArchiveAnalyzer getArchiveAnalyzer(@Nonnull API api) {
-<span class="fc" id="L465">        boolean ignoreMissingAnnotations = configuration.isIgnoreMissingAnnotations();</span>
-<span class="fc" id="L466">        InclusionFilter inclusionFilter = composeInclusionFilter(configuration);</span>
+<span class="fc" id="L467">        boolean ignoreMissingAnnotations = configuration.isIgnoreMissingAnnotations();</span>
+<span class="fc" id="L468">        InclusionFilter inclusionFilter = composeInclusionFilter(configuration);</span>
 
-<span class="fc" id="L468">        return new JavaArchiveAnalyzer(api, compilationExecutor, configuration.getMissingClassReporting(),</span>
+<span class="fc" id="L470">        return new JavaArchiveAnalyzer(api, compilationExecutor, configuration.getMissingClassReporting(),</span>
                 ignoreMissingAnnotations, inclusionFilter);
     }
 
@@ -473,103 +475,103 @@ public final class JavaApiAnalyzer implements ApiAnalyzer {
     @Override
     public DifferenceAnalyzer getDifferenceAnalyzer(@Nonnull ArchiveAnalyzer oldArchive,
                                                     @Nonnull ArchiveAnalyzer newArchive) {
-<span class="fc" id="L476">        JavaArchiveAnalyzer oldA = (JavaArchiveAnalyzer) oldArchive;</span>
-<span class="fc" id="L477">        JavaArchiveAnalyzer newA = (JavaArchiveAnalyzer) newArchive;</span>
+<span class="fc" id="L478">        JavaArchiveAnalyzer oldA = (JavaArchiveAnalyzer) oldArchive;</span>
+<span class="fc" id="L479">        JavaArchiveAnalyzer newA = (JavaArchiveAnalyzer) newArchive;</span>
 
-<span class="fc" id="L479">        ProbingEnvironment oldEnvironment = oldA.getProbingEnvironment();</span>
-<span class="fc" id="L480">        ProbingEnvironment newEnvironment = newA.getProbingEnvironment();</span>
-<span class="fc" id="L481">        CompilationValve oldValve = oldA.getCompilationValve();</span>
-<span class="fc" id="L482">        CompilationValve newValve = newA.getCompilationValve();</span>
+<span class="fc" id="L481">        ProbingEnvironment oldEnvironment = oldA.getProbingEnvironment();</span>
+<span class="fc" id="L482">        ProbingEnvironment newEnvironment = newA.getProbingEnvironment();</span>
+<span class="fc" id="L483">        CompilationValve oldValve = oldA.getCompilationValve();</span>
+<span class="fc" id="L484">        CompilationValve newValve = newA.getCompilationValve();</span>
 
-<span class="fc" id="L484">        return new JavaElementDifferenceAnalyzer(analysisContext, oldEnvironment, oldValve, newEnvironment, newValve,</span>
+<span class="fc" id="L486">        return new JavaElementDifferenceAnalyzer(analysisContext, oldEnvironment, oldValve, newEnvironment, newValve,</span>
                 checks, configuration);
     }
 
     @Override
     public void close() {
-<span class="fc" id="L490">        compilationExecutor.shutdown();</span>
-<span class="fc" id="L491">    }</span>
+<span class="fc" id="L492">        compilationExecutor.shutdown();</span>
+<span class="fc" id="L493">    }</span>
 
     private static InclusionFilter composeInclusionFilter(AnalysisConfiguration config) {
-<span class="fc" id="L494">        final Set&lt;Pattern&gt; inclClasses = config.getClassInclusionFilters();</span>
-<span class="fc" id="L495">        final Set&lt;Pattern&gt; exclClasses = config.getClassExclusionFilters();</span>
-<span class="fc" id="L496">        final Set&lt;Pattern&gt; inclPkgs = config.getPackageInclusionFilters();</span>
-<span class="fc" id="L497">        final Set&lt;Pattern&gt; exclPkgs = config.getPackageExclusionFilters();</span>
+<span class="fc" id="L496">        final Set&lt;Pattern&gt; inclClasses = config.getClassInclusionFilters();</span>
+<span class="fc" id="L497">        final Set&lt;Pattern&gt; exclClasses = config.getClassExclusionFilters();</span>
+<span class="fc" id="L498">        final Set&lt;Pattern&gt; inclPkgs = config.getPackageInclusionFilters();</span>
+<span class="fc" id="L499">        final Set&lt;Pattern&gt; exclPkgs = config.getPackageExclusionFilters();</span>
 
-<span class="fc" id="L499">        return new InclusionFilter() {</span>
+<span class="fc" id="L501">        return new InclusionFilter() {</span>
             @Override
             public boolean accepts(String typeBinaryName, String typeCanonicalName) {
-<span class="fc bfc" id="L502" title="All 2 branches covered.">                for (Pattern p : inclClasses) {</span>
-<span class="fc bfc" id="L503" title="All 2 branches covered.">                    if (p.matcher(typeCanonicalName).matches()) {</span>
-<span class="fc" id="L504">                        return true;</span>
+<span class="fc bfc" id="L504" title="All 2 branches covered.">                for (Pattern p : inclClasses) {</span>
+<span class="fc bfc" id="L505" title="All 2 branches covered.">                    if (p.matcher(typeCanonicalName).matches()) {</span>
+<span class="fc" id="L506">                        return true;</span>
                     }
-<span class="fc" id="L506">                }</span>
+<span class="fc" id="L508">                }</span>
 
-<span class="fc" id="L508">                int lastDot = typeBinaryName.lastIndexOf('.');</span>
-<span class="fc bfc" id="L509" title="All 2 branches covered.">                String pkg = lastDot == -1 ? &quot;&quot; : typeBinaryName.substring(0, lastDot);</span>
+<span class="fc" id="L510">                int lastDot = typeBinaryName.lastIndexOf('.');</span>
+<span class="fc bfc" id="L511" title="All 2 branches covered.">                String pkg = lastDot == -1 ? &quot;&quot; : typeBinaryName.substring(0, lastDot);</span>
 
 
-<span class="fc bfc" id="L512" title="All 2 branches covered.">                for (Pattern p : inclPkgs) {</span>
-<span class="fc bfc" id="L513" title="All 2 branches covered.">                    if (p.matcher(pkg).matches()) {</span>
-<span class="fc" id="L514">                        return true;</span>
+<span class="fc bfc" id="L514" title="All 2 branches covered.">                for (Pattern p : inclPkgs) {</span>
+<span class="fc bfc" id="L515" title="All 2 branches covered.">                    if (p.matcher(pkg).matches()) {</span>
+<span class="fc" id="L516">                        return true;</span>
                     }
-<span class="fc" id="L516">                }</span>
+<span class="fc" id="L518">                }</span>
 
-<span class="fc" id="L518">                return false;</span>
+<span class="fc" id="L520">                return false;</span>
             }
 
             @Override
             public boolean rejects(String typeBinaryName, String typeCanonicalName) {
-<span class="fc bfc" id="L523" title="All 2 branches covered.">                for (Pattern p : exclClasses) {</span>
-<span class="fc bfc" id="L524" title="All 2 branches covered.">                    if (p.matcher(typeCanonicalName).matches()) {</span>
-<span class="fc" id="L525">                        return true;</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">                for (Pattern p : exclClasses) {</span>
+<span class="fc bfc" id="L526" title="All 2 branches covered.">                    if (p.matcher(typeCanonicalName).matches()) {</span>
+<span class="fc" id="L527">                        return true;</span>
                     }
-<span class="fc" id="L527">                }</span>
+<span class="fc" id="L529">                }</span>
 
-<span class="fc" id="L529">                int lastDot = typeBinaryName.lastIndexOf('.');</span>
-<span class="fc bfc" id="L530" title="All 2 branches covered.">                String pkg = lastDot == -1 ? &quot;&quot; : typeBinaryName.substring(0, lastDot);</span>
+<span class="fc" id="L531">                int lastDot = typeBinaryName.lastIndexOf('.');</span>
+<span class="fc bfc" id="L532" title="All 2 branches covered.">                String pkg = lastDot == -1 ? &quot;&quot; : typeBinaryName.substring(0, lastDot);</span>
 
-<span class="fc bfc" id="L532" title="All 2 branches covered.">                for (Pattern p : exclPkgs) {</span>
-<span class="fc bfc" id="L533" title="All 2 branches covered.">                    if (p.matcher(pkg).matches()) {</span>
-<span class="fc" id="L534">                        return true;</span>
+<span class="fc bfc" id="L534" title="All 2 branches covered.">                for (Pattern p : exclPkgs) {</span>
+<span class="fc bfc" id="L535" title="All 2 branches covered.">                    if (p.matcher(pkg).matches()) {</span>
+<span class="fc" id="L536">                        return true;</span>
                     }
-<span class="fc" id="L536">                }</span>
+<span class="fc" id="L538">                }</span>
 
-<span class="fc" id="L538">                return false;</span>
+<span class="fc" id="L540">                return false;</span>
             }
 
             @Override
             public boolean defaultCase() {
-<span class="fc bfc" id="L543" title="All 4 branches covered.">                return inclClasses.isEmpty() &amp;&amp; inclPkgs.isEmpty();</span>
+<span class="fc bfc" id="L545" title="All 4 branches covered.">                return inclClasses.isEmpty() &amp;&amp; inclPkgs.isEmpty();</span>
             }
         };
     }
 
     private static String consume(Reader rdr) throws IOException {
-<span class="fc" id="L549">        Throwable suppressed = null;</span>
+<span class="fc" id="L551">        Throwable suppressed = null;</span>
         try {
-<span class="fc" id="L551">            char[] buffer = new char[512];</span>
+<span class="fc" id="L553">            char[] buffer = new char[512];</span>
             int cnt;
-<span class="fc" id="L553">            StringBuilder bld = new StringBuilder();</span>
-<span class="fc bfc" id="L554" title="All 2 branches covered.">            while ((cnt = rdr.read(buffer)) &gt;= 0) {</span>
-<span class="fc" id="L555">                bld.append(buffer, 0, cnt);</span>
+<span class="fc" id="L555">            StringBuilder bld = new StringBuilder();</span>
+<span class="fc bfc" id="L556" title="All 2 branches covered.">            while ((cnt = rdr.read(buffer)) &gt;= 0) {</span>
+<span class="fc" id="L557">                bld.append(buffer, 0, cnt);</span>
             }
 
-<span class="fc" id="L558">            return bld.toString();</span>
-<span class="nc" id="L559">        } catch (Throwable t) {</span>
-<span class="nc" id="L560">            suppressed = t;</span>
-<span class="nc" id="L561">            throw t;</span>
+<span class="fc" id="L560">            return bld.toString();</span>
+<span class="nc" id="L561">        } catch (Throwable t) {</span>
+<span class="nc" id="L562">            suppressed = t;</span>
+<span class="nc" id="L563">            throw t;</span>
         } finally {
-<span class="nc" id="L563">            try {</span>
-<span class="pc" id="L564">                rdr.close();</span>
-<span class="nc" id="L565">            } catch (IOException e) {</span>
-<span class="nc bnc" id="L566" title="All 4 branches missed.">                if (suppressed != null) {</span>
-<span class="nc" id="L567">                    e.addSuppressed(suppressed);</span>
+<span class="nc" id="L565">            try {</span>
+<span class="pc" id="L566">                rdr.close();</span>
+<span class="nc" id="L567">            } catch (IOException e) {</span>
+<span class="nc bnc" id="L568" title="All 4 branches missed.">                if (suppressed != null) {</span>
+<span class="nc" id="L569">                    e.addSuppressed(suppressed);</span>
                 }
 
                 //noinspection ThrowFromFinallyBlock
-<span class="nc" id="L571">                throw e;</span>
-<span class="pc" id="L572">            }</span>
+<span class="nc" id="L573">                throw e;</span>
+<span class="pc" id="L574">            }</span>
         }
     }
 }

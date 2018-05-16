@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnnotationElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">AnnotationElement.java</span></div><h1>AnnotationElement.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 package org.revapi.java.model;
+
+import java.util.SortedSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,66 +42,78 @@ public final class AnnotationElement extends SimpleElement implements JavaAnnota
     private final Archive archive;
     private String comparableSignature;
 
-<span class="fc" id="L43">    public AnnotationElement(ProbingEnvironment environment, Archive archive, AnnotationMirror annotation) {</span>
-<span class="fc" id="L44">        this.environment = environment;</span>
-<span class="fc" id="L45">        this.annotation = annotation;</span>
-<span class="fc" id="L46">        this.archive = archive;</span>
-<span class="fc" id="L47">    }</span>
+<span class="fc" id="L45">    public AnnotationElement(ProbingEnvironment environment, Archive archive, AnnotationMirror annotation) {</span>
+<span class="fc" id="L46">        this.environment = environment;</span>
+<span class="fc" id="L47">        this.annotation = annotation;</span>
+<span class="fc" id="L48">        this.archive = archive;</span>
+<span class="fc" id="L49">    }</span>
 
     @SuppressWarnings(&quot;ConstantConditions&quot;)
     @Nonnull @Override public JavaModelElement getParent() {
-<span class="fc" id="L51">        return (JavaModelElement) super.getParent();</span>
+<span class="fc" id="L53">        return (JavaModelElement) super.getParent();</span>
     }
 
     @Nonnull
     @Override
     public API getApi() {
-<span class="nc" id="L57">        return environment.getApi();</span>
+<span class="nc" id="L59">        return environment.getApi();</span>
     }
 
     @Nullable
     @Override
     public Archive getArchive() {
-<span class="fc" id="L63">        return archive;</span>
+<span class="fc" id="L65">        return archive;</span>
+    }
+
+    @Nonnull
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public SortedSet&lt;AnnotationElement&gt; getChildren() {
+<span class="fc" id="L72">        return (SortedSet&lt;AnnotationElement&gt;) super.getChildren();</span>
     }
 
     @Nonnull
     @Override
     public AnnotationMirror getAnnotation() {
-<span class="fc" id="L69">        return annotation;</span>
+<span class="fc" id="L78">        return annotation;</span>
     }
 
     @Nonnull
     @Override
     public TypeEnvironment getTypeEnvironment() {
-<span class="nc" id="L75">        return environment;</span>
+<span class="nc" id="L84">        return environment;</span>
     }
 
     @Override
     public int compareTo(@Nonnull Element o) {
-<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (!(o instanceof AnnotationElement)) {</span>
-<span class="fc" id="L81">            return JavaElementFactory.compareByType(this, o);</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (!(o instanceof AnnotationElement)) {</span>
+<span class="fc" id="L90">            return JavaElementFactory.compareByType(this, o);</span>
         }
 
-<span class="fc" id="L84">        return getComparableSignature().compareTo(((AnnotationElement) o).getComparableSignature());</span>
+<span class="fc" id="L93">        return getComparableSignature().compareTo(((AnnotationElement) o).getComparableSignature());</span>
     }
 
     @Override
     public @Nonnull String getFullHumanReadableString() {
-<span class="fc" id="L89">        return Util.toHumanReadableString(annotation);</span>
+<span class="fc" id="L98">        return Util.toHumanReadableString(annotation);</span>
     }
 
     @Override
     public String toString() {
-<span class="nc" id="L94">        return getFullHumanReadableString();</span>
+<span class="nc" id="L103">        return getFullHumanReadableString();</span>
+    }
+
+    @Override
+    public AnnotationElement clone() {
+<span class="fc" id="L108">        return (AnnotationElement) super.clone();</span>
     }
 
     private String getComparableSignature() {
-<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (comparableSignature == null) {</span>
-<span class="fc" id="L99">            comparableSignature = &quot;@&quot; + Util.toHumanReadableString(annotation.getAnnotationType());</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (comparableSignature == null) {</span>
+<span class="fc" id="L113">            comparableSignature = &quot;@&quot; + Util.toHumanReadableString(annotation.getAnnotationType());</span>
         }
 
-<span class="fc" id="L102">        return comparableSignature;</span>
+<span class="fc" id="L116">        return comparableSignature;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

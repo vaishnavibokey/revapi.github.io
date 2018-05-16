@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaElementBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">JavaElementBase.java</span></div><h1>JavaElementBase.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -122,13 +122,13 @@ public abstract class JavaElementBase&lt;E extends Element, T extends TypeMirror
     @Nonnull
     @Override
     public final String getFullHumanReadableString() {
-<span class="pc bpc" id="L125" title="1 of 4 branches missed.">        if (environment.isScanningComplete() &amp;&amp; stringRepre != null) {</span>
+<span class="fc bfc" id="L125" title="All 4 branches covered.">        if (environment.isScanningComplete() &amp;&amp; stringRepre != null) {</span>
 <span class="fc" id="L126">            return stringRepre;</span>
         }
 
 <span class="fc" id="L129">        String ret = createFullHumanReadableString();</span>
 
-<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        if (environment.isScanningComplete()) {</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (environment.isScanningComplete()) {</span>
 <span class="fc" id="L132">            stringRepre = ret;</span>
         }
 
@@ -171,12 +171,18 @@ public abstract class JavaElementBase&lt;E extends Element, T extends TypeMirror
 <span class="nc" id="L171">        return getFullHumanReadableString();</span>
     }
 
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public JavaElementBase&lt;E, T&gt; clone() {
+<span class="fc" id="L177">        return (JavaElementBase&lt;E, T&gt;) super.clone();</span>
+    }
+
     protected String getComparableSignature() {
-<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (comparableSignature == null) {</span>
-<span class="fc" id="L176">            comparableSignature = createComparableSignature();</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        if (comparableSignature == null) {</span>
+<span class="fc" id="L182">            comparableSignature = createComparableSignature();</span>
         }
 
-<span class="fc" id="L179">        return comparableSignature;</span>
+<span class="fc" id="L185">        return comparableSignature;</span>
     }
 
     protected abstract String createComparableSignature();
