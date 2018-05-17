@@ -8,7 +8,7 @@
 
 	<head>
 		<meta charset="UTF-8" />
-		<title>Revapi - Released Revapi Maven Plugin 0.9.5</title>
+		<title>Revapi - Speedup and fixes</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="description" content="" />
 		<meta http-equiv="content-language" content="en" />
@@ -45,7 +45,7 @@
 <link rel="alternate" href="https://revapi.org/news.atom" type="application/rss+xml" title="Revapi News"/>
 	</head>
 
-	<body class="page-news-20171031-revapi-maven-plugin-release project-revapi-site" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
+	<body class="page-news-20180516-releases project-revapi-site" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
 
 		<header class="navbar navbar-default navbar-fixed-top">
 			<div class="container">
@@ -115,21 +115,60 @@
 			<div class="body-content">
 <div class="sect1"> 
  <div class="page-header">
-  <h2 id="released_revapi_maven_plugin_0_9_5">Released Revapi Maven Plugin 0.9.5</h2>
+  <h2 id="speedup_and_fixes">Speedup and fixes</h2>
  </div> 
  <div class="sectionbody"> 
   <div class="paragraph"> 
-   <p>In quick succession to the <a href="20171031-revapi-java-release.html">new release</a> of <code>revapi-java</code> I also released a new bugfix version of <code>revapi-maven-plugin</code>. The new version <code>0.9.5</code> fixes the problem with the resolution of dependencies when <code>LATEST</code> is used as the (old or new) version of the artifact to check.</p> 
+   <p>After the great feedback from the community, new versions of the various Revapi components were released.</p> 
   </div> 
   <div class="paragraph"> 
-   <p>As with the last release of <code>revapi-java</code>, thanks go out to Martin Monperrus who discovered and helped analyze the issue.</p> 
+   <p>The Java analyzer, <code>revapi-java</code>, has seen a couple of improvements in version 0.17.0:</p> 
+  </div> 
+  <div class="ulist"> 
+   <ul> 
+    <li> <p>The classes are now correctly located by their binary name in (hopefully) all cornercases (<a href="https://github.com/revapi/revapi/issues/112">#112</a>).</p> </li> 
+    <li> <p>The analysis is up now to 30% faster thanks to various optimizations.</p> </li> 
+    <li> <p>The <code>jdk.internal.HotSpotIntrinsicCandidate</code> annotation is no longer reported.</p> </li> 
+    <li> <p><code>classQualifiedName</code> is now included in the attachments of the reported differences making it possible to ignore problems on inner classes for which the combinations of previously existing <code>package</code> and <code>simpleName</code> would not work (<a href="https://github.com/revapi/revapi/issues/127">#127</a>).</p> </li> 
+    <li> <p>The configuration of the individual java checks is now correctly read from the <code>checks</code> sub map instead of from the root of the <code>revapi-java</code> configuration (<a href="https://github.com/revapi/revapi/issues/130">#130</a>).</p> </li> 
+    <li> <p>The analyzer now reports changes to the serialization even if the classes don’t contain the <code>serialVersionUID</code> field using a new <code>java.class.defaultSerializationChanged</code> difference code.</p> </li> 
+   </ul> 
+  </div> 
+  <div class="paragraph"> 
+   <p>Revapi maven plugin introduced the following in 0.10.2:</p> 
+  </div> 
+  <div class="ulist"> 
+   <ul> 
+    <li> <p>The provided dependencies are no longer resolved transitively by default. This reduces the sometimes surprising and on other occasions incorrect findings. Namely if two dependencies require the same artifact in a different version as provided, revapi no longer reports gets confused when the archives are resolved in a certain order. The original behavior can be restored by setting the new <code>resolveTransitiveProvidedDependencies</code> property to true.</p> </li> 
+    <li> <p>The extensions can now use a <code>maven-log</code> and <code>writer</code> context objects to be able to access the maven log or the output writer of the maven reporter. This can be used by the extensions to contribute to the maven build output.</p> </li> 
+   </ul> 
+  </div> 
+  <div class="paragraph"> 
+   <p>Revapi standalone introduced the following in 0.8.0:</p> 
+  </div> 
+  <div class="ulist"> 
+   <ul> 
+    <li> <p>It is now possible to specify a list of remote repositories to use for artifact resolution instead of the default maven central (<a href="https://github.com/revapi/revapi/issues/125">#125</a>).</p> </li> 
+    <li> <p>In line with the revapi maven plugin, the standalone also changed the way provided dependencies are resolved.</p> </li> 
+   </ul> 
+  </div> 
+  <div class="paragraph"> 
+   <p>The basic feature introduced the following in 0.8.0:</p> 
+  </div> 
+  <div class="ulist"> 
+   <ul> 
+    <li> <p>Previously the semver extension would fail the build if there were multiple archives specified as the main ones for either old or new version even if the semver extension was disabled. This is no longer the case and the build will break only when the semver extension is enabled (because it cannot work in such situation).</p> </li> 
+   </ul> 
+  </div> 
+  <div class="paragraph"> 
+   <p>Special thanks go out to Steve Gutz who contributed the remote repo support to the standalone CLI and the <code>classQualifiedName</code> to the java reports, Rostislav Svoboda for spending the time on analyzing revapi behavior on huge archives (namely the whole Wildfly server distribution) and David Pereira for pointing out the need for checking the serialization changes for classes with default serialization.</p> 
   </div> 
   <div id="disqus_thread"></div> 
   <script>
 
 var disqus_config = function () {
-this.page.url = "https://revapi.org/news/20171031-revapi-maven-plugin-release.html";
-this.page.identifier = "20171031-revapi-maven-plugin-release";
+this.page.url = "https://revapi.org/news/20180516-releases.html";
+this.page.identifier = "20180516-releases";
 };
 (function() { // DON&#8217;T EDIT BELOW THIS LINE
 var d = document, s = d.createElement('script');
@@ -151,7 +190,7 @@ s.setAttribute('data-timestamp', +new Date());
 				<div class="well">
 					<ul class="nav nav-list">
 						<li class="nav-header">Table of Contents</li>
-		<li><a href="#released_revapi_maven_plugin_0_9_5" title="Released Revapi Maven Plugin 0.9.5">Released Revapi Maven Plugin 0.9.5</a>
+		<li><a href="#speedup_and_fixes" title="Speedup and fixes">Speedup and fixes</a>
 					</ul>
 				</div>
 			</div>
