@@ -147,11 +147,11 @@ public final class Analyzer {
 
 <span class="nc" id="L148">        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repositorySystemSession);</span>
 <span class="nc bnc" id="L149" title="All 2 branches missed.">        String[] topLevelScopes = resolveProvidedDependencies</span>
-<span class="nc" id="L150">                ? new String[] {&quot;compile&quot;, &quot;provided&quot;}</span>
-<span class="nc" id="L151">                : new String[] {&quot;compile&quot;};</span>
+                ? new String[] {&quot;compile&quot;, &quot;provided&quot;}
+                : new String[] {&quot;compile&quot;};
 <span class="nc bnc" id="L152" title="All 2 branches missed.">        String[] transitiveScopes = resolveTransitiveProvidedDependencies</span>
-<span class="nc" id="L153">                ? new String[]{&quot;compile&quot;, &quot;provided&quot;}</span>
-<span class="nc" id="L154">                : new String[]{&quot;compile&quot;};</span>
+                ? new String[]{&quot;compile&quot;, &quot;provided&quot;}
+                : new String[]{&quot;compile&quot;};
 
 <span class="nc" id="L156">        session.setDependencySelector(new ScopeDependencySelector(topLevelScopes, transitiveScopes));</span>
 <span class="nc" id="L157">        session.setDependencyTraverser(new ScopeDependencyTraverser(topLevelScopes, transitiveScopes));</span>
@@ -232,7 +232,7 @@ public final class Analyzer {
 
 <span class="nc bnc" id="L233" title="All 4 branches missed.">            String upTo = project.getGroupId().equals(a.getGroupId()) &amp;&amp; project.getArtifactId().equals(a.getArtifactId())</span>
 <span class="nc" id="L234">                    ? project.getVersion()</span>
-<span class="nc" id="L235">                    : null;</span>
+                    : null;
 
 <span class="nc" id="L237">            return resolver.resolveNewestMatching(gav, upTo, versionRegex, latest, latest);</span>
         } else {
@@ -406,8 +406,8 @@ public final class Analyzer {
 <span class="nc" id="L406">                (Spliterator&lt;MavenArchive&gt;) resolvedNewApi.getArchives().spliterator(), false)</span>
 <span class="nc" id="L407">                .map(MavenArchive::getName).collect(toList());</span>
 
-<span class="nc" id="L409">        log.info(&quot;Comparing &quot; + oldArchives + &quot; against &quot; + newArchives +</span>
-<span class="nc bnc" id="L410" title="All 2 branches missed.">                (resolveDependencies ? &quot; (including their transitive dependencies).&quot; : &quot;.&quot;));</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">        log.info(&quot;Comparing &quot; + oldArchives + &quot; against &quot; + newArchives +</span>
+                (resolveDependencies ? &quot; (including their transitive dependencies).&quot; : &quot;.&quot;));
 
         try {
 <span class="nc" id="L413">            buildRevapi();</span>
@@ -461,8 +461,8 @@ public final class Analyzer {
                                     &quot; not both.&quot;);
                 }
 
-<span class="nc" id="L464">                String readErrorMessage = &quot;Error while processing the configuration file on &quot;</span>
-<span class="nc bnc" id="L465" title="All 2 branches missed.">                        + (path == null ? &quot;classpath &quot; + resource : &quot;path &quot; + path);</span>
+<span class="nc bnc" id="L464" title="All 2 branches missed.">                String readErrorMessage = &quot;Error while processing the configuration file on &quot;</span>
+                        + (path == null ? &quot;classpath &quot; + resource : &quot;path &quot; + path);
 
                 Supplier&lt;Iterator&lt;InputStream&gt;&gt; configFileContents;
 
@@ -519,7 +519,7 @@ public final class Analyzer {
                     ModelNode config;
 <span class="nc" id="L520">                    try (InputStream in = it.next()) {</span>
 <span class="nc" id="L521">                        config = readJson(in);</span>
-<span class="nc bnc" id="L522" title="All 4 branches missed.">                    } catch (MarkerException | IOException e) {</span>
+<span class="nc bnc" id="L522" title="All 8 branches missed.">                    } catch (MarkerException | IOException e) {</span>
 <span class="nc" id="L523">                        throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
 <span class="nc" id="L524">                    }</span>
 
@@ -541,7 +541,7 @@ public final class Analyzer {
 <span class="nc bnc" id="L541" title="All 2 branches missed.">                            if (nonJsonIndexes.contains(idx)) {</span>
 <span class="nc" id="L542">                                mergeXmlConfigFile(ctxBld, configFile, rdr);</span>
                             }
-<span class="nc" id="L544">                        } catch (MarkerException | IOException | XmlPullParserException e) {</span>
+<span class="nc bnc" id="L544" title="All 8 branches missed.">                        } catch (MarkerException | IOException | XmlPullParserException e) {</span>
 <span class="nc" id="L545">                            throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
 <span class="nc" id="L546">                        }</span>
 

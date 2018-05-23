@@ -223,9 +223,9 @@ class AnalyzerBuilder {
         }
 
 
-<span class="pc bpc" id="L226" title="1 of 2 branches missed.">        final List&lt;String&gt; disallowedExtensions = this.disallowedExtensions == null</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        final List&lt;String&gt; disallowedExtensions = this.disallowedExtensions == null</span>
 <span class="fc" id="L227">                ? Collections.emptyList()</span>
-<span class="pc" id="L228">                : Arrays.asList(this.disallowedExtensions.split(&quot;\\s*,\\s*&quot;));</span>
+<span class="fc" id="L228">                : Arrays.asList(this.disallowedExtensions.split(&quot;\\s*,\\s*&quot;));</span>
 
 <span class="fc" id="L230">        Supplier&lt;Revapi.Builder&gt; ctor = getDisallowedExtensionsAwareRevapiConstructor(disallowedExtensions);</span>
 
@@ -326,7 +326,7 @@ class AnalyzerBuilder {
     private static &lt;T&gt; void addAllAllowed(List&lt;Class&lt;? extends T&gt;&gt; list, Iterable&lt;Class&lt;? extends T&gt;&gt; candidates,
                                           List&lt;String&gt; disallowedClassNames) {
 <span class="fc bfc" id="L328" title="All 2 branches covered.">        for (Class&lt;? extends T&gt; c : candidates) {</span>
-<span class="pc bpc" id="L329" title="2 of 4 branches missed.">            if (c != null &amp;&amp; !disallowedClassNames.contains(c.getName())) {</span>
+<span class="pc bpc" id="L329" title="1 of 4 branches missed.">            if (c != null &amp;&amp; !disallowedClassNames.contains(c.getName())) {</span>
 <span class="fc" id="L330">                list.add(c);</span>
             }
 <span class="fc" id="L332">        }</span>

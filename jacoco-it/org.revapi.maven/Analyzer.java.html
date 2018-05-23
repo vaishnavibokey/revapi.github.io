@@ -147,11 +147,11 @@ public final class Analyzer {
 
 <span class="fc" id="L148">        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repositorySystemSession);</span>
 <span class="pc bpc" id="L149" title="1 of 2 branches missed.">        String[] topLevelScopes = resolveProvidedDependencies</span>
-<span class="fc" id="L150">                ? new String[] {&quot;compile&quot;, &quot;provided&quot;}</span>
-<span class="pc" id="L151">                : new String[] {&quot;compile&quot;};</span>
+                ? new String[] {&quot;compile&quot;, &quot;provided&quot;}
+                : new String[] {&quot;compile&quot;};
 <span class="pc bpc" id="L152" title="1 of 2 branches missed.">        String[] transitiveScopes = resolveTransitiveProvidedDependencies</span>
-<span class="nc" id="L153">                ? new String[]{&quot;compile&quot;, &quot;provided&quot;}</span>
-<span class="fc" id="L154">                : new String[]{&quot;compile&quot;};</span>
+                ? new String[]{&quot;compile&quot;, &quot;provided&quot;}
+                : new String[]{&quot;compile&quot;};
 
 <span class="fc" id="L156">        session.setDependencySelector(new ScopeDependencySelector(topLevelScopes, transitiveScopes));</span>
 <span class="fc" id="L157">        session.setDependencyTraverser(new ScopeDependencyTraverser(topLevelScopes, transitiveScopes));</span>
@@ -198,7 +198,7 @@ public final class Analyzer {
 
 <span class="fc" id="L199">        ctxBuilder.withData(contextData);</span>
 
-<span class="nc" id="L201">        return revapi.validateConfiguration(ctxBuilder.build());</span>
+<span class="fc" id="L201">        return revapi.validateConfiguration(ctxBuilder.build());</span>
     }
 
     /**
@@ -231,8 +231,8 @@ public final class Analyzer {
             }
 
 <span class="pc bpc" id="L233" title="2 of 4 branches missed.">            String upTo = project.getGroupId().equals(a.getGroupId()) &amp;&amp; project.getArtifactId().equals(a.getArtifactId())</span>
-<span class="fc" id="L234">                    ? project.getVersion()</span>
-<span class="pc" id="L235">                    : null;</span>
+<span class="pc" id="L234">                    ? project.getVersion()</span>
+                    : null;
 
 <span class="fc" id="L237">            return resolver.resolveNewestMatching(gav, upTo, versionRegex, latest, latest);</span>
         } else {
@@ -406,8 +406,8 @@ public final class Analyzer {
 <span class="fc" id="L406">                (Spliterator&lt;MavenArchive&gt;) resolvedNewApi.getArchives().spliterator(), false)</span>
 <span class="fc" id="L407">                .map(MavenArchive::getName).collect(toList());</span>
 
-<span class="fc" id="L409">        log.info(&quot;Comparing &quot; + oldArchives + &quot; against &quot; + newArchives +</span>
-<span class="fc bfc" id="L410" title="All 2 branches covered.">                (resolveDependencies ? &quot; (including their transitive dependencies).&quot; : &quot;.&quot;));</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        log.info(&quot;Comparing &quot; + oldArchives + &quot; against &quot; + newArchives +</span>
+                (resolveDependencies ? &quot; (including their transitive dependencies).&quot; : &quot;.&quot;));
 
         try {
 <span class="fc" id="L413">            buildRevapi();</span>
@@ -461,8 +461,8 @@ public final class Analyzer {
                                     &quot; not both.&quot;);
                 }
 
-<span class="fc" id="L464">                String readErrorMessage = &quot;Error while processing the configuration file on &quot;</span>
-<span class="fc bfc" id="L465" title="All 2 branches covered.">                        + (path == null ? &quot;classpath &quot; + resource : &quot;path &quot; + path);</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">                String readErrorMessage = &quot;Error while processing the configuration file on &quot;</span>
+                        + (path == null ? &quot;classpath &quot; + resource : &quot;path &quot; + path);
 
                 Supplier&lt;Iterator&lt;InputStream&gt;&gt; configFileContents;
 
@@ -519,7 +519,7 @@ public final class Analyzer {
                     ModelNode config;
 <span class="pc" id="L520">                    try (InputStream in = it.next()) {</span>
 <span class="fc" id="L521">                        config = readJson(in);</span>
-<span class="pc bpc" id="L522" title="3 of 4 branches missed.">                    } catch (MarkerException | IOException e) {</span>
+<span class="pc bpc" id="L522" title="6 of 8 branches missed.">                    } catch (MarkerException | IOException e) {</span>
 <span class="nc" id="L523">                        throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
 <span class="fc" id="L524">                    }</span>
 
@@ -541,7 +541,7 @@ public final class Analyzer {
 <span class="pc bpc" id="L541" title="1 of 2 branches missed.">                            if (nonJsonIndexes.contains(idx)) {</span>
 <span class="fc" id="L542">                                mergeXmlConfigFile(ctxBld, configFile, rdr);</span>
                             }
-<span class="pc" id="L544">                        } catch (MarkerException | IOException | XmlPullParserException e) {</span>
+<span class="pc bpc" id="L544" title="6 of 8 branches missed.">                        } catch (MarkerException | IOException | XmlPullParserException e) {</span>
 <span class="nc" id="L545">                            throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
 <span class="fc" id="L546">                        }</span>
 

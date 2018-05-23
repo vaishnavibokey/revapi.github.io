@@ -218,11 +218,11 @@ import org.revapi.maven.utils.ScopeDependencyTraverser;
 <span class="nc bnc" id="L218" title="All 2 branches missed.">        Pattern versionRegex = versionRegexString == null ? null : Pattern.compile(versionRegexString);</span>
 
 <span class="nc bnc" id="L220" title="All 2 branches missed.">        String[] topLevelScopes = resolveProvidedDependencies</span>
-<span class="nc" id="L221">                ? new String[] {&quot;compile&quot;, &quot;provided&quot;}</span>
-<span class="nc" id="L222">                : new String[] {&quot;compile&quot;};</span>
+                ? new String[] {&quot;compile&quot;, &quot;provided&quot;}
+                : new String[] {&quot;compile&quot;};
 <span class="nc bnc" id="L223" title="All 2 branches missed.">        String[] transitiveScopes = resolveTransitiveProvidedDependencies</span>
-<span class="nc" id="L224">            ? new String[]{&quot;compile&quot;, &quot;provided&quot;}</span>
-<span class="nc" id="L225">            : new String[]{&quot;compile&quot;};</span>
+            ? new String[]{&quot;compile&quot;, &quot;provided&quot;}
+            : new String[]{&quot;compile&quot;};
 
 <span class="nc" id="L227">        DefaultRepositorySystemSession session = new DefaultRepositorySystemSession(repositorySystemSession);</span>
 <span class="nc" id="L228">        session.setDependencySelector(new ScopeDependencySelector(topLevelScopes, transitiveScopes));</span>

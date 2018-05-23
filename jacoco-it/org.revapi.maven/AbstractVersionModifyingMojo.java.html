@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractVersionModifyingMojo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">AbstractVersionModifyingMojo.java</span></div><h1>AbstractVersionModifyingMojo.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -32,15 +32,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.revapi.AnalysisResult;
-
 import com.ximpleware.AutoPilot;
 import com.ximpleware.ModifyException;
 import com.ximpleware.NavException;
@@ -50,12 +41,20 @@ import com.ximpleware.VTDNav;
 import com.ximpleware.XMLModifier;
 import com.ximpleware.XPathEvalException;
 import com.ximpleware.XPathParseException;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.revapi.AnalysisResult;
 
 /**
  * @author Lukas Krejci
  * @since 0.4.0
  */
-<span class="fc" id="L58">class AbstractVersionModifyingMojo extends AbstractRevapiMojo {</span>
+<span class="fc" id="L57">class AbstractVersionModifyingMojo extends AbstractRevapiMojo {</span>
 
     @Component
     protected MavenSession mavenSession;
@@ -87,26 +86,27 @@ import com.ximpleware.XPathParseException;
     private String replacementSuffix;
 
     public boolean isPreserveSuffix() {
-<span class="nc" id="L90">        return preserveSuffix;</span>
+<span class="nc" id="L89">        return preserveSuffix;</span>
     }
 
     void setPreserveSuffix(boolean preserveSuffix) {
-<span class="fc" id="L94">        this.preserveSuffix = preserveSuffix;</span>
-<span class="fc" id="L95">    }</span>
+<span class="fc" id="L93">        this.preserveSuffix = preserveSuffix;</span>
+<span class="fc" id="L94">    }</span>
 
     public String getReplacementSuffix() {
-<span class="nc" id="L98">        return replacementSuffix;</span>
+<span class="nc" id="L97">        return replacementSuffix;</span>
     }
 
     void setReplacementSuffix(String replacementSuffix) {
-<span class="fc" id="L102">        this.replacementSuffix = replacementSuffix;</span>
-<span class="fc" id="L103">    }</span>
+<span class="fc" id="L101">        this.replacementSuffix = replacementSuffix;</span>
+<span class="fc" id="L102">    }</span>
 
     public boolean isSingleVersionForAllModules() {
-<span class="nc" id="L106">        return singleVersionForAllModules;</span>
+<span class="nc" id="L105">        return singleVersionForAllModules;</span>
     }
 
-    @Override public void execute() throws MojoExecutionException, MojoFailureException {
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
 <span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (skip) {</span>
 <span class="nc" id="L111">            return;</span>
         }
@@ -131,7 +131,7 @@ import com.ximpleware.XPathParseException;
 
 <span class="pc" id="L132">            try (PrintWriter out = new PrintWriter(new FileOutputStream(changesFile, true))) {</span>
 <span class="fc" id="L133">                out.println(project.getArtifact().toString() + &quot;=&quot; + changeLevel + &quot;,&quot; + analysisResults.baseVersion);</span>
-<span class="pc" id="L134">            } catch (IOException e) {</span>
+<span class="pc bpc" id="L134" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
 <span class="nc" id="L135">                throw new MojoExecutionException(&quot;Failure while updating the changes tracking file.&quot;, e);</span>
 <span class="fc" id="L136">            }</span>
 <span class="fc" id="L137">        } else {</span>
@@ -208,7 +208,7 @@ import com.ximpleware.XPathParseException;
                         }
 <span class="fc" id="L209">                    }</span>
 <span class="fc" id="L210">                }</span>
-<span class="pc" id="L211">            } catch (IOException e) {</span>
+<span class="pc bpc" id="L211" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
 <span class="nc" id="L212">                throw new MojoExecutionException(&quot;Failure while reading the changes tracking file.&quot;, e);</span>
 <span class="fc" id="L213">            }</span>
         }
@@ -234,7 +234,7 @@ import com.ximpleware.XPathParseException;
             int indentationSize;
 <span class="pc" id="L235">            try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
 <span class="fc" id="L236">                indentationSize = XmlUtil.estimateIndentationSize(rdr);</span>
-<span class="pc" id="L237">            }</span>
+<span class="pc bpc" id="L237" title="6 of 8 branches missed.">            }</span>
 
 <span class="fc" id="L239">            VTDGen gen = new VTDGen();</span>
 <span class="fc" id="L240">            gen.enableIgnoredWhiteSpace(true);</span>
@@ -268,7 +268,7 @@ import com.ximpleware.XPathParseException;
 
 <span class="pc" id="L269">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="fc" id="L270">                mod.output(out);</span>
-<span class="pc" id="L271">            }</span>
+<span class="pc bpc" id="L271" title="6 of 8 branches missed.">            }</span>
 <span class="nc" id="L272">        } catch (IOException | ModifyException | NavException | XPathParseException | XPathEvalException | TranscodeException e) {</span>
 <span class="nc" id="L273">            throw new MojoExecutionException(&quot;Failed to update the version of project &quot; + project, e);</span>
 <span class="fc" id="L274">        }</span>
@@ -294,7 +294,7 @@ import com.ximpleware.XPathParseException;
 
 <span class="pc" id="L295">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="fc" id="L296">                mod.output(out);</span>
-<span class="pc" id="L297">            }</span>
+<span class="pc bpc" id="L297" title="6 of 8 branches missed.">            }</span>
 <span class="nc" id="L298">        } catch (IOException | ModifyException | NavException | XPathParseException | TranscodeException e) {</span>
 <span class="nc" id="L299">            throw new MojoExecutionException(&quot;Failed to update the parent version of project &quot; + project, e);</span>
 <span class="fc" id="L300">        }</span>
@@ -344,30 +344,31 @@ import com.ximpleware.XPathParseException;
     }
 
     private AnalysisResults analyzeProject(MavenProject project) throws MojoExecutionException {
-<span class="fc" id="L347">        Analyzer analyzer = prepareAnalyzer(project, ApiBreakageHintingReporter.class, Collections.emptyMap());</span>
+<span class="fc" id="L347">        Analyzer analyzer = prepareAnalyzer(project, ApiBreakageHintingReporter.class, Collections.emptyMap(),</span>
+<span class="fc" id="L348">                getPropertyOverrideMap());</span>
 
         try {
-<span class="fc" id="L350">            analyzer.resolveArtifacts();</span>
+<span class="fc" id="L351">            analyzer.resolveArtifacts();</span>
 
-<span class="pc bpc" id="L352" title="1 of 2 branches missed.">            if (analyzer.getResolvedOldApi() == null) {</span>
-<span class="nc" id="L353">                return null;</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">            if (analyzer.getResolvedOldApi() == null) {</span>
+<span class="nc" id="L354">                return null;</span>
             } else {
-<span class="pc" id="L355">                try (AnalysisResult res = analyzer.analyze()) {</span>
-<span class="fc" id="L356">                    res.throwIfFailed();</span>
+<span class="pc" id="L356">                try (AnalysisResult res = analyzer.analyze()) {</span>
+<span class="fc" id="L357">                    res.throwIfFailed();</span>
 
-<span class="fc" id="L358">                    ApiBreakageHintingReporter reporter =</span>
-<span class="fc" id="L359">                            res.getExtensions().getFirstExtension(ApiBreakageHintingReporter.class, null);</span>
+<span class="fc" id="L359">                    ApiBreakageHintingReporter reporter =</span>
+<span class="fc" id="L360">                            res.getExtensions().getFirstExtension(ApiBreakageHintingReporter.class, null);</span>
 
-<span class="fc" id="L361">                    ApiChangeLevel level = reporter.getChangeLevel();</span>
-<span class="fc" id="L362">                    String baseVersion = ((MavenArchive) analyzer.getResolvedOldApi().getArchives().iterator().next())</span>
-<span class="fc" id="L363">                            .getVersion();</span>
+<span class="fc" id="L362">                    ApiChangeLevel level = reporter.getChangeLevel();</span>
+<span class="fc" id="L363">                    String baseVersion = ((MavenArchive) analyzer.getResolvedOldApi().getArchives().iterator().next())</span>
+<span class="fc" id="L364">                            .getVersion();</span>
 
-<span class="fc" id="L365">                    return new AnalysisResults(level, baseVersion);</span>
-<span class="pc bpc" id="L366" title="3 of 4 branches missed.">                }</span>
+<span class="fc" id="L366">                    return new AnalysisResults(level, baseVersion);</span>
+<span class="pc bpc" id="L367" title="6 of 8 branches missed.">                }</span>
 
             }
-<span class="nc" id="L369">        } catch (Exception e) {</span>
-<span class="nc" id="L370">            throw new MojoExecutionException(&quot;Analysis failure&quot;, e);</span>
+<span class="nc" id="L370">        } catch (Exception e) {</span>
+<span class="nc" id="L371">            throw new MojoExecutionException(&quot;Analysis failure&quot;, e);</span>
         }
     }
 
@@ -375,10 +376,16 @@ import com.ximpleware.XPathParseException;
         ApiChangeLevel apiChangeLevel;
         final String baseVersion;
 
-<span class="fc" id="L378">        AnalysisResults(ApiChangeLevel apiChangeLevel, String baseVersion) {</span>
-<span class="fc" id="L379">            this.apiChangeLevel = apiChangeLevel;</span>
-<span class="fc" id="L380">            this.baseVersion = baseVersion;</span>
-<span class="fc" id="L381">        }</span>
+<span class="fc" id="L379">        AnalysisResults(ApiChangeLevel apiChangeLevel, String baseVersion) {</span>
+<span class="fc" id="L380">            this.apiChangeLevel = apiChangeLevel;</span>
+<span class="fc" id="L381">            this.baseVersion = baseVersion;</span>
+<span class="fc" id="L382">        }</span>
+    }
+
+    private Map&lt;String, Object&gt; getPropertyOverrideMap() {
+<span class="fc" id="L386">        Map&lt;String, Object&gt; ret = new HashMap&lt;&gt;(1);</span>
+<span class="fc" id="L387">        ret.put(&quot;disallowedExtensions&quot;, disallowedExtensions);</span>
+<span class="fc" id="L388">        return ret;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

@@ -43,11 +43,11 @@ import org.revapi.simple.SimpleReporter;
 <span class="nc" id="L43">                ValidationResult res = analyzer.validateConfiguration();</span>
 <span class="nc bnc" id="L44" title="All 2 branches missed.">                if (!res.isSuccessful()) {</span>
 <span class="nc bnc" id="L45" title="All 2 branches missed.">                    String errors = res.getErrors() == null</span>
-<span class="nc" id="L46">                            ? &quot;&quot;</span>
+                            ? &quot;&quot;
 <span class="nc" id="L47">                            : Stream.of(res.getErrors()).map(e -&gt; e.message + &quot; @ &quot; + e.dataPath)</span>
 <span class="nc" id="L48">                            .collect(Collectors.joining(&quot;, &quot;, &quot;Errors: &quot;, &quot;&quot;));</span>
 <span class="nc bnc" id="L49" title="All 2 branches missed.">                    String missingSchemas = res.getMissingSchemas() == null</span>
-<span class="nc" id="L50">                            ? &quot;&quot;</span>
+                            ? &quot;&quot;
 <span class="nc" id="L51">                            : Stream.of(res.getMissingSchemas())</span>
 <span class="nc" id="L52">                            .collect(Collectors.joining(&quot;, &quot;, &quot;Missing schemas: &quot;, &quot;&quot;));</span>
 <span class="nc" id="L53">                    throw new MojoExecutionException(</span>
