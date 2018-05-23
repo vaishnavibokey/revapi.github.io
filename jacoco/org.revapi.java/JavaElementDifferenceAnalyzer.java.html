@@ -95,29 +95,29 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
     static {
 <span class="fc" id="L96">        String javaVersion = System.getProperty(&quot;java.version&quot;);</span>
 <span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (javaVersion.startsWith(&quot;1.&quot;)) {</span>
-<span class="nc" id="L98">            Method clearCompilerCache = null;</span>
-<span class="nc" id="L99">            Object sharedInstance = null;</span>
+<span class="fc" id="L98">            Method clearCompilerCache = null;</span>
+<span class="fc" id="L99">            Object sharedInstance = null;</span>
             try {
-<span class="nc" id="L101">                Class&lt;?&gt; zipFileIndexCacheClass = ToolProvider.getSystemToolClassLoader()</span>
-<span class="nc" id="L102">                        .loadClass(&quot;com.sun.tools.javac.file.ZipFileIndexCache&quot;);</span>
+<span class="fc" id="L101">                Class&lt;?&gt; zipFileIndexCacheClass = ToolProvider.getSystemToolClassLoader()</span>
+<span class="fc" id="L102">                        .loadClass(&quot;com.sun.tools.javac.file.ZipFileIndexCache&quot;);</span>
 
-<span class="nc" id="L104">                clearCompilerCache = zipFileIndexCacheClass.getDeclaredMethod(&quot;clearCache&quot;);</span>
-<span class="nc" id="L105">                Method getSharedInstance = zipFileIndexCacheClass.getDeclaredMethod(&quot;getSharedInstance&quot;);</span>
-<span class="nc" id="L106">                sharedInstance = getSharedInstance.invoke(null);</span>
+<span class="fc" id="L104">                clearCompilerCache = zipFileIndexCacheClass.getDeclaredMethod(&quot;clearCache&quot;);</span>
+<span class="fc" id="L105">                Method getSharedInstance = zipFileIndexCacheClass.getDeclaredMethod(&quot;getSharedInstance&quot;);</span>
+<span class="fc" id="L106">                sharedInstance = getSharedInstance.invoke(null);</span>
 <span class="nc" id="L107">            } catch (Exception e) {</span>
 <span class="nc" id="L108">                LOG.warn(&quot;Failed to initialize the force-clearing of javac file caches. We will probably leak resources.&quot;, e);</span>
-<span class="nc" id="L109">            }</span>
+<span class="fc" id="L109">            }</span>
 
-<span class="nc bnc" id="L111" title="All 4 branches missed.">            if (clearCompilerCache != null &amp;&amp; sharedInstance != null) {</span>
-<span class="nc" id="L112">                CLEAR_COMPILER_CACHE = clearCompilerCache;</span>
-<span class="nc" id="L113">                SHARED_ZIP_FILE_INDEX_CACHE = sharedInstance;</span>
+<span class="pc bpc" id="L111" title="2 of 4 branches missed.">            if (clearCompilerCache != null &amp;&amp; sharedInstance != null) {</span>
+<span class="fc" id="L112">                CLEAR_COMPILER_CACHE = clearCompilerCache;</span>
+<span class="fc" id="L113">                SHARED_ZIP_FILE_INDEX_CACHE = sharedInstance;</span>
             } else {
 <span class="nc" id="L115">                CLEAR_COMPILER_CACHE = null;</span>
 <span class="nc" id="L116">                SHARED_ZIP_FILE_INDEX_CACHE = null;</span>
             }
-<span class="nc" id="L118">        } else {</span>
-<span class="fc" id="L119">            CLEAR_COMPILER_CACHE = null;</span>
-<span class="fc" id="L120">            SHARED_ZIP_FILE_INDEX_CACHE = null;</span>
+<span class="fc" id="L118">        } else {</span>
+<span class="nc" id="L119">            CLEAR_COMPILER_CACHE = null;</span>
+<span class="nc" id="L120">            SHARED_ZIP_FILE_INDEX_CACHE = null;</span>
         }
 <span class="fc" id="L122">    }</span>
 
@@ -209,8 +209,8 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="fc" id="L209">            lastAnnotationResults = null;</span>
 <span class="fc bfc" id="L210" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
 <span class="fc" id="L211">                Stats.of(c.getClass().getName()).start();</span>
-<span class="fc bfc" id="L212" title="All 2 branches covered.">                c.visitClass(oldElement == null ? null : (TypeElement) oldElement,</span>
-<span class="fc bfc" id="L213" title="All 2 branches covered.">                    newElement == null ? null : (TypeElement) newElement);</span>
+<span class="fc bfc" id="L212" title="All 4 branches covered.">                c.visitClass(oldElement == null ? null : (TypeElement) oldElement,</span>
+                    newElement == null ? null : (TypeElement) newElement);
 <span class="fc" id="L214">                Stats.of(c.getClass().getName()).end(oldElement, newElement);</span>
 <span class="fc" id="L215">            }</span>
 <span class="fc bfc" id="L216" title="All 2 branches covered.">        } else if (conforms(oldElement, newElement, AnnotationElement.class)) {</span>
@@ -223,9 +223,9 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
             //Annotations are handled differently and this would lead to the stack corruption and missed problems!!!
 <span class="fc bfc" id="L224" title="All 2 branches covered.">            for (Check c : possibleChecks) {</span>
 <span class="fc" id="L225">                Stats.of(c.getClass().getName()).start();</span>
-<span class="fc" id="L226">                List&lt;Difference&gt; cps = c</span>
-<span class="fc bfc" id="L227" title="All 2 branches covered.">                    .visitAnnotation(oldElement == null ? null : (AnnotationElement) oldElement,</span>
-<span class="fc bfc" id="L228" title="All 2 branches covered.">                        newElement == null ? null : (AnnotationElement) newElement);</span>
+<span class="fc bfc" id="L226" title="All 4 branches covered.">                List&lt;Difference&gt; cps = c</span>
+<span class="fc" id="L227">                    .visitAnnotation(oldElement == null ? null : (AnnotationElement) oldElement,</span>
+                        newElement == null ? null : (AnnotationElement) newElement);
 <span class="fc bfc" id="L229" title="All 2 branches covered.">                if (cps != null) {</span>
 <span class="fc" id="L230">                    lastAnnotationResults.addAll(cps);</span>
                 }
@@ -398,7 +398,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 
     private void append(StringBuilder bld, TypeAndUseSite typeAndUseSite) {
         String message;
-<span class="pc bpc" id="L401" title="7 of 10 branches missed.">        switch (typeAndUseSite.useSite.getUseType()) {</span>
+<span class="pc bpc" id="L401" title="6 of 10 branches missed.">        switch (typeAndUseSite.useSite.getUseType()) {</span>
             case ANNOTATES:
 <span class="nc" id="L403">                message = &quot;revapi.java.uses.annotates&quot;;</span>
 <span class="nc" id="L404">                break;</span>
@@ -412,8 +412,8 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="nc" id="L412">                message = &quot;revapi.java.uses.isInherited&quot;;</span>
 <span class="nc" id="L413">                break;</span>
             case IS_THROWN:
-<span class="nc" id="L415">                message = &quot;revapi.java.uses.isThrown&quot;;</span>
-<span class="nc" id="L416">                break;</span>
+<span class="fc" id="L415">                message = &quot;revapi.java.uses.isThrown&quot;;</span>
+<span class="fc" id="L416">                break;</span>
             case PARAMETER_TYPE:
 <span class="fc" id="L418">                message = &quot;revapi.java.uses.parameterType&quot;;</span>
 <span class="fc" id="L419">                break;</span>
@@ -583,7 +583,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="fc bfc" id="L583" title="All 2 branches covered.">            if (ret == null) {</span>
 <span class="fc" id="L584">                Set&lt;javax.lang.model.element.TypeElement&gt; derivedUseTypes = env.getDerivedTypes(useType);</span>
 
-<span class="pc bpc" id="L586" title="1 of 2 branches missed.">                for (javax.lang.model.element.TypeElement dut : derivedUseTypes) {</span>
+<span class="fc bfc" id="L586" title="All 2 branches covered.">                for (javax.lang.model.element.TypeElement dut : derivedUseTypes) {</span>
 <span class="fc" id="L587">                    TypeElement model = env.getTypeMap().get(dut);</span>
 <span class="pc bpc" id="L588" title="1 of 2 branches missed.">                    if (model == null) {</span>
 <span class="nc" id="L589">                        continue;</span>
@@ -605,7 +605,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 
             }
 
-<span class="pc bpc" id="L608" title="1 of 2 branches missed.">            return ret == null ? false : ret;</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">            return ret == null ? false : ret;</span>
         }
     }
 
@@ -668,13 +668,13 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
     //Javac's standard file manager is leaking resources across compilation tasks because it doesn't clear a shared
     //&quot;zip file index&quot; cache, when it is close()'d. We try to clear it by force.
     private static void forceClearCompilerCache() {
-<span class="pc bpc" id="L671" title="3 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
+<span class="pc bpc" id="L671" title="2 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
             try {
-<span class="nc" id="L673">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
+<span class="fc" id="L673">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
 <span class="nc" id="L674">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
 <span class="nc" id="L675">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
                                 &quot;This will probably leak memory&quot;, e);
-<span class="nc" id="L677">            }</span>
+<span class="fc" id="L677">            }</span>
         }
 <span class="fc" id="L679">    }</span>
 
