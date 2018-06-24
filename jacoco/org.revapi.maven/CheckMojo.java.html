@@ -20,10 +20,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.revapi.AnalysisResult;
 
 import java.io.StringWriter;
+import java.util.stream.Stream;
 
 /**
  * Runs the API check of old and new artifacts using the specified configuration of extensions declared as dependencies
@@ -34,45 +36,71 @@ import java.io.StringWriter;
  */
 @Mojo(name = &quot;check&quot;, defaultPhase = LifecyclePhase.VERIFY, threadSafe = true,
         requiresDependencyCollection = ResolutionScope.COMPILE_PLUS_RUNTIME)
-<span class="nc" id="L37">public class CheckMojo extends AbstractRevapiMojo {</span>
+<span class="nc" id="L39">public class CheckMojo extends AbstractRevapiMojo {</span>
+
+    /**
+     * Whether or not to output the JSON-formatted suggestions for ignoring the found API problems.
+     *
+     * @since 0.10.4
+     */
+    @Parameter(property = Props.outputIgnoreSuggestions.NAME, defaultValue = Props.outputIgnoreSuggestions.DEFAULT_VALUE)
+    private boolean outputIgnoreSuggestions;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (skip) {</span>
-<span class="nc" id="L42">            return;</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L52">            return;</span>
         }
 
-<span class="nc" id="L45">        StringWriter wrt = new StringWriter();</span>
+<span class="nc" id="L55">        StringWriter wrt = new StringWriter();</span>
         BuildTimeReporter reporter;
 
-<span class="nc" id="L48">        try (AnalysisResult res = analyze(BuildTimeReporter.class,</span>
-<span class="nc" id="L49">                BuildTimeReporter.BREAKING_SEVERITY_KEY, failSeverity.asDifferenceSeverity(), &quot;maven-log&quot;, getLog(),</span>
+<span class="nc" id="L58">        String report = null;</span>
+
+<span class="nc" id="L60">        try (AnalysisResult res = analyze(BuildTimeReporter.class,</span>
+<span class="nc" id="L61">                BuildTimeReporter.BREAKING_SEVERITY_KEY, failSeverity.asDifferenceSeverity(), &quot;maven-log&quot;, getLog(),</span>
                 &quot;writer&quot;, wrt)) {
 
-<span class="nc" id="L52">            res.throwIfFailed();</span>
+<span class="nc" id="L64">            res.throwIfFailed();</span>
 
-<span class="nc" id="L54">            reporter = res.getExtensions().getFirstExtension(BuildTimeReporter.class, null);</span>
-<span class="nc bnc" id="L55" title="All 8 branches missed.">        } catch (MojoFailureException e) {</span>
-<span class="nc" id="L56">            throw e;</span>
-<span class="nc" id="L57">        } catch (Exception e) {</span>
-<span class="nc" id="L58">            throw new MojoExecutionException(&quot;Failed to execute the API analysis.&quot;, e);</span>
-<span class="nc" id="L59">        }</span>
+<span class="nc" id="L66">            reporter = res.getExtensions().getFirstExtension(BuildTimeReporter.class, null);</span>
 
-<span class="nc bnc" id="L61" title="All 4 branches missed.">        if (reporter != null &amp;&amp; reporter.hasBreakingProblems()) {</span>
-<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (failBuildOnProblemsFound) {</span>
-<span class="nc" id="L63">                String report = reporter.getAllProblemsMessage();</span>
-<span class="nc" id="L64">                String additionalOutput = wrt.toString();</span>
-<span class="nc bnc" id="L65" title="All 2 branches missed.">                if (!additionalOutput.isEmpty()) {</span>
-<span class="nc" id="L66">                    report += &quot;\n\nAdditionally, the configured reporters reported:\n\n&quot; + additionalOutput;</span>
+<span class="nc bnc" id="L68" title="All 4 branches missed.">            if (reporter != null &amp;&amp; reporter.hasBreakingProblems()) {</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                if (failBuildOnProblemsFound) {</span>
+<span class="nc" id="L70">                    report = reporter.getAllProblemsMessage();</span>
+<span class="nc" id="L71">                    String additionalOutput = wrt.toString();</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                    if (!additionalOutput.isEmpty()) {</span>
+<span class="nc" id="L73">                        report += &quot;\n\nAdditionally, the configured reporters reported:\n\n&quot; + additionalOutput;</span>
+                    }
+
+<span class="nc" id="L76">                    Stream.of(report.split(&quot;\n&quot;)).forEach(l -&gt; getLog().info(l));</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                    if (outputIgnoreSuggestions) {</span>
+<span class="nc" id="L79">                        getLog().info(&quot;&quot;);</span>
+<span class="nc" id="L80">                        getLog().info(&quot;If you're using the semver-ignore extension, update your module's&quot; +</span>
+                                &quot; version to one compatible with the current changes (e.g. mvn package&quot; +
+                                &quot; revapi:update-versions). If you want to explicitly ignore this change and provide a&quot; +
+                                &quot; justification for it, add the following JSON snippet to your Revapi configuration&quot; +
+<span class="nc" id="L84">                                &quot; under \&quot;revapi.ignore\&quot; path:\n\n&quot; + reporter.getIgnoreSuggestion());</span>
+
+<span class="nc" id="L86">                        report += &quot;\nConsult the plugin output above for suggestions on how to ignore the found&quot; +</span>
+                                &quot; problems.&quot;;
+                    }
+<span class="nc" id="L89">                } else {</span>
+<span class="nc" id="L90">                    getLog().info(&quot;API problems found but letting the build pass as configured.&quot;);</span>
                 }
-
-<span class="nc" id="L69">                throw new MojoFailureException(report);</span>
             } else {
-<span class="nc" id="L71">                getLog().info(&quot;API problems found but letting the build pass as configured.&quot;);</span>
+<span class="nc" id="L93">                getLog().info(&quot;API checks completed without failures.&quot;);</span>
             }
-        } else {
-<span class="nc" id="L74">            getLog().info(&quot;API checks completed without failures.&quot;);</span>
+<span class="nc bnc" id="L95" title="All 8 branches missed.">        } catch (MojoFailureException e) {</span>
+<span class="nc" id="L96">            throw e;</span>
+<span class="nc" id="L97">        } catch (Exception e) {</span>
+<span class="nc" id="L98">            throw new MojoExecutionException(&quot;Failed to execute the API analysis.&quot;, e);</span>
+<span class="nc" id="L99">        }</span>
+
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (report != null) {</span>
+<span class="nc" id="L102">            throw new MojoFailureException(report);</span>
         }
-<span class="nc" id="L76">    }</span>
+<span class="nc" id="L104">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
