@@ -261,7 +261,7 @@ public final class XmlToJson&lt;Xml&gt; {
     private ModelNode convertBoolean(Xml configuration) {
 <span class="fc" id="L262">        String v = getValue.apply(configuration);</span>
 <span class="fc bfc" id="L263" title="All 2 branches covered.">        Boolean boolVal = &quot;true&quot;.equalsIgnoreCase(v)</span>
-<span class="fc" id="L264">                ? Boolean.TRUE</span>
+                ? Boolean.TRUE
 <span class="fc bfc" id="L265" title="All 2 branches covered.">                : (&quot;false&quot;.equalsIgnoreCase(v) ? Boolean.FALSE : null);</span>
 <span class="fc bfc" id="L266" title="All 2 branches covered.">        if (boolVal == null) {</span>
 <span class="fc" id="L267">            throw new IllegalArgumentException(&quot;'true' or 'false' expected as a boolean value.&quot;);</span>

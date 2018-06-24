@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalysisResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">AnalysisResult.java</span></div><h1>AnalysisResult.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -24,6 +24,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
@@ -42,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @since 0.8.0
  */
 public final class AnalysisResult implements AutoCloseable {
-<span class="fc" id="L45">    private static final Logger LOG = LoggerFactory.getLogger(AnalysisResult.class);</span>
+<span class="fc" id="L46">    private static final Logger LOG = LoggerFactory.getLogger(AnalysisResult.class);</span>
 
     private final Exception failure;
     private final Extensions extensions;
@@ -54,8 +55,8 @@ public final class AnalysisResult implements AutoCloseable {
      * @return a &quot;fake&quot; successful analysis result
      */
     public static AnalysisResult fakeSuccess() {
-<span class="nc" id="L57">        return new AnalysisResult(null, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
-<span class="nc" id="L58">                Collections.emptyMap(), Collections.emptyMap()));</span>
+<span class="nc" id="L58">        return new AnalysisResult(null, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
+<span class="nc" id="L59">                Collections.emptyMap(), Collections.emptyMap()));</span>
     }
 
     /**
@@ -65,58 +66,67 @@ public final class AnalysisResult implements AutoCloseable {
      * @return a &quot;fake&quot; failed analysis result
      */
     public static AnalysisResult fakeFailure(Exception failure) {
-<span class="nc" id="L68">        return new AnalysisResult(failure, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
-<span class="nc" id="L69">                Collections.emptyMap(), Collections.emptyMap()));</span>
+<span class="nc" id="L69">        return new AnalysisResult(failure, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
+<span class="nc" id="L70">                Collections.emptyMap(), Collections.emptyMap()));</span>
     }
 
-<span class="fc" id="L72">    AnalysisResult(@Nullable Exception failure, Extensions extensions) {</span>
-<span class="fc" id="L73">        this.failure = failure;</span>
-<span class="fc" id="L74">        this.extensions = extensions;</span>
-<span class="fc" id="L75">    }</span>
+<span class="fc" id="L73">    AnalysisResult(@Nullable Exception failure, Extensions extensions) {</span>
+<span class="fc" id="L74">        this.failure = failure;</span>
+<span class="fc" id="L75">        this.extensions = extensions;</span>
+<span class="fc" id="L76">    }</span>
 
     public boolean isSuccess() {
-<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        return failure == null;</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        return failure == null;</span>
     }
 
     /**
      * @return the error thrown during the analysis or null if the analysis completed without failures
      */
     public @Nullable Exception getFailure() {
-<span class="nc" id="L85">        return failure;</span>
+<span class="nc" id="L86">        return failure;</span>
     }
 
     public void throwIfFailed() throws Exception {
-<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (failure != null) {</span>
-<span class="nc" id="L90">            throw failure;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (failure != null) {</span>
+<span class="nc" id="L91">            throw failure;</span>
         }
-<span class="nc" id="L92">    }</span>
+<span class="nc" id="L93">    }</span>
 
     /**
      * @return the extension instances run during the analysis, each with its corresponding analysis context containing
      * the configuration used for the extension
      */
     public Extensions getExtensions() {
-<span class="nc" id="L99">        return extensions;</span>
+<span class="nc" id="L100">        return extensions;</span>
     }
 
     @Override public void close() throws Exception {
-<span class="fc" id="L103">        TIMING_LOG.debug(&quot;Closing all extensions&quot;);</span>
-<span class="fc bfc" id="L104" title="All 2 branches covered.">        for (Map.Entry&lt;?, AnalysisContext&gt; e : extensions) {</span>
-<span class="fc" id="L105">            Object ext = e.getKey();</span>
-<span class="pc bpc" id="L106" title="1 of 2 branches missed.">            if (!(ext instanceof AutoCloseable)) {</span>
-<span class="nc" id="L107">                continue;</span>
+<span class="fc" id="L104">        TIMING_LOG.debug(Stats.asString());</span>
+<span class="fc" id="L105">        TIMING_LOG.debug(&quot;Closing all extensions&quot;);</span>
+
+<span class="fc" id="L107">        Consumer&lt;Object&gt; close = ext -&gt; {</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (!(ext instanceof AutoCloseable)) {</span>
+<span class="nc" id="L109">                return;</span>
             }
 
-<span class="fc" id="L110">            AutoCloseable c = (AutoCloseable) ext;</span>
+<span class="fc" id="L112">            AutoCloseable c = (AutoCloseable) ext;</span>
             try {
-<span class="fc" id="L112">                c.close();</span>
-<span class="nc" id="L113">            } catch (Exception ex) {</span>
-<span class="nc" id="L114">                LOG.warn(&quot;Failed to close &quot; + c, ex);</span>
-<span class="fc" id="L115">            }</span>
-<span class="fc" id="L116">        }</span>
-<span class="fc" id="L117">        TIMING_LOG.debug(&quot;Extensions closed. Analysis complete.&quot;);</span>
-<span class="fc" id="L118">        TIMING_LOG.debug(Stats.asString());</span>
-<span class="fc" id="L119">    }</span>
+<span class="fc" id="L114">                c.close();</span>
+<span class="nc" id="L115">            } catch (Exception ex) {</span>
+<span class="nc" id="L116">                LOG.warn(&quot;Failed to close &quot; + c, ex);</span>
+<span class="fc" id="L117">            }</span>
+<span class="fc" id="L118">        };</span>
+
+        //the order here is quite important - we need for first close the reporters, because they use the outcomes
+        //of the filters/transforms/analyzer and the outcomes might be dependent on some state within those that might
+        //get destroyed when they're closed.
+<span class="fc" id="L123">        extensions.reporters.keySet().forEach(close);</span>
+<span class="fc" id="L124">        extensions.transforms.keySet().forEach(close);</span>
+<span class="fc" id="L125">        extensions.filters.keySet().forEach(close);</span>
+<span class="fc" id="L126">        extensions.analyzers.keySet().forEach(close);</span>
+
+<span class="fc" id="L128">        TIMING_LOG.debug(&quot;Extensions closed. Analysis complete.&quot;);</span>
+<span class="fc" id="L129">    }</span>
 
     public static final class Extensions implements Iterable&lt;Map.Entry&lt;?, AnalysisContext&gt;&gt; {
         private final Map&lt;ApiAnalyzer, AnalysisContext&gt; analyzers;
@@ -126,59 +136,59 @@ public final class AnalysisResult implements AutoCloseable {
 
         Extensions(Map&lt;ApiAnalyzer, AnalysisContext&gt; analyzers, Map&lt;ElementFilter, AnalysisContext&gt; filters,
                           Map&lt;Reporter, AnalysisContext&gt; reporters,
-<span class="fc" id="L129">                          Map&lt;DifferenceTransform&lt;?&gt;, AnalysisContext&gt; transforms) {</span>
-<span class="fc" id="L130">            this.analyzers = Collections.unmodifiableMap(analyzers);</span>
-<span class="fc" id="L131">            this.filters = Collections.unmodifiableMap(filters);</span>
-<span class="fc" id="L132">            this.reporters = Collections.unmodifiableMap(reporters);</span>
-<span class="fc" id="L133">            this.transforms = Collections.unmodifiableMap(transforms);</span>
-<span class="fc" id="L134">        }</span>
+<span class="fc" id="L139">                          Map&lt;DifferenceTransform&lt;?&gt;, AnalysisContext&gt; transforms) {</span>
+<span class="fc" id="L140">            this.analyzers = Collections.unmodifiableMap(analyzers);</span>
+<span class="fc" id="L141">            this.filters = Collections.unmodifiableMap(filters);</span>
+<span class="fc" id="L142">            this.reporters = Collections.unmodifiableMap(reporters);</span>
+<span class="fc" id="L143">            this.transforms = Collections.unmodifiableMap(transforms);</span>
+<span class="fc" id="L144">        }</span>
 
         public Map&lt;ApiAnalyzer, AnalysisContext&gt; getAnalyzers() {
-<span class="fc" id="L137">            return analyzers;</span>
+<span class="fc" id="L147">            return analyzers;</span>
         }
 
         public Map&lt;ElementFilter, AnalysisContext&gt; getFilters() {
-<span class="fc" id="L141">            return filters;</span>
+<span class="fc" id="L151">            return filters;</span>
         }
 
         public Map&lt;Reporter, AnalysisContext&gt; getReporters() {
-<span class="fc" id="L145">            return reporters;</span>
+<span class="fc" id="L155">            return reporters;</span>
         }
 
         public Map&lt;DifferenceTransform&lt;?&gt;, AnalysisContext&gt; getTransforms() {
-<span class="fc" id="L149">            return transforms;</span>
+<span class="fc" id="L159">            return transforms;</span>
         }
 
         public &lt;T&gt; Map&lt;T, AnalysisContext&gt; getExtensionContexts(Class&lt;T&gt; extensionType) {
-<span class="nc" id="L153">            IdentityHashMap&lt;T, AnalysisContext&gt; ret = new IdentityHashMap&lt;&gt;();</span>
-<span class="nc" id="L154">            stream().filter(e -&gt; extensionType.isAssignableFrom(e.getKey().getClass()))</span>
-<span class="nc" id="L155">                    .forEach(e -&gt; ret.put(extensionType.cast(e.getKey()), e.getValue()));</span>
-<span class="nc" id="L156">            return ret;</span>
+<span class="nc" id="L163">            IdentityHashMap&lt;T, AnalysisContext&gt; ret = new IdentityHashMap&lt;&gt;();</span>
+<span class="nc" id="L164">            stream().filter(e -&gt; extensionType.isAssignableFrom(e.getKey().getClass()))</span>
+<span class="nc" id="L165">                    .forEach(e -&gt; ret.put(extensionType.cast(e.getKey()), e.getValue()));</span>
+<span class="nc" id="L166">            return ret;</span>
         }
 
         public &lt;T&gt; Set&lt;T&gt; getExtensionInstances(Class&lt;T&gt; extensionType) {
-<span class="nc" id="L160">            return getExtensionContexts(extensionType).keySet();</span>
+<span class="nc" id="L170">            return getExtensionContexts(extensionType).keySet();</span>
         }
 
         public &lt;T&gt; T getFirstExtension(Class&lt;T&gt; extensionType, T defaultValue) {
-<span class="nc" id="L164">            Set&lt;T&gt; instances = getExtensionInstances(extensionType);</span>
-<span class="nc bnc" id="L165" title="All 2 branches missed.">            return instances.isEmpty() ? defaultValue : instances.iterator().next();</span>
+<span class="nc" id="L174">            Set&lt;T&gt; instances = getExtensionInstances(extensionType);</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">            return instances.isEmpty() ? defaultValue : instances.iterator().next();</span>
         }
 
         public AnalysisContext getFirstConfigurationOrNull(Class&lt;?&gt; extensionType) {
-<span class="nc" id="L169">            Collection&lt;AnalysisContext&gt; ctxs = getExtensionContexts(extensionType).values();</span>
-<span class="nc bnc" id="L170" title="All 2 branches missed.">            return ctxs.isEmpty() ? null : ctxs.iterator().next();</span>
+<span class="nc" id="L179">            Collection&lt;AnalysisContext&gt; ctxs = getExtensionContexts(extensionType).values();</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            return ctxs.isEmpty() ? null : ctxs.iterator().next();</span>
         }
 
         @Override public Iterator&lt;Map.Entry&lt;?, AnalysisContext&gt;&gt; iterator() {
-<span class="fc" id="L174">            return stream().iterator();</span>
+<span class="fc" id="L184">            return stream().iterator();</span>
         }
 
         public Stream&lt;Map.Entry&lt;?, AnalysisContext&gt;&gt; stream() {
-<span class="fc" id="L178">            return Stream.concat(analyzers.entrySet().stream(),</span>
-<span class="fc" id="L179">                    Stream.concat(filters.entrySet().stream(),</span>
-<span class="fc" id="L180">                            Stream.concat(reporters.entrySet().stream(),</span>
-<span class="fc" id="L181">                                    transforms.entrySet().stream())));</span>
+<span class="fc" id="L188">            return Stream.concat(analyzers.entrySet().stream(),</span>
+<span class="fc" id="L189">                    Stream.concat(filters.entrySet().stream(),</span>
+<span class="fc" id="L190">                            Stream.concat(reporters.entrySet().stream(),</span>
+<span class="fc" id="L191">                                    transforms.entrySet().stream())));</span>
         }
     }
 }

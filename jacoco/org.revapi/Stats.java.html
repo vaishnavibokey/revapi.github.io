@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Stats.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">Stats.java</span></div><h1>Stats.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -22,48 +22,49 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * Quick and dirty execution time statistics collection class.
+ * Quick and dirty execution time statistics collection class. Note that the statistics collected during the
+ * {@code close()} methods of the extensions are not taken into account.
  *
  * @author Lukas Krejci
  * @since 0.4.1
  */
 public final class Stats {
-<span class="fc" id="L31">    private static final Map&lt;String, Collector&gt; COLLECTORS = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L32">    private static final Map&lt;String, Collector&gt; COLLECTORS = new TreeMap&lt;&gt;();</span>
 
-<span class="nc" id="L33">    private Stats() {</span>
+<span class="nc" id="L34">    private Stats() {</span>
 
-<span class="nc" id="L35">    }</span>
+<span class="nc" id="L36">    }</span>
 
     public static Collector of(String stat) {
-<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (!Revapi.TIMING_LOG.isDebugEnabled()) {</span>
-<span class="fc" id="L39">            return DummyCollector.INSTANCE;</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (!Revapi.TIMING_LOG.isDebugEnabled()) {</span>
+<span class="fc" id="L40">            return DummyCollector.INSTANCE;</span>
         }
 
-<span class="nc" id="L42">        Collector ret = COLLECTORS.get(stat);</span>
-<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (ret == null) {</span>
-<span class="nc" id="L44">            ret = new Collector();</span>
-<span class="nc" id="L45">            COLLECTORS.put(stat, ret);</span>
+<span class="nc" id="L43">        Collector ret = COLLECTORS.get(stat);</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (ret == null) {</span>
+<span class="nc" id="L45">            ret = new Collector();</span>
+<span class="nc" id="L46">            COLLECTORS.put(stat, ret);</span>
         }
 
-<span class="nc" id="L48">        return ret;</span>
+<span class="nc" id="L49">        return ret;</span>
     }
 
     public static String asString() {
-<span class="fc" id="L52">        Map&lt;String, Collector&gt; map = COLLECTORS.entrySet().stream()</span>
-<span class="pc" id="L53">                .sorted((e1, e2) -&gt; (int) (e2.getValue().totalTime - e1.getValue().totalTime))</span>
-<span class="pc" id="L54">                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (m1, m2) -&gt; m1, LinkedHashMap::new));</span>
+<span class="fc" id="L53">        Map&lt;String, Collector&gt; map = COLLECTORS.entrySet().stream()</span>
+<span class="pc" id="L54">                .sorted((e1, e2) -&gt; (int) (e2.getValue().totalTime - e1.getValue().totalTime))</span>
+<span class="pc" id="L55">                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (m1, m2) -&gt; m1, LinkedHashMap::new));</span>
 
-<span class="fc" id="L56">        StringBuilder bld = new StringBuilder(&quot;Stats:&quot;);</span>
+<span class="fc" id="L57">        StringBuilder bld = new StringBuilder(&quot;Stats:&quot;);</span>
 
-<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (map.isEmpty()) {</span>
-<span class="fc" id="L59">            return bld.append(&quot; &lt;none&gt;&quot;).toString();</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (map.isEmpty()) {</span>
+<span class="fc" id="L60">            return bld.append(&quot; &lt;none&gt;&quot;).toString();</span>
         }
 
-<span class="nc bnc" id="L62" title="All 2 branches missed.">        for (Map.Entry&lt;String, Collector&gt; e : map.entrySet()) {</span>
-<span class="nc" id="L63">            bld.append('\n').append(e.getKey()).append(&quot;: &quot;).append(e.getValue());</span>
-<span class="nc" id="L64">        }</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        for (Map.Entry&lt;String, Collector&gt; e : map.entrySet()) {</span>
+<span class="nc" id="L64">            bld.append('\n').append(e.getKey()).append(&quot;: &quot;).append(e.getValue());</span>
+<span class="nc" id="L65">        }</span>
 
-<span class="nc" id="L66">        return bld.toString();</span>
+<span class="nc" id="L67">        return bld.toString();</span>
     }
 
     public static class Collector {
@@ -76,75 +77,75 @@ public final class Stats {
 
         volatile Object offender;
 
-<span class="fc" id="L79">        private Collector() {</span>
+<span class="fc" id="L80">        private Collector() {</span>
 
-<span class="fc" id="L81">        }</span>
+<span class="fc" id="L82">        }</span>
 
         public long start() {
-<span class="nc" id="L84">            return currentStartTime = System.currentTimeMillis();</span>
+<span class="nc" id="L85">            return currentStartTime = System.currentTimeMillis();</span>
         }
 
         public void end(Object cause) {
-<span class="nc" id="L88">            end(0, cause);</span>
-<span class="nc" id="L89">        }</span>
+<span class="nc" id="L89">            end(0, cause);</span>
+<span class="nc" id="L90">        }</span>
 
         public void end(Object cause1, Object cause2) {
-<span class="nc" id="L92">            end(0, new Tuple2(cause1, cause2));</span>
-<span class="nc" id="L93">        }</span>
+<span class="nc" id="L93">            end(0, new Tuple2(cause1, cause2));</span>
+<span class="nc" id="L94">        }</span>
 
         public void end(long additionalDuration, Object cause) {
-<span class="nc" id="L96">            long duration = System.currentTimeMillis() - currentStartTime + additionalDuration;</span>
-<span class="nc" id="L97">            totalTime += duration;</span>
-<span class="nc" id="L98">            occurrences++;</span>
-<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (duration &gt; worstTime) {</span>
-<span class="nc" id="L100">                worstTime = duration;</span>
-<span class="nc" id="L101">                offender = cause;</span>
+<span class="nc" id="L97">            long duration = System.currentTimeMillis() - currentStartTime + additionalDuration;</span>
+<span class="nc" id="L98">            totalTime += duration;</span>
+<span class="nc" id="L99">            occurrences++;</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (duration &gt; worstTime) {</span>
+<span class="nc" id="L101">                worstTime = duration;</span>
+<span class="nc" id="L102">                offender = cause;</span>
             }
-<span class="nc" id="L103">        }</span>
+<span class="nc" id="L104">        }</span>
 
         public void end(long additionalDuration, Object cause1, Object cause2) {
-<span class="nc" id="L106">            end(additionalDuration, new Tuple2(cause1, cause2));</span>
-<span class="nc" id="L107">        }</span>
+<span class="nc" id="L107">            end(additionalDuration, new Tuple2(cause1, cause2));</span>
+<span class="nc" id="L108">        }</span>
 
         public long reset() {
-<span class="nc" id="L110">            return System.currentTimeMillis() - currentStartTime;</span>
+<span class="nc" id="L111">            return System.currentTimeMillis() - currentStartTime;</span>
         }
 
         @Override
         public String toString() {
-<span class="nc" id="L115">            return &quot;{occurrences = &quot; + occurrences + &quot;, total = &quot; + totalTime + &quot;ms, average = &quot; +</span>
-<span class="nc" id="L116">                    String.format(&quot;%.2fms&quot;, ((double) totalTime) / occurrences) + &quot;, worstTime = &quot; + worstTime +</span>
+<span class="nc" id="L116">            return &quot;{occurrences = &quot; + occurrences + &quot;, total = &quot; + totalTime + &quot;ms, average = &quot; +</span>
+<span class="nc" id="L117">                    String.format(&quot;%.2fms&quot;, ((double) totalTime) / occurrences) + &quot;, worstTime = &quot; + worstTime +</span>
                     &quot;ms caused by &quot; + offender + &quot;}&quot;;
         }
     }
 
-<span class="fc" id="L121">    private static final class DummyCollector extends Collector {</span>
-<span class="fc" id="L122">        static final DummyCollector INSTANCE = new DummyCollector();</span>
+<span class="fc" id="L122">    private static final class DummyCollector extends Collector {</span>
+<span class="fc" id="L123">        static final DummyCollector INSTANCE = new DummyCollector();</span>
 
         @Override
         public void end(long additionalDuration, Object cause) {
-<span class="fc" id="L126">        }</span>
+<span class="fc" id="L127">        }</span>
 
         @Override
         public void end(long additionalDuration, Object cause1, Object cause2) {
-<span class="nc" id="L130">        }</span>
+<span class="nc" id="L131">        }</span>
 
         @Override
         public void end(Object cause) {
-<span class="fc" id="L134">        }</span>
+<span class="fc" id="L135">        }</span>
 
         @Override
         public void end(Object cause1, Object cause2) {
-<span class="fc" id="L138">        }</span>
+<span class="fc" id="L139">        }</span>
 
         @Override
         public long reset() {
-<span class="fc" id="L142">            return 0;</span>
+<span class="fc" id="L143">            return 0;</span>
         }
 
         @Override
         public long start() {
-<span class="fc" id="L147">            return 0;</span>
+<span class="fc" id="L148">            return 0;</span>
         }
     }
 
@@ -152,14 +153,14 @@ public final class Stats {
         private final Object a;
         private final Object b;
 
-<span class="nc" id="L155">        private Tuple2(Object a, Object b) {</span>
-<span class="nc" id="L156">            this.a = a;</span>
-<span class="nc" id="L157">            this.b = b;</span>
-<span class="nc" id="L158">        }</span>
+<span class="nc" id="L156">        private Tuple2(Object a, Object b) {</span>
+<span class="nc" id="L157">            this.a = a;</span>
+<span class="nc" id="L158">            this.b = b;</span>
+<span class="nc" id="L159">        }</span>
 
         @Override
         public String toString() {
-<span class="nc" id="L162">            return &quot;[&quot; + a + &quot;, &quot; + b + &quot;]&quot;;</span>
+<span class="nc" id="L163">            return &quot;[&quot; + a + &quot;, &quot; + b + &quot;]&quot;;</span>
         }
     }
 }
