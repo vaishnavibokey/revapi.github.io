@@ -18,11 +18,15 @@ package org.revapi.java.checks.classes;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
-import javax.lang.model.element.TypeElement;
+import javax.annotation.Nonnull;
 
+import org.revapi.AnalysisContext;
+import org.revapi.Archive;
 import org.revapi.Difference;
 import org.revapi.java.spi.CheckBase;
 import org.revapi.java.spi.Code;
@@ -32,35 +36,44 @@ import org.revapi.java.spi.JavaTypeElement;
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L35">public final class Added extends CheckBase {</span>
+<span class="fc" id="L39">public final class Added extends CheckBase {</span>
+    private Set&lt;Archive&gt; primaryApi;
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L44">        super.initialize(analysisContext);</span>
+
+        // the primary API most often consists of a single archive. Let's reserve capacity for 2 just to be sure, but
+        // don't waste space just because of the unlikely possibility of more primary archives.
+<span class="fc" id="L48">        primaryApi = new HashSet&lt;&gt;(2);</span>
+<span class="fc" id="L49">        analysisContext.getNewApi().getArchives().forEach(primaryApi::add);</span>
+<span class="fc" id="L50">    }</span>
+
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L38">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
-<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (types != null) {</span>
-<span class="fc" id="L40">            TypeElement typeInOld = getOldTypeEnvironment().getElementUtils()</span>
-<span class="fc" id="L41">                    .getTypeElement(types.newElement.getDeclaringElement().getQualifiedName());</span>
+<span class="fc" id="L54">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (types != null) {</span>
+<span class="fc" id="L56">            LinkedHashMap&lt;String, String&gt; attachments = Code.attachmentsFor(types.oldElement, types.newElement);</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            Difference difference = primaryApi.contains(types.newElement.getArchive())</span>
+<span class="fc" id="L58">                    ? createDifference(Code.CLASS_ADDED, attachments)</span>
+<span class="fc" id="L59">                    : createDifference(Code.CLASS_EXTERNAL_CLASS_EXPOSED_IN_API, attachments);</span>
 
-<span class="fc" id="L43">            LinkedHashMap&lt;String, String&gt; attachments = Code.attachmentsFor(types.oldElement, types.newElement);</span>
-<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            Difference difference = typeInOld == null</span>
-<span class="pc" id="L45">                    ? createDifference(Code.CLASS_ADDED, attachments)</span>
-<span class="pc" id="L46">                    : createDifference(Code.CLASS_EXTERNAL_CLASS_EXPOSED_IN_API, attachments);</span>
-
-<span class="fc" id="L48">            return Collections.singletonList(difference);</span>
+<span class="fc" id="L61">            return Collections.singletonList(difference);</span>
         }
 
-<span class="fc" id="L51">        return null;</span>
+<span class="fc" id="L64">        return null;</span>
     }
 
     @Override
     protected void doVisitClass(JavaTypeElement oldType, JavaTypeElement newType) {
-<span class="pc bpc" id="L56" title="1 of 6 branches missed.">        if (oldType == null &amp;&amp; newType != null &amp;&amp; isAccessible(newType)) {</span>
-<span class="fc" id="L57">            pushActive(null, newType);</span>
+<span class="pc bpc" id="L69" title="1 of 6 branches missed.">        if (oldType == null &amp;&amp; newType != null &amp;&amp; isAccessible(newType)) {</span>
+<span class="fc" id="L70">            pushActive(null, newType);</span>
         }
-<span class="fc" id="L59">    }</span>
+<span class="fc" id="L72">    }</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L63">        return EnumSet.of(Type.CLASS);</span>
+<span class="fc" id="L76">        return EnumSet.of(Type.CLASS);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
