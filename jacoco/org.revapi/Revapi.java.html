@@ -183,8 +183,8 @@ public final class Revapi {
 <span class="fc bfc" id="L183" title="All 2 branches covered.">            for (ApiAnalyzer a : extensions.getAnalyzers().keySet()) {</span>
 <span class="fc" id="L184">                analyzeWith(a, analysisContext.getOldApi(), analysisContext.getNewApi(), extensions);</span>
 <span class="fc" id="L185">            }</span>
-<span class="nc" id="L186">        } catch (Exception t) {</span>
-<span class="nc" id="L187">            error = t;</span>
+<span class="fc" id="L186">        } catch (Exception t) {</span>
+<span class="fc" id="L187">            error = t;</span>
 <span class="fc" id="L188">        }</span>
 
 <span class="fc" id="L190">        return new AnalysisResult(error, extensions);</span>
@@ -253,7 +253,7 @@ public final class Revapi {
 <span class="fc" id="L253">        ElementForest newTree = newAnalyzer.analyze();</span>
 <span class="fc" id="L254">        TIMING_LOG.debug(&quot;API trees obtained&quot;);</span>
 
-<span class="pc" id="L256">        try (DifferenceAnalyzer elementDifferenceAnalyzer = apiAnalyzer.getDifferenceAnalyzer(oldAnalyzer, newAnalyzer)) {</span>
+<span class="fc" id="L256">        try (DifferenceAnalyzer elementDifferenceAnalyzer = apiAnalyzer.getDifferenceAnalyzer(oldAnalyzer, newAnalyzer)) {</span>
 <span class="fc" id="L257">            TIMING_LOG.debug(&quot;Obtaining API roots&quot;);</span>
 <span class="fc" id="L258">            SortedSet&lt;? extends Element&gt; as = oldTree.getRoots();</span>
 <span class="fc" id="L259">            SortedSet&lt;? extends Element&gt; bs = newTree.getRoots();</span>
@@ -268,7 +268,7 @@ public final class Revapi {
 <span class="fc" id="L268">            elementDifferenceAnalyzer.open();</span>
 <span class="fc" id="L269">            analyze(apiAnalyzer.getCorrespondenceDeducer(), elementDifferenceAnalyzer, as, bs, extensions);</span>
 <span class="fc" id="L270">            TIMING_LOG.debug(&quot;Closing difference analyzer&quot;);</span>
-<span class="pc bpc" id="L271" title="6 of 8 branches missed.">        }</span>
+        }
 <span class="fc" id="L272">        TIMING_LOG.debug(&quot;Difference analyzer closed&quot;);</span>
 <span class="fc" id="L273">    }</span>
 
@@ -387,244 +387,242 @@ public final class Revapi {
 <span class="fc bfc" id="L387" title="All 2 branches covered.">            while (it.hasNext()) {</span>
 <span class="fc" id="L388">                Difference d = it.next();</span>
 <span class="fc" id="L389">                transformed.clear();</span>
-<span class="fc" id="L390">                boolean shouldBeRemoved = false;</span>
-<span class="fc" id="L391">                boolean differenceChanged = false;</span>
-<span class="fc bfc" id="L392" title="All 2 branches covered.">                for (DifferenceTransform&lt;?&gt; t : getTransformsForDifference(d, extensions)) {</span>
+<span class="fc" id="L390">                boolean differenceChanged = false;</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">                for (DifferenceTransform&lt;?&gt; t : getTransformsForDifference(d, extensions)) {</span>
                     // it is the responsibility of the transform to declare the proper type.
                     // it will get a ClassCastException if it fails to declare a type that is common to all differences
                     // it can handle
                     @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L397">                    DifferenceTransform&lt;Element&gt; tt = (DifferenceTransform&lt;Element&gt;) t;</span>
+<span class="fc" id="L396">                    DifferenceTransform&lt;Element&gt; tt = (DifferenceTransform&lt;Element&gt;) t;</span>
 
-<span class="fc" id="L399">                    Difference td = d;</span>
+<span class="fc" id="L398">                    Difference td = d;</span>
                     try {
-<span class="fc" id="L401">                        td = tt.transform(report.getOldElement(), report.getNewElement(), d);</span>
-<span class="nc" id="L402">                    } catch (Exception e) {</span>
-<span class="nc" id="L403">                        LOG.warn(&quot;Difference transform &quot; + t + &quot; of class '&quot; + t.getClass() + &quot; threw an exception&quot; +</span>
-<span class="nc" id="L404">                                &quot; while processing difference &quot; + d + &quot; on old element &quot; + report.getOldElement() +</span>
+<span class="fc" id="L400">                        td = tt.transform(report.getOldElement(), report.getNewElement(), d);</span>
+<span class="nc" id="L401">                    } catch (Exception e) {</span>
+<span class="nc" id="L402">                        LOG.warn(&quot;Difference transform &quot; + t + &quot; of class '&quot; + t.getClass() + &quot; threw an exception&quot; +</span>
+<span class="nc" id="L403">                                &quot; while processing difference &quot; + d + &quot; on old element &quot; + report.getOldElement() +</span>
                                 &quot; and&quot; +
-<span class="nc" id="L406">                                &quot; new element &quot; + report.getNewElement(), e);</span>
-<span class="fc" id="L407">                    }</span>
+<span class="nc" id="L405">                                &quot; new element &quot; + report.getNewElement(), e);</span>
+<span class="fc" id="L406">                    }</span>
 
                     // ignore if transformation returned null, meaning that it &quot;swallowed&quot; the difference..
-<span class="pc bpc" id="L410" title="1 of 2 branches missed.">                    if (td == null) {</span>
-<span class="nc" id="L411">                        shouldBeRemoved = true;</span>
-<span class="nc" id="L412">                        listChanged = true;</span>
-<span class="nc" id="L413">                        differenceChanged = true;</span>
-<span class="pc bpc" id="L414" title="1 of 2 branches missed.">                    } else if (!d.equals(td)) {</span>
-<span class="nc bnc" id="L415" title="All 2 branches missed.">                        if (LOG.isDebugEnabled()) {</span>
-<span class="nc" id="L416">                            LOG.debug(&quot;Difference transform {} transforms {} to {}&quot;, t.getClass(), d, td);</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">                    if (td == null) {</span>
+<span class="fc" id="L410">                        listChanged = true;</span>
+<span class="fc" id="L411">                        differenceChanged = true;</span>
+<span class="fc bfc" id="L412" title="All 2 branches covered.">                    } else if (!d.equals(td)) {</span>
+<span class="pc bpc" id="L413" title="1 of 2 branches missed.">                        if (LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L414">                            LOG.debug(&quot;Difference transform {} transforms {} to {}&quot;, t.getClass(), d, td);</span>
                         }
 
-<span class="nc" id="L419">                        transformed.add(td);</span>
-<span class="nc" id="L420">                        listChanged = true;</span>
-<span class="nc" id="L421">                        differenceChanged = true;</span>
+<span class="fc" id="L417">                        transformed.add(td);</span>
+<span class="fc" id="L418">                        listChanged = true;</span>
+<span class="fc" id="L419">                        differenceChanged = true;</span>
                     }
-<span class="fc" id="L423">                }</span>
+<span class="fc" id="L421">                }</span>
 
-<span class="pc bpc" id="L425" title="1 of 2 branches missed.">                if (differenceChanged) {</span>
+<span class="fc bfc" id="L423" title="All 2 branches covered.">                if (differenceChanged) {</span>
                     //we need to remove the element in either case
-<span class="nc" id="L427">                    it.remove();</span>
-<span class="nc bnc" id="L428" title="All 2 branches missed.">                    if (!shouldBeRemoved) {</span>
+<span class="fc" id="L425">                    it.remove();</span>
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">                    if (!transformed.isEmpty()) {</span>
                         //if it was not removed, but transformed, let's add the transformed difference in the place of
                         //our currently removed element
-<span class="nc bnc" id="L431" title="All 2 branches missed.">                        for (Difference td : transformed) {</span>
+<span class="fc bfc" id="L429" title="All 2 branches covered.">                        for (Difference td : transformed) {</span>
                             //this adds the new element *before* the currently pointed to index...
-<span class="nc" id="L433">                            it.add(td);</span>
+<span class="fc" id="L431">                            it.add(td);</span>
                             //we want to check the newly added difference, so we need the iterator to point at it...
-<span class="nc" id="L435">                            it.previous();</span>
-<span class="nc" id="L436">                        }</span>
+<span class="fc" id="L433">                            it.previous();</span>
+<span class="fc" id="L434">                        }</span>
                     }
                 }
-<span class="fc" id="L439">            }</span>
+<span class="fc" id="L437">            }</span>
 
-<span class="fc" id="L441">            iteration++;</span>
+<span class="fc" id="L439">            iteration++;</span>
 
-<span class="pc bpc" id="L443" title="1 of 2 branches missed.">            if (iteration % 100 == 0) {</span>
-<span class="nc" id="L444">                LOG.warn(&quot;Transformation of differences in match report &quot; + report + &quot; has cycled &quot; + iteration +</span>
+<span class="pc bpc" id="L441" title="1 of 2 branches missed.">            if (iteration % 100 == 0) {</span>
+<span class="nc" id="L442">                LOG.warn(&quot;Transformation of differences in match report &quot; + report + &quot; has cycled &quot; + iteration +</span>
                         &quot; times. Maybe we're in an infinite loop with differences transforming back and forth?&quot;);
             }
 
-<span class="pc bpc" id="L448" title="1 of 2 branches missed.">            if (iteration == Integer.MAX_VALUE) {</span>
-<span class="nc" id="L449">                throw new IllegalStateException(&quot;Transformation failed to settle in &quot; + Integer.MAX_VALUE +</span>
+<span class="pc bpc" id="L446" title="1 of 2 branches missed.">            if (iteration == Integer.MAX_VALUE) {</span>
+<span class="nc" id="L447">                throw new IllegalStateException(&quot;Transformation failed to settle in &quot; + Integer.MAX_VALUE +</span>
                         &quot; iterations. This is most probably an error in difference transform configuration that&quot; +
                         &quot; cycles between two or more changes back and forth.&quot;);
             }
-<span class="pc bpc" id="L453" title="1 of 2 branches missed.">        } while (listChanged);</span>
+<span class="fc bfc" id="L451" title="All 2 branches covered.">        } while (listChanged);</span>
 
-<span class="fc" id="L455">        Stats.of(&quot;transforms&quot;).end(report);</span>
+<span class="fc" id="L453">        Stats.of(&quot;transforms&quot;).end(report);</span>
 
-<span class="pc bpc" id="L457" title="1 of 2 branches missed.">        if (!report.getDifferences().isEmpty()) {</span>
-<span class="fc" id="L458">            Stats.of(&quot;reports&quot;).start();</span>
-<span class="fc bfc" id="L459" title="All 2 branches covered.">            for (Reporter reporter : extensions.getReporters().keySet()) {</span>
-<span class="fc" id="L460">                reporter.report(report);</span>
-<span class="fc" id="L461">            }</span>
-<span class="fc" id="L462">            Stats.of(&quot;reports&quot;).end(report);</span>
+<span class="pc bpc" id="L455" title="1 of 2 branches missed.">        if (!report.getDifferences().isEmpty()) {</span>
+<span class="fc" id="L456">            Stats.of(&quot;reports&quot;).start();</span>
+<span class="fc bfc" id="L457" title="All 2 branches covered.">            for (Reporter reporter : extensions.getReporters().keySet()) {</span>
+<span class="fc" id="L458">                reporter.report(report);</span>
+<span class="fc" id="L459">            }</span>
+<span class="fc" id="L460">            Stats.of(&quot;reports&quot;).end(report);</span>
         }
-<span class="fc" id="L464">    }</span>
+<span class="fc" id="L462">    }</span>
 
     private List&lt;DifferenceTransform&lt;?&gt;&gt; getTransformsForDifference(Difference diff, AnalysisResult.Extensions extensions) {
-<span class="fc" id="L467">        List&lt;DifferenceTransform&lt;?&gt;&gt; ret = matchingTransformsCache.get(diff.code);</span>
-<span class="pc bpc" id="L468" title="1 of 2 branches missed.">        if (ret == null) {</span>
-<span class="fc" id="L469">            ret = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L470" title="All 2 branches covered.">            for (DifferenceTransform&lt;?&gt; t : extensions.getTransforms().keySet()) {</span>
-<span class="pc bpc" id="L471" title="1 of 2 branches missed.">                for (Pattern p : t.getDifferenceCodePatterns()) {</span>
-<span class="pc bpc" id="L472" title="1 of 2 branches missed.">                    if (p.matcher(diff.code).matches()) {</span>
-<span class="fc" id="L473">                        ret.add(t);</span>
-<span class="fc" id="L474">                        break;</span>
+<span class="fc" id="L465">        List&lt;DifferenceTransform&lt;?&gt;&gt; ret = matchingTransformsCache.get(diff.code);</span>
+<span class="fc bfc" id="L466" title="All 2 branches covered.">        if (ret == null) {</span>
+<span class="fc" id="L467">            ret = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">            for (DifferenceTransform&lt;?&gt; t : extensions.getTransforms().keySet()) {</span>
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">                for (Pattern p : t.getDifferenceCodePatterns()) {</span>
+<span class="pc bpc" id="L470" title="1 of 2 branches missed.">                    if (p.matcher(diff.code).matches()) {</span>
+<span class="fc" id="L471">                        ret.add(t);</span>
+<span class="fc" id="L472">                        break;</span>
                     }
                 }
-<span class="fc" id="L477">            }</span>
-<span class="fc" id="L478">            matchingTransformsCache.put(diff.code, ret);</span>
+<span class="fc" id="L475">            }</span>
+<span class="fc" id="L476">            matchingTransformsCache.put(diff.code, ret);</span>
         }
 
-<span class="fc" id="L481">        return ret;</span>
+<span class="fc" id="L479">        return ret;</span>
     }
 
     @SuppressWarnings({&quot;unused&quot;, &quot;WeakerAccess&quot;})
-<span class="fc" id="L485">    public static final class Builder {</span>
-<span class="fc" id="L486">        private Set&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers = null;</span>
-<span class="fc" id="L487">        private Set&lt;Class&lt;? extends Reporter&gt;&gt; reporters = null;</span>
-<span class="fc" id="L488">        private Set&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; transforms = null;</span>
-<span class="fc" id="L489">        private Set&lt;Class&lt;? extends ElementFilter&gt;&gt; filters = null;</span>
+<span class="fc" id="L483">    public static final class Builder {</span>
+<span class="fc" id="L484">        private Set&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers = null;</span>
+<span class="fc" id="L485">        private Set&lt;Class&lt;? extends Reporter&gt;&gt; reporters = null;</span>
+<span class="fc" id="L486">        private Set&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; transforms = null;</span>
+<span class="fc" id="L487">        private Set&lt;Class&lt;? extends ElementFilter&gt;&gt; filters = null;</span>
 
         @Nonnull
         public Builder withAnalyzersFromThreadContextClassLoader() {
-<span class="nc" id="L493">            return withAnalyzers(ServiceTypeLoader.load(ApiAnalyzer.class));</span>
+<span class="nc" id="L491">            return withAnalyzers(ServiceTypeLoader.load(ApiAnalyzer.class));</span>
         }
 
         @Nonnull
         public Builder withAnalyzersFrom(@Nonnull ClassLoader cl) {
-<span class="nc" id="L498">            return withAnalyzers(ServiceTypeLoader.load(ApiAnalyzer.class, cl));</span>
+<span class="nc" id="L496">            return withAnalyzers(ServiceTypeLoader.load(ApiAnalyzer.class, cl));</span>
         }
 
         @SafeVarargs
         @Nonnull
         public final Builder withAnalyzers(Class&lt;? extends ApiAnalyzer&gt;... analyzers) {
-<span class="fc" id="L504">            return withAnalyzers(Arrays.asList(analyzers));</span>
+<span class="fc" id="L502">            return withAnalyzers(Arrays.asList(analyzers));</span>
         }
 
         @Nonnull
         public Builder withAnalyzers(@Nonnull Iterable&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers) {
-<span class="pc bpc" id="L509" title="1 of 2 branches missed.">            if (this.analyzers == null) {</span>
-<span class="fc" id="L510">                this.analyzers = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L507" title="1 of 2 branches missed.">            if (this.analyzers == null) {</span>
+<span class="fc" id="L508">                this.analyzers = new HashSet&lt;&gt;();</span>
             }
-<span class="fc bfc" id="L512" title="All 2 branches covered.">            for (Class&lt;? extends ApiAnalyzer&gt; a : analyzers) {</span>
-<span class="fc" id="L513">                this.analyzers.add(a);</span>
-<span class="fc" id="L514">            }</span>
+<span class="fc bfc" id="L510" title="All 2 branches covered.">            for (Class&lt;? extends ApiAnalyzer&gt; a : analyzers) {</span>
+<span class="fc" id="L511">                this.analyzers.add(a);</span>
+<span class="fc" id="L512">            }</span>
 
-<span class="fc" id="L516">            return this;</span>
+<span class="fc" id="L514">            return this;</span>
         }
 
         @Nonnull
         public Builder withReportersFromThreadContextClassLoader() {
-<span class="nc" id="L521">            return withReporters(ServiceTypeLoader.load(Reporter.class));</span>
+<span class="nc" id="L519">            return withReporters(ServiceTypeLoader.load(Reporter.class));</span>
         }
 
         @Nonnull
         public Builder withReportersFrom(@Nonnull ClassLoader cl) {
-<span class="nc" id="L526">            return withReporters(ServiceTypeLoader.load(Reporter.class, cl));</span>
+<span class="nc" id="L524">            return withReporters(ServiceTypeLoader.load(Reporter.class, cl));</span>
         }
 
         @SafeVarargs
         @Nonnull
         public final Builder withReporters(Class&lt;? extends Reporter&gt;... reporters) {
-<span class="fc" id="L532">            return withReporters(Arrays.asList(reporters));</span>
+<span class="fc" id="L530">            return withReporters(Arrays.asList(reporters));</span>
         }
 
         @Nonnull
         public Builder withReporters(@Nonnull Iterable&lt;Class&lt;? extends Reporter&gt;&gt; reporters) {
-<span class="pc bpc" id="L537" title="1 of 2 branches missed.">            if (this.reporters == null) {</span>
-<span class="fc" id="L538">                this.reporters = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L535" title="1 of 2 branches missed.">            if (this.reporters == null) {</span>
+<span class="fc" id="L536">                this.reporters = new HashSet&lt;&gt;();</span>
             }
-<span class="fc bfc" id="L540" title="All 2 branches covered.">            for (Class&lt;? extends Reporter&gt; r : reporters) {</span>
-<span class="fc" id="L541">                this.reporters.add(r);</span>
-<span class="fc" id="L542">            }</span>
+<span class="fc bfc" id="L538" title="All 2 branches covered.">            for (Class&lt;? extends Reporter&gt; r : reporters) {</span>
+<span class="fc" id="L539">                this.reporters.add(r);</span>
+<span class="fc" id="L540">            }</span>
 
-<span class="fc" id="L544">            return this;</span>
+<span class="fc" id="L542">            return this;</span>
         }
 
         @Nonnull
         public Builder withTransformsFromThreadContextClassLoader() {
             //don't you love Java generics? ;)
             @SuppressWarnings(&quot;rawtypes&quot;)
-<span class="nc" id="L551">            Iterable trs = ServiceTypeLoader.load(DifferenceTransform.class);</span>
+<span class="nc" id="L549">            Iterable trs = ServiceTypeLoader.load(DifferenceTransform.class);</span>
 
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L554">            Iterable&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; rtrs</span>
+<span class="nc" id="L552">            Iterable&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; rtrs</span>
                     = (Iterable&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt;) trs;
 
-<span class="nc" id="L557">            return withTransforms(rtrs);</span>
+<span class="nc" id="L555">            return withTransforms(rtrs);</span>
         }
 
         @Nonnull
         public Builder withTransformsFrom(@Nonnull ClassLoader cl) {
             //don't you love Java generics? ;)
             @SuppressWarnings(&quot;rawtypes&quot;)
-<span class="nc" id="L564">            Iterable trs = ServiceTypeLoader.load(DifferenceTransform.class, cl);</span>
+<span class="nc" id="L562">            Iterable trs = ServiceTypeLoader.load(DifferenceTransform.class, cl);</span>
 
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L567">            Iterable&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; rtrs</span>
+<span class="nc" id="L565">            Iterable&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; rtrs</span>
                     = (Iterable&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt;) trs;
 
-<span class="nc" id="L570">            return withTransforms(rtrs);</span>
+<span class="nc" id="L568">            return withTransforms(rtrs);</span>
         }
 
         @SafeVarargs
         @Nonnull
         public final Builder withTransforms(Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;... transforms) {
-<span class="fc" id="L576">            return withTransforms(Arrays.asList(transforms));</span>
+<span class="fc" id="L574">            return withTransforms(Arrays.asList(transforms));</span>
         }
 
         @Nonnull
         public Builder withTransforms(@Nonnull Iterable&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; transforms) {
-<span class="pc bpc" id="L581" title="1 of 2 branches missed.">            if (this.transforms == null) {</span>
-<span class="fc" id="L582">                this.transforms = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L579" title="All 2 branches covered.">            if (this.transforms == null) {</span>
+<span class="fc" id="L580">                this.transforms = new HashSet&lt;&gt;();</span>
             }
-<span class="fc bfc" id="L584" title="All 2 branches covered.">            for (Class&lt;? extends DifferenceTransform&lt;?&gt;&gt; t : transforms) {</span>
-<span class="fc" id="L585">                this.transforms.add(t);</span>
-<span class="fc" id="L586">            }</span>
+<span class="fc bfc" id="L582" title="All 2 branches covered.">            for (Class&lt;? extends DifferenceTransform&lt;?&gt;&gt; t : transforms) {</span>
+<span class="fc" id="L583">                this.transforms.add(t);</span>
+<span class="fc" id="L584">            }</span>
 
-<span class="fc" id="L588">            return this;</span>
+<span class="fc" id="L586">            return this;</span>
         }
 
         @Nonnull
         public Builder withFiltersFromThreadContextClassLoader() {
-<span class="nc" id="L593">            return withFilters(ServiceTypeLoader.load(ElementFilter.class));</span>
+<span class="nc" id="L591">            return withFilters(ServiceTypeLoader.load(ElementFilter.class));</span>
         }
 
         @Nonnull
         public Builder withFiltersFrom(@Nonnull ClassLoader cl) {
-<span class="nc" id="L598">            return withFilters(ServiceTypeLoader.load(ElementFilter.class, cl));</span>
+<span class="nc" id="L596">            return withFilters(ServiceTypeLoader.load(ElementFilter.class, cl));</span>
         }
 
         @SafeVarargs
         @Nonnull
         public final Builder withFilters(Class&lt;? extends ElementFilter&gt;... filters) {
-<span class="fc" id="L604">            return withFilters(Arrays.asList(filters));</span>
+<span class="fc" id="L602">            return withFilters(Arrays.asList(filters));</span>
         }
 
         @Nonnull
         public Builder withFilters(@Nonnull Iterable&lt;Class&lt;? extends ElementFilter&gt;&gt; filters) {
-<span class="pc bpc" id="L609" title="1 of 2 branches missed.">            if (this.filters == null) {</span>
-<span class="fc" id="L610">                this.filters = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L607" title="1 of 2 branches missed.">            if (this.filters == null) {</span>
+<span class="fc" id="L608">                this.filters = new HashSet&lt;&gt;();</span>
             }
-<span class="fc bfc" id="L612" title="All 2 branches covered.">            for (Class&lt;? extends ElementFilter&gt; f : filters) {</span>
-<span class="fc" id="L613">                this.filters.add(f);</span>
-<span class="fc" id="L614">            }</span>
+<span class="fc bfc" id="L610" title="All 2 branches covered.">            for (Class&lt;? extends ElementFilter&gt; f : filters) {</span>
+<span class="fc" id="L611">                this.filters.add(f);</span>
+<span class="fc" id="L612">            }</span>
 
-<span class="fc" id="L616">            return this;</span>
+<span class="fc" id="L614">            return this;</span>
         }
 
         @Nonnull
         public Builder withAllExtensionsFromThreadContextClassLoader() {
-<span class="nc" id="L621">            return withAllExtensionsFrom(Thread.currentThread().getContextClassLoader());</span>
+<span class="nc" id="L619">            return withAllExtensionsFrom(Thread.currentThread().getContextClassLoader());</span>
         }
 
         @Nonnull
         public Builder withAllExtensionsFrom(@Nonnull ClassLoader cl) {
-<span class="nc" id="L626">            return withAnalyzersFrom(cl).withFiltersFrom(cl).withReportersFrom(cl)</span>
-<span class="nc" id="L627">                    .withTransformsFrom(cl);</span>
+<span class="nc" id="L624">            return withAnalyzersFrom(cl).withFiltersFrom(cl).withReportersFrom(cl)</span>
+<span class="nc" id="L625">                    .withTransformsFrom(cl);</span>
         }
 
         /**
@@ -633,56 +631,56 @@ public final class Revapi {
          */
         @Nonnull
         public Revapi build() throws IllegalStateException {
-<span class="pc bpc" id="L636" title="1 of 2 branches missed.">            analyzers = analyzers == null ? Collections.emptySet() : analyzers;</span>
-<span class="pc bpc" id="L637" title="1 of 2 branches missed.">            reporters = reporters == null ? Collections.emptySet() : reporters;</span>
-<span class="fc bfc" id="L638" title="All 2 branches covered.">            transforms = transforms == null ? Collections.emptySet() : transforms;</span>
-<span class="fc bfc" id="L639" title="All 2 branches covered.">            filters = filters == null ? Collections.emptySet() : filters;</span>
+<span class="pc bpc" id="L634" title="1 of 2 branches missed.">            analyzers = analyzers == null ? Collections.emptySet() : analyzers;</span>
+<span class="pc bpc" id="L635" title="1 of 2 branches missed.">            reporters = reporters == null ? Collections.emptySet() : reporters;</span>
+<span class="fc bfc" id="L636" title="All 2 branches covered.">            transforms = transforms == null ? Collections.emptySet() : transforms;</span>
+<span class="fc bfc" id="L637" title="All 2 branches covered.">            filters = filters == null ? Collections.emptySet() : filters;</span>
 
-<span class="pc bpc" id="L641" title="1 of 2 branches missed.">            if (analyzers.isEmpty()) {</span>
-<span class="nc" id="L642">                throw new IllegalStateException(</span>
+<span class="pc bpc" id="L639" title="1 of 2 branches missed.">            if (analyzers.isEmpty()) {</span>
+<span class="nc" id="L640">                throw new IllegalStateException(</span>
                         &quot;No API analyzers defined. The analysis cannot run without an analyzer.&quot;);
             }
 
-<span class="pc bpc" id="L646" title="1 of 2 branches missed.">            if (reporters.isEmpty()) {</span>
-<span class="nc" id="L647">                throw new IllegalStateException(</span>
+<span class="pc bpc" id="L644" title="1 of 2 branches missed.">            if (reporters.isEmpty()) {</span>
+<span class="nc" id="L645">                throw new IllegalStateException(</span>
                         &quot;No reporters defined. There is no way how to obtain the results of the analysis without&quot; +
                                 &quot; a reporter.&quot;);
             }
 
-<span class="fc" id="L652">            return new Revapi(analyzers, reporters, transforms, filters);</span>
+<span class="fc" id="L650">            return new Revapi(analyzers, reporters, transforms, filters);</span>
         }
     }
 
     private static boolean filtersApply(Element element, Iterable&lt;? extends ElementFilter&gt; filters) {
-<span class="pc bpc" id="L657" title="1 of 2 branches missed.">        for (ElementFilter f : filters) {</span>
-<span class="nc" id="L658">            String name = f.getClass().getName() + &quot;.applies&quot;;</span>
-<span class="nc" id="L659">            Stats.of(name).start();</span>
-<span class="nc" id="L660">            boolean applies = f.applies(element);</span>
-<span class="nc" id="L661">            Stats.of(name).end(element);</span>
-<span class="nc bnc" id="L662" title="All 2 branches missed.">            if (!applies) {</span>
-<span class="nc" id="L663">                return false;</span>
+<span class="pc bpc" id="L655" title="1 of 2 branches missed.">        for (ElementFilter f : filters) {</span>
+<span class="nc" id="L656">            String name = f.getClass().getName() + &quot;.applies&quot;;</span>
+<span class="nc" id="L657">            Stats.of(name).start();</span>
+<span class="nc" id="L658">            boolean applies = f.applies(element);</span>
+<span class="nc" id="L659">            Stats.of(name).end(element);</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">            if (!applies) {</span>
+<span class="nc" id="L661">                return false;</span>
             }
-<span class="nc" id="L665">        }</span>
-<span class="fc" id="L666">        return true;</span>
+<span class="nc" id="L663">        }</span>
+<span class="fc" id="L664">        return true;</span>
     }
 
     private static boolean filtersDescend(Element element, Iterable&lt;? extends ElementFilter&gt; filters) {
-<span class="fc" id="L670">        Iterator&lt;? extends ElementFilter&gt; it = filters.iterator();</span>
-<span class="pc bpc" id="L671" title="1 of 2 branches missed.">        boolean hasNoFilters = !it.hasNext();</span>
+<span class="fc" id="L668">        Iterator&lt;? extends ElementFilter&gt; it = filters.iterator();</span>
+<span class="pc bpc" id="L669" title="1 of 2 branches missed.">        boolean hasNoFilters = !it.hasNext();</span>
 
-<span class="pc bpc" id="L673" title="1 of 2 branches missed.">        while (it.hasNext()) {</span>
-<span class="nc" id="L674">            ElementFilter f = it.next();</span>
-<span class="nc" id="L675">            String name = f.getClass().getName() + &quot;.shouldDescendInto&quot;;</span>
-<span class="nc" id="L676">            Stats.of(name).start();</span>
-<span class="nc" id="L677">            boolean should = f.shouldDescendInto(element);</span>
-<span class="nc" id="L678">            Stats.of(name).end(element);</span>
-<span class="nc bnc" id="L679" title="All 2 branches missed.">            if (should) {</span>
-<span class="nc" id="L680">                return true;</span>
+<span class="pc bpc" id="L671" title="1 of 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L672">            ElementFilter f = it.next();</span>
+<span class="nc" id="L673">            String name = f.getClass().getName() + &quot;.shouldDescendInto&quot;;</span>
+<span class="nc" id="L674">            Stats.of(name).start();</span>
+<span class="nc" id="L675">            boolean should = f.shouldDescendInto(element);</span>
+<span class="nc" id="L676">            Stats.of(name).end(element);</span>
+<span class="nc bnc" id="L677" title="All 2 branches missed.">            if (should) {</span>
+<span class="nc" id="L678">                return true;</span>
             }
-<span class="nc" id="L682">        }</span>
+<span class="nc" id="L680">        }</span>
 
-<span class="fc" id="L684">        return hasNoFilters;</span>
+<span class="fc" id="L682">        return hasNoFilters;</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

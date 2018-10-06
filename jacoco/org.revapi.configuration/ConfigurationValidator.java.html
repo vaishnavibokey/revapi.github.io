@@ -140,12 +140,12 @@ import org.jboss.dmr.ModelNode;
 <span class="fc" id="L140">        List&lt;PartialValidationResult&gt; validationResults = new ArrayList&lt;&gt;();</span>
 
         String schema;
-<span class="pc" id="L143">        try (Reader rdr = configurable.getJSONSchema()) {</span>
+<span class="fc" id="L143">        try (Reader rdr = configurable.getJSONSchema()) {</span>
 <span class="pc bpc" id="L144" title="1 of 2 branches missed.">            if (rdr == null) {</span>
 <span class="nc" id="L145">                return ValidationResult.success();</span>
             }
 <span class="fc" id="L147">            schema = read(rdr);</span>
-<span class="pc bpc" id="L148" title="10 of 12 branches missed.">        }</span>
+        }
 
 <span class="fc" id="L150">        int idx = 0;</span>
 <span class="fc bfc" id="L151" title="All 2 branches covered.">        for (ModelNode extensionConfig : fullConfiguration.asList()) {</span>
@@ -258,10 +258,10 @@ import org.jboss.dmr.ModelNode;
     }
 
     private void initTv4(ScriptEngine engine, Bindings bindings) throws IOException, ScriptException {
-<span class="pc" id="L261">        try (Reader rdr = new InputStreamReader(getClass().getResourceAsStream(&quot;/tv4.min.js&quot;),</span>
+<span class="fc" id="L261">        try (Reader rdr = new InputStreamReader(getClass().getResourceAsStream(&quot;/tv4.min.js&quot;),</span>
 <span class="fc" id="L262">                Charset.forName(&quot;UTF-8&quot;))) {</span>
 <span class="fc" id="L263">            engine.eval(rdr, bindings);</span>
-<span class="pc bpc" id="L264" title="6 of 8 branches missed.">        }</span>
+        }
 <span class="fc" id="L265">    }</span>
 
     private static String read(Reader rdr) throws IOException {
@@ -276,4 +276,4 @@ import org.jboss.dmr.ModelNode;
 <span class="fc" id="L276">        return bld.toString();</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

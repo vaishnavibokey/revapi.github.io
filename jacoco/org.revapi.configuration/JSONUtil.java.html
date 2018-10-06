@@ -41,14 +41,14 @@ import org.jboss.dmr.ModelNode;
  */
 public final class JSONUtil {
 
-<span class="pc" id="L44">    private enum State {</span>
+<span class="fc" id="L44">    private enum State {</span>
 <span class="fc" id="L45">        NORMAL, FIRST_SLASH, SINGLE_LINE, MULTI_LINE, STAR_IN_MULTI_LINE, IN_STRING, ESCAPE_IN_STRING</span>
     }
 
 
-<span class="nc" id="L49">    private JSONUtil() {</span>
+    private JSONUtil() {
 
-<span class="nc" id="L51">    }</span>
+    }
 
     /**
      * @param json the JSON-encoded data
@@ -66,7 +66,7 @@ public final class JSONUtil {
      */
     public static String stripComments(String json) {
         try {
-<span class="pc" id="L69">            try (Reader rdr = stripComments(new StringReader(json))) {</span>
+<span class="fc" id="L69">            try (Reader rdr = stripComments(new StringReader(json))) {</span>
 <span class="fc" id="L70">                StringBuilder bld = new StringBuilder();</span>
 
 <span class="fc" id="L72">                char[] buf = new char[1024];</span>
@@ -77,7 +77,7 @@ public final class JSONUtil {
                 }
 
 <span class="fc" id="L79">                return bld.toString();</span>
-<span class="pc bpc" id="L80" title="6 of 8 branches missed.">            }</span>
+            }
 <span class="nc" id="L81">        } catch (IOException e) {</span>
             //doesn't happen with strings
 <span class="nc" id="L83">            throw new AssertionError(&quot;IOException in StringReader? I thought that was impossible!&quot;, e);</span>
@@ -336,4 +336,4 @@ public final class JSONUtil {
         }
 <span class="nc" id="L337">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
