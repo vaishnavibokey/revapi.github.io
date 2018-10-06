@@ -129,9 +129,9 @@ import org.revapi.AnalysisResult;
 <span class="fc bfc" id="L129" title="All 2 branches covered.">        if (singleVersionForAllModules) {</span>
 <span class="fc" id="L130">            File changesFile = getChangesFile();</span>
 
-<span class="pc" id="L132">            try (PrintWriter out = new PrintWriter(new FileOutputStream(changesFile, true))) {</span>
+<span class="fc" id="L132">            try (PrintWriter out = new PrintWriter(new FileOutputStream(changesFile, true))) {</span>
 <span class="fc" id="L133">                out.println(project.getArtifact().toString() + &quot;=&quot; + changeLevel + &quot;,&quot; + analysisResults.baseVersion);</span>
-<span class="pc bpc" id="L134" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L134">            } catch (IOException e) {</span>
 <span class="nc" id="L135">                throw new MojoExecutionException(&quot;Failure while updating the changes tracking file.&quot;, e);</span>
 <span class="fc" id="L136">            }</span>
 <span class="fc" id="L137">        } else {</span>
@@ -142,7 +142,7 @@ import org.revapi.AnalysisResult;
 <span class="fc bfc" id="L142" title="All 2 branches covered.">        if (singleVersionForAllModules</span>
 <span class="fc bfc" id="L143" title="All 2 branches covered.">                &amp;&amp; project.equals(mavenSession.getProjects().get(mavenSession.getProjects().size() - 1))) {</span>
 
-<span class="pc" id="L145">            try (BufferedReader rdr = new BufferedReader(new FileReader(getChangesFile()))) {</span>
+<span class="fc" id="L145">            try (BufferedReader rdr = new BufferedReader(new FileReader(getChangesFile()))) {</span>
 
 <span class="fc" id="L147">                Map&lt;String, AnalysisResults&gt; projectChanges = new HashMap&lt;&gt;();</span>
 
@@ -208,7 +208,7 @@ import org.revapi.AnalysisResult;
                         }
 <span class="fc" id="L209">                    }</span>
 <span class="fc" id="L210">                }</span>
-<span class="pc bpc" id="L211" title="6 of 8 branches missed.">            } catch (IOException e) {</span>
+<span class="nc" id="L211">            } catch (IOException e) {</span>
 <span class="nc" id="L212">                throw new MojoExecutionException(&quot;Failure while reading the changes tracking file.&quot;, e);</span>
 <span class="fc" id="L213">            }</span>
         }
@@ -232,9 +232,9 @@ import org.revapi.AnalysisResult;
         try {
 
             int indentationSize;
-<span class="pc" id="L235">            try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
+<span class="fc" id="L235">            try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
 <span class="fc" id="L236">                indentationSize = XmlUtil.estimateIndentationSize(rdr);</span>
-<span class="pc bpc" id="L237" title="6 of 8 branches missed.">            }</span>
+            }
 
 <span class="fc" id="L239">            VTDGen gen = new VTDGen();</span>
 <span class="fc" id="L240">            gen.enableIgnoredWhiteSpace(true);</span>
@@ -266,9 +266,9 @@ import org.revapi.AnalysisResult;
                 }
             }
 
-<span class="pc" id="L269">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
+<span class="fc" id="L269">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="fc" id="L270">                mod.output(out);</span>
-<span class="pc bpc" id="L271" title="6 of 8 branches missed.">            }</span>
+            }
 <span class="nc" id="L272">        } catch (IOException | ModifyException | NavException | XPathParseException | XPathEvalException | TranscodeException e) {</span>
 <span class="nc" id="L273">            throw new MojoExecutionException(&quot;Failed to update the version of project &quot; + project, e);</span>
 <span class="fc" id="L274">        }</span>
@@ -292,9 +292,9 @@ import org.revapi.AnalysisResult;
 <span class="fc" id="L292">            XMLModifier mod = new XMLModifier(nav);</span>
 <span class="fc" id="L293">            mod.updateToken(pos, version.toString());</span>
 
-<span class="pc" id="L295">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
+<span class="fc" id="L295">            try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="fc" id="L296">                mod.output(out);</span>
-<span class="pc bpc" id="L297" title="6 of 8 branches missed.">            }</span>
+            }
 <span class="nc" id="L298">        } catch (IOException | ModifyException | NavException | XPathParseException | TranscodeException e) {</span>
 <span class="nc" id="L299">            throw new MojoExecutionException(&quot;Failed to update the parent version of project &quot; + project, e);</span>
 <span class="fc" id="L300">        }</span>
@@ -353,7 +353,7 @@ import org.revapi.AnalysisResult;
 <span class="pc bpc" id="L353" title="1 of 2 branches missed.">            if (analyzer.getResolvedOldApi() == null) {</span>
 <span class="nc" id="L354">                return null;</span>
             } else {
-<span class="pc" id="L356">                try (AnalysisResult res = analyzer.analyze()) {</span>
+<span class="fc" id="L356">                try (AnalysisResult res = analyzer.analyze()) {</span>
 <span class="fc" id="L357">                    res.throwIfFailed();</span>
 
 <span class="fc" id="L359">                    ApiBreakageHintingReporter reporter =</span>
@@ -364,7 +364,7 @@ import org.revapi.AnalysisResult;
 <span class="fc" id="L364">                            .getVersion();</span>
 
 <span class="fc" id="L366">                    return new AnalysisResults(level, baseVersion);</span>
-<span class="pc bpc" id="L367" title="6 of 8 branches missed.">                }</span>
+                }
 
             }
 <span class="nc" id="L370">        } catch (Exception e) {</span>
@@ -388,4 +388,4 @@ import org.revapi.AnalysisResult;
 <span class="fc" id="L388">        return ret;</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

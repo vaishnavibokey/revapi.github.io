@@ -517,9 +517,9 @@ public final class Analyzer {
 <span class="fc" id="L517">                int idx = 0;</span>
 <span class="fc bfc" id="L518" title="All 2 branches covered.">                while (it.hasNext()) {</span>
                     ModelNode config;
-<span class="pc" id="L520">                    try (InputStream in = it.next()) {</span>
+<span class="fc" id="L520">                    try (InputStream in = it.next()) {</span>
 <span class="fc" id="L521">                        config = readJson(in);</span>
-<span class="pc bpc" id="L522" title="6 of 8 branches missed.">                    } catch (MarkerException | IOException e) {</span>
+<span class="nc" id="L522">                    } catch (MarkerException | IOException e) {</span>
 <span class="nc" id="L523">                        throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
 <span class="fc" id="L524">                    }</span>
 
@@ -537,11 +537,11 @@ public final class Analyzer {
 <span class="fc" id="L537">                    idx = 0;</span>
 <span class="fc" id="L538">                    it = configFileContents.get();</span>
 <span class="fc bfc" id="L539" title="All 2 branches covered.">                    while (it.hasNext()) {</span>
-<span class="pc" id="L540">                        try (Reader rdr = new InputStreamReader(it.next())) {</span>
+<span class="fc" id="L540">                        try (Reader rdr = new InputStreamReader(it.next())) {</span>
 <span class="pc bpc" id="L541" title="1 of 2 branches missed.">                            if (nonJsonIndexes.contains(idx)) {</span>
 <span class="fc" id="L542">                                mergeXmlConfigFile(ctxBld, configFile, rdr);</span>
                             }
-<span class="pc bpc" id="L544" title="6 of 8 branches missed.">                        } catch (MarkerException | IOException | XmlPullParserException e) {</span>
+<span class="nc" id="L544">                        } catch (MarkerException | IOException | XmlPullParserException e) {</span>
 <span class="nc" id="L545">                            throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
 <span class="fc" id="L546">                        }</span>
 
@@ -656,4 +656,4 @@ public final class Analyzer {
         T get() throws Exception;
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

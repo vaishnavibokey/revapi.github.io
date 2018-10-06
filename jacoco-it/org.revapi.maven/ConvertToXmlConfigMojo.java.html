@@ -118,9 +118,9 @@ import com.ximpleware.XMLModifier;
 <span class="fc" id="L118">        }</span>
 
         int indentationSize;
-<span class="pc" id="L121">        try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
+<span class="fc" id="L121">        try (BufferedReader rdr = new BufferedReader(new FileReader(project.getFile()))) {</span>
 <span class="fc" id="L122">            indentationSize = XmlUtil.estimateIndentationSize(rdr);</span>
-<span class="pc bpc" id="L123" title="6 of 8 branches missed.">        } catch (IOException e) {</span>
+<span class="nc" id="L123">        } catch (IOException e) {</span>
 <span class="nc" id="L124">            throw new MojoExecutionException(&quot;Failed to read pom.xml&quot;, e);</span>
 <span class="fc" id="L125">        }</span>
 
@@ -181,18 +181,18 @@ import com.ximpleware.XMLModifier;
 <span class="fc" id="L181">        update.accept(&quot;//plugin[groupId = 'org.revapi' and artifactId = 'revapi-maven-plugin']&quot; +</span>
                 &quot;/executions/execution/configuration/analysisConfigurationFiles/configurationFile[not(roots)]/path&quot;);
 
-<span class="pc" id="L184">        try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
+<span class="fc" id="L184">        try (OutputStream out = new FileOutputStream(project.getFile())) {</span>
 <span class="fc" id="L185">            mod.output(out);</span>
-<span class="pc bpc" id="L186" title="6 of 8 branches missed.">        }</span>
+        }
 <span class="fc" id="L187">    }</span>
 
     private File updateConfigurationFile(File configFile, Map&lt;String, ModelNode&gt; extensionSchemas, int indentationSize)
             throws Exception {
 
         ModelNode jsonConfig;
-<span class="pc" id="L193">        try (InputStream is = new FileInputStream(configFile)) {</span>
+<span class="fc" id="L193">        try (InputStream is = new FileInputStream(configFile)) {</span>
 <span class="fc" id="L194">            jsonConfig = ModelNode.fromJSONStream(is);</span>
-<span class="pc bpc" id="L195" title="6 of 8 branches missed.">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L195">        } catch (IllegalArgumentException e) {</span>
             //k, probably XML already
 <span class="nc" id="L197">            return null;</span>
 <span class="fc" id="L198">        }</span>
@@ -208,11 +208,11 @@ import com.ximpleware.XMLModifier;
 <span class="fc" id="L208">            newFile = new File(newFilePath);</span>
         }
 
-<span class="pc" id="L211">        try (Writer wrt = new FileWriter(newFile)) {</span>
+<span class="fc" id="L211">        try (Writer wrt = new FileWriter(newFile)) {</span>
 <span class="fc" id="L212">            StringWriter pretty = new StringWriter();</span>
 <span class="fc" id="L213">            XmlUtil.toIndentedString(xml, indentationSize, 0, pretty);</span>
 <span class="fc" id="L214">            wrt.write(pretty.toString());</span>
-<span class="pc bpc" id="L215" title="6 of 8 branches missed.">        }</span>
+        }
 
 <span class="fc" id="L217">        return newFile;</span>
     }
@@ -273,9 +273,9 @@ import com.ximpleware.XMLModifier;
 <span class="fc" id="L273">            update.call();</span>
         }
 
-<span class="pc" id="L276">        try (OutputStream out = new FileOutputStream(pomXml)) {</span>
+<span class="fc" id="L276">        try (OutputStream out = new FileOutputStream(pomXml)) {</span>
 <span class="fc" id="L277">            mod.output(out);</span>
-<span class="pc bpc" id="L278" title="6 of 8 branches missed.">        }</span>
+        }
 <span class="fc" id="L279">    }</span>
 
     private static String readFull(Reader rdr) throws IOException {
@@ -301,7 +301,7 @@ import com.ximpleware.XMLModifier;
 <span class="nc" id="L301">                continue;</span>
             }
 
-<span class="pc" id="L304">            try (Reader schemaRdr = ext.getJSONSchema()) {</span>
+<span class="fc" id="L304">            try (Reader schemaRdr = ext.getJSONSchema()) {</span>
 <span class="pc bpc" id="L305" title="1 of 2 branches missed.">                if (schemaRdr == null) {</span>
                     continue;
                 }
@@ -309,7 +309,7 @@ import com.ximpleware.XMLModifier;
 <span class="fc" id="L309">                ModelNode schema = ModelNode.fromJSONString(readFull(schemaRdr));</span>
 
 <span class="fc" id="L311">                extensionSchemas.put(extensionId, schema);</span>
-<span class="pc bpc" id="L312" title="10 of 12 branches missed.">            }</span>
+            }
 <span class="fc" id="L313">        }</span>
 
 <span class="fc" id="L315">        return extensionSchemas;</span>
@@ -335,4 +335,4 @@ import com.ximpleware.XMLModifier;
         void accept(T value) throws Exception;
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
