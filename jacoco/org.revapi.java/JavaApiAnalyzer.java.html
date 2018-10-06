@@ -609,17 +609,17 @@ public final class JavaApiAnalyzer implements ApiAnalyzer {
 <span class="nc" id="L609">            suppressed = t;</span>
 <span class="nc" id="L610">            throw t;</span>
         } finally {
-<span class="nc" id="L612">            try {</span>
-<span class="pc" id="L613">                rdr.close();</span>
+            try {
+<span class="fc" id="L613">                rdr.close();</span>
 <span class="nc" id="L614">            } catch (IOException e) {</span>
-<span class="nc bnc" id="L615" title="All 4 branches missed.">                if (suppressed != null) {</span>
+<span class="nc bnc" id="L615" title="All 2 branches missed.">                if (suppressed != null) {</span>
 <span class="nc" id="L616">                    e.addSuppressed(suppressed);</span>
                 }
 
                 //noinspection ThrowFromFinallyBlock
 <span class="nc" id="L620">                throw e;</span>
-<span class="pc" id="L621">            }</span>
-<span class="nc" id="L622">        }</span>
+<span class="fc" id="L621">            }</span>
+        }
     }
 
     //Javac's standard file manager prior to Java 9 is leaking resources across compilation tasks because it doesn't
@@ -635,4 +635,4 @@ public final class JavaApiAnalyzer implements ApiAnalyzer {
         }
 <span class="fc" id="L636">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
