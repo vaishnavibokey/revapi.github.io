@@ -413,11 +413,11 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
             @Override
             public Object visit(@Nonnull DeclaredType type, @Nonnull UseSite use,
                                 @Nullable Void parameter) {
-<span class="pc bpc" id="L416" title="1 of 2 branches missed.">                if (appendUse(env, usedType, bld, type, use)) {</span>
+<span class="fc bfc" id="L416" title="All 2 branches covered.">                if (appendUse(env, usedType, bld, type, use)) {</span>
 <span class="fc" id="L417">                    return Boolean.TRUE; //just a non-null values</span>
                 }
 
-<span class="nc" id="L420">                return null;</span>
+<span class="fc" id="L420">                return null;</span>
             }
 
             @Nullable
@@ -432,8 +432,8 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
     private boolean appendUse(ProbingEnvironment env, JavaTypeElement usedType, StringBuilder bld, DeclaredType type,
                               UseSite use) {
 
-<span class="pc bpc" id="L435" title="1 of 2 branches missed.">        if (!use.getUseType().isMovingToApi()) {</span>
-<span class="nc" id="L436">            return false;</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">        if (!use.getUseType().isMovingToApi()) {</span>
+<span class="fc" id="L436">            return false;</span>
         }
 
 <span class="fc" id="L439">        List&lt;TypeAndUseSite&gt; chain = getExamplePathToApiArchive(env, usedType, type, use);</span>

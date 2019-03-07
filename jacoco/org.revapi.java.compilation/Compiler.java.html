@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Compiler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.compilation</a> &gt; <span class="el_source">Compiler.java</span></div><h1>Compiler.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2018 Lukas Krejci
+ * Copyright 2014-2019 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -32,6 +32,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -44,6 +45,7 @@ import javax.tools.ToolProvider;
 import org.revapi.Archive;
 import org.revapi.java.AnalysisConfiguration;
 import org.revapi.java.Timing;
+import org.revapi.java.spi.JarExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,27 +54,31 @@ import org.slf4j.LoggerFactory;
  * @since 0.1
  */
 public final class Compiler {
-<span class="fc" id="L55">    private static final Logger LOG = LoggerFactory.getLogger(Compiler.class);</span>
+<span class="fc" id="L57">    private static final Logger LOG = LoggerFactory.getLogger(Compiler.class);</span>
 
     private final JavaCompiler compiler;
     private final Writer output;
     private final Iterable&lt;? extends Archive&gt; classPath;
     private final Iterable&lt;? extends Archive&gt; additionalClassPath;
     private final ExecutorService executor;
+    private final Iterable&lt;JarExtractor&gt; jarExtractors;
 
-    public Compiler(ExecutorService executor, Writer reportingOutput, Iterable&lt;? extends Archive&gt; classPath,
-<span class="fc" id="L64">        Iterable&lt;? extends Archive&gt; additionalClassPath) {</span>
+    public Compiler(ExecutorService executor, Writer reportingOutput,
+            Iterable&lt;JarExtractor&gt; jarExtractors,
+            Iterable&lt;? extends Archive&gt; classPath,
+<span class="fc" id="L69">            Iterable&lt;? extends Archive&gt; additionalClassPath) {</span>
+<span class="fc" id="L70">        this.jarExtractors = jarExtractors;</span>
 
-<span class="fc" id="L66">        compiler = ToolProvider.getSystemJavaCompiler();</span>
-<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (compiler == null) {</span>
-<span class="nc" id="L68">            throw new AssertionError(&quot;Could not obtain the system compiler. Is tools.jar on the classpath?&quot;);</span>
+<span class="fc" id="L72">        compiler = ToolProvider.getSystemJavaCompiler();</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        if (compiler == null) {</span>
+<span class="nc" id="L74">            throw new AssertionError(&quot;Could not obtain the system compiler. Is tools.jar on the classpath?&quot;);</span>
         }
 
-<span class="fc" id="L71">        this.executor = executor;</span>
-<span class="fc" id="L72">        this.output = reportingOutput;</span>
-<span class="fc" id="L73">        this.classPath = classPath;</span>
-<span class="fc" id="L74">        this.additionalClassPath = additionalClassPath;</span>
-<span class="fc" id="L75">    }</span>
+<span class="fc" id="L77">        this.executor = executor;</span>
+<span class="fc" id="L78">        this.output = reportingOutput;</span>
+<span class="fc" id="L79">        this.classPath = classPath;</span>
+<span class="fc" id="L80">        this.additionalClassPath = additionalClassPath;</span>
+<span class="fc" id="L81">    }</span>
 
     public CompilationValve compile(final ProbingEnvironment environment,
                                     final AnalysisConfiguration.MissingClassReporting missingClassReporting,
@@ -80,29 +86,29 @@ public final class Compiler {
                                     final InclusionFilter inclusionFilter)
             throws Exception {
 
-<span class="fc" id="L83">        File targetPath = Files.createTempDirectory(&quot;revapi-java&quot;).toAbsolutePath().toFile();</span>
+<span class="fc" id="L89">        File targetPath = Files.createTempDirectory(&quot;revapi-java&quot;).toAbsolutePath().toFile();</span>
 
-<span class="fc" id="L85">        File sourceDir = new File(targetPath, &quot;sources&quot;);</span>
-<span class="fc" id="L86">        sourceDir.mkdir();</span>
+<span class="fc" id="L91">        File sourceDir = new File(targetPath, &quot;sources&quot;);</span>
+<span class="fc" id="L92">        sourceDir.mkdir();</span>
 
-<span class="fc" id="L88">        File lib = new File(targetPath, &quot;lib&quot;);</span>
-<span class="fc" id="L89">        lib.mkdir();</span>
+<span class="fc" id="L94">        File lib = new File(targetPath, &quot;lib&quot;);</span>
+<span class="fc" id="L95">        lib.mkdir();</span>
 
         // make sure the classpath is in the same order as passed in
-<span class="fc" id="L92">        int classPathSize = size(classPath);</span>
-<span class="fc" id="L93">        int nofArchives = classPathSize + size(additionalClassPath);</span>
+<span class="fc" id="L98">        int classPathSize = size(classPath);</span>
+<span class="fc" id="L99">        int nofArchives = classPathSize + size(additionalClassPath);</span>
 
-<span class="fc" id="L95">        int prefixLength = (int) Math.log10(nofArchives) + 1;</span>
+<span class="fc" id="L101">        int prefixLength = (int) Math.log10(nofArchives) + 1;</span>
 
-<span class="fc" id="L97">        IdentityHashMap&lt;Archive, File&gt; classPathFiles = copyArchives(classPath, lib, 0, prefixLength);</span>
-<span class="fc" id="L98">        IdentityHashMap&lt;Archive, File&gt; additionClassPathFiles = copyArchives(additionalClassPath, lib, classPathSize, prefixLength);</span>
+<span class="fc" id="L103">        IdentityHashMap&lt;Archive, File&gt; classPathFiles = copyArchives(classPath, lib, 0, prefixLength);</span>
+<span class="fc" id="L104">        IdentityHashMap&lt;Archive, File&gt; additionClassPathFiles = copyArchives(additionalClassPath, lib, classPathSize, prefixLength);</span>
 
-<span class="fc" id="L100">        List&lt;String&gt; options = Arrays.asList(</span>
-<span class="fc" id="L101">            &quot;-d&quot;, sourceDir.toString(),</span>
-<span class="fc" id="L102">            &quot;-cp&quot;, composeClassPath(lib)</span>
+<span class="fc" id="L106">        List&lt;String&gt; options = Arrays.asList(</span>
+<span class="fc" id="L107">            &quot;-d&quot;, sourceDir.toString(),</span>
+<span class="fc" id="L108">            &quot;-cp&quot;, composeClassPath(lib)</span>
         );
 
-<span class="fc" id="L105">        List&lt;JavaFileObject&gt; sources = Arrays.&lt;JavaFileObject&gt;asList(</span>
+<span class="fc" id="L111">        List&lt;JavaFileObject&gt; sources = Arrays.&lt;JavaFileObject&gt;asList(</span>
             new MarkerAnnotationObject(),
             new ArchiveProbeObject()
         );
@@ -110,118 +116,129 @@ public final class Compiler {
         //the locale and charset are actually not important, because the only sources we're providing
         //are not file-based. The rest of the stuff the compiler will be touching is already compiled
         //and therefore not affected by the charset.
-<span class="fc" id="L113">        StandardJavaFileManager fileManager = compiler</span>
-<span class="fc" id="L114">                .getStandardFileManager(null, Locale.getDefault(), Charset.forName(&quot;UTF-8&quot;));</span>
+<span class="fc" id="L119">        StandardJavaFileManager fileManager = compiler</span>
+<span class="fc" id="L120">                .getStandardFileManager(null, Locale.getDefault(), Charset.forName(&quot;UTF-8&quot;));</span>
 
-<span class="fc" id="L116">        final JavaCompiler.CompilationTask task = compiler</span>
-<span class="fc" id="L117">            .getTask(output, fileManager, null, options, Collections.singletonList(ArchiveProbeObject.CLASS_NAME),</span>
+<span class="fc" id="L122">        final JavaCompiler.CompilationTask task = compiler</span>
+<span class="fc" id="L123">            .getTask(output, fileManager, null, options, Collections.singletonList(ArchiveProbeObject.CLASS_NAME),</span>
                 sources);
 
-<span class="fc" id="L120">        ProbingAnnotationProcessor processor = new ProbingAnnotationProcessor(environment);</span>
+<span class="fc" id="L126">        ProbingAnnotationProcessor processor = new ProbingAnnotationProcessor(environment);</span>
 
-<span class="fc" id="L122">        task.setProcessors(Collections.singletonList(processor));</span>
+<span class="fc" id="L128">        task.setProcessors(Collections.singletonList(processor));</span>
 
-<span class="fc" id="L124">        Future&lt;Boolean&gt; future = processor.submitWithCompilationAwareness(executor, task, () -&gt; {</span>
-<span class="pc bpc" id="L125" title="1 of 2 branches missed.">            if (Timing.LOG.isDebugEnabled()) {</span>
-<span class="nc" id="L126">                Timing.LOG.debug(&quot;About to crawl &quot; + environment.getApi());</span>
+<span class="fc" id="L130">        Future&lt;Boolean&gt; future = processor.submitWithCompilationAwareness(executor, task, () -&gt; {</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            if (Timing.LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L132">                Timing.LOG.debug(&quot;About to crawl &quot; + environment.getApi());</span>
             }
 
             try {
-<span class="fc" id="L130">                new ClasspathScanner(fileManager, environment, classPathFiles, additionClassPathFiles,</span>
-<span class="fc" id="L131">                        missingClassReporting, ignoreMissingAnnotations, inclusionFilter).initTree();</span>
-<span class="nc" id="L132">            } catch (IOException e) {</span>
-<span class="nc" id="L133">                throw new IllegalStateException(&quot;Failed to scan the classpath.&quot;, e);</span>
-<span class="fc" id="L134">            }</span>
+<span class="fc" id="L136">                new ClasspathScanner(fileManager, environment, classPathFiles, additionClassPathFiles,</span>
+<span class="fc" id="L137">                        missingClassReporting, ignoreMissingAnnotations, inclusionFilter).initTree();</span>
+<span class="nc" id="L138">            } catch (IOException e) {</span>
+<span class="nc" id="L139">                throw new IllegalStateException(&quot;Failed to scan the classpath.&quot;, e);</span>
+<span class="fc" id="L140">            }</span>
 
-<span class="pc bpc" id="L136" title="1 of 2 branches missed.">            if (Timing.LOG.isDebugEnabled()) {</span>
-<span class="nc" id="L137">                Timing.LOG.debug(&quot;Crawl finished for &quot; + environment.getApi());</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            if (Timing.LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L143">                Timing.LOG.debug(&quot;Crawl finished for &quot; + environment.getApi());</span>
             }
-<span class="fc" id="L139">        });</span>
+<span class="fc" id="L145">        });</span>
 
 
-<span class="fc" id="L142">        return new CompilationValve(future, targetPath, environment, fileManager);</span>
+<span class="fc" id="L148">        return new CompilationValve(future, targetPath, environment, fileManager);</span>
     }
 
     private String composeClassPath(File classPathDir) {
-<span class="fc" id="L146">        StringBuilder bld = new StringBuilder();</span>
+<span class="fc" id="L152">        StringBuilder bld = new StringBuilder();</span>
 
-<span class="fc" id="L148">        File[] jars = classPathDir.listFiles();</span>
+<span class="fc" id="L154">        File[] jars = classPathDir.listFiles();</span>
 
-<span class="pc bpc" id="L150" title="1 of 4 branches missed.">        if (jars == null || jars.length == 0) {</span>
-<span class="fc" id="L151">            return &quot;&quot;;</span>
+<span class="pc bpc" id="L156" title="1 of 4 branches missed.">        if (jars == null || jars.length == 0) {</span>
+<span class="fc" id="L157">            return &quot;&quot;;</span>
         }
 
-<span class="fc" id="L154">        List&lt;File&gt; sortedJars = new ArrayList&lt;&gt;(Arrays.asList(jars));</span>
-<span class="fc" id="L155">        Collections.sort(sortedJars, new Comparator&lt;File&gt;() {</span>
+<span class="fc" id="L160">        List&lt;File&gt; sortedJars = new ArrayList&lt;&gt;(Arrays.asList(jars));</span>
+<span class="fc" id="L161">        Collections.sort(sortedJars, new Comparator&lt;File&gt;() {</span>
             @Override
             public int compare(File o1, File o2) {
-<span class="fc" id="L158">                return o1.getName().compareTo(o2.getName());</span>
+<span class="fc" id="L164">                return o1.getName().compareTo(o2.getName());</span>
             }
         });
 
-<span class="fc" id="L162">        Iterator&lt;File&gt; it = sortedJars.iterator();</span>
+<span class="fc" id="L168">        Iterator&lt;File&gt; it = sortedJars.iterator();</span>
 
-<span class="fc" id="L164">        bld.append(it.next().getAbsolutePath());</span>
-<span class="fc bfc" id="L165" title="All 2 branches covered.">        while (it.hasNext()) {</span>
-<span class="fc" id="L166">            bld.append(File.pathSeparator).append(it.next().getAbsolutePath());</span>
+<span class="fc" id="L170">        bld.append(it.next().getAbsolutePath());</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc" id="L172">            bld.append(File.pathSeparator).append(it.next().getAbsolutePath());</span>
         }
 
-<span class="fc" id="L169">        return bld.toString();</span>
+<span class="fc" id="L175">        return bld.toString();</span>
     }
 
     private IdentityHashMap&lt;Archive, File&gt;
     copyArchives(Iterable&lt;? extends Archive&gt; archives, File parentDir, int startIdx, int prefixLength) {
-<span class="fc" id="L174">        IdentityHashMap&lt;Archive, File&gt; ret = new IdentityHashMap&lt;&gt;();</span>
-<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (archives == null) {</span>
-<span class="fc" id="L176">            return ret;</span>
+<span class="fc" id="L180">        IdentityHashMap&lt;Archive, File&gt; ret = new IdentityHashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">        if (archives == null) {</span>
+<span class="fc" id="L182">            return ret;</span>
         }
 
-<span class="fc bfc" id="L179" title="All 2 branches covered.">        for (Archive a : archives) {</span>
-<span class="fc" id="L180">            String name = formatName(startIdx++, prefixLength, a.getName());</span>
-<span class="fc" id="L181">            File f = new File(parentDir, name);</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        for (Archive a : archives) {</span>
+<span class="fc" id="L186">            String name = formatName(startIdx++, prefixLength, a.getName());</span>
+<span class="fc" id="L187">            File f = new File(parentDir, name);</span>
 
-<span class="fc" id="L183">            ret.put(a, f);</span>
+<span class="fc" id="L189">            ret.put(a, f);</span>
 
-<span class="pc bpc" id="L185" title="1 of 2 branches missed.">            if (f.exists()) {</span>
-<span class="nc" id="L186">                LOG.warn(</span>
-<span class="nc" id="L187">                    &quot;File &quot; + f.getAbsolutePath() + &quot; with the data of archive '&quot; + a.getName() + &quot;' already exists.&quot; +</span>
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">            if (f.exists()) {</span>
+<span class="nc" id="L192">                LOG.warn(</span>
+<span class="nc" id="L193">                    &quot;File &quot; + f.getAbsolutePath() + &quot; with the data of archive '&quot; + a.getName() + &quot;' already exists.&quot; +</span>
                             &quot; Assume it already contains the bits we need.&quot;);
-<span class="nc" id="L189">                continue;</span>
+<span class="nc" id="L195">                continue;</span>
             }
 
-<span class="fc" id="L192">            Path target = new File(parentDir, name).toPath();</span>
+<span class="fc" id="L198">            Path target = new File(parentDir, name).toPath();</span>
 
-<span class="fc" id="L194">            try (InputStream data = a.openStream()) {</span>
-<span class="fc" id="L195">                Files.copy(data, target);</span>
-<span class="nc" id="L196">            } catch (IOException e) {</span>
-<span class="nc" id="L197">                throw new IllegalStateException(</span>
-<span class="nc" id="L198">                    &quot;Failed to copy class path element: &quot; + a.getName() + &quot; to &quot; + f.getAbsolutePath(), e);</span>
-<span class="fc" id="L199">            }</span>
-<span class="fc" id="L200">        }</span>
+<span class="fc" id="L200">            try (InputStream data = extracted(a)) {</span>
+<span class="fc" id="L201">                Files.copy(data, target);</span>
+<span class="nc" id="L202">            } catch (IOException e) {</span>
+<span class="nc" id="L203">                throw new IllegalStateException(</span>
+<span class="nc" id="L204">                    &quot;Failed to copy class path element: &quot; + a.getName() + &quot; to &quot; + f.getAbsolutePath(), e);</span>
+<span class="fc" id="L205">            }</span>
+<span class="fc" id="L206">        }</span>
 
-<span class="fc" id="L202">        return ret;</span>
+<span class="fc" id="L208">        return ret;</span>
+    }
+
+    private InputStream extracted(Archive archive) throws IOException {
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        for (JarExtractor t : jarExtractors) {</span>
+<span class="fc" id="L213">            Optional&lt;InputStream&gt; extracted = t.extract(archive);</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">            if (extracted.isPresent()) {</span>
+<span class="nc" id="L215">                return extracted.get();</span>
+            }
+<span class="fc" id="L217">        }</span>
+
+<span class="fc" id="L219">        return archive.openStream();</span>
     }
 
     private int size(Iterable&lt;?&gt; collection) {
-<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (collection == null) {</span>
-<span class="fc" id="L207">            return 0;</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        if (collection == null) {</span>
+<span class="fc" id="L224">            return 0;</span>
         }
 
-<span class="fc" id="L210">        int ret = 0;</span>
-<span class="fc" id="L211">        Iterator&lt;?&gt; it = collection.iterator();</span>
-<span class="fc bfc" id="L212" title="All 2 branches covered.">        while (it.hasNext()) {</span>
-<span class="fc" id="L213">            ret++;</span>
-<span class="fc" id="L214">            it.next();</span>
+<span class="fc" id="L227">        int ret = 0;</span>
+<span class="fc" id="L228">        Iterator&lt;?&gt; it = collection.iterator();</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc" id="L230">            ret++;</span>
+<span class="fc" id="L231">            it.next();</span>
         }
 
-<span class="fc" id="L217">        return ret;</span>
+<span class="fc" id="L234">        return ret;</span>
     }
 
     private String formatName(int idx, int prefixLength, String rootName) {
         try {
-<span class="fc" id="L222">            return String.format(&quot;%0&quot; + prefixLength + &quot;d-%s&quot;, idx, UUID.nameUUIDFromBytes(rootName.getBytes(&quot;UTF-8&quot;)));</span>
-<span class="nc" id="L223">        } catch (UnsupportedEncodingException e) {</span>
-<span class="nc" id="L224">            throw new IllegalStateException(&quot;UTF-8 not supported.&quot;);</span>
+<span class="fc" id="L239">            return String.format(&quot;%0&quot; + prefixLength + &quot;d-%s&quot;, idx, UUID.nameUUIDFromBytes(rootName.getBytes(&quot;UTF-8&quot;)));</span>
+<span class="nc" id="L240">        } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L241">            throw new IllegalStateException(&quot;UTF-8 not supported.&quot;);</span>
         }
     }
 }
