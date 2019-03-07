@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractRevapiMojo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">AbstractRevapiMojo.java</span></div><h1>AbstractRevapiMojo.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2018 Lukas Krejci
+ * Copyright 2014-2019 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -38,6 +38,16 @@ import org.revapi.Reporter;
  * @since 0.3.11
  */
 <span class="nc" id="L40">abstract class AbstractRevapiMojo extends AbstractMojo {</span>
+    /**
+     * The JSON or XML configuration of the extensions pipeline. This enables the users easily specify which extensions
+     * should be included/excluded in the Revapi analysis pipeline and also to define transformation blocks - a way
+     * of grouping transforms together to enable more fine grained control over how differences are transformed.
+     *
+     * @since 0.11.0
+     */
+    @Parameter(property = Props.pipelineConfiguration.NAME, defaultValue = Props.pipelineConfiguration.DEFAULT_VALUE)
+    protected PlexusConfiguration pipelineConfiguration;
+
     /**
      * The JSON or XML configuration of various analysis options. The available options depend on what
      * analyzers are present on the plugin classpath through the {@code &amp;lt;dependencies&amp;gt;}.
@@ -272,89 +282,93 @@ import org.revapi.Reporter;
      * &lt;p&gt;
      * You can modify this set if you use another extensions that change the found differences in a way that the
      * determined new version would not correspond to what it should be.
+     *
+     * @deprecated since 0.11.0, use the {@link #pipelineConfiguration} instead
      */
+    @Deprecated
     @Parameter(property = Props.disallowedExtensions.NAME, defaultValue = Props.disallowedExtensions.DEFAULT_VALUE)
     protected String disallowedExtensions;
 
     protected AnalysisResult analyze(Class&lt;? extends Reporter&gt; reporter, Object... contextDataKeyValues)
             throws MojoExecutionException, MojoFailureException {
 
-<span class="nc" id="L282">        Analyzer analyzer = prepareAnalyzer(project, reporter, toContextData(contextDataKeyValues));</span>
-<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (analyzer != null) {</span>
-<span class="nc" id="L284">            return analyzer.analyze();</span>
+<span class="nc" id="L295">        Analyzer analyzer = prepareAnalyzer(project, reporter, toContextData(contextDataKeyValues));</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">        if (analyzer != null) {</span>
+<span class="nc" id="L297">            return analyzer.analyze();</span>
         } else {
             //a null analyzer means the current module doesn't have a jar output
-<span class="nc" id="L287">            return AnalysisResult.fakeSuccess();</span>
+<span class="nc" id="L300">            return AnalysisResult.fakeSuccess();</span>
         }
     }
 
     protected Analyzer prepareAnalyzer(MavenProject project, Class&lt;? extends Reporter&gt; reporter,
                                        Map&lt;String, Object&gt; contextData) {
-<span class="nc" id="L293">        AnalyzerBuilder.Result res = buildAnalyzer(project, reporter, contextData);</span>
+<span class="nc" id="L306">        AnalyzerBuilder.Result res = buildAnalyzer(project, reporter, contextData);</span>
 
-<span class="nc bnc" id="L295" title="All 2 branches missed.">        if (res.skip) {</span>
-<span class="nc" id="L296">            this.skip = true;</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (res.skip) {</span>
+<span class="nc" id="L309">            this.skip = true;</span>
         }
 
-<span class="nc" id="L299">        this.oldArtifacts = res.oldArtifacts;</span>
-<span class="nc" id="L300">        this.newArtifacts = res.newArtifacts;</span>
+<span class="nc" id="L312">        this.oldArtifacts = res.oldArtifacts;</span>
+<span class="nc" id="L313">        this.newArtifacts = res.newArtifacts;</span>
 
-<span class="nc bnc" id="L302" title="All 2 branches missed.">        return res.isOnClasspath ? res.analyzer : null;</span>
+<span class="nc" id="L315">        return res.analyzer;</span>
     }
 
     protected Analyzer prepareAnalyzer(MavenProject project, Class&lt;? extends Reporter&gt; reporter,
             Map&lt;String, Object&gt; contextData, Map&lt;String, Object&gt; propertyOverrides) {
-<span class="nc" id="L307">        AnalyzerBuilder.Result res = buildAnalyzer(project, reporter, contextData, propertyOverrides);</span>
+<span class="nc" id="L320">        AnalyzerBuilder.Result res = buildAnalyzer(project, reporter, contextData, propertyOverrides);</span>
 
-<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (res.skip) {</span>
-<span class="nc" id="L310">            this.skip = true;</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        if (res.skip) {</span>
+<span class="nc" id="L323">            this.skip = true;</span>
         }
 
-<span class="nc" id="L313">        this.oldArtifacts = res.oldArtifacts;</span>
-<span class="nc" id="L314">        this.newArtifacts = res.newArtifacts;</span>
+<span class="nc" id="L326">        this.oldArtifacts = res.oldArtifacts;</span>
+<span class="nc" id="L327">        this.newArtifacts = res.newArtifacts;</span>
 
-<span class="nc bnc" id="L316" title="All 2 branches missed.">        return res.isOnClasspath ? res.analyzer : null;</span>
+<span class="nc" id="L329">        return res.analyzer;</span>
     }
 
     AnalyzerBuilder.Result buildAnalyzer(MavenProject project, Class&lt;? extends Reporter&gt; reporter,
                                                    Map&lt;String, Object&gt; contextData) {
-<span class="nc" id="L321">        return buildAnalyzer(project, reporter, contextData, Collections.emptyMap());</span>
+<span class="nc" id="L334">        return buildAnalyzer(project, reporter, contextData, Collections.emptyMap());</span>
     }
 
     AnalyzerBuilder.Result buildAnalyzer(MavenProject project, Class&lt;? extends Reporter&gt; reporter,
             Map&lt;String, Object&gt; contextData, Map&lt;String, Object&gt; propertyOverrides) {
-<span class="nc" id="L326">        return AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
-<span class="nc" id="L327">                .withAlwaysCheckForReleasedVersion(overrideOrDefault(&quot;alwaysCheckForReleaseVersion&quot;, this.alwaysCheckForReleaseVersion, propertyOverrides))</span>
-<span class="nc" id="L328">                .withAnalysisConfiguration(overrideOrDefault(&quot;analysisConfiguration&quot;, this.analysisConfiguration, propertyOverrides))</span>
-<span class="nc" id="L329">                .withAnalysisConfigurationFiles(overrideOrDefault(&quot;analysisConfigurationFiles&quot;, this.analysisConfigurationFiles, propertyOverrides))</span>
-<span class="nc" id="L330">                .withCheckDependencies(overrideOrDefault(&quot;checkDependencies&quot;, this.checkDependencies, propertyOverrides))</span>
-<span class="nc" id="L331">                .withResolveProvidedDependencies(overrideOrDefault(&quot;resolveProvidedDependencies&quot;, this.resolveProvidedDependencies, propertyOverrides))</span>
-<span class="nc" id="L332">                .withResolveTransitiveProvidedDependencies(overrideOrDefault(&quot;resolveTransitiveProvidedDependencies&quot;, this.resolveTransitiveProvidedDependencies, propertyOverrides))</span>
-<span class="nc" id="L333">                .withDisallowedExtensions(overrideOrDefault(&quot;disallowedExtensions&quot;, this.disallowedExtensions, propertyOverrides))</span>
-<span class="nc" id="L334">                .withFailOnMissingConfigurationFiles(overrideOrDefault(&quot;failOnMissingConfigurationFiles&quot;, this.failOnMissingConfigurationFiles, propertyOverrides))</span>
-<span class="nc" id="L335">                .withFailOnUnresolvedArtifacts(overrideOrDefault(&quot;failOnUnresolvedArtifacts&quot;, this.failOnUnresolvedArtifacts, propertyOverrides))</span>
-<span class="nc" id="L336">                .withFailOnUnresolvedDependencies(overrideOrDefault(&quot;failOnUnresolvedDependencies&quot;, this.failOnUnresolvedDependencies, propertyOverrides))</span>
-<span class="nc" id="L337">                .withLocale(Locale.getDefault())</span>
-<span class="nc" id="L338">                .withLog(getLog())</span>
-<span class="nc" id="L339">                .withNewVersion(overrideOrDefault(&quot;newVersion&quot;, this.newVersion, propertyOverrides))</span>
-<span class="nc" id="L340">                .withOldVersion(overrideOrDefault(&quot;oldVersion&quot;, this.oldVersion, propertyOverrides))</span>
-<span class="nc" id="L341">                .withProject(project)</span>
-<span class="nc" id="L342">                .withReporter(reporter)</span>
-<span class="nc" id="L343">                .withRepositorySystem(this.repositorySystem)</span>
-<span class="nc" id="L344">                .withRepositorySystemSession(this.repositorySystemSession)</span>
-<span class="nc" id="L345">                .withSkip(overrideOrDefault(&quot;skip&quot;, this.skip, propertyOverrides))</span>
-<span class="nc" id="L346">                .withVersionFormat(overrideOrDefault(&quot;versionFormat&quot;, this.versionFormat, propertyOverrides))</span>
-<span class="nc" id="L347">                .withContextData(contextData)</span>
-<span class="nc" id="L348">                .build();</span>
+<span class="nc" id="L339">        return AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
+<span class="nc" id="L340">                .withAlwaysCheckForReleasedVersion(overrideOrDefault(&quot;alwaysCheckForReleaseVersion&quot;, this.alwaysCheckForReleaseVersion, propertyOverrides))</span>
+<span class="nc" id="L341">                .withPipelineConfiguration(overrideOrDefault(&quot;pipelineConfiguration&quot;, this.pipelineConfiguration, propertyOverrides))</span>
+<span class="nc" id="L342">                .withAnalysisConfiguration(overrideOrDefault(&quot;analysisConfiguration&quot;, this.analysisConfiguration, propertyOverrides))</span>
+<span class="nc" id="L343">                .withAnalysisConfigurationFiles(overrideOrDefault(&quot;analysisConfigurationFiles&quot;, this.analysisConfigurationFiles, propertyOverrides))</span>
+<span class="nc" id="L344">                .withCheckDependencies(overrideOrDefault(&quot;checkDependencies&quot;, this.checkDependencies, propertyOverrides))</span>
+<span class="nc" id="L345">                .withResolveProvidedDependencies(overrideOrDefault(&quot;resolveProvidedDependencies&quot;, this.resolveProvidedDependencies, propertyOverrides))</span>
+<span class="nc" id="L346">                .withResolveTransitiveProvidedDependencies(overrideOrDefault(&quot;resolveTransitiveProvidedDependencies&quot;, this.resolveTransitiveProvidedDependencies, propertyOverrides))</span>
+<span class="nc" id="L347">                .withDisallowedExtensions(overrideOrDefault(&quot;disallowedExtensions&quot;, this.disallowedExtensions, propertyOverrides))</span>
+<span class="nc" id="L348">                .withFailOnMissingConfigurationFiles(overrideOrDefault(&quot;failOnMissingConfigurationFiles&quot;, this.failOnMissingConfigurationFiles, propertyOverrides))</span>
+<span class="nc" id="L349">                .withFailOnUnresolvedArtifacts(overrideOrDefault(&quot;failOnUnresolvedArtifacts&quot;, this.failOnUnresolvedArtifacts, propertyOverrides))</span>
+<span class="nc" id="L350">                .withFailOnUnresolvedDependencies(overrideOrDefault(&quot;failOnUnresolvedDependencies&quot;, this.failOnUnresolvedDependencies, propertyOverrides))</span>
+<span class="nc" id="L351">                .withLocale(Locale.getDefault())</span>
+<span class="nc" id="L352">                .withLog(getLog())</span>
+<span class="nc" id="L353">                .withNewVersion(overrideOrDefault(&quot;newVersion&quot;, this.newVersion, propertyOverrides))</span>
+<span class="nc" id="L354">                .withOldVersion(overrideOrDefault(&quot;oldVersion&quot;, this.oldVersion, propertyOverrides))</span>
+<span class="nc" id="L355">                .withProject(project)</span>
+<span class="nc" id="L356">                .withReporter(reporter)</span>
+<span class="nc" id="L357">                .withRepositorySystem(this.repositorySystem)</span>
+<span class="nc" id="L358">                .withRepositorySystemSession(this.repositorySystemSession)</span>
+<span class="nc" id="L359">                .withSkip(overrideOrDefault(&quot;skip&quot;, this.skip, propertyOverrides))</span>
+<span class="nc" id="L360">                .withVersionFormat(overrideOrDefault(&quot;versionFormat&quot;, this.versionFormat, propertyOverrides))</span>
+<span class="nc" id="L361">                .withContextData(contextData)</span>
+<span class="nc" id="L362">                .build();</span>
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     private &lt;T&gt; T overrideOrDefault(String propertyName, T defaultValue, Map&lt;String, Object&gt; overrides) {
-<span class="nc" id="L353">        Object val = overrides.get(propertyName);</span>
-<span class="nc bnc" id="L354" title="All 2 branches missed.">        if (val == null) {</span>
-<span class="nc" id="L355">            return defaultValue;</span>
+<span class="nc" id="L367">        Object val = overrides.get(propertyName);</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">        if (val == null) {</span>
+<span class="nc" id="L369">            return defaultValue;</span>
         } else {
-<span class="nc" id="L357">            return (T) val;</span>
+<span class="nc" id="L371">            return (T) val;</span>
         }
     }
 
@@ -362,70 +376,70 @@ import org.revapi.Reporter;
      * @return true if artifacts are initialized, false if not and the analysis should not proceed
      */
     protected boolean initializeComparisonArtifacts() {
-<span class="nc bnc" id="L365" title="All 6 branches missed.">        if (newArtifacts != null &amp;&amp; newArtifacts.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newArtifacts[0])) {</span>
-<span class="nc" id="L366">            getLog().warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
+<span class="nc bnc" id="L379" title="All 6 branches missed.">        if (newArtifacts != null &amp;&amp; newArtifacts.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newArtifacts[0])) {</span>
+<span class="nc" id="L380">            getLog().warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
                     &quot; \&quot;${project.version}\&quot; as the value for \&quot;newVersion\&quot; (which is the default, so you don't&quot; +
                     &quot; actually have to do that either).&quot;);
-<span class="nc" id="L369">            oldArtifacts = null;</span>
+<span class="nc" id="L383">            oldArtifacts = null;</span>
         }
 
-<span class="nc bnc" id="L372" title="All 4 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0) {</span>
+<span class="nc bnc" id="L386" title="All 4 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0) {</span>
             //non-intuitively, we need to initialize the artifacts even if we will not proceed with the analysis itself
             //that's because we need know the versions when figuring out the version modifications -
             //see AbstractVersionModifyingMojo
-<span class="nc" id="L376">            oldArtifacts = new String[]{</span>
-<span class="nc" id="L377">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
+<span class="nc" id="L390">            oldArtifacts = new String[]{</span>
+<span class="nc" id="L391">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
 
             //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
             //analyze there
             //only do it here, because oldArtifacts might point to another artifact.
             //if we end up here in this branch, we know we'll be comparing the current artifact with something.
-<span class="nc bnc" id="L383" title="All 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="nc" id="L384">                return false;</span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="nc" id="L398">                return false;</span>
             }
         }
 
-<span class="nc bnc" id="L388" title="All 4 branches missed.">        if (newArtifacts == null || newArtifacts.length == 0) {</span>
-<span class="nc" id="L389">            newArtifacts = new String[]{</span>
-<span class="nc" id="L390">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
+<span class="nc bnc" id="L402" title="All 4 branches missed.">        if (newArtifacts == null || newArtifacts.length == 0) {</span>
+<span class="nc" id="L403">            newArtifacts = new String[]{</span>
+<span class="nc" id="L404">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
 
             //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
             //analyze there
             //again, do this check only here, because oldArtifact might point elsewhere. But if we end up here, it
             //means that oldArtifacts would be compared against the current artifact (in some version). Comparing
             //against a POM artifact is always no-op.
-<span class="nc bnc" id="L397" title="All 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="nc" id="L398">                return false;</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
+<span class="nc" id="L412">                return false;</span>
             }
         }
 
-<span class="nc" id="L402">        return true;</span>
+<span class="nc" id="L416">        return true;</span>
     }
 
     private Map&lt;String, Object&gt; toContextData(Object... contextDataKeyValues) {
-<span class="nc bnc" id="L406" title="All 2 branches missed.">        if (contextDataKeyValues.length % 2 != 0) {</span>
-<span class="nc" id="L407">            throw new IllegalArgumentException(&quot;Key-value pairs not balanced.&quot;);</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">        if (contextDataKeyValues.length % 2 != 0) {</span>
+<span class="nc" id="L421">            throw new IllegalArgumentException(&quot;Key-value pairs not balanced.&quot;);</span>
         }
 
-<span class="nc" id="L410">        Map&lt;String, Object&gt; ret = new HashMap&lt;&gt;(contextDataKeyValues.length / 2);</span>
+<span class="nc" id="L424">        Map&lt;String, Object&gt; ret = new HashMap&lt;&gt;(contextDataKeyValues.length / 2);</span>
 
-<span class="nc" id="L412">        boolean isKey = true;</span>
-<span class="nc" id="L413">        String key = null;</span>
-<span class="nc bnc" id="L414" title="All 2 branches missed.">        for(Object kv : contextDataKeyValues) {</span>
-<span class="nc bnc" id="L415" title="All 2 branches missed.">            if (isKey) {</span>
-<span class="nc bnc" id="L416" title="All 2 branches missed.">                if (!(kv instanceof String)) {</span>
-<span class="nc" id="L417">                    throw new IllegalArgumentException(&quot;Found non-string key.&quot;);</span>
+<span class="nc" id="L426">        boolean isKey = true;</span>
+<span class="nc" id="L427">        String key = null;</span>
+<span class="nc bnc" id="L428" title="All 2 branches missed.">        for(Object kv : contextDataKeyValues) {</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">            if (isKey) {</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                if (!(kv instanceof String)) {</span>
+<span class="nc" id="L431">                    throw new IllegalArgumentException(&quot;Found non-string key.&quot;);</span>
                 }
 
-<span class="nc" id="L420">                key = (String) kv;</span>
-<span class="nc" id="L421">                isKey = false;</span>
+<span class="nc" id="L434">                key = (String) kv;</span>
+<span class="nc" id="L435">                isKey = false;</span>
             } else {
-<span class="nc" id="L423">                ret.put(key, kv);</span>
-<span class="nc" id="L424">                isKey = true;</span>
+<span class="nc" id="L437">                ret.put(key, kv);</span>
+<span class="nc" id="L438">                isKey = true;</span>
             }
         }
 
-<span class="nc" id="L428">        return ret;</span>
+<span class="nc" id="L442">        return ret;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

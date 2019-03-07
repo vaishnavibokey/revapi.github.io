@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalyzerBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">AnalyzerBuilder.java</span></div><h1>AnalyzerBuilder.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2018 Lukas Krejci
+ * Copyright 2014-2019 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -23,8 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -32,10 +31,10 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.util.artifact.ArtifactIdUtils;
 import org.revapi.ApiAnalyzer;
 import org.revapi.DifferenceTransform;
 import org.revapi.ElementFilter;
+import org.revapi.PipelineConfiguration;
 import org.revapi.Reporter;
 import org.revapi.Revapi;
 import org.revapi.ServiceTypeLoader;
@@ -60,6 +59,7 @@ class AnalyzerBuilder {
     private String newVersion;
     private String disallowedExtensions;
     private Class&lt;? extends Reporter&gt; reporterType;
+    private PlexusConfiguration pipelineConfiguration;
     private PlexusConfiguration analysisConfiguration;
     private Object[] analysisConfigurationFiles;
     private RepositorySystem repositorySystem;
@@ -125,216 +125,185 @@ class AnalyzerBuilder {
 <span class="fc" id="L125">        return this;</span>
     }
 
-    AnalyzerBuilder withAnalysisConfiguration(PlexusConfiguration analysisConfiguration) {
-<span class="fc" id="L129">        this.analysisConfiguration = analysisConfiguration;</span>
+    AnalyzerBuilder withPipelineConfiguration(PlexusConfiguration pipelineConfiguration) {
+<span class="fc" id="L129">        this.pipelineConfiguration = pipelineConfiguration;</span>
 <span class="fc" id="L130">        return this;</span>
     }
 
-    AnalyzerBuilder withAnalysisConfigurationFiles(Object[] analysisConfigurationFiles) {
-<span class="fc" id="L134">        this.analysisConfigurationFiles = analysisConfigurationFiles;</span>
+    AnalyzerBuilder withAnalysisConfiguration(PlexusConfiguration analysisConfiguration) {
+<span class="fc" id="L134">        this.analysisConfiguration = analysisConfiguration;</span>
 <span class="fc" id="L135">        return this;</span>
     }
 
-    AnalyzerBuilder withRepositorySystem(RepositorySystem repositorySystem) {
-<span class="fc" id="L139">        this.repositorySystem = repositorySystem;</span>
+    AnalyzerBuilder withAnalysisConfigurationFiles(Object[] analysisConfigurationFiles) {
+<span class="fc" id="L139">        this.analysisConfigurationFiles = analysisConfigurationFiles;</span>
 <span class="fc" id="L140">        return this;</span>
     }
 
-    AnalyzerBuilder withRepositorySystemSession(RepositorySystemSession repositorySystemSession) {
-<span class="fc" id="L144">        this.repositorySystemSession = repositorySystemSession;</span>
+    AnalyzerBuilder withRepositorySystem(RepositorySystem repositorySystem) {
+<span class="fc" id="L144">        this.repositorySystem = repositorySystem;</span>
 <span class="fc" id="L145">        return this;</span>
     }
 
-    AnalyzerBuilder withFailOnMissingConfigurationFiles(boolean failOnMissingConfigurationFiles) {
-<span class="fc" id="L149">        this.failOnMissingConfigurationFiles = failOnMissingConfigurationFiles;</span>
+    AnalyzerBuilder withRepositorySystemSession(RepositorySystemSession repositorySystemSession) {
+<span class="fc" id="L149">        this.repositorySystemSession = repositorySystemSession;</span>
 <span class="fc" id="L150">        return this;</span>
     }
 
-    AnalyzerBuilder withFailOnUnresolvedDependencies(boolean failOnUnresolvedDependencies) {
-<span class="fc" id="L154">        this.failOnUnresolvedDependencies = failOnUnresolvedDependencies;</span>
+    AnalyzerBuilder withFailOnMissingConfigurationFiles(boolean failOnMissingConfigurationFiles) {
+<span class="fc" id="L154">        this.failOnMissingConfigurationFiles = failOnMissingConfigurationFiles;</span>
 <span class="fc" id="L155">        return this;</span>
     }
 
-    AnalyzerBuilder withFailOnUnresolvedArtifacts(boolean failOnUnresolvedArtifacts) {
-<span class="fc" id="L159">        this.failOnUnresolvedArtifacts = failOnUnresolvedArtifacts;</span>
+    AnalyzerBuilder withFailOnUnresolvedDependencies(boolean failOnUnresolvedDependencies) {
+<span class="fc" id="L159">        this.failOnUnresolvedDependencies = failOnUnresolvedDependencies;</span>
 <span class="fc" id="L160">        return this;</span>
     }
 
-    AnalyzerBuilder withAlwaysCheckForReleasedVersion(boolean alwaysCheckForReleaseVersion) {
-<span class="fc" id="L164">        this.alwaysCheckForReleaseVersion = alwaysCheckForReleaseVersion;</span>
+    AnalyzerBuilder withFailOnUnresolvedArtifacts(boolean failOnUnresolvedArtifacts) {
+<span class="fc" id="L164">        this.failOnUnresolvedArtifacts = failOnUnresolvedArtifacts;</span>
 <span class="fc" id="L165">        return this;</span>
     }
 
-    AnalyzerBuilder withCheckDependencies(boolean checkDependencies) {
-<span class="fc" id="L169">        this.checkDependencies = checkDependencies;</span>
+    AnalyzerBuilder withAlwaysCheckForReleasedVersion(boolean alwaysCheckForReleaseVersion) {
+<span class="fc" id="L169">        this.alwaysCheckForReleaseVersion = alwaysCheckForReleaseVersion;</span>
 <span class="fc" id="L170">        return this;</span>
     }
 
-    AnalyzerBuilder withResolveProvidedDependencies(boolean resolveProvidedDependencies) {
-<span class="fc" id="L174">        this.resolveProvidedDependencies = resolveProvidedDependencies;</span>
+    AnalyzerBuilder withCheckDependencies(boolean checkDependencies) {
+<span class="fc" id="L174">        this.checkDependencies = checkDependencies;</span>
 <span class="fc" id="L175">        return this;</span>
     }
 
-    AnalyzerBuilder withResolveTransitiveProvidedDependencies(boolean resolveTransitiveProvidedDependencies) {
-<span class="fc" id="L179">        this.resolveTransitiveProvidedDependencies = resolveTransitiveProvidedDependencies;</span>
+    AnalyzerBuilder withResolveProvidedDependencies(boolean resolveProvidedDependencies) {
+<span class="fc" id="L179">        this.resolveProvidedDependencies = resolveProvidedDependencies;</span>
 <span class="fc" id="L180">        return this;</span>
     }
 
-    AnalyzerBuilder withVersionFormat(String versionFormat) {
-<span class="fc" id="L184">        this.versionFormat = versionFormat;</span>
+    AnalyzerBuilder withResolveTransitiveProvidedDependencies(boolean resolveTransitiveProvidedDependencies) {
+<span class="fc" id="L184">        this.resolveTransitiveProvidedDependencies = resolveTransitiveProvidedDependencies;</span>
 <span class="fc" id="L185">        return this;</span>
     }
 
-    AnalyzerBuilder withLog(Log log) {
-<span class="fc" id="L189">        this.log = log;</span>
+    AnalyzerBuilder withVersionFormat(String versionFormat) {
+<span class="fc" id="L189">        this.versionFormat = versionFormat;</span>
 <span class="fc" id="L190">        return this;</span>
     }
 
+    AnalyzerBuilder withLog(Log log) {
+<span class="fc" id="L194">        this.log = log;</span>
+<span class="fc" id="L195">        return this;</span>
+    }
+
     AnalyzerBuilder withRevapiInstance(Revapi revapi) {
-<span class="nc" id="L194">        this.revapi = revapi;</span>
-<span class="nc" id="L195">        return this;</span>
+<span class="nc" id="L199">        this.revapi = revapi;</span>
+<span class="nc" id="L200">        return this;</span>
     }
 
     AnalyzerBuilder withContextData(Map&lt;String, Object&gt; contextData) {
-<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        if (contextData != null) {</span>
-<span class="fc" id="L200">            this.contextData.putAll(contextData);</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        if (contextData != null) {</span>
+<span class="fc" id="L205">            this.contextData.putAll(contextData);</span>
         }
-<span class="fc" id="L202">        return this;</span>
+<span class="fc" id="L207">        return this;</span>
     }
 
     public Result build() {
-<span class="fc" id="L206">        Result res = new Result();</span>
+<span class="fc" id="L211">        Result res = new Result();</span>
 
-<span class="fc" id="L208">        res.isOnClasspath = initializeComparisonArtifacts();</span>
+<span class="fc" id="L213">        initializeComparisonArtifacts();</span>
 
-<span class="fc" id="L210">        res.newArtifacts = newGavs;</span>
-<span class="fc" id="L211">        res.oldArtifacts = oldGavs;</span>
+<span class="fc" id="L215">        res.newArtifacts = newGavs;</span>
+<span class="fc" id="L216">        res.oldArtifacts = oldGavs;</span>
 
-<span class="fc" id="L213">        res.skip = skip;</span>
+<span class="fc" id="L218">        res.skip = skip;</span>
 
-<span class="fc" id="L215">        res.analyzer = prepareAnalyzer();</span>
+<span class="fc" id="L220">        res.analyzer = prepareAnalyzer();</span>
 
-<span class="fc" id="L217">        return res;</span>
+<span class="fc" id="L222">        return res;</span>
     }
 
     private Analyzer prepareAnalyzer() {
-<span class="pc bpc" id="L221" title="1 of 2 branches missed.">        if (skip) {</span>
-<span class="nc" id="L222">            return null;</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L227">            return null;</span>
         }
 
 
-<span class="fc bfc" id="L226" title="All 2 branches covered.">        final List&lt;String&gt; disallowedExtensions = this.disallowedExtensions == null</span>
-<span class="fc" id="L227">                ? Collections.emptyList()</span>
-<span class="fc" id="L228">                : Arrays.asList(this.disallowedExtensions.split(&quot;\\s*,\\s*&quot;));</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">        final List&lt;String&gt; disallowedExtensions = this.disallowedExtensions == null</span>
+<span class="fc" id="L232">                ? Collections.emptyList()</span>
+<span class="fc" id="L233">                : Arrays.asList(this.disallowedExtensions.split(&quot;\\s*,\\s*&quot;));</span>
 
-<span class="fc" id="L230">        Supplier&lt;Revapi.Builder&gt; ctor = getDisallowedExtensionsAwareRevapiConstructor(disallowedExtensions);</span>
+<span class="fc" id="L235">        Consumer&lt;PipelineConfiguration.Builder&gt; pipelineModifier =</span>
+<span class="fc" id="L236">                applyDisallowedExtensionsToPipeline(disallowedExtensions);</span>
 
-<span class="fc" id="L232">        return new Analyzer(analysisConfiguration, analysisConfigurationFiles, oldArtifacts, newArtifacts, oldGavs,</span>
-                newGavs, project, repositorySystem, repositorySystemSession, reporterType, contextData, locale, log,
-                failOnMissingConfigurationFiles, failOnUnresolvedArtifacts, failOnUnresolvedDependencies,
-                alwaysCheckForReleaseVersion, checkDependencies, resolveProvidedDependencies,
-                resolveTransitiveProvidedDependencies, versionFormat, ctor, revapi);
+<span class="fc" id="L238">        return new Analyzer(pipelineConfiguration, analysisConfiguration, analysisConfigurationFiles, oldArtifacts,</span>
+                newArtifacts, oldGavs, newGavs, project, repositorySystem, repositorySystemSession, reporterType,
+                contextData, locale, log, failOnMissingConfigurationFiles, failOnUnresolvedArtifacts,
+                failOnUnresolvedDependencies, alwaysCheckForReleaseVersion, checkDependencies,
+                resolveProvidedDependencies, resolveTransitiveProvidedDependencies, versionFormat, pipelineModifier,
+                revapi);
     }
 
-    /**
-     * @return true if artifacts are initialized, false if not and the analysis should not proceed
-     */
-    private boolean initializeComparisonArtifacts() {
-<span class="fc bfc" id="L243" title="All 2 branches covered.">        if (oldArtifacts == null) {</span>
-<span class="fc" id="L244">            return initializeComparisonGavs();</span>
-        } else {
-<span class="fc" id="L246">            String coords = Analyzer.getProjectArtifactCoordinates(project, null);</span>
-
-<span class="fc" id="L248">            boolean projectInOlds = Stream.of(oldArtifacts).anyMatch(a -&gt; ArtifactIdUtils.toId(a).equals(coords));</span>
-<span class="fc" id="L249">            boolean projectInNews = Stream.of(newArtifacts).anyMatch(a -&gt; ArtifactIdUtils.toId(a).equals(coords));</span>
-
-<span class="pc bpc" id="L251" title="3 of 6 branches missed.">            if ((projectInOlds || projectInNews) &amp;&amp; !project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="nc" id="L252">                return false;</span>
-            }
-
-<span class="fc" id="L255">            return true;</span>
+    private void initializeComparisonArtifacts() {
+<span class="fc bfc" id="L247" title="All 2 branches covered.">        if (oldArtifacts == null) {</span>
+<span class="fc" id="L248">            initializeComparisonGavs();</span>
         }
-    }
+<span class="fc" id="L250">    }</span>
 
-    private boolean initializeComparisonGavs() {
-<span class="pc bpc" id="L260" title="2 of 6 branches missed.">        if (newGavs != null &amp;&amp; newGavs.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newGavs[0])) {</span>
-<span class="nc" id="L261">            log.warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
+    private void initializeComparisonGavs() {
+<span class="pc bpc" id="L253" title="2 of 6 branches missed.">        if (newGavs != null &amp;&amp; newGavs.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newGavs[0])) {</span>
+<span class="nc" id="L254">            log.warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
                     &quot; \&quot;${project.version}\&quot; as the value for \&quot;newVersion\&quot; (which is the default, so you don't&quot; +
                     &quot; actually have to do that either).&quot;);
-<span class="nc" id="L264">            oldGavs = null;</span>
+<span class="nc" id="L257">            oldGavs = null;</span>
         }
 
-<span class="pc bpc" id="L267" title="1 of 4 branches missed.">        if (oldGavs == null || oldGavs.length == 0) {</span>
+<span class="pc bpc" id="L260" title="1 of 4 branches missed.">        if (oldGavs == null || oldGavs.length == 0) {</span>
             //non-intuitively, we need to initialize the artifacts even if we will not proceed with the analysis itself
             //that's because we need know the versions when figuring out the version modifications -
             //see AbstractVersionModifyingMojo
-<span class="fc" id="L271">            oldGavs = new String[]{</span>
-<span class="fc" id="L272">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
-
-            //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
-            //analyze there
-            //only do it here, because oldArtifacts might point to another artifact.
-            //if we end up here in this branch, we know we'll be comparing the current artifact with something.
-<span class="fc bfc" id="L278" title="All 2 branches covered.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="fc" id="L279">                return false;</span>
-            }
+<span class="fc" id="L264">            oldGavs = new String[]{</span>
+<span class="fc" id="L265">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
         }
 
-<span class="pc bpc" id="L283" title="1 of 4 branches missed.">        if (newGavs == null || newGavs.length == 0) {</span>
-<span class="fc" id="L284">            newGavs = new String[]{</span>
-<span class="fc" id="L285">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
-
-            //bail out quickly for POM artifacts (or any other packaging without a file result) - there's nothing we can
-            //analyze there
-            //again, do this check only here, because oldArtifact might point elsewhere. But if we end up here, it
-            //means that oldArtifacts would be compared against the current artifact (in some version). Comparing
-            //against a POM artifact is always no-op.
-<span class="pc bpc" id="L292" title="1 of 2 branches missed.">            if (!project.getArtifact().getArtifactHandler().isAddedToClasspath()) {</span>
-<span class="nc" id="L293">                return false;</span>
-            }
+<span class="pc bpc" id="L268" title="1 of 4 branches missed.">        if (newGavs == null || newGavs.length == 0) {</span>
+<span class="fc" id="L269">            newGavs = new String[]{</span>
+<span class="fc" id="L270">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
         }
+<span class="fc" id="L272">   }</span>
 
-<span class="fc" id="L297">        return true;</span>
-    }
+    private static Consumer&lt;PipelineConfiguration.Builder&gt;
+    applyDisallowedExtensionsToPipeline(List&lt;String&gt; disallowedExtensions) {
+<span class="fc" id="L276">        return (bld) -&gt; {</span>
+<span class="fc" id="L277">            List&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L278">            List&lt;Class&lt;? extends ElementFilter&gt;&gt; filters = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L279">            List&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L280">            List&lt;Class&lt;? extends Reporter&gt;&gt; reporters = new ArrayList&lt;&gt;();</span>
 
-    private static Supplier&lt;Revapi.Builder&gt;
-    getDisallowedExtensionsAwareRevapiConstructor(List&lt;String&gt; disallowedExtensions) {
-<span class="fc" id="L302">        return () -&gt; {</span>
-<span class="fc" id="L303">            Revapi.Builder bld = Revapi.builder();</span>
-
-<span class="fc" id="L305">            List&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L306">            List&lt;Class&lt;? extends ElementFilter&gt;&gt; filters = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L307">            List&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L308">            List&lt;Class&lt;? extends Reporter&gt;&gt; reporters = new ArrayList&lt;&gt;();</span>
-
-<span class="fc" id="L310">            addAllAllowed(analyzers, ServiceTypeLoader.load(ApiAnalyzer.class), disallowedExtensions);</span>
-<span class="fc" id="L311">            addAllAllowed(filters, ServiceTypeLoader.load(ElementFilter.class), disallowedExtensions);</span>
-<span class="fc" id="L312">            addAllAllowed(transforms, ServiceTypeLoader.load(DifferenceTransform.class), disallowedExtensions);</span>
-<span class="fc" id="L313">            addAllAllowed(reporters, ServiceTypeLoader.load(Reporter.class), disallowedExtensions);</span>
+<span class="fc" id="L282">            addAllAllowed(analyzers, ServiceTypeLoader.load(ApiAnalyzer.class), disallowedExtensions);</span>
+<span class="fc" id="L283">            addAllAllowed(filters, ServiceTypeLoader.load(ElementFilter.class), disallowedExtensions);</span>
+<span class="fc" id="L284">            addAllAllowed(transforms, ServiceTypeLoader.load(DifferenceTransform.class), disallowedExtensions);</span>
+<span class="fc" id="L285">            addAllAllowed(reporters, ServiceTypeLoader.load(Reporter.class), disallowedExtensions);</span>
 
             @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L316">            List&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; castTransforms =</span>
+<span class="fc" id="L288">            List&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; castTransforms =</span>
                     (List&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt;) (List) transforms;
 
-<span class="fc" id="L319">            bld.withAnalyzers(analyzers).withFilters(filters).withTransforms(castTransforms).withReporters(reporters);</span>
-
-<span class="fc" id="L321">            return bld;</span>
-        };
+<span class="fc" id="L291">            bld.withAnalyzers(analyzers).withFilters(filters).withTransforms(castTransforms).withReporters(reporters);</span>
+<span class="fc" id="L292">        };</span>
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     private static &lt;T&gt; void addAllAllowed(List&lt;Class&lt;? extends T&gt;&gt; list, Iterable&lt;Class&lt;? extends T&gt;&gt; candidates,
                                           List&lt;String&gt; disallowedClassNames) {
-<span class="fc bfc" id="L328" title="All 2 branches covered.">        for (Class&lt;? extends T&gt; c : candidates) {</span>
-<span class="pc bpc" id="L329" title="1 of 4 branches missed.">            if (c != null &amp;&amp; !disallowedClassNames.contains(c.getName())) {</span>
-<span class="fc" id="L330">                list.add(c);</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">        for (Class&lt;? extends T&gt; c : candidates) {</span>
+<span class="pc bpc" id="L299" title="1 of 4 branches missed.">            if (c != null &amp;&amp; !disallowedClassNames.contains(c.getName())) {</span>
+<span class="fc" id="L300">                list.add(c);</span>
             }
-<span class="fc" id="L332">        }</span>
-<span class="fc" id="L333">    }</span>
+<span class="fc" id="L302">        }</span>
+<span class="fc" id="L303">    }</span>
 
     static class Result {
         boolean skip;
-        boolean isOnClasspath;
         String[] oldArtifacts;
         String[] newArtifacts;
         Analyzer analyzer;
