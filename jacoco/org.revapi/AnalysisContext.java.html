@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalysisContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">AnalysisContext.java</span></div><h1>AnalysisContext.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2018 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -51,11 +51,11 @@ import org.revapi.configuration.JSONUtil;
  *
  * &lt;p&gt;The configuration accepted by the builder is actually of 2 forms.
  * &lt;ol&gt;
- *     &lt;li&gt;The &quot;old style&quot; configuration where each extension could be configured at most once
- *     &lt;li&gt;The &quot;new style&quot; configuration that enables multiple configurations for each extension and is more easily
- *     translatable to XML.
+ * &lt;li&gt;The &quot;old style&quot; configuration where each extension could be configured at most once
+ * &lt;li&gt;The &quot;new style&quot; configuration that enables multiple configurations for each extension and is more easily
+ * translatable to XML.
  * &lt;/ol&gt;
- *
+ * &lt;p&gt;
  * In the old format, the configuration of an extension was nested inside objects corresponding to its exploded
  * extension id. E.g. if the extension had an id of &quot;my.extension&quot;, the configuration would look like:
  * &lt;pre&gt;&lt;code&gt;
@@ -132,6 +132,7 @@ public final class AnalysisContext {
 
     /**
      * Constructor
+     *
      * @param locale        the locale the analysis reporters should use
      * @param configuration configuration represented as DMR node
      * @param oldApi        the old API
@@ -139,18 +140,18 @@ public final class AnalysisContext {
      * @param data          the data that should be attached to the analysis context
      */
     private AnalysisContext(@Nonnull Locale locale, @Nullable ModelNode configuration, @Nonnull API oldApi,
-<span class="fc" id="L142">                           @Nonnull API newApi, @Nonnull Map&lt;String, Object&gt; data) {</span>
-<span class="fc" id="L143">        this.locale = locale;</span>
-<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (configuration == null) {</span>
-<span class="fc" id="L145">            this.configuration = new ModelNode();</span>
-<span class="fc" id="L146">            this.configuration.setEmptyList();</span>
+<span class="fc" id="L143">            @Nonnull API newApi, @Nonnull Map&lt;String, Object&gt; data) {</span>
+<span class="fc" id="L144">        this.locale = locale;</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (configuration == null) {</span>
+<span class="fc" id="L146">            this.configuration = new ModelNode();</span>
+<span class="fc" id="L147">            this.configuration.setEmptyList();</span>
         } else {
-<span class="fc" id="L148">            this.configuration = configuration;</span>
+<span class="fc" id="L149">            this.configuration = configuration;</span>
         }
-<span class="fc" id="L150">        this.oldApi = oldApi;</span>
-<span class="fc" id="L151">        this.newApi = newApi;</span>
-<span class="fc" id="L152">        this.data = data;</span>
-<span class="fc" id="L153">    }</span>
+<span class="fc" id="L151">        this.oldApi = oldApi;</span>
+<span class="fc" id="L152">        this.newApi = newApi;</span>
+<span class="fc" id="L153">        this.data = data;</span>
+<span class="fc" id="L154">    }</span>
 
     /**
      * Returns a new analysis context builder that extracts the information about the available extensions from
@@ -160,16 +161,15 @@ public final class AnalysisContext {
      *
      * @param revapi the revapi instance to read the available extensions from
      * @return a new analysis context builder
-     *
      */
     @Nonnull
     public static Builder builder(Revapi revapi) {
 <span class="fc" id="L167">        List&lt;String&gt; knownExtensionIds = new ArrayList&lt;&gt;();</span>
 
-<span class="fc" id="L169">        addExtensionIds(revapi.getApiAnalyzerTypes(), knownExtensionIds);</span>
-<span class="fc" id="L170">        addExtensionIds(revapi.getDifferenceTransformTypes(), knownExtensionIds);</span>
-<span class="fc" id="L171">        addExtensionIds(revapi.getElementFilterTypes(), knownExtensionIds);</span>
-<span class="fc" id="L172">        addExtensionIds(revapi.getReporterTypes(), knownExtensionIds);</span>
+<span class="fc" id="L169">        addExtensionIds(revapi.getPipelineConfiguration().getApiAnalyzerTypes(), knownExtensionIds);</span>
+<span class="fc" id="L170">        addExtensionIds(revapi.getPipelineConfiguration().getTransformTypes(), knownExtensionIds);</span>
+<span class="fc" id="L171">        addExtensionIds(revapi.getPipelineConfiguration().getFilterTypes(), knownExtensionIds);</span>
+<span class="fc" id="L172">        addExtensionIds(revapi.getPipelineConfiguration().getReporterTypes(), knownExtensionIds);</span>
 
 <span class="fc" id="L174">        return new Builder(knownExtensionIds);</span>
     }
@@ -181,7 +181,7 @@ public final class AnalysisContext {
      * @return a new analysis context builder
      */
     public static Builder builder() {
-<span class="nc" id="L184">        return new Builder(null);</span>
+<span class="fc" id="L184">        return new Builder(null);</span>
     }
 
     /**
@@ -363,161 +363,162 @@ public final class AnalysisContext {
 <span class="fc" id="L363">            ModelNode newStyleConfig = new ModelNode();</span>
 <span class="fc" id="L364">            newStyleConfig.setEmptyList();</span>
 
-<span class="fc bfc" id="L366" title="All 2 branches covered.">            extensionScan: for (String extensionId : knownExtensionIds) {</span>
-<span class="fc" id="L367">                String[] explodedId = extensionId.split(&quot;\\.&quot;);</span>
+            extensionScan:
+<span class="fc bfc" id="L367" title="All 2 branches covered.">            for (String extensionId : knownExtensionIds) {</span>
+<span class="fc" id="L368">                String[] explodedId = extensionId.split(&quot;\\.&quot;);</span>
 
-<span class="fc" id="L369">                ModelNode extConfig = configuration;</span>
-<span class="fc bfc" id="L370" title="All 2 branches covered.">                for (String segment : explodedId) {</span>
-<span class="pc bpc" id="L371" title="1 of 2 branches missed.">                    if (!extConfig.hasDefined(segment)) {</span>
-<span class="nc" id="L372">                        continue extensionScan;</span>
+<span class="fc" id="L370">                ModelNode extConfig = configuration;</span>
+<span class="fc bfc" id="L371" title="All 2 branches covered.">                for (String segment : explodedId) {</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">                    if (!extConfig.hasDefined(segment)) {</span>
+<span class="fc" id="L373">                        continue extensionScan;</span>
                     } else {
-<span class="fc" id="L374">                        extConfig = extConfig.get(segment);</span>
+<span class="fc" id="L375">                        extConfig = extConfig.get(segment);</span>
                     }
                 }
 
-<span class="fc" id="L378">                ModelNode extNewStyle = new ModelNode();</span>
-<span class="fc" id="L379">                extNewStyle.get(&quot;extension&quot;).set(extensionId);</span>
-<span class="fc" id="L380">                extNewStyle.get(&quot;configuration&quot;).set(extConfig);</span>
+<span class="fc" id="L379">                ModelNode extNewStyle = new ModelNode();</span>
+<span class="fc" id="L380">                extNewStyle.get(&quot;extension&quot;).set(extensionId);</span>
+<span class="fc" id="L381">                extNewStyle.get(&quot;configuration&quot;).set(extConfig);</span>
 
-<span class="fc" id="L382">                newStyleConfig.add(extNewStyle);</span>
-<span class="fc" id="L383">            }</span>
+<span class="fc" id="L383">                newStyleConfig.add(extNewStyle);</span>
+<span class="fc" id="L384">            }</span>
 
-<span class="fc" id="L385">            return newStyleConfig;</span>
+<span class="fc" id="L386">            return newStyleConfig;</span>
         }
 
         private static void splitByExtensionAndId(List&lt;ModelNode&gt; configs,
-                                                  Map&lt;String, Map&lt;String, ModelNode&gt;&gt; byExtensionAndId,
-                                                  Map&lt;String, List&lt;ModelNode&gt;&gt; idlessByExtension) {
-<span class="fc bfc" id="L391" title="All 2 branches covered.">            for (ModelNode c : configs) {</span>
-<span class="fc" id="L392">                String extensionId = c.get(&quot;extension&quot;).asString();</span>
-<span class="fc bfc" id="L393" title="All 2 branches covered.">                if (!c.hasDefined(&quot;id&quot;)) {</span>
-<span class="fc" id="L394">                    idlessByExtension.computeIfAbsent(extensionId, x -&gt; new ArrayList&lt;&gt;(2)).add(c);</span>
-<span class="fc" id="L395">                    continue;</span>
+                Map&lt;String, Map&lt;String, ModelNode&gt;&gt; byExtensionAndId,
+                Map&lt;String, List&lt;ModelNode&gt;&gt; idlessByExtension) {
+<span class="fc bfc" id="L392" title="All 2 branches covered.">            for (ModelNode c : configs) {</span>
+<span class="fc" id="L393">                String extensionId = c.get(&quot;extension&quot;).asString();</span>
+<span class="fc bfc" id="L394" title="All 2 branches covered.">                if (!c.hasDefined(&quot;id&quot;)) {</span>
+<span class="fc" id="L395">                    idlessByExtension.computeIfAbsent(extensionId, x -&gt; new ArrayList&lt;&gt;(2)).add(c);</span>
+<span class="fc" id="L396">                    continue;</span>
                 }
 
-<span class="fc" id="L398">                String id = c.get(&quot;id&quot;).asString();</span>
+<span class="fc" id="L399">                String id = c.get(&quot;id&quot;).asString();</span>
 
-<span class="fc" id="L400">                byExtensionAndId.computeIfAbsent(extensionId, x -&gt; new HashMap&lt;&gt;(2)).compute(id, (i, n) -&gt; {</span>
-<span class="pc bpc" id="L401" title="1 of 2 branches missed.">                    if (n == null) {</span>
-<span class="fc" id="L402">                        return c;</span>
+<span class="fc" id="L401">                byExtensionAndId.computeIfAbsent(extensionId, x -&gt; new HashMap&lt;&gt;(2)).compute(id, (i, n) -&gt; {</span>
+<span class="pc bpc" id="L402" title="1 of 2 branches missed.">                    if (n == null) {</span>
+<span class="fc" id="L403">                        return c;</span>
                     } else {
-<span class="nc" id="L404">                        throw new IllegalArgumentException(</span>
+<span class="nc" id="L405">                        throw new IllegalArgumentException(</span>
                                 &quot;There cannot be 2 or more configurations with the same ID.&quot;);
                     }
                 });
-<span class="fc" id="L408">            }</span>
-<span class="fc" id="L409">        }</span>
+<span class="fc" id="L409">            }</span>
+<span class="fc" id="L410">        }</span>
 
         private static void mergeConfigs(ModelNode a, ModelNode b) {
-<span class="fc" id="L412">            Map&lt;String, Map&lt;String, ModelNode&gt;&gt; aByExtensionAndId = new HashMap&lt;&gt;(4);</span>
-<span class="fc" id="L413">            Map&lt;String, List&lt;ModelNode&gt;&gt; idlessAByExtensionId = new HashMap&lt;&gt;(4);</span>
-<span class="fc" id="L414">            splitByExtensionAndId(a.asList(), aByExtensionAndId, idlessAByExtensionId);</span>
+<span class="fc" id="L413">            Map&lt;String, Map&lt;String, ModelNode&gt;&gt; aByExtensionAndId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L414">            Map&lt;String, List&lt;ModelNode&gt;&gt; idlessAByExtensionId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L415">            splitByExtensionAndId(a.asList(), aByExtensionAndId, idlessAByExtensionId);</span>
 
-<span class="fc" id="L416">            Map&lt;String, Map&lt;String, ModelNode&gt;&gt; bByExtensionAndId = new HashMap&lt;&gt;(4);</span>
-<span class="fc" id="L417">            Map&lt;String, List&lt;ModelNode&gt;&gt; idlessBByExtensionId = new HashMap&lt;&gt;(4);</span>
-<span class="fc" id="L418">            splitByExtensionAndId(b.asList(), bByExtensionAndId, idlessBByExtensionId);</span>
+<span class="fc" id="L417">            Map&lt;String, Map&lt;String, ModelNode&gt;&gt; bByExtensionAndId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L418">            Map&lt;String, List&lt;ModelNode&gt;&gt; idlessBByExtensionId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L419">            splitByExtensionAndId(b.asList(), bByExtensionAndId, idlessBByExtensionId);</span>
 
             //we cannot merge if:
             //1) &quot;a&quot; contains 2 or more (idless or not) for an extension and b contains at least 1 idless for an extension
             //2) &quot;a&quot; contains at least 1 for an extension and b contains 2 or more idless for an extension
-<span class="fc" id="L423">            Stream.concat(aByExtensionAndId.keySet().stream(), idlessAByExtensionId.keySet().stream()).forEach(ext -&gt; {</span>
-<span class="fc" id="L424">                int aCnt = idlessAByExtensionId.getOrDefault(ext, emptyList()).size()</span>
-<span class="fc" id="L425">                        + aByExtensionAndId.getOrDefault(ext, emptyMap()).size();</span>
+<span class="fc" id="L424">            Stream.concat(aByExtensionAndId.keySet().stream(), idlessAByExtensionId.keySet().stream()).forEach(ext -&gt; {</span>
+<span class="fc" id="L425">                int aCnt = idlessAByExtensionId.getOrDefault(ext, emptyList()).size()</span>
+<span class="fc" id="L426">                        + aByExtensionAndId.getOrDefault(ext, emptyMap()).size();</span>
 
-<span class="fc" id="L427">                int bCnt = idlessBByExtensionId.getOrDefault(ext, emptyList()).size();</span>
+<span class="fc" id="L428">                int bCnt = idlessBByExtensionId.getOrDefault(ext, emptyList()).size();</span>
 
                 //rule 1
-<span class="pc bpc" id="L430" title="1 of 4 branches missed.">                if (aCnt &gt; 1 &amp;&amp; bCnt &gt; 0) {</span>
-<span class="fc" id="L431">                    throw new IllegalArgumentException(</span>
+<span class="pc bpc" id="L431" title="1 of 4 branches missed.">                if (aCnt &gt; 1 &amp;&amp; bCnt &gt; 0) {</span>
+<span class="fc" id="L432">                    throw new IllegalArgumentException(</span>
                             &quot;The configuration already contains more than 1 configuration for extension &quot; +
                                     ext + &quot;. Cannot determine which one of them to merge&quot; +
                                     &quot; the new configuration(s) (which don't have an explicit ID) into.&quot;);
                 }
 
                 //rule 2
-<span class="pc bpc" id="L438" title="1 of 4 branches missed.">                if (aCnt &gt; 0 &amp;&amp; bCnt &gt; 1) {</span>
-<span class="fc" id="L439">                    throw new IllegalArgumentException(</span>
+<span class="pc bpc" id="L439" title="1 of 4 branches missed.">                if (aCnt &gt; 0 &amp;&amp; bCnt &gt; 1) {</span>
+<span class="fc" id="L440">                    throw new IllegalArgumentException(</span>
                             &quot;The configuration already contains 1 or more configurations for extension &quot; +
                                     ext + &quot;. At the same time, the configuration to merge already contains 2 or more&quot; +
                                     &quot; configurations for the same extension without an explicit ID.&quot; +
                                     &quot; Cannot figure out how to merge these together.&quot;);
                 }
-<span class="fc" id="L445">            });</span>
+<span class="fc" id="L446">            });</span>
 
-<span class="fc" id="L447">            int bcIdx = 0;</span>
-<span class="fc bfc" id="L448" title="All 2 branches covered.">            for (ModelNode bc : b.asList()) {</span>
-<span class="fc bfc" id="L449" title="All 2 branches covered.">                String bcId = bc.hasDefined(&quot;id&quot;) ? bc.get(&quot;id&quot;).asString() : null;</span>
-<span class="fc" id="L450">                String bcExtension = bc.get(&quot;extension&quot;).asString();</span>
+<span class="fc" id="L448">            int bcIdx = 0;</span>
+<span class="fc bfc" id="L449" title="All 2 branches covered.">            for (ModelNode bc : b.asList()) {</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">                String bcId = bc.hasDefined(&quot;id&quot;) ? bc.get(&quot;id&quot;).asString() : null;</span>
+<span class="fc" id="L451">                String bcExtension = bc.get(&quot;extension&quot;).asString();</span>
 
-<span class="fc bfc" id="L452" title="All 2 branches covered.">                if (bcId == null) {</span>
-<span class="fc" id="L453">                    List&lt;ModelNode&gt; idless = idlessAByExtensionId.get(bcExtension);</span>
-<span class="fc bfc" id="L454" title="All 2 branches covered.">                    if (idless != null) {</span>
-<span class="pc bpc" id="L455" title="1 of 2 branches missed.">                        if (idless.size() == 1) {</span>
-<span class="fc" id="L456">                            List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
-<span class="fc" id="L457">                            path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
-<span class="fc" id="L458">                            mergeNodes(bcExtension, null, path, idless.get(0).get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
-<span class="fc" id="L459">                        }</span>
+<span class="fc bfc" id="L453" title="All 2 branches covered.">                if (bcId == null) {</span>
+<span class="fc" id="L454">                    List&lt;ModelNode&gt; idless = idlessAByExtensionId.get(bcExtension);</span>
+<span class="fc bfc" id="L455" title="All 2 branches covered.">                    if (idless != null) {</span>
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">                        if (idless.size() == 1) {</span>
+<span class="fc" id="L457">                            List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L458">                            path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
+<span class="fc" id="L459">                            mergeNodes(bcExtension, null, path, idless.get(0).get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
+<span class="fc" id="L460">                        }</span>
                     } else {
-<span class="fc" id="L461">                        Map&lt;String, ModelNode&gt; aExtensions = aByExtensionAndId.get(bcExtension);</span>
-<span class="fc bfc" id="L462" title="All 2 branches covered.">                        if (aExtensions == null) {</span>
-<span class="fc" id="L463">                            a.add(bc);</span>
-<span class="fc" id="L464">                            continue;</span>
+<span class="fc" id="L462">                        Map&lt;String, ModelNode&gt; aExtensions = aByExtensionAndId.get(bcExtension);</span>
+<span class="fc bfc" id="L463" title="All 2 branches covered.">                        if (aExtensions == null) {</span>
+<span class="fc" id="L464">                            a.add(bc);</span>
+<span class="fc" id="L465">                            continue;</span>
                         }
 
-<span class="fc" id="L467">                        List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
-<span class="fc" id="L468">                        path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
+<span class="fc" id="L468">                        List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L469">                        path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
 
-<span class="fc" id="L470">                        ModelNode aConfig = aExtensions.values().iterator().next();</span>
-<span class="fc" id="L471">                        mergeNodes(bcExtension, null, path, aConfig.get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
+<span class="fc" id="L471">                        ModelNode aConfig = aExtensions.values().iterator().next();</span>
+<span class="fc" id="L472">                        mergeNodes(bcExtension, null, path, aConfig.get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
                     }
-<span class="fc" id="L473">                } else {</span>
-<span class="fc" id="L474">                    Map&lt;String, ModelNode&gt; aExtensions = aByExtensionAndId.get(bcExtension);</span>
-<span class="pc bpc" id="L475" title="1 of 2 branches missed.">                    if (aExtensions == null) {</span>
-<span class="nc" id="L476">                        a.add(bc);</span>
-<span class="nc" id="L477">                        continue;</span>
+<span class="fc" id="L474">                } else {</span>
+<span class="fc" id="L475">                    Map&lt;String, ModelNode&gt; aExtensions = aByExtensionAndId.get(bcExtension);</span>
+<span class="pc bpc" id="L476" title="1 of 2 branches missed.">                    if (aExtensions == null) {</span>
+<span class="nc" id="L477">                        a.add(bc);</span>
+<span class="nc" id="L478">                        continue;</span>
                     }
 
-<span class="fc" id="L480">                    ModelNode aConfig = aExtensions.get(bcId);</span>
+<span class="fc" id="L481">                    ModelNode aConfig = aExtensions.get(bcId);</span>
 
-<span class="fc bfc" id="L482" title="All 2 branches covered.">                    if (aConfig == null) {</span>
-<span class="fc" id="L483">                        a.add(bc);</span>
+<span class="fc bfc" id="L483" title="All 2 branches covered.">                    if (aConfig == null) {</span>
+<span class="fc" id="L484">                        a.add(bc);</span>
                     } else {
-<span class="fc" id="L485">                        List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
-<span class="fc" id="L486">                        path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
-<span class="fc" id="L487">                        mergeNodes(bcExtension, bcId, path, aConfig.get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
+<span class="fc" id="L486">                        List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L487">                        path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
+<span class="fc" id="L488">                        mergeNodes(bcExtension, bcId, path, aConfig.get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
                     }
                 }
 
-<span class="fc" id="L491">                bcIdx++;</span>
-<span class="fc" id="L492">            }</span>
-<span class="fc" id="L493">        }</span>
+<span class="fc" id="L492">                bcIdx++;</span>
+<span class="fc" id="L493">            }</span>
+<span class="fc" id="L494">        }</span>
 
         private static void mergeNodes(String extension, String id, List&lt;String&gt; path, ModelNode a, ModelNode b) {
-<span class="fc bfc" id="L496" title="All 3 branches covered.">            switch (b.getType()) {</span>
+<span class="fc bfc" id="L497" title="All 3 branches covered.">            switch (b.getType()) {</span>
                 case LIST:
-<span class="fc bfc" id="L498" title="All 2 branches covered.">                    for (ModelNode v : b.asList()) {</span>
-<span class="fc" id="L499">                        a.add(v.clone());</span>
-<span class="fc" id="L500">                    }</span>
-<span class="fc" id="L501">                    break;</span>
+<span class="fc bfc" id="L499" title="All 2 branches covered.">                    for (ModelNode v : b.asList()) {</span>
+<span class="fc" id="L500">                        a.add(v.clone());</span>
+<span class="fc" id="L501">                    }</span>
+<span class="fc" id="L502">                    break;</span>
                 case OBJECT:
-<span class="fc bfc" id="L503" title="All 2 branches covered.">                    for (String k : b.keys()) {</span>
-<span class="fc" id="L504">                        ModelNode ak = a.get(k);</span>
-<span class="fc" id="L505">                        path.add(k);</span>
-<span class="fc" id="L506">                        mergeNodes(extension, id, path, ak, b.get(k));</span>
-<span class="fc" id="L507">                        path.remove(path.size() - 1);</span>
-<span class="fc" id="L508">                    }</span>
-<span class="fc" id="L509">                    break;</span>
+<span class="fc bfc" id="L504" title="All 2 branches covered.">                    for (String k : b.keys()) {</span>
+<span class="fc" id="L505">                        ModelNode ak = a.get(k);</span>
+<span class="fc" id="L506">                        path.add(k);</span>
+<span class="fc" id="L507">                        mergeNodes(extension, id, path, ak, b.get(k));</span>
+<span class="fc" id="L508">                        path.remove(path.size() - 1);</span>
+<span class="fc" id="L509">                    }</span>
+<span class="fc" id="L510">                    break;</span>
                 default:
-<span class="pc bpc" id="L511" title="1 of 2 branches missed.">                    if (a.isDefined()) {</span>
-<span class="nc" id="L512">                        String p = path.stream().collect(Collectors.joining(&quot;/&quot;));</span>
-<span class="nc" id="L513">                        throw new IllegalArgumentException(</span>
+<span class="pc bpc" id="L512" title="1 of 2 branches missed.">                    if (a.isDefined()) {</span>
+<span class="nc" id="L513">                        String p = path.stream().collect(Collectors.joining(&quot;/&quot;));</span>
+<span class="nc" id="L514">                        throw new IllegalArgumentException(</span>
                                 &quot;A conflict detected while merging configurations of extension '&quot; + extension +
                                         &quot;' with id '&quot; + id + &quot;'. A value on path '&quot; + p + &quot;' would overwrite an already existing one.&quot;);
                     } else {
-<span class="fc" id="L517">                        a.set(b);</span>
+<span class="fc" id="L518">                        a.set(b);</span>
                     }
             }
-<span class="fc" id="L520">        }</span>
+<span class="fc" id="L521">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

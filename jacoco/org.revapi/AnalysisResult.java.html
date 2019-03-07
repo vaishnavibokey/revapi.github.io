@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -43,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * @since 0.8.0
  */
 public final class AnalysisResult implements AutoCloseable {
-<span class="fc" id="L46">    private static final Logger LOG = LoggerFactory.getLogger(AnalysisResult.class);</span>
+<span class="fc" id="L47">    private static final Logger LOG = LoggerFactory.getLogger(AnalysisResult.class);</span>
 
     private final Exception failure;
     private final Extensions extensions;
@@ -55,8 +56,8 @@ public final class AnalysisResult implements AutoCloseable {
      * @return a &quot;fake&quot; successful analysis result
      */
     public static AnalysisResult fakeSuccess() {
-<span class="nc" id="L58">        return new AnalysisResult(null, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
-<span class="nc" id="L59">                Collections.emptyMap(), Collections.emptyMap()));</span>
+<span class="nc" id="L59">        return new AnalysisResult(null, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
+<span class="nc" id="L60">                Collections.emptyMap(), Collections.emptyMap()));</span>
     }
 
     /**
@@ -66,129 +67,188 @@ public final class AnalysisResult implements AutoCloseable {
      * @return a &quot;fake&quot; failed analysis result
      */
     public static AnalysisResult fakeFailure(Exception failure) {
-<span class="nc" id="L69">        return new AnalysisResult(failure, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
-<span class="nc" id="L70">                Collections.emptyMap(), Collections.emptyMap()));</span>
+<span class="nc" id="L70">        return new AnalysisResult(failure, new Extensions(Collections.emptyMap(), Collections.emptyMap(),</span>
+<span class="nc" id="L71">                Collections.emptyMap(), Collections.emptyMap()));</span>
     }
 
-<span class="fc" id="L73">    AnalysisResult(@Nullable Exception failure, Extensions extensions) {</span>
-<span class="fc" id="L74">        this.failure = failure;</span>
-<span class="fc" id="L75">        this.extensions = extensions;</span>
-<span class="fc" id="L76">    }</span>
+<span class="fc" id="L74">    AnalysisResult(@Nullable Exception failure, Extensions extensions) {</span>
+<span class="fc" id="L75">        this.failure = failure;</span>
+<span class="fc" id="L76">        this.extensions = extensions;</span>
+<span class="fc" id="L77">    }</span>
 
     public boolean isSuccess() {
-<span class="fc bfc" id="L79" title="All 2 branches covered.">        return failure == null;</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        return failure == null;</span>
     }
 
     /**
      * @return the error thrown during the analysis or null if the analysis completed without failures
      */
     public @Nullable Exception getFailure() {
-<span class="nc" id="L86">        return failure;</span>
+<span class="nc" id="L87">        return failure;</span>
     }
 
     public void throwIfFailed() throws Exception {
-<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (failure != null) {</span>
-<span class="nc" id="L91">            throw failure;</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (failure != null) {</span>
+<span class="nc" id="L92">            throw failure;</span>
         }
-<span class="nc" id="L93">    }</span>
+<span class="fc" id="L94">    }</span>
 
     /**
      * @return the extension instances run during the analysis, each with its corresponding analysis context containing
      * the configuration used for the extension
      */
     public Extensions getExtensions() {
-<span class="nc" id="L100">        return extensions;</span>
+<span class="nc" id="L101">        return extensions;</span>
     }
 
     @Override public void close() throws Exception {
-<span class="fc" id="L104">        TIMING_LOG.debug(Stats.asString());</span>
-<span class="fc" id="L105">        TIMING_LOG.debug(&quot;Closing all extensions&quot;);</span>
+<span class="fc" id="L105">        TIMING_LOG.debug(Stats.asString());</span>
+<span class="fc" id="L106">        TIMING_LOG.debug(&quot;Closing all extensions&quot;);</span>
 
-<span class="fc" id="L107">        Consumer&lt;Object&gt; close = ext -&gt; {</span>
-<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (!(ext instanceof AutoCloseable)) {</span>
-<span class="nc" id="L109">                return;</span>
+<span class="fc" id="L108">        Consumer&lt;ExtensionInstance&gt; close = inst -&gt; {</span>
+<span class="fc" id="L109">            Object ext = inst.instance;</span>
+
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            if (!(ext instanceof AutoCloseable)) {</span>
+<span class="nc" id="L112">                return;</span>
             }
 
-<span class="fc" id="L112">            AutoCloseable c = (AutoCloseable) ext;</span>
+<span class="fc" id="L115">            AutoCloseable c = (AutoCloseable) ext;</span>
             try {
-<span class="fc" id="L114">                c.close();</span>
-<span class="nc" id="L115">            } catch (Exception ex) {</span>
-<span class="nc" id="L116">                LOG.warn(&quot;Failed to close &quot; + c, ex);</span>
-<span class="fc" id="L117">            }</span>
-<span class="fc" id="L118">        };</span>
+<span class="fc" id="L117">                c.close();</span>
+<span class="nc" id="L118">            } catch (Exception ex) {</span>
+<span class="nc" id="L119">                LOG.warn(&quot;Failed to close &quot; + c, ex);</span>
+<span class="fc" id="L120">            }</span>
+<span class="fc" id="L121">        };</span>
 
         //the order here is quite important - we need for first close the reporters, because they use the outcomes
         //of the filters/transforms/analyzer and the outcomes might be dependent on some state within those that might
         //get destroyed when they're closed.
-<span class="fc" id="L123">        extensions.reporters.keySet().forEach(close);</span>
-<span class="fc" id="L124">        extensions.transforms.keySet().forEach(close);</span>
-<span class="fc" id="L125">        extensions.filters.keySet().forEach(close);</span>
-<span class="fc" id="L126">        extensions.analyzers.keySet().forEach(close);</span>
+<span class="fc" id="L126">        extensions.reporters.keySet().forEach(close);</span>
+<span class="fc" id="L127">        extensions.transforms.keySet().forEach(close);</span>
+<span class="fc" id="L128">        extensions.filters.keySet().forEach(close);</span>
+<span class="fc" id="L129">        extensions.analyzers.keySet().forEach(close);</span>
 
-<span class="fc" id="L128">        TIMING_LOG.debug(&quot;Extensions closed. Analysis complete.&quot;);</span>
-<span class="fc" id="L129">    }</span>
+<span class="fc" id="L131">        TIMING_LOG.debug(&quot;Extensions closed. Analysis complete.&quot;);</span>
+<span class="fc" id="L132">    }</span>
 
-    public static final class Extensions implements Iterable&lt;Map.Entry&lt;?, AnalysisContext&gt;&gt; {
-        private final Map&lt;ApiAnalyzer, AnalysisContext&gt; analyzers;
-        private final Map&lt;ElementFilter, AnalysisContext&gt; filters;
-        private final Map&lt;Reporter, AnalysisContext&gt; reporters;
-        private final Map&lt;DifferenceTransform&lt;?&gt;, AnalysisContext&gt; transforms;
+    public static final class Extensions implements Iterable&lt;Map.Entry&lt;ExtensionInstance&lt;?&gt;, AnalysisContext&gt;&gt; {
+        private final Map&lt;ExtensionInstance&lt;ApiAnalyzer&gt;, AnalysisContext&gt; analyzers;
+        private final Map&lt;ExtensionInstance&lt;ElementFilter&gt;, AnalysisContext&gt; filters;
+        private final Map&lt;ExtensionInstance&lt;Reporter&gt;, AnalysisContext&gt; reporters;
+        private final Map&lt;ExtensionInstance&lt;DifferenceTransform&lt;?&gt;&gt;, AnalysisContext&gt; transforms;
 
-        Extensions(Map&lt;ApiAnalyzer, AnalysisContext&gt; analyzers, Map&lt;ElementFilter, AnalysisContext&gt; filters,
-                          Map&lt;Reporter, AnalysisContext&gt; reporters,
-<span class="fc" id="L139">                          Map&lt;DifferenceTransform&lt;?&gt;, AnalysisContext&gt; transforms) {</span>
-<span class="fc" id="L140">            this.analyzers = Collections.unmodifiableMap(analyzers);</span>
-<span class="fc" id="L141">            this.filters = Collections.unmodifiableMap(filters);</span>
-<span class="fc" id="L142">            this.reporters = Collections.unmodifiableMap(reporters);</span>
-<span class="fc" id="L143">            this.transforms = Collections.unmodifiableMap(transforms);</span>
-<span class="fc" id="L144">        }</span>
+        Extensions(Map&lt;ExtensionInstance&lt;ApiAnalyzer&gt;, AnalysisContext&gt; analyzers,
+                Map&lt;ExtensionInstance&lt;ElementFilter&gt;, AnalysisContext&gt; filters,
+                Map&lt;ExtensionInstance&lt;Reporter&gt;, AnalysisContext&gt; reporters,
+<span class="fc" id="L143">                Map&lt;ExtensionInstance&lt;DifferenceTransform&lt;?&gt;&gt;, AnalysisContext&gt; transforms) {</span>
+<span class="fc" id="L144">            this.analyzers = Collections.unmodifiableMap(analyzers);</span>
+<span class="fc" id="L145">            this.filters = Collections.unmodifiableMap(filters);</span>
+<span class="fc" id="L146">            this.reporters = Collections.unmodifiableMap(reporters);</span>
+<span class="fc" id="L147">            this.transforms = Collections.unmodifiableMap(transforms);</span>
+<span class="fc" id="L148">        }</span>
 
-        public Map&lt;ApiAnalyzer, AnalysisContext&gt; getAnalyzers() {
-<span class="fc" id="L147">            return analyzers;</span>
+        public Map&lt;ExtensionInstance&lt;ApiAnalyzer&gt;, AnalysisContext&gt; getAnalyzers() {
+<span class="fc" id="L151">            return analyzers;</span>
         }
 
-        public Map&lt;ElementFilter, AnalysisContext&gt; getFilters() {
-<span class="fc" id="L151">            return filters;</span>
+        public Map&lt;ExtensionInstance&lt;ElementFilter&gt;, AnalysisContext&gt; getFilters() {
+<span class="fc" id="L155">            return filters;</span>
         }
 
-        public Map&lt;Reporter, AnalysisContext&gt; getReporters() {
-<span class="fc" id="L155">            return reporters;</span>
+        public Map&lt;ExtensionInstance&lt;Reporter&gt;, AnalysisContext&gt; getReporters() {
+<span class="fc" id="L159">            return reporters;</span>
         }
 
-        public Map&lt;DifferenceTransform&lt;?&gt;, AnalysisContext&gt; getTransforms() {
-<span class="fc" id="L159">            return transforms;</span>
+        public Map&lt;ExtensionInstance&lt;DifferenceTransform&lt;?&gt;&gt;, AnalysisContext&gt; getTransforms() {
+<span class="fc" id="L163">            return transforms;</span>
         }
 
-        public &lt;T&gt; Map&lt;T, AnalysisContext&gt; getExtensionContexts(Class&lt;T&gt; extensionType) {
-<span class="nc" id="L163">            IdentityHashMap&lt;T, AnalysisContext&gt; ret = new IdentityHashMap&lt;&gt;();</span>
-<span class="nc" id="L164">            stream().filter(e -&gt; extensionType.isAssignableFrom(e.getKey().getClass()))</span>
-<span class="nc" id="L165">                    .forEach(e -&gt; ret.put(extensionType.cast(e.getKey()), e.getValue()));</span>
-<span class="nc" id="L166">            return ret;</span>
+        public &lt;T&gt; Map&lt;ExtensionInstance&lt;T&gt;, AnalysisContext&gt; getExtensionContexts(Class&lt;T&gt; extensionType) {
+<span class="nc" id="L167">            IdentityHashMap&lt;ExtensionInstance&lt;T&gt;, AnalysisContext&gt; ret = new IdentityHashMap&lt;&gt;();</span>
+<span class="nc" id="L168">            stream().filter(e -&gt; extensionType.isAssignableFrom(e.getKey().getInstance().getClass()))</span>
+<span class="nc" id="L169">                    .forEach(e -&gt; ret.put(e.getKey().as(extensionType), e.getValue()));</span>
+<span class="nc" id="L170">            return ret;</span>
         }
 
-        public &lt;T&gt; Set&lt;T&gt; getExtensionInstances(Class&lt;T&gt; extensionType) {
-<span class="nc" id="L170">            return getExtensionContexts(extensionType).keySet();</span>
+        public &lt;T&gt; Set&lt;ExtensionInstance&lt;T&gt;&gt; getExtensionInstances(Class&lt;T&gt; extensionType) {
+<span class="nc" id="L174">            return getExtensionContexts(extensionType).keySet();</span>
         }
 
         public &lt;T&gt; T getFirstExtension(Class&lt;T&gt; extensionType, T defaultValue) {
-<span class="nc" id="L174">            Set&lt;T&gt; instances = getExtensionInstances(extensionType);</span>
-<span class="nc bnc" id="L175" title="All 2 branches missed.">            return instances.isEmpty() ? defaultValue : instances.iterator().next();</span>
+<span class="nc" id="L178">            Set&lt;ExtensionInstance&lt;T&gt;&gt; instances = getExtensionInstances(extensionType);</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            return instances.isEmpty() ? defaultValue : instances.iterator().next().getInstance();</span>
         }
 
         public AnalysisContext getFirstConfigurationOrNull(Class&lt;?&gt; extensionType) {
-<span class="nc" id="L179">            Collection&lt;AnalysisContext&gt; ctxs = getExtensionContexts(extensionType).values();</span>
-<span class="nc bnc" id="L180" title="All 2 branches missed.">            return ctxs.isEmpty() ? null : ctxs.iterator().next();</span>
+<span class="nc" id="L183">            Collection&lt;AnalysisContext&gt; ctxs = getExtensionContexts(extensionType).values();</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            return ctxs.isEmpty() ? null : ctxs.iterator().next();</span>
         }
 
-        @Override public Iterator&lt;Map.Entry&lt;?, AnalysisContext&gt;&gt; iterator() {
-<span class="fc" id="L184">            return stream().iterator();</span>
+        @Override public Iterator&lt;Map.Entry&lt;ExtensionInstance&lt;?&gt;, AnalysisContext&gt;&gt; iterator() {
+<span class="fc" id="L188">            return stream().iterator();</span>
         }
 
-        public Stream&lt;Map.Entry&lt;?, AnalysisContext&gt;&gt; stream() {
-<span class="fc" id="L188">            return Stream.concat(analyzers.entrySet().stream(),</span>
-<span class="fc" id="L189">                    Stream.concat(filters.entrySet().stream(),</span>
-<span class="fc" id="L190">                            Stream.concat(reporters.entrySet().stream(),</span>
-<span class="fc" id="L191">                                    transforms.entrySet().stream())));</span>
+        public Stream&lt;Map.Entry&lt;ExtensionInstance&lt;?&gt;, AnalysisContext&gt;&gt; stream() {
+<span class="fc" id="L192">            return Stream.concat(retype(analyzers.entrySet()).stream(),</span>
+<span class="fc" id="L193">                    Stream.concat(retype(filters.entrySet()).stream(),</span>
+<span class="fc" id="L194">                            Stream.concat(retype(reporters.entrySet()).stream(),</span>
+<span class="fc" id="L195">                                    retype(transforms.entrySet()).stream())));</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        private static Set&lt;Map.Entry&lt;ExtensionInstance&lt;?&gt;, AnalysisContext&gt;&gt; retype(Set&lt;?&gt; set) {
+<span class="fc" id="L200">            return (Set) set;</span>
+        }
+    }
+
+    public static final class ExtensionInstance&lt;I&gt; {
+        private final I instance;
+        private final @Nullable String id;
+
+<span class="fc" id="L208">        ExtensionInstance(I instance, @Nullable String id) {</span>
+<span class="fc" id="L209">            this.instance = instance;</span>
+<span class="fc" id="L210">            this.id = id;</span>
+<span class="fc" id="L211">        }</span>
+
+        public I getInstance() {
+<span class="fc" id="L214">            return instance;</span>
+        }
+
+        @Nullable
+        public String getId() {
+<span class="fc" id="L219">            return id;</span>
+        }
+
+        public &lt;U&gt; ExtensionInstance&lt;U&gt; as(Class&lt;U&gt; instanceType) {
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (!instanceType.isAssignableFrom(instance.getClass())) {</span>
+<span class="nc" id="L224">                throw new ClassCastException();</span>
+            }
+
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L228">            ExtensionInstance&lt;U&gt; ret = (ExtensionInstance&lt;U&gt;) this;</span>
+
+<span class="nc" id="L230">            return ret;</span>
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L235" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L236">                return true;</span>
+            }
+
+<span class="nc bnc" id="L239" title="All 2 branches missed.">            if (!(o instanceof ExtensionInstance)) {</span>
+<span class="nc" id="L240">                return false;</span>
+            }
+
+<span class="nc" id="L243">            ExtensionInstance&lt;?&gt; that = (ExtensionInstance&lt;?&gt;) o;</span>
+
+<span class="nc bnc" id="L245" title="All 2 branches missed.">            return Objects.equals(instance, that.instance) &amp;&amp;</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                    Objects.equals(id, that.id);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L251">            return Objects.hash(instance, id);</span>
         }
     }
 }
