@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypeElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">TypeElement.java</span></div><h1>TypeElement.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2018 Lukas Krejci
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -164,60 +164,65 @@ public class TypeElement extends JavaElementBase&lt;javax.lang.model.element.Typ
     }
 
     @Override
+    public String toString() {
+<span class="nc" id="L168">        return super.toString() + &quot; (archive = &quot; + archive + &quot;, in api = &quot; + inApi + &quot;, through use = &quot; + inApiThroughUse + &quot;)&quot;;</span>
+    }
+
+    @Override
     public TypeElement clone() {
-<span class="nc" id="L168">        return (TypeElement) super.clone();</span>
+<span class="nc" id="L173">        return (TypeElement) super.clone();</span>
     }
 
     private JavaModelElement getModel(Element element, int indexInParent) {
-<span class="fc" id="L172">        return element.accept(new SimpleElementVisitor8&lt;JavaModelElement, Void&gt;() {</span>
+<span class="fc" id="L177">        return element.accept(new SimpleElementVisitor8&lt;JavaModelElement, Void&gt;() {</span>
             @Override public JavaModelElement visitVariable(VariableElement e, Void ignored) {
-<span class="pc bpc" id="L174" title="1 of 2 branches missed.">                if (e.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">                if (e.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
                     //this is a field
-<span class="fc" id="L176">                    TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
-<span class="pc bpc" id="L177" title="1 of 2 branches missed.">                    if (type == null) {</span>
-<span class="nc" id="L178">                        return null;</span>
+<span class="fc" id="L181">                    TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">                    if (type == null) {</span>
+<span class="nc" id="L183">                        return null;</span>
                     }
 
-<span class="fc" id="L181">                    List&lt;FieldElement&gt; fs = type.searchChildren(FieldElement.class, false,</span>
-<span class="fc" id="L182">                            FlatFilter.by(f -&gt; f.getDeclaringElement().equals(e)));</span>
-<span class="fc" id="L183">                    return fs.get(0);</span>
-<span class="nc bnc" id="L184" title="All 2 branches missed.">                } else if (e.getEnclosingElement() instanceof javax.lang.model.element.ExecutableElement) {</span>
+<span class="fc" id="L186">                    List&lt;FieldElement&gt; fs = type.searchChildren(FieldElement.class, false,</span>
+<span class="fc" id="L187">                            FlatFilter.by(f -&gt; f.getDeclaringElement().equals(e)));</span>
+<span class="fc" id="L188">                    return fs.get(0);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                } else if (e.getEnclosingElement() instanceof javax.lang.model.element.ExecutableElement) {</span>
                     //this is a method parameter
-<span class="nc" id="L186">                    Element methodEl = e.getEnclosingElement();</span>
-<span class="nc" id="L187">                    TypeElement type = environment.getTypeMap().get(methodEl.getEnclosingElement());</span>
-<span class="nc bnc" id="L188" title="All 2 branches missed.">                    if (type == null) {</span>
-<span class="nc" id="L189">                        return null;</span>
+<span class="nc" id="L191">                    Element methodEl = e.getEnclosingElement();</span>
+<span class="nc" id="L192">                    TypeElement type = environment.getTypeMap().get(methodEl.getEnclosingElement());</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    if (type == null) {</span>
+<span class="nc" id="L194">                        return null;</span>
                     }
 
-<span class="nc" id="L192">                    List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
-<span class="nc" id="L193">                            FlatFilter.by(m -&gt; m.getDeclaringElement().equals(methodEl)));</span>
+<span class="nc" id="L197">                    List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
+<span class="nc" id="L198">                            FlatFilter.by(m -&gt; m.getDeclaringElement().equals(methodEl)));</span>
 
-<span class="nc" id="L195">                    MethodElement method = ms.get(0);</span>
+<span class="nc" id="L200">                    MethodElement method = ms.get(0);</span>
 
                     //now look for the parameter
-<span class="nc" id="L198">                    List&lt;MethodParameterElement&gt; params =</span>
-<span class="nc" id="L199">                            method.searchChildren(MethodParameterElement.class, false, FlatFilter.by(p -&gt; true));</span>
+<span class="nc" id="L203">                    List&lt;MethodParameterElement&gt; params =</span>
+<span class="nc" id="L204">                            method.searchChildren(MethodParameterElement.class, false, FlatFilter.by(p -&gt; true));</span>
 
-<span class="nc" id="L201">                    return params.get(indexInParent);</span>
+<span class="nc" id="L206">                    return params.get(indexInParent);</span>
                 } else {
-<span class="nc" id="L203">                    return null;</span>
+<span class="nc" id="L208">                    return null;</span>
                 }
             }
 
             @Override public JavaModelElement visitType(javax.lang.model.element.TypeElement e, Void ignored) {
-<span class="fc" id="L208">                return environment.getTypeMap().get(e);</span>
+<span class="fc" id="L213">                return environment.getTypeMap().get(e);</span>
             }
 
             @Override public JavaModelElement visitExecutable(ExecutableElement e, Void ignored) {
-<span class="fc" id="L212">                TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
-<span class="pc bpc" id="L213" title="1 of 2 branches missed.">                if (type == null) {</span>
-<span class="nc" id="L214">                    return null;</span>
+<span class="fc" id="L217">                TypeElement type = environment.getTypeMap().get(e.getEnclosingElement());</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">                if (type == null) {</span>
+<span class="nc" id="L219">                    return null;</span>
                 }
 
-<span class="fc" id="L217">                List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
-<span class="fc" id="L218">                        FlatFilter.by(m -&gt; m.getDeclaringElement().equals(e)));</span>
+<span class="fc" id="L222">                List&lt;MethodElement&gt; ms = type.searchChildren(MethodElement.class, false,</span>
+<span class="fc" id="L223">                        FlatFilter.by(m -&gt; m.getDeclaringElement().equals(e)));</span>
 
-<span class="fc" id="L220">                return ms.get(0);</span>
+<span class="fc" id="L225">                return ms.get(0);</span>
             }
         }, null);
     }
