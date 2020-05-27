@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlToJson.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.configuration</a> &gt; <span class="el_source">XmlToJson.java</span></div><h1>XmlToJson.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2018 Lukas Krejci
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -223,8 +223,8 @@ public final class XmlToJson&lt;Xml&gt; {
 <span class="nc" id="L223">            throw new IllegalArgumentException(</span>
                     &quot;No schema found for items of a list. Cannot continue with XML-to-JSON conversion.&quot;);
         }
-<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (getValue.apply( configuration ) != null) {</span>
-<span class="fc" id="L227">            throw new IllegalArgumentException(&quot;Array is not allowed to have a text node&quot;);</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (getValue.apply(configuration) != null) {</span>
+<span class="fc" id="L227">            throw new IllegalArgumentException(&quot;Array is not allowed to have a text node: &lt;&quot; + getName.apply(configuration) + &quot;&gt;&quot;);</span>
         }
 <span class="fc" id="L229">        ModelNode list = new ModelNode();</span>
 <span class="fc" id="L230">        list.setEmptyList();</span>
