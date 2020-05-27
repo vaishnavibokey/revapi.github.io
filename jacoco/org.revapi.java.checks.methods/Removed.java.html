@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Removed.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.methods</a> &gt; <span class="el_source">Removed.java</span></div><h1>Removed.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -20,59 +20,41 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeMirror;
 
 import org.revapi.Difference;
 import org.revapi.java.spi.CheckBase;
 import org.revapi.java.spi.Code;
 import org.revapi.java.spi.JavaMethodElement;
-import org.revapi.java.spi.Util;
 
 /**
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="fc" id="L38">public final class Removed extends CheckBase {</span>
-
-    private static String getMethodSignature(@Nonnull CharSequence methodName, @Nonnull ExecutableType erasedMethod) {
-<span class="nc" id="L41">        StringBuilder bld = new StringBuilder(methodName);</span>
-
-<span class="nc" id="L43">        bld.append(&quot;(&quot;);</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">        for (TypeMirror p : erasedMethod.getParameterTypes()) {</span>
-<span class="nc" id="L45">            bld.append(Util.toUniqueString(p)).append(&quot;;&quot;);</span>
-<span class="nc" id="L46">        }</span>
-<span class="nc" id="L47">        bld.append(&quot;)&quot;);</span>
-
-<span class="nc" id="L49">        bld.append(Util.toUniqueString(erasedMethod.getReturnType()));</span>
-
-<span class="nc" id="L51">        return bld.toString();</span>
-    }
+<span class="fc" id="L34">public final class Removed extends CheckBase {</span>
 
     @Override
     public EnumSet&lt;Type&gt; getInterest() {
-<span class="fc" id="L56">        return EnumSet.of(Type.METHOD);</span>
+<span class="fc" id="L38">        return EnumSet.of(Type.METHOD);</span>
     }
 
     @Override
     protected void doVisitMethod(@Nullable JavaMethodElement oldMethod, @Nullable JavaMethodElement newMethod) {
-<span class="fc bfc" id="L61" title="All 6 branches covered.">        if (oldMethod != null &amp;&amp; newMethod == null &amp;&amp; isAccessible(oldMethod)) {</span>
-<span class="fc" id="L62">            pushActive(oldMethod, null);</span>
+<span class="fc bfc" id="L43" title="All 6 branches covered.">        if (oldMethod != null &amp;&amp; newMethod == null &amp;&amp; isAccessible(oldMethod)) {</span>
+<span class="fc" id="L44">            pushActive(oldMethod, null);</span>
         }
-<span class="fc" id="L64">    }</span>
+<span class="fc" id="L46">    }</span>
 
     @Nullable
     @Override
     protected List&lt;Difference&gt; doEnd() {
-<span class="fc" id="L69">        ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
-<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (methods == null) {</span>
-<span class="fc" id="L71">            return null;</span>
+<span class="fc" id="L51">        ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (methods == null) {</span>
+<span class="fc" id="L53">            return null;</span>
         }
 
-<span class="fc" id="L74">        return Collections.singletonList(createDifference(Code.METHOD_REMOVED,</span>
-<span class="fc" id="L75">                Code.attachmentsFor(methods.oldElement, methods.newElement)));</span>
+<span class="fc" id="L56">        return Collections.singletonList(createDifference(Code.METHOD_REMOVED,</span>
+<span class="fc" id="L57">                Code.attachmentsFor(methods.oldElement, methods.newElement)));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
