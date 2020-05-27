@@ -8,7 +8,7 @@
 
 	<head>
 		<meta charset="UTF-8" />
-		<title>Revapi - Regression Fixes</title>
+		<title>Revapi - New Releases</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="description" content="" />
 		<meta http-equiv="content-language" content="en" />
@@ -32,7 +32,7 @@
 		
 	</head>
 
-	<body class="page-news-20180523-fixes project-revapi-site" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
+	<body class="page-news-20200527-releases project-revapi-site" data-spy="scroll" data-offset="60" data-target="#toc-scroll-target">
 
 		<header class="navbar navbar-default navbar-fixed-top">
 			<div class="container">
@@ -106,30 +106,57 @@
 			<div class="body-content">
 <div class="sect1"> 
  <div class="page-header">
-  <h2 id="regression_fixes">Regression Fixes</h2>
+  <h2 id="new_releases">New Releases</h2>
  </div> 
  <div class="sectionbody"> 
   <div class="paragraph"> 
-   <p>After the last week’s new releases a regression has been discovered which warranted a quick new release.</p> 
+   <p>There’s actually been a couple of releases of all Revapi components since the last time about which I failed to get the news out. Life sometimes intervenes :)</p> 
+  </div> 
+  <div class="admonitionblock important"> 
+   <table> 
+    <tbody> 
+     <tr> 
+      <td class="icon"> 
+       <div class="title">
+         Important 
+       </div> </td> 
+      <td class="content"> In this release the rendering of Java elements was generally improved, especially in the case of elements with type parameters. This may cause your existing <code>revapi.ignore</code> recipes to stop working. Please update the ignore recipes with the new way Revapi represents the Java elements textually. </td> 
+     </tr> 
+    </tbody> 
+   </table> 
   </div> 
   <div class="paragraph"> 
-   <p>So without further ado, here’s what’s new:</p> 
+   <p>The following issues were fixed in the latest set of Revapi components:</p> 
+  </div> 
+  <div class="ulist"> 
+   <ul> 
+    <li> <p><a href="https://github.com/revapi/revapi/issues/135">#135</a> - improvements in the <code>update-versions</code> goal of the maven plugin</p> </li> 
+    <li> <p><a href="https://github.com/revapi/revapi/issues/179">#179</a> - <code>singleVersionForAllModules</code> parameter of <code>update-version</code> goal is now properly honored. Thanks go out to <a href="https://github.com/mkavanagh">Matthew Kavanagh</a> for the fix!</p> </li> 
+    <li> <p><a href="https://github.com/revapi/revapi/issues/180">#180</a> - an NPE in ancient code in <code>revapi.ignore</code></p> </li> 
+    <li> <p><a href="https://github.com/revapi/revapi/issues/181">#181</a> - methods from <code>java.lang.Object</code> are now considered present also on interfaces and annotation types because every instance of those types is going to have those methods. This gets rid of reports of these methods added/removed when an interface becomes a class or vice versa.</p> </li> 
+   </ul> 
   </div> 
   <div class="paragraph"> 
-   <p>The new version of <code>revapi-java</code>, <code>0.17.1</code>, fixes a regression caused by the speed ups from <code>0.17.0</code> where methods and fields inherited from super classes from other archives can pop up in the found problems even if the inheriting classes were filtered out.</p> 
+   <p>Based on the input from <a href="https://github.com/vmassol">Vincent Massol</a> in <a href="https://github.com/revapi/revapi/issues/182">#182</a> there’s been a couple of improvements made to the maven plugin:</p> 
+  </div> 
+  <div class="ulist"> 
+   <ul> 
+    <li> <p><code>convert-config-to-xml</code> maven goal should now properly escape special characters</p> </li> 
+    <li> <p><code>check</code> maven goal now has <code>ignoreSuggestionsFormat</code> property. Use this property to make the maven plugin print out the suggestions for ignoring the found problems in either JSON (by setting it to <code>json</code>, which is the default) or in XML (by setting it to <code>xml</code>).</p> </li> 
+   </ul> 
   </div> 
   <div class="paragraph"> 
-   <p>Additionally, <code>revapi-java-0.17.1</code> add the <code>oldArchive</code> and <code>newArchive</code> attachments to the found differences. This enables users to filter the found differences by the archive they’re originating from. People can use that to set up filtering of problems coming from other modules of a multi-module build similarly to what is described in <a href="https://github.com/revapi/revapi/pull/133#issuecomment-391062799">this comment</a>.</p> 
+   <p>Additionally, there is now a new <a href="../modules/revapi-reporter-json/index.html">JSON reporter</a> that you can use in pipelines for easier further processing.</p> 
   </div> 
   <div class="paragraph"> 
-   <p>There is also a new release of the maven plugin, <code>revapi-maven-plugin-0.10.3</code> that fixes a long standing bug in the goals that modify the versions in <code>pom.xml</code>. These goals would malfunction when the <code>revapi.semver.ignore</code> extension was enabled.</p> 
+   <p>Last but not least, you can now sponsor the further maintenance and development of Revapi using its <a href="https://opencollective.com/revapi">Open Collective</a> page or by clicking the sponsor button on the <a href="https://github.com/revapi/revapi">github repo</a>.</p> 
   </div> 
   <div id="disqus_thread"></div> 
   <script>
 
 var disqus_config = function () {
-this.page.url = "https://revapi.org/news/20180523-fixes.html";
-this.page.identifier = "20180523-fixes";
+this.page.url = "https://revapi.org/news/20200527-releases.html";
+this.page.identifier = "20200527-releases";
 };
 (function() { // DON&#8217;T EDIT BELOW THIS LINE
 var d = document, s = d.createElement('script');
@@ -151,7 +178,7 @@ s.setAttribute('data-timestamp', +new Date());
 				<div class="well">
 					<ul class="nav nav-list">
 						<li class="nav-header">Table of Contents</li>
-		<li><a href="#regression_fixes" title="Regression Fixes">Regression Fixes</a>
+		<li><a href="#new_releases" title="New Releases">New Releases</a>
 					</ul>
 				</div>
 			</div>
