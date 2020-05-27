@@ -138,7 +138,7 @@ import org.revapi.maven.utils.ArtifactResolver;
 
 <span class="fc bfc" id="L139" title="All 2 branches covered.">            for (MavenProject p : dependents) {</span>
 <span class="fc" id="L140">                Analyzer projectAnalyzer = prepareAnalyzer(sharedRevapi, p, locale, projectVersions.get(p));</span>
-<span class="pc bpc" id="L141" title="1 of 2 branches missed.">                if (projectAnalyzer != null) {</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                if (projectAnalyzer != null) {</span>
 <span class="fc" id="L142">                    try (AnalysisResult res = projectAnalyzer.analyze()) {</span>
 <span class="fc" id="L143">                        res.throwIfFailed();</span>
 
@@ -231,13 +231,13 @@ import org.revapi.maven.utils.ArtifactResolver;
 <span class="fc" id="L231">        Function&lt;String, Artifact&gt; resolve = gav -&gt; {</span>
             try {
 <span class="fc" id="L233">                return Analyzer.resolveConstrained(project, gav, versionRegex, resolver);</span>
-<span class="nc" id="L234">            } catch (VersionRangeResolutionException | ArtifactResolutionException e) {</span>
-<span class="nc" id="L235">                getLog().warn(&quot;Could not resolve artifact '&quot; + gav + &quot;' with message: &quot; + e.getMessage());</span>
-<span class="nc" id="L236">                return null;</span>
+<span class="fc" id="L234">            } catch (VersionRangeResolutionException | ArtifactResolutionException e) {</span>
+<span class="fc" id="L235">                getLog().warn(&quot;Could not resolve artifact '&quot; + gav + &quot;' with message: &quot; + e.getMessage());</span>
+<span class="fc" id="L236">                return null;</span>
             }
         };
 
-<span class="pc bpc" id="L240" title="1 of 2 branches missed.">        ret.oldGavs = Stream.of(oldArtifacts).map(resolve).filter(f -&gt; f != null).toArray(Artifact[]::new);</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        ret.oldGavs = Stream.of(oldArtifacts).map(resolve).filter(f -&gt; f != null).toArray(Artifact[]::new);</span>
 <span class="pc bpc" id="L241" title="1 of 2 branches missed.">        ret.newGavs = Stream.of(newArtifacts).map(resolve).filter(f -&gt; f != null).toArray(Artifact[]::new);</span>
 
 <span class="fc" id="L243">        return ret;</span>
@@ -256,7 +256,7 @@ import org.revapi.maven.utils.ArtifactResolver;
 <span class="fc" id="L256">        Artifact[] oldArtifacts = storedVersions.oldGavs;</span>
 <span class="fc" id="L257">        Artifact[] newArtifacts = storedVersions.newGavs;</span>
 
-<span class="pc bpc" id="L259" title="3 of 8 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0 || newArtifacts == null || newArtifacts.length == 0) {</span>
+<span class="pc bpc" id="L259" title="2 of 8 branches missed.">        if (oldArtifacts == null || oldArtifacts.length == 0 || newArtifacts == null || newArtifacts.length == 0) {</span>
 <span class="fc" id="L260">            return null;</span>
         }
 

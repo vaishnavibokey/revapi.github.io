@@ -310,35 +310,35 @@ import org.revapi.Element;
     }
 
     @Override public boolean canGenerateReport() {
-<span class="nc" id="L313">        return project.getArtifact().getArtifactHandler().isAddedToClasspath();</span>
+<span class="fc" id="L313">        return project.getArtifact().getArtifactHandler().isAddedToClasspath();</span>
     }
 
     @Override
     protected void executeReport(Locale locale) throws MavenReportException {
-<span class="nc" id="L318">        ensureAnalyzed(locale);</span>
+<span class="fc" id="L318">        ensureAnalyzed(locale);</span>
 
-<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (skip) {</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        if (skip) {</span>
 <span class="nc" id="L321">            return;</span>
         }
 
-<span class="nc bnc" id="L324" title="All 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
+<span class="pc bpc" id="L324" title="2 of 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
 <span class="nc" id="L325">            getLog().warn(&quot;Could not determine the artifacts to compare. If you're comparing the&quot; +</span>
                     &quot; currently built version, have you run the package goal?&quot;);
 <span class="nc" id="L327">            return;</span>
         }
 
-<span class="nc bnc" id="L330" title="All 2 branches missed.">        if (generateSiteReport) {</span>
-<span class="nc" id="L331">            Sink sink = getSink();</span>
-<span class="nc" id="L332">            ResourceBundle bundle = getBundle(locale);</span>
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">        if (generateSiteReport) {</span>
+<span class="fc" id="L331">            Sink sink = getSink();</span>
+<span class="fc" id="L332">            ResourceBundle bundle = getBundle(locale);</span>
 
-<span class="nc" id="L334">            ReportTimeReporter reporter =</span>
-<span class="nc" id="L335">                    analysisResult.getExtensions().getFirstExtension(ReportTimeReporter.class, null);</span>
+<span class="fc" id="L334">            ReportTimeReporter reporter =</span>
+<span class="fc" id="L335">                    analysisResult.getExtensions().getFirstExtension(ReportTimeReporter.class, null);</span>
 
-<span class="nc" id="L337">            startReport(sink, bundle);</span>
-<span class="nc" id="L338">            reportBody(reporter, oldAPI, newAPI, sink, bundle);</span>
-<span class="nc" id="L339">            endReport(sink);</span>
+<span class="fc" id="L337">            startReport(sink, bundle);</span>
+<span class="fc" id="L338">            reportBody(reporter, oldAPI, newAPI, sink, bundle);</span>
+<span class="fc" id="L339">            endReport(sink);</span>
         }
-<span class="nc" id="L341">    }</span>
+<span class="fc" id="L341">    }</span>
 
     protected void startReport(Sink sink, ResourceBundle messages) {
 <span class="fc" id="L344">        sink.head();</span>
@@ -378,7 +378,7 @@ import org.revapi.Element;
 
     @Override
     public String getOutputName() {
-<span class="nc" id="L381">        return &quot;revapi-report&quot;;</span>
+<span class="fc" id="L381">        return &quot;revapi-report&quot;;</span>
     }
 
     @Override
@@ -388,14 +388,14 @@ import org.revapi.Element;
 
     @Override
     public String getDescription(Locale locale) {
-<span class="nc" id="L391">        ensureAnalyzed(locale);</span>
+<span class="fc" id="L391">        ensureAnalyzed(locale);</span>
 
-<span class="nc bnc" id="L393" title="All 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
+<span class="pc bpc" id="L393" title="2 of 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
 <span class="nc" id="L394">            getLog().debug(&quot;Was unable to determine the old and new artifacts to compare while determining&quot; +</span>
                     &quot; the report description.&quot;);
 <span class="nc" id="L396">            return null;</span>
         } else {
-<span class="nc" id="L398">            return getDescription(getBundle(locale), oldAPI, newAPI);</span>
+<span class="fc" id="L398">            return getDescription(getBundle(locale), oldAPI, newAPI);</span>
         }
     }
 
@@ -405,66 +405,66 @@ import org.revapi.Element;
     }
 
     protected Analyzer prepareAnalyzer(Locale locale) {
-<span class="nc" id="L408">        Map&lt;String, Object&gt; contextData = null;</span>
-<span class="nc bnc" id="L409" title="All 2 branches missed.">        if (generateSiteReport) {</span>
-<span class="nc" id="L410">            contextData = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L411">            contextData.put(ReportTimeReporter.MIN_SEVERITY_KEY, reportSeverity.asDifferenceSeverity());</span>
+<span class="fc" id="L408">        Map&lt;String, Object&gt; contextData = null;</span>
+<span class="pc bpc" id="L409" title="1 of 2 branches missed.">        if (generateSiteReport) {</span>
+<span class="fc" id="L410">            contextData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L411">            contextData.put(ReportTimeReporter.MIN_SEVERITY_KEY, reportSeverity.asDifferenceSeverity());</span>
         }
 
-<span class="nc" id="L414">        AnalyzerBuilder.Result res = AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
-<span class="nc" id="L415">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
-<span class="nc" id="L416">                .withPipelineConfiguration(this.pipelineConfiguration)</span>
-<span class="nc" id="L417">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
-<span class="nc" id="L418">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
-<span class="nc" id="L419">                .withCheckDependencies(this.checkDependencies)</span>
-<span class="nc" id="L420">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
-<span class="nc" id="L421">                .withResolveTransitiveProvidedDependencies(this.resolveTransitiveProvidedDependencies)</span>
-<span class="nc" id="L422">                .withDisallowedExtensions(this.disallowedExtensions)</span>
-<span class="nc" id="L423">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
-<span class="nc" id="L424">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
-<span class="nc" id="L425">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
-<span class="nc" id="L426">                .withLocale(locale)</span>
-<span class="nc" id="L427">                .withLog(getLog())</span>
-<span class="nc" id="L428">                .withNewVersion(this.newVersion)</span>
-<span class="nc" id="L429">                .withOldVersion(this.oldVersion)</span>
-<span class="nc bnc" id="L430" title="All 2 branches missed.">                .withProject(this.project)</span>
-<span class="nc" id="L431">                .withReporter(generateSiteReport ? ReportTimeReporter.class : null)</span>
-<span class="nc" id="L432">                .withRepositorySystem(this.repositorySystem)</span>
-<span class="nc" id="L433">                .withRepositorySystemSession(this.repositorySystemSession)</span>
-<span class="nc" id="L434">                .withSkip(this.skip)</span>
-<span class="nc" id="L435">                .withVersionFormat(this.versionFormat)</span>
-<span class="nc" id="L436">                .withContextData(contextData)</span>
-<span class="nc" id="L437">                .build();</span>
+<span class="fc" id="L414">        AnalyzerBuilder.Result res = AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
+<span class="fc" id="L415">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
+<span class="fc" id="L416">                .withPipelineConfiguration(this.pipelineConfiguration)</span>
+<span class="fc" id="L417">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
+<span class="fc" id="L418">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
+<span class="fc" id="L419">                .withCheckDependencies(this.checkDependencies)</span>
+<span class="fc" id="L420">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
+<span class="fc" id="L421">                .withResolveTransitiveProvidedDependencies(this.resolveTransitiveProvidedDependencies)</span>
+<span class="fc" id="L422">                .withDisallowedExtensions(this.disallowedExtensions)</span>
+<span class="fc" id="L423">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
+<span class="fc" id="L424">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
+<span class="fc" id="L425">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
+<span class="fc" id="L426">                .withLocale(locale)</span>
+<span class="fc" id="L427">                .withLog(getLog())</span>
+<span class="fc" id="L428">                .withNewVersion(this.newVersion)</span>
+<span class="fc" id="L429">                .withOldVersion(this.oldVersion)</span>
+<span class="pc bpc" id="L430" title="1 of 2 branches missed.">                .withProject(this.project)</span>
+<span class="fc" id="L431">                .withReporter(generateSiteReport ? ReportTimeReporter.class : null)</span>
+<span class="fc" id="L432">                .withRepositorySystem(this.repositorySystem)</span>
+<span class="fc" id="L433">                .withRepositorySystemSession(this.repositorySystemSession)</span>
+<span class="fc" id="L434">                .withSkip(this.skip)</span>
+<span class="fc" id="L435">                .withVersionFormat(this.versionFormat)</span>
+<span class="fc" id="L436">                .withContextData(contextData)</span>
+<span class="fc" id="L437">                .build();</span>
 
-<span class="nc bnc" id="L439" title="All 2 branches missed.">        if (res.skip) {</span>
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">        if (res.skip) {</span>
 <span class="nc" id="L440">            this.skip = true;</span>
         }
 
-<span class="nc" id="L443">        this.oldArtifacts = res.oldArtifacts;</span>
-<span class="nc" id="L444">        this.newArtifacts = res.newArtifacts;</span>
+<span class="fc" id="L443">        this.oldArtifacts = res.oldArtifacts;</span>
+<span class="fc" id="L444">        this.newArtifacts = res.newArtifacts;</span>
 
-<span class="nc" id="L446">        return res.analyzer;</span>
+<span class="fc" id="L446">        return res.analyzer;</span>
     }
 
     private void ensureAnalyzed(Locale locale) {
-<span class="nc bnc" id="L450" title="All 4 branches missed.">        if (!skip &amp;&amp; analysisResult == null) {</span>
-<span class="nc" id="L451">            Analyzer analyzer = prepareAnalyzer(locale);</span>
-<span class="nc bnc" id="L452" title="All 2 branches missed.">            if (analyzer == null) {</span>
+<span class="pc bpc" id="L450" title="1 of 4 branches missed.">        if (!skip &amp;&amp; analysisResult == null) {</span>
+<span class="fc" id="L451">            Analyzer analyzer = prepareAnalyzer(locale);</span>
+<span class="pc bpc" id="L452" title="1 of 2 branches missed.">            if (analyzer == null) {</span>
 <span class="nc" id="L453">                return;</span>
             }
 
-<span class="nc" id="L456">            try (AnalysisResult res = analyzer.analyze()) {</span>
-<span class="nc" id="L457">                res.throwIfFailed();</span>
+<span class="fc" id="L456">            try (AnalysisResult res = analyzer.analyze()) {</span>
+<span class="fc" id="L457">                res.throwIfFailed();</span>
 
-<span class="nc" id="L459">                oldAPI = analyzer.getResolvedOldApi();</span>
-<span class="nc" id="L460">                newAPI = analyzer.getResolvedNewApi();</span>
+<span class="fc" id="L459">                oldAPI = analyzer.getResolvedOldApi();</span>
+<span class="fc" id="L460">                newAPI = analyzer.getResolvedNewApi();</span>
 
-<span class="nc" id="L462">                analysisResult = res;</span>
+<span class="fc" id="L462">                analysisResult = res;</span>
 <span class="nc" id="L463">            } catch (Exception e) {</span>
 <span class="nc" id="L464">                throw new IllegalStateException(&quot;Failed to generate report.&quot;, e);</span>
-<span class="nc" id="L465">            }</span>
+<span class="fc" id="L465">            }</span>
         }
-<span class="nc" id="L467">    }</span>
+<span class="fc" id="L467">    }</span>
 
     protected ResourceBundle getBundle(Locale locale) {
 <span class="fc" id="L470">        return ResourceBundle.getBundle(&quot;revapi-report&quot;, locale, this.getClass().getClassLoader());</span>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">XmlUtil.java</span></div><h1>XmlUtil.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -110,7 +110,7 @@ final class XmlUtil {
             }
 
 <span class="fc bfc" id="L112" title="All 2 branches covered.">            if (hasContent) {</span>
-<span class="fc" id="L113">                wrt.write(xml.getValue());</span>
+<span class="fc" id="L113">                escaped(wrt, xml.getValue());</span>
             }
 
 <span class="fc" id="L116">            wrt.write(&quot;&lt;/&quot;);</span>
@@ -126,5 +126,23 @@ final class XmlUtil {
         }
 <span class="fc" id="L127">    }</span>
 
+    private static void escaped(Writer wrt, String value) throws IOException {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for (int i = 0; i &lt; value.length(); ++i) {</span>
+<span class="fc" id="L131">            char c = value.charAt(i);</span>
+<span class="pc bpc" id="L132" title="3 of 4 branches missed.">            switch (c) {</span>
+            case '&amp;':
+<span class="nc" id="L134">                wrt.write(&quot;&amp;amp;&quot;);</span>
+<span class="nc" id="L135">                break;</span>
+            case '&lt;':
+<span class="nc" id="L137">                wrt.write(&quot;&amp;lt;&quot;);</span>
+<span class="nc" id="L138">                break;</span>
+            case '&gt;':
+<span class="nc" id="L140">                wrt.write(&quot;&amp;gt;&quot;);</span>
+<span class="nc" id="L141">                break;</span>
+            default:
+<span class="fc" id="L143">                wrt.write(c);</span>
+            }
+        }
+<span class="fc" id="L146">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

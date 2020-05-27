@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BuildTimeReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">BuildTimeReporter.java</span></div><h1>BuildTimeReporter.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2018 Lukas Krejci
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,219 +33,167 @@ import org.revapi.Report;
 import org.revapi.Reporter;
 
 /**
+ * Build-time reporter is a {@link Reporter} extension for Revapi that is used by the {@link CheckMojo} to output the
+ * found problems and also to provide the suggestions to the user how to ignore the problems if deemed ok.
+ * &lt;p&gt;
+ * Even though this is a normal Revapi extension, it doesn't use the normal configuration mechanisms provided by Revapi
+ * (i.e. it doesn't define a configuration schema and doesn't accept any configuration from the configuration in the
+ * analysis context during the {@link #initialize(AnalysisContext)} method). Instead, it is configured through the
+ * {@link AnalysisContext#getData(String)}. This is to make it easier to pass complex objects to the reporter and also
+ * to amplify the fact that this is no &quot;normal&quot; extension but is tightly bound to the {@link CheckMojo} and the Maven
+ * build.
+ *
  * @author Lukas Krejci
  * @since 0.1
  */
-<span class="pc bpc" id="L40" title="1 of 2 branches missed.">public final class BuildTimeReporter implements Reporter {</span>
-    static final String BREAKING_SEVERITY_KEY = &quot;org.revapi.maven.buildTimeBreakingSeverity&quot;;
-    static final String OUTPUT_NON_IDENTIFYING_ATTACHMENTS = &quot;org.revapi.maven.outputNonIdentifyingAttachments&quot;;
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">public final class BuildTimeReporter implements Reporter {</span>
+    public static final String BREAKING_SEVERITY_KEY = &quot;org.revapi.maven.buildTimeBreakingSeverity&quot;;
+    public static final String OUTPUT_NON_IDENTIFYING_ATTACHMENTS = &quot;org.revapi.maven.outputNonIdentifyingAttachments&quot;;
+    public static final String SUGGESTIONS_BUILDER_KEY = &quot;org.revapi.maven.buildTimeSuggestionsBuilder&quot;;
+
     private DifferenceSeverity breakingSeverity;
     private List&lt;Report&gt; allProblems;
     private List&lt;Archive&gt; oldApi;
     private List&lt;Archive&gt; newApi;
     private boolean outputNonIdentifyingAttachments;
+    private SuggestionsBuilder suggestionsBuilder;
 
     public boolean hasBreakingProblems() {
-<span class="nc bnc" id="L50" title="All 4 branches missed.">        return allProblems != null &amp;&amp; !allProblems.isEmpty();</span>
+<span class="nc bnc" id="L62" title="All 4 branches missed.">        return allProblems != null &amp;&amp; !allProblems.isEmpty();</span>
     }
 
     public String getAllProblemsMessage() {
-<span class="nc" id="L54">        StringBuilder errors = new StringBuilder(&quot;The following API problems caused the build to fail:\n&quot;);</span>
-<span class="nc bnc" id="L55" title="All 2 branches missed.">        for (Report r : allProblems) {</span>
-<span class="nc" id="L56">            Element element = r.getNewElement();</span>
+<span class="nc" id="L66">        StringBuilder errors = new StringBuilder(&quot;The following API problems caused the build to fail:\n&quot;);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        for (Report r : allProblems) {</span>
+<span class="nc" id="L68">            Element element = r.getNewElement();</span>
             Archive archive;
-<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (element == null) {</span>
-<span class="nc" id="L59">                element = r.getOldElement();</span>
-<span class="nc bnc" id="L60" title="All 4 branches missed.">                assert element != null;</span>
-<span class="nc bnc" id="L61" title="All 2 branches missed.">                archive = shouldOutputArchive(oldApi, element.getArchive()) ? element.getArchive() : null;</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (element == null) {</span>
+<span class="nc" id="L71">                element = r.getOldElement();</span>
+<span class="nc bnc" id="L72" title="All 4 branches missed.">                assert element != null;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                archive = shouldOutputArchive(oldApi, element.getArchive()) ? element.getArchive() : null;</span>
             } else {
-<span class="nc bnc" id="L63" title="All 2 branches missed.">                archive = shouldOutputArchive(newApi, element.getArchive()) ? element.getArchive() : null;</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                archive = shouldOutputArchive(newApi, element.getArchive()) ? element.getArchive() : null;</span>
             }
 
-<span class="nc bnc" id="L66" title="All 2 branches missed.">            for (Difference d : r.getDifferences()) {</span>
-<span class="nc bnc" id="L67" title="All 2 branches missed.">                if (isReportable(d)) {</span>
-<span class="nc" id="L68">                    errors.append(d.code).append(&quot;: &quot;).append(element.getFullHumanReadableString()).append(&quot;: &quot;)</span>
-<span class="nc" id="L69">                            .append(d.description);</span>
-<span class="nc bnc" id="L70" title="All 2 branches missed.">                    if (archive != null) {</span>
-<span class="nc" id="L71">                        errors.append(&quot; [&quot;).append(archive.getName()).append(&quot;]&quot;);</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            for (Difference d : r.getDifferences()) {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (isReportable(d)) {</span>
+<span class="nc" id="L80">                    errors.append(d.code).append(&quot;: &quot;).append(element.getFullHumanReadableString()).append(&quot;: &quot;)</span>
+<span class="nc" id="L81">                            .append(d.description);</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">                    if (archive != null) {</span>
+<span class="nc" id="L83">                        errors.append(&quot; [&quot;).append(archive.getName()).append(&quot;]&quot;);</span>
                     }
-<span class="nc" id="L73">                    errors.append(&quot;\n&quot;);</span>
+<span class="nc" id="L85">                    errors.append(&quot;\n&quot;);</span>
                 }
-<span class="nc" id="L75">            }</span>
-<span class="nc" id="L76">        }</span>
+<span class="nc" id="L87">            }</span>
+<span class="nc" id="L88">        }</span>
 
-<span class="nc" id="L78">        return errors.toString();</span>
+<span class="nc" id="L90">        return errors.toString();</span>
     }
 
     public String getIgnoreSuggestion() {
-<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (allProblems.isEmpty()) {</span>
-<span class="nc" id="L83">            return null;</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (allProblems.isEmpty()) {</span>
+<span class="nc" id="L95">            return null;</span>
         }
 
-<span class="fc" id="L86">        StringBuilder ignores = new StringBuilder();</span>
-
-<span class="fc bfc" id="L88" title="All 2 branches covered.">        for (Report r : allProblems) {</span>
-<span class="fc bfc" id="L89" title="All 2 branches covered.">            for (Difference d : r.getDifferences()) {</span>
-<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                if (!isReportable(d)) {</span>
-<span class="nc" id="L91">                    continue;</span>
-                }
-
-<span class="fc" id="L94">                ignores.append(&quot;{\n&quot;);</span>
-<span class="fc" id="L95">                ignores.append(&quot;  \&quot;code\&quot;: \&quot;&quot;).append(escape(d.code)).append(&quot;\&quot;,\n&quot;);</span>
-<span class="pc bpc" id="L96" title="1 of 2 branches missed.">                if (r.getOldElement() != null) {</span>
-<span class="fc" id="L97">                    ignores.append(&quot;  \&quot;old\&quot;: \&quot;&quot;).append(escape(r.getOldElement())).append(&quot;\&quot;,\n&quot;);</span>
-                }
-<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                if (r.getNewElement() != null) {</span>
-<span class="fc" id="L100">                    ignores.append(&quot;  \&quot;new\&quot;: \&quot;&quot;).append(escape(r.getNewElement())).append(&quot;\&quot;,\n&quot;);</span>
-                }
-
-<span class="fc" id="L103">                boolean hasOptionalAttachments = false;</span>
-<span class="fc bfc" id="L104" title="All 2 branches covered.">                for (Map.Entry&lt;String, String&gt; e : d.attachments.entrySet()) {</span>
-<span class="fc bfc" id="L105" title="All 2 branches covered.">                    if (d.isIdentifyingAttachment(e.getKey())) {</span>
-<span class="fc" id="L106">                        ignores.append(&quot;  \&quot;&quot;).append(escape(e.getKey())).append(&quot;\&quot;: \&quot;&quot;).append(escape(e.getValue()))</span>
-<span class="fc" id="L107">                                .append(&quot;\&quot;,\n&quot;);</span>
-                    } else {
-<span class="fc" id="L109">                        hasOptionalAttachments = true;</span>
-                    }
-<span class="fc" id="L111">                }</span>
-
-<span class="fc" id="L113">                ignores.append(&quot;  \&quot;justification\&quot;: &lt;&lt;&lt;&lt;&lt; ADD YOUR EXPLANATION FOR THE NECESSITY OF THIS CHANGE&quot; +</span>
-                        &quot; &gt;&gt;&gt;&gt;&gt;\n&quot;);
-
-<span class="fc bfc" id="L116" title="All 4 branches covered.">                if (outputNonIdentifyingAttachments &amp;&amp; hasOptionalAttachments) {</span>
-<span class="fc" id="L117">                    ignores.append(&quot;  /*\n  Additionally, the following attachments can be used to further identify the difference:\n\n&quot;);</span>
-<span class="fc bfc" id="L118" title="All 2 branches covered.">                    for (Map.Entry&lt;String, String&gt; e : d.attachments.entrySet()) {</span>
-<span class="pc bpc" id="L119" title="1 of 2 branches missed.">                        if (!d.isIdentifyingAttachment(e.getKey())) {</span>
-<span class="fc" id="L120">                            ignores.append(&quot;  \&quot;&quot;).append(escape(e.getKey())).append(&quot;\&quot;: \&quot;&quot;).append(escape(e.getValue()))</span>
-<span class="fc" id="L121">                                    .append(&quot;\&quot;,\n&quot;);</span>
-                        }
-<span class="fc" id="L123">                    }</span>
-<span class="fc" id="L124">                    ignores.append(&quot;  */\n&quot;);</span>
-                }
-
-<span class="fc" id="L127">                ignores.append(&quot;},\n&quot;);</span>
-
-<span class="fc" id="L129">            }</span>
-<span class="fc" id="L130">        }</span>
-
-<span class="fc" id="L132">        return ignores.toString();</span>
+<span class="fc" id="L98">        return suggestionsBuilder.build(allProblems, new SuggestionBuilderContext());</span>
     }
 
     @Nullable @Override public String getExtensionId() {
-<span class="nc" id="L136">        return &quot;revapi.maven.internal.buildTimeReporter&quot;;</span>
+<span class="nc" id="L102">        return &quot;revapi.maven.internal.buildTimeReporter&quot;;</span>
     }
 
     @Nullable @Override public Reader getJSONSchema() {
-<span class="nc" id="L140">        return null;</span>
+<span class="nc" id="L106">        return null;</span>
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext context) {
-<span class="fc" id="L145">        allProblems = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L146">        oldApi = new ArrayList&lt;&gt;();</span>
-<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        for (Archive a : context.getOldApi().getArchives()) {</span>
-<span class="nc" id="L148">            oldApi.add(a);</span>
-<span class="nc" id="L149">        }</span>
-<span class="fc" id="L150">        newApi = new ArrayList&lt;&gt;();</span>
-<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        for (Archive a : context.getNewApi().getArchives()) {</span>
-<span class="nc" id="L152">            newApi.add(a);</span>
-<span class="nc" id="L153">        }</span>
-<span class="fc" id="L154">        this.breakingSeverity = (DifferenceSeverity) context.getData(BREAKING_SEVERITY_KEY);</span>
-<span class="fc" id="L155">        Boolean outputNonIdentifyingAttachments = (Boolean) context.getData(OUTPUT_NON_IDENTIFYING_ATTACHMENTS);</span>
-<span class="fc bfc" id="L156" title="All 2 branches covered.">        this.outputNonIdentifyingAttachments = outputNonIdentifyingAttachments == null</span>
+<span class="fc" id="L111">        allProblems = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L112">        oldApi = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        for (Archive a : context.getOldApi().getArchives()) {</span>
+<span class="nc" id="L114">            oldApi.add(a);</span>
+<span class="nc" id="L115">        }</span>
+<span class="fc" id="L116">        newApi = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        for (Archive a : context.getNewApi().getArchives()) {</span>
+<span class="nc" id="L118">            newApi.add(a);</span>
+<span class="nc" id="L119">        }</span>
+<span class="fc" id="L120">        this.breakingSeverity = (DifferenceSeverity) context.getData(BREAKING_SEVERITY_KEY);</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if (breakingSeverity == null) {</span>
+<span class="nc" id="L122">            throw new IllegalStateException(&quot;Breaking severity must be provided in the context data of the&quot; +</span>
+                    &quot; BuildTimeReporter. If you see this, you've come across a bug, please report it.&quot;);
+        }
+
+<span class="fc" id="L126">        Boolean outputNonIdentifyingAttachments = (Boolean) context.getData(OUTPUT_NON_IDENTIFYING_ATTACHMENTS);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        this.outputNonIdentifyingAttachments = outputNonIdentifyingAttachments == null</span>
                 ? true
-<span class="fc" id="L158">                : outputNonIdentifyingAttachments;</span>
-<span class="fc" id="L159">    }</span>
+<span class="fc" id="L129">                : outputNonIdentifyingAttachments;</span>
+<span class="fc" id="L130">        this.suggestionsBuilder = (SuggestionsBuilder) context.getData(SUGGESTIONS_BUILDER_KEY);</span>
+
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (suggestionsBuilder == null) {</span>
+<span class="nc" id="L133">            throw new IllegalStateException(&quot;SuggestionBuilder instance must be provided in the context data of the&quot; +</span>
+                    &quot; BuildTimeReporter. If you see this, you've come across a bug, please report it.&quot;);
+        }
+<span class="fc" id="L136">    }</span>
 
     @Override
     public void report(@Nonnull Report report) {
-<span class="fc" id="L163">        Element element = report.getNewElement();</span>
-<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (element == null) {</span>
-<span class="nc" id="L165">            element = report.getOldElement();</span>
+<span class="fc" id="L140">        Element element = report.getNewElement();</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (element == null) {</span>
+<span class="nc" id="L142">            element = report.getOldElement();</span>
         }
 
-<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        if (element == null) {</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        if (element == null) {</span>
             //wat? At least one of old and new should always be non-null
-<span class="nc" id="L170">            return;</span>
+<span class="nc" id="L147">            return;</span>
         }
 
-<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        for (Difference d : report.getDifferences()) {</span>
-<span class="pc bpc" id="L174" title="1 of 2 branches missed.">            if (isReportable(d)) {</span>
-<span class="fc" id="L175">                allProblems.add(report);</span>
-<span class="fc" id="L176">                break;</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        for (Difference d : report.getDifferences()) {</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">            if (isReportable(d)) {</span>
+<span class="fc" id="L152">                allProblems.add(report);</span>
+<span class="fc" id="L153">                break;</span>
             }
-<span class="nc" id="L178">        }</span>
-<span class="fc" id="L179">    }</span>
+<span class="nc" id="L155">        }</span>
+<span class="fc" id="L156">    }</span>
 
     private boolean isReportable(Difference d) {
-<span class="fc" id="L182">        DifferenceSeverity maxSeverity = DifferenceSeverity.NON_BREAKING;</span>
-<span class="fc bfc" id="L183" title="All 2 branches covered.">        for (DifferenceSeverity s : d.classification.values()) {</span>
-<span class="pc bpc" id="L184" title="1 of 2 branches missed.">            if (maxSeverity.compareTo(s) &lt; 0) {</span>
-<span class="fc" id="L185">                maxSeverity = s;</span>
+<span class="fc" id="L159">        DifferenceSeverity maxSeverity = DifferenceSeverity.NON_BREAKING;</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        for (DifferenceSeverity s : d.classification.values()) {</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">            if (maxSeverity.compareTo(s) &lt; 0) {</span>
+<span class="fc" id="L162">                maxSeverity = s;</span>
             }
-<span class="fc" id="L187">        }</span>
+<span class="fc" id="L164">        }</span>
 
-<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        return maxSeverity.compareTo(breakingSeverity) &gt;= 0;</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        return maxSeverity.compareTo(breakingSeverity) &gt;= 0;</span>
     }
 
     private boolean shouldOutputArchive(List&lt;Archive&gt; primaryApi, Archive archive) {
-<span class="nc bnc" id="L193" title="All 4 branches missed.">        return !primaryApi.contains(archive) || primaryApi.size() &gt; 1;</span>
+<span class="nc bnc" id="L170" title="All 4 branches missed.">        return !primaryApi.contains(archive) || primaryApi.size() &gt; 1;</span>
     }
 
     @Override
     public void close() throws IOException {
-<span class="nc" id="L198">    }</span>
+<span class="nc" id="L175">    }</span>
 
-    private static String escape(Object obj) {
-<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        if (obj == null) {</span>
-<span class="nc" id="L202">            return &quot;null&quot;;</span>
+    /**
+     * A suggestion builder is an object that the {@link BuildTimeReporter} uses to render suggestions for ignoring
+     * the found problems.
+     */
+    public interface SuggestionsBuilder {
+        String build(List&lt;Report&gt; reports, SuggestionBuilderContext context);
+    }
+
+    /**
+     * The context that can be used by the {@link SuggestionsBuilder} to get information about the differences
+     * and the configured output options.
+     */
+<span class="fc" id="L189">    public final class SuggestionBuilderContext {</span>
+        boolean isReportable(Difference difference) {
+<span class="fc" id="L191">            return BuildTimeReporter.this.isReportable(difference);</span>
         }
 
-<span class="fc" id="L205">        String string = obj.toString();</span>
-
-        char c;
-        int i;
-<span class="fc" id="L209">        int len = string.length();</span>
-<span class="fc" id="L210">        StringBuilder sb = new StringBuilder(len);</span>
-        String t;
-
-<span class="fc bfc" id="L213" title="All 2 branches covered.">        for (i = 0; i &lt; len; i += 1) {</span>
-<span class="fc" id="L214">            c = string.charAt(i);</span>
-<span class="pc bpc" id="L215" title="6 of 8 branches missed.">            switch (c) {</span>
-                case '\\':
-                case '&quot;':
-<span class="fc" id="L218">                    sb.append('\\');</span>
-<span class="fc" id="L219">                    sb.append(c);</span>
-<span class="fc" id="L220">                    break;</span>
-                case '/':
-<span class="nc" id="L222">                    sb.append('\\');</span>
-<span class="nc" id="L223">                    sb.append(c);</span>
-<span class="nc" id="L224">                    break;</span>
-                case '\b':
-<span class="nc" id="L226">                    sb.append(&quot;\\b&quot;);</span>
-<span class="nc" id="L227">                    break;</span>
-                case '\t':
-<span class="nc" id="L229">                    sb.append(&quot;\\t&quot;);</span>
-<span class="nc" id="L230">                    break;</span>
-                case '\n':
-<span class="nc" id="L232">                    sb.append(&quot;\\n&quot;);</span>
-<span class="nc" id="L233">                    break;</span>
-                case '\f':
-<span class="nc" id="L235">                    sb.append(&quot;\\f&quot;);</span>
-<span class="nc" id="L236">                    break;</span>
-                case '\r':
-<span class="nc" id="L238">                    sb.append(&quot;\\r&quot;);</span>
-<span class="nc" id="L239">                    break;</span>
-                default:
-<span class="pc bpc" id="L241" title="1 of 2 branches missed.">                    if (c &lt; ' ') {</span>
-<span class="nc" id="L242">                        t = &quot;000&quot; + Integer.toHexString(c);</span>
-<span class="nc" id="L243">                        sb.append(&quot;\\u&quot;).append(t.substring(t.length() - 4));</span>
-                    } else {
-<span class="fc" id="L245">                        sb.append(c);</span>
-                    }
-            }
+        boolean isAttachmentsReported() {
+<span class="fc" id="L195">            return outputNonIdentifyingAttachments;</span>
         }
-<span class="fc" id="L249">        return sb.toString();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

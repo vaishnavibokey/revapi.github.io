@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheckMojo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Revapi Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">CheckMojo.java</span></div><h1>CheckMojo.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2018 Lukas Krejci
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -39,7 +39,9 @@ import java.util.stream.Stream;
 <span class="nc" id="L39">public class CheckMojo extends AbstractRevapiMojo {</span>
 
     /**
-     * Whether or not to output the JSON-formatted suggestions for ignoring the found API problems.
+     * Whether or not to output the suggestions for ignoring the found API problems. Before 0.11.5 the suggestions
+     * were always JSON formatted. Since 0.11.5 one can choose between JSON and XML using the
+     * {@link #ignoreSuggestionsFormat} property.
      *
      * @since 0.10.4
      */
@@ -57,61 +59,81 @@ import java.util.stream.Stream;
     @Parameter(property = Props.outputNonIdentifyingDifferenceInfo.NAME, defaultValue = Props.outputNonIdentifyingDifferenceInfo.DEFAULT_VALUE)
     private boolean outputNonIdentifyingDifferenceInfo;
 
+    /**
+     * The format used to output the ignore suggestions. The default value is &quot;json&quot;. The other possible value is
+     * &quot;xml&quot; for XML formatted ignore suggestions.
+     *
+     * @since 0.11.5
+     */
+    @Parameter(property = Props.ignoreSuggestionsFormat.NAME, defaultValue = Props.ignoreSuggestionsFormat.DEFAULT_VALUE)
+    private String ignoreSuggestionsFormat;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (skip) {</span>
-<span class="nc" id="L63">            return;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L74">            return;</span>
         }
 
-<span class="nc" id="L66">        StringWriter wrt = new StringWriter();</span>
+<span class="nc" id="L77">        StringWriter wrt = new StringWriter();</span>
         BuildTimeReporter reporter;
 
-<span class="nc" id="L69">        String report = null;</span>
+<span class="nc" id="L80">        String report = null;</span>
 
-<span class="nc" id="L71">        try (AnalysisResult res = analyze(BuildTimeReporter.class,</span>
-<span class="nc" id="L72">                BuildTimeReporter.BREAKING_SEVERITY_KEY, failSeverity.asDifferenceSeverity(), &quot;maven-log&quot;, getLog(),</span>
-<span class="nc" id="L73">                &quot;writer&quot;, wrt, BuildTimeReporter.OUTPUT_NON_IDENTIFYING_ATTACHMENTS, outputNonIdentifyingDifferenceInfo)) {</span>
+<span class="nc" id="L82">        try (AnalysisResult res = analyze(BuildTimeReporter.class,</span>
+<span class="nc" id="L83">                BuildTimeReporter.BREAKING_SEVERITY_KEY, failSeverity.asDifferenceSeverity(), &quot;maven-log&quot;, getLog(),</span>
+<span class="nc" id="L84">                &quot;writer&quot;, wrt, BuildTimeReporter.OUTPUT_NON_IDENTIFYING_ATTACHMENTS, outputNonIdentifyingDifferenceInfo,</span>
+<span class="nc" id="L85">                BuildTimeReporter.SUGGESTIONS_BUILDER_KEY, getSuggestionsBuilder())) {</span>
 
-<span class="nc" id="L75">            res.throwIfFailed();</span>
+<span class="nc" id="L87">            res.throwIfFailed();</span>
 
-<span class="nc" id="L77">            reporter = res.getExtensions().getFirstExtension(BuildTimeReporter.class, null);</span>
+<span class="nc" id="L89">            reporter = res.getExtensions().getFirstExtension(BuildTimeReporter.class, null);</span>
 
-<span class="nc bnc" id="L79" title="All 4 branches missed.">            if (reporter != null &amp;&amp; reporter.hasBreakingProblems()) {</span>
-<span class="nc bnc" id="L80" title="All 2 branches missed.">                if (failBuildOnProblemsFound) {</span>
-<span class="nc" id="L81">                    report = reporter.getAllProblemsMessage();</span>
-<span class="nc" id="L82">                    String additionalOutput = wrt.toString();</span>
-<span class="nc bnc" id="L83" title="All 2 branches missed.">                    if (!additionalOutput.isEmpty()) {</span>
-<span class="nc" id="L84">                        report += &quot;\n\nAdditionally, the configured reporters reported:\n\n&quot; + additionalOutput;</span>
+<span class="nc bnc" id="L91" title="All 4 branches missed.">            if (reporter != null &amp;&amp; reporter.hasBreakingProblems()) {</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                if (failBuildOnProblemsFound) {</span>
+<span class="nc" id="L93">                    report = reporter.getAllProblemsMessage();</span>
+<span class="nc" id="L94">                    String additionalOutput = wrt.toString();</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                    if (!additionalOutput.isEmpty()) {</span>
+<span class="nc" id="L96">                        report += &quot;\n\nAdditionally, the configured reporters reported:\n\n&quot; + additionalOutput;</span>
                     }
 
-<span class="nc" id="L87">                    Stream.of(report.split(&quot;\n&quot;)).forEach(l -&gt; getLog().info(l));</span>
+<span class="nc" id="L99">                    Stream.of(report.split(&quot;\n&quot;)).forEach(l -&gt; getLog().info(l));</span>
 
-<span class="nc bnc" id="L89" title="All 2 branches missed.">                    if (outputIgnoreSuggestions) {</span>
-<span class="nc" id="L90">                        getLog().info(&quot;&quot;);</span>
-<span class="nc" id="L91">                        getLog().info(&quot;If you're using the semver-ignore extension, update your module's&quot; +</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                    if (outputIgnoreSuggestions) {</span>
+<span class="nc" id="L102">                        getLog().info(&quot;&quot;);</span>
+<span class="nc" id="L103">                        getLog().info(&quot;If you're using the semver-ignore extension, update your module's&quot; +</span>
                                 &quot; version to one compatible with the current changes (e.g. mvn package&quot; +
                                 &quot; revapi:update-versions). If you want to explicitly ignore this change and provide a&quot; +
-                                &quot; justification for it, add the following JSON snippet to your Revapi configuration&quot; +
-<span class="nc" id="L95">                                &quot; under \&quot;revapi.ignore\&quot; path:\n\n&quot; + reporter.getIgnoreSuggestion());</span>
+                                &quot; justification for it, add the following &quot; + ignoreSuggestionsFormat + &quot; snippet to your Revapi configuration&quot; +
+<span class="nc" id="L107">                                &quot; under \&quot;revapi.ignore\&quot; path:\n\n&quot; + reporter.getIgnoreSuggestion());</span>
 
-<span class="nc" id="L97">                        report += &quot;\nConsult the plugin output above for suggestions on how to ignore the found&quot; +</span>
+<span class="nc" id="L109">                        report += &quot;\nConsult the plugin output above for suggestions on how to ignore the found&quot; +</span>
                                 &quot; problems.&quot;;
                     }
-<span class="nc" id="L100">                } else {</span>
-<span class="nc" id="L101">                    getLog().info(&quot;API problems found but letting the build pass as configured.&quot;);</span>
+<span class="nc" id="L112">                } else {</span>
+<span class="nc" id="L113">                    getLog().info(&quot;API problems found but letting the build pass as configured.&quot;);</span>
                 }
             } else {
-<span class="nc" id="L104">                getLog().info(&quot;API checks completed without failures.&quot;);</span>
+<span class="nc" id="L116">                getLog().info(&quot;API checks completed without failures.&quot;);</span>
             }
-<span class="nc" id="L106">        } catch (MojoFailureException e) {</span>
-<span class="nc" id="L107">            throw e;</span>
-<span class="nc" id="L108">        } catch (Exception e) {</span>
-<span class="nc" id="L109">            throw new MojoExecutionException(&quot;Failed to execute the API analysis.&quot;, e);</span>
-<span class="nc" id="L110">        }</span>
+<span class="nc" id="L118">        } catch (MojoFailureException e) {</span>
+<span class="nc" id="L119">            throw e;</span>
+<span class="nc" id="L120">        } catch (Exception e) {</span>
+<span class="nc" id="L121">            throw new MojoExecutionException(&quot;Failed to execute the API analysis.&quot;, e);</span>
+<span class="nc" id="L122">        }</span>
 
-<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (report != null) {</span>
-<span class="nc" id="L113">            throw new MojoFailureException(report);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (report != null) {</span>
+<span class="nc" id="L125">            throw new MojoFailureException(report);</span>
         }
-<span class="nc" id="L115">    }</span>
+<span class="nc" id="L127">    }</span>
+
+    private BuildTimeReporter.SuggestionsBuilder getSuggestionsBuilder() {
+<span class="nc bnc" id="L130" title="All 3 branches missed.">        switch (ignoreSuggestionsFormat) {</span>
+<span class="nc" id="L131">        case &quot;json&quot;: return new JsonSuggestionsBuilder();</span>
+<span class="nc" id="L132">        case &quot;xml&quot;: return new XmlSuggestionsBuilder();</span>
+        default:
+<span class="nc" id="L134">            throw new IllegalArgumentException(&quot;`ignoreSuggestionsFormat` only accepts \&quot;json\&quot; or \&quot;xml\&quot; but \&quot;&quot;</span>
+                    + ignoreSuggestionsFormat + &quot;\&quot; was provided.&quot;);
+        }
+    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
