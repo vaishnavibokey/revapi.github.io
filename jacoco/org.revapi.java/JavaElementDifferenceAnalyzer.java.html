@@ -344,7 +344,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 
     private void append(StringBuilder bld, TypeAndUseSite typeAndUseSite) {
         String message;
-<span class="pc bpc" id="L347" title="6 of 10 branches missed.">        switch (typeAndUseSite.useSite.getUseType()) {</span>
+<span class="pc bpc" id="L347" title="7 of 10 branches missed.">        switch (typeAndUseSite.useSite.getUseType()) {</span>
             case ANNOTATES:
 <span class="nc" id="L349">                message = &quot;revapi.java.uses.annotates&quot;;</span>
 <span class="nc" id="L350">                break;</span>
@@ -358,8 +358,8 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="nc" id="L358">                message = &quot;revapi.java.uses.isInherited&quot;;</span>
 <span class="nc" id="L359">                break;</span>
             case IS_THROWN:
-<span class="fc" id="L361">                message = &quot;revapi.java.uses.isThrown&quot;;</span>
-<span class="fc" id="L362">                break;</span>
+<span class="nc" id="L361">                message = &quot;revapi.java.uses.isThrown&quot;;</span>
+<span class="nc" id="L362">                break;</span>
             case PARAMETER_TYPE:
 <span class="fc" id="L364">                message = &quot;revapi.java.uses.parameterType&quot;;</span>
 <span class="fc" id="L365">                break;</span>
@@ -529,7 +529,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 <span class="fc bfc" id="L529" title="All 2 branches covered.">            if (ret == null) {</span>
 <span class="fc" id="L530">                Set&lt;javax.lang.model.element.TypeElement&gt; derivedUseTypes = env.getDerivedTypes(useType);</span>
 
-<span class="pc bpc" id="L532" title="1 of 2 branches missed.">                for (javax.lang.model.element.TypeElement dut : derivedUseTypes) {</span>
+<span class="fc bfc" id="L532" title="All 2 branches covered.">                for (javax.lang.model.element.TypeElement dut : derivedUseTypes) {</span>
 <span class="fc" id="L533">                    TypeElement model = env.getTypeMap().get(dut);</span>
 <span class="pc bpc" id="L534" title="1 of 2 branches missed.">                    if (model == null) {</span>
 <span class="nc" id="L535">                        continue;</span>
@@ -551,7 +551,7 @@ public final class JavaElementDifferenceAnalyzer implements DifferenceAnalyzer {
 
             }
 
-<span class="pc bpc" id="L554" title="1 of 2 branches missed.">            return ret == null ? false : ret;</span>
+<span class="fc bfc" id="L554" title="All 2 branches covered.">            return ret == null ? false : ret;</span>
         }
     }
 
