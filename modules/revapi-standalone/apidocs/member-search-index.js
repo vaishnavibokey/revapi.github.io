@@ -1,1 +1,0 @@
-memberSearchIndex = [{"p":"org.revapi.standalone","c":"Main","l":"main(String[])","url":"main-java.lang.String:A-"},{"p":"org.revapi.standalone","c":"Main","l":"Main()"}]

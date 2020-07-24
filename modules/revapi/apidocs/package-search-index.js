@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"org.revapi"},{"l":"org.revapi.configuration"},{"l":"org.revapi.query"},{"l":"org.revapi.simple"}]

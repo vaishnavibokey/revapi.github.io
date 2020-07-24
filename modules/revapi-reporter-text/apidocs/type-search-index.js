@@ -1,1 +1,0 @@
-typeSearchIndex = [{"p":"org.revapi.reporter.text","l":"NaiveFileTemplateLoader"},{"p":"org.revapi.reporter.text","l":"TextReporter"}]

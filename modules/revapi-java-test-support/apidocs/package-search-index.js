@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"org.revapi.java.test.support"}]

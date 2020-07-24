@@ -1,1 +1,0 @@
-typeSearchIndex = [{"p":"org.revapi.java.test.support","l":"Jar"},{"p":"org.revapi.java.test.support","l":"Jar.Builder"},{"p":"org.revapi.java.test.support","l":"Jar.BuildOutput"},{"p":"org.revapi.java.test.support","l":"Jar.Environment"}]
