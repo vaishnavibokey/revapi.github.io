@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SchemaDrivenJSONToXmlConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">SchemaDrivenJSONToXmlConverter.java</span></div><h1>SchemaDrivenJSONToXmlConverter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.revapi.configuration.ConfigurationValidator;
+import org.revapi.configuration.XmlToJson;
+
+/**
+ * Converts JSON representation into a XML.
+ *
+ * @author Lukas Krejci
+ * @since 0.9.0
+ */
+final class SchemaDrivenJSONToXmlConverter {
+
+<span class="fc" id="L43">    private static final ConfigurationValidator VALIDATOR = new ConfigurationValidator();</span>
+
+    private SchemaDrivenJSONToXmlConverter() {
+
+    }
+
+    /**
+     * Converts the given {@code jsonConfig} into XML given the JSON schemas for the extensions.
+     * &lt;p&gt;
+     * Beware that {@link PlexusConfiguration} does NOT do any escaping of the values. Use
+     * {@link XmlUtil#toIndentedString(PlexusConfiguration, int, int, Writer)} to correctly serialize the configuration.
+     * 
+     * @param extensionSchemas the known extension schemas
+     * @param jsonConfig the json configuration to convert
+     * @return the {@link PlexusConfiguration} instance
+     * @throws IOException on error
+     */
+    static PlexusConfiguration convertToXml(Map&lt;String, ModelNode&gt; extensionSchemas, ModelNode jsonConfig)
+            throws IOException {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (jsonConfig.getType() == ModelType.LIST) {</span>
+<span class="nc" id="L63">            return convertNewStyleConfigToXml(extensionSchemas, jsonConfig);</span>
+        } else {
+<span class="fc" id="L65">            return convertOldStyleConfigToXml(extensionSchemas, jsonConfig);</span>
+        }
+    }
+
+    //visibility increased for testing
+    static PlexusConfiguration convert(ModelNode configuration, ModelNode jsonSchema, String extensionId, String id) {
+<span class="fc" id="L71">        ConversionContext ctx = new ConversionContext();</span>
+<span class="fc" id="L72">        ctx.currentSchema = jsonSchema;</span>
+<span class="fc" id="L73">        ctx.rootSchema = jsonSchema;</span>
+<span class="fc" id="L74">        ctx.pushTag(extensionId);</span>
+<span class="fc" id="L75">        ctx.id = id;</span>
+<span class="fc" id="L76">        return convert(configuration, ctx);</span>
+    }
+
+    private static PlexusConfiguration convert(ModelNode configuration, ConversionContext ctx) {
+<span class="fc" id="L80">        ModelNode type = ctx.currentSchema.get(&quot;type&quot;);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (!type.isDefined()) {</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (ctx.currentSchema.get(&quot;enum&quot;).isDefined()) {</span>
+<span class="fc" id="L83">                boolean containsUnsupportedTypes = ctx.currentSchema.get(&quot;enum&quot;).asList().stream()</span>
+<span class="pc bpc" id="L84" title="1 of 4 branches missed.">                        .anyMatch(n -&gt; n.getType() == ModelType.OBJECT || n.getType() == ModelType.LIST);</span>
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                if (containsUnsupportedTypes) {</span>
+<span class="fc" id="L87">                    throw new IllegalArgumentException(&quot;Unsupported type of enum value defined in schema.&quot;);</span>
+                }
+<span class="fc" id="L89">                return convertSimple(ctx.tagName, ctx.id, configuration.asString());</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            } else if (ctx.currentSchema.get(&quot;$ref&quot;).isDefined()) {</span>
+<span class="fc" id="L91">                ctx.currentSchema = findRef(ctx.rootSchema, ctx.currentSchema.get(&quot;$ref&quot;).asString());</span>
+<span class="fc" id="L92">                return convert(configuration, ctx);</span>
+            } else {
+<span class="fc" id="L94">                ModelNode matchingSchema = null;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                if (ctx.currentSchema.hasDefined(&quot;oneOf&quot;)) {</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">                    for (ModelNode s : ctx.currentSchema.get(&quot;oneOf&quot;).asList()) {</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                        if (VALIDATOR.validate(configuration, s).isSuccessful()) {</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                            if (matchingSchema != null) {</span>
+<span class="fc" id="L99">                                matchingSchema = null;</span>
+<span class="fc" id="L100">                                break;</span>
+                            } else {
+<span class="fc" id="L102">                                matchingSchema = s;</span>
+                            }
+                        }
+<span class="fc" id="L105">                    }</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                } else if (ctx.currentSchema.hasDefined(&quot;anyOf&quot;)) {</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">                    for (ModelNode s : ctx.currentSchema.get(&quot;anyOf&quot;).asList()) {</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                        if (VALIDATOR.validate(configuration, s).isSuccessful()) {</span>
+<span class="fc" id="L109">                            matchingSchema = s;</span>
+<span class="fc" id="L110">                            break;</span>
+                        }
+<span class="fc" id="L112">                    }</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                } else if (ctx.currentSchema.hasDefined(&quot;allOf&quot;)) {</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                    for (ModelNode s : ctx.currentSchema.get(&quot;allOf&quot;).asList()) {</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                        if (VALIDATOR.validate(configuration, s).isSuccessful()) {</span>
+<span class="fc" id="L116">                            matchingSchema = s;</span>
+                        } else {
+<span class="nc" id="L118">                            matchingSchema = null;</span>
+<span class="nc" id="L119">                            break;</span>
+                        }
+<span class="fc" id="L121">                    }</span>
+                }
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                if (matchingSchema != null) {</span>
+<span class="fc" id="L125">                    ctx.currentSchema = matchingSchema;</span>
+<span class="fc" id="L126">                    return convert(configuration, ctx);</span>
+                } else {
+<span class="fc" id="L128">                    throw new IllegalArgumentException(&quot;Could not convert the configuration.&quot;);</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (type.getType() != ModelType.STRING) {</span>
+<span class="nc" id="L134">            throw new IllegalArgumentException(</span>
+                    &quot;JSON schema allows for multiple possible types. &quot; +
+                            &quot;This is not supported by the XML-to-JSON conversion yet.&quot;);
+        }
+
+<span class="fc" id="L139">        String valueType = type.asString();</span>
+
+<span class="pc bpc" id="L141" title="1 of 7 branches missed.">        switch (valueType) {</span>
+            case &quot;boolean&quot;:
+<span class="fc" id="L143">                return convertSimple(ctx.tagName, ctx.id, configuration.asString());</span>
+            case &quot;integer&quot;:
+<span class="fc" id="L145">                return convertSimple(ctx.tagName, ctx.id, configuration.asString());</span>
+            case &quot;number&quot;:
+<span class="fc" id="L147">                return convertSimple(ctx.tagName, ctx.id, configuration.asString());</span>
+            case &quot;string&quot;:
+<span class="fc" id="L149">                return convertSimple(ctx.tagName, ctx.id, configuration.asString());</span>
+            case &quot;array&quot;:
+<span class="fc" id="L151">                return convertArray(configuration, ctx);</span>
+            case &quot;object&quot;:
+<span class="fc" id="L153">                return convertObject(configuration, ctx);</span>
+            default:
+<span class="nc" id="L155">                throw new IllegalArgumentException(&quot;Unsupported json value type: &quot; + valueType);</span>
+        }
+    }
+
+    private static ModelNode findRef(ModelNode rootSchema, String ref) {
+<span class="fc" id="L160">        return XmlToJson.JSONPointer.parse(ref).navigate(rootSchema);</span>
+    }
+
+    private static PlexusConfiguration convertObject(ModelNode configuration, ConversionContext ctx) {
+<span class="fc" id="L164">        XmlPlexusConfiguration object = new XmlPlexusConfiguration(ctx.tagName);</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        if (ctx.id != null) {</span>
+<span class="nc" id="L166">            object.setAttribute(&quot;id&quot;, ctx.id);</span>
+        }
+
+<span class="fc" id="L169">        ModelNode propertySchemas = ctx.currentSchema.get(&quot;properties&quot;);</span>
+<span class="fc" id="L170">        ModelNode additionalPropSchemas = ctx.currentSchema.get(&quot;additionalProperties&quot;);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (String key : configuration.keys()) {</span>
+<span class="fc" id="L172">            ModelNode childConfig = configuration.get(key);</span>
+<span class="fc" id="L173">            ModelNode childSchema = propertySchemas.get(key);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">            if (!childSchema.isDefined()) {</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">                if (additionalPropSchemas.getType() == ModelType.BOOLEAN) {</span>
+<span class="nc" id="L176">                    throw new IllegalArgumentException(&quot;Cannot determine the format for the '&quot; + key +</span>
+                            &quot;' JSON value during the JSON-to-XML conversion.&quot;);
+                }
+<span class="fc" id="L179">                childSchema = additionalPropSchemas;</span>
+            }
+
+<span class="fc" id="L182">            ctx.currentSchema = childSchema;</span>
+<span class="fc" id="L183">            ctx.pushTag(key);</span>
+<span class="fc" id="L184">            ctx.id = null;</span>
+
+<span class="fc bfc" id="L186" title="All 2 branches covered.">            if (!childSchema.isDefined()) {</span>
+                //check if this is an ignorable path
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">                if (ctx.ignorablePaths.contains(ctx.getCurrentPathString())) {</span>
+<span class="fc" id="L189">                    ctx.currentPath.pop();</span>
+<span class="fc" id="L190">                    continue;</span>
+                }
+<span class="nc" id="L192">                throw new IllegalArgumentException(&quot;Could not determine the format for the '&quot; + key +</span>
+                        &quot;' JSON value during the JSON-to-XML conversion.&quot;);
+            }
+
+<span class="fc" id="L196">            PlexusConfiguration xmlChild = convert(childConfig, ctx);</span>
+<span class="fc" id="L197">            ctx.currentPath.pop();</span>
+<span class="fc" id="L198">            object.addChild(xmlChild);</span>
+<span class="fc" id="L199">        }</span>
+<span class="fc" id="L200">        return object;</span>
+    }
+
+    private static PlexusConfiguration convertArray(ModelNode configuration, ConversionContext ctx) {
+<span class="fc" id="L204">        ModelNode itemsSchema = ctx.currentSchema.get(&quot;items&quot;);</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (!itemsSchema.isDefined()) {</span>
+<span class="nc" id="L206">            throw new IllegalArgumentException(</span>
+                    &quot;No schema found for items of a list. Cannot continue with XML-to-JSON conversion.&quot;);
+        }
+<span class="fc" id="L209">        PlexusConfiguration list = new XmlPlexusConfiguration(ctx.tagName);</span>
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if (ctx.id != null) {</span>
+<span class="nc" id="L211">            list.setAttribute(&quot;id&quot;, ctx.id);</span>
+        }
+
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        for (ModelNode childConfig : configuration.asList()) {</span>
+<span class="fc" id="L215">            ctx.tagName = &quot;item&quot;;</span>
+<span class="fc" id="L216">            ctx.currentSchema = itemsSchema;</span>
+<span class="fc" id="L217">            ctx.id = null;</span>
+<span class="fc" id="L218">            ctx.currentPath.push(&quot;[]&quot;);</span>
+<span class="fc" id="L219">            PlexusConfiguration child = convert(childConfig, ctx);</span>
+<span class="fc" id="L220">            ctx.currentPath.pop();</span>
+<span class="fc" id="L221">            list.addChild(child);</span>
+<span class="fc" id="L222">        }</span>
+<span class="fc" id="L223">        return list;</span>
+    }
+
+    private static PlexusConfiguration convertSimple(String tagName, String id, String value) {
+<span class="fc" id="L227">        XmlPlexusConfiguration ret = new XmlPlexusConfiguration(tagName);</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">        if (id != null) {</span>
+<span class="fc" id="L229">            ret.setAttribute(&quot;id&quot;, id);</span>
+        }
+
+<span class="fc" id="L232">        ret.setValue(value);</span>
+<span class="fc" id="L233">        return ret;</span>
+    }
+
+    private static PlexusConfiguration convertOldStyleConfigToXml(Map&lt;String, ModelNode&gt; extensionSchemas,
+                                                                  ModelNode jsonConfig) {
+<span class="fc" id="L238">        PlexusConfiguration xmlConfig = new XmlPlexusConfiguration(&quot;analysisConfiguration&quot;);</span>
+
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        extensionCheck: for (Map.Entry&lt;String, ModelNode&gt; e : extensionSchemas.entrySet()) {</span>
+<span class="fc" id="L241">            String extensionId = e.getKey();</span>
+<span class="fc" id="L242">            ModelNode schema = e.getValue();</span>
+
+<span class="fc" id="L244">            String[] extensionPath = extensionId.split(&quot;\\.&quot;);</span>
+
+<span class="fc" id="L246">            ModelNode config = jsonConfig;</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            for (String segment : extensionPath) {</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">                if (!config.has(segment)) {</span>
+<span class="nc" id="L249">                    continue extensionCheck;</span>
+                } else {
+<span class="fc" id="L251">                    config = config.get(segment);</span>
+                }
+            }
+
+<span class="fc" id="L255">            ConversionContext ctx = new ConversionContext();</span>
+<span class="fc" id="L256">            ctx.rootSchema = schema;</span>
+<span class="fc" id="L257">            ctx.currentSchema = schema;</span>
+<span class="fc" id="L258">            ctx.pushTag(extensionId);</span>
+<span class="fc" id="L259">            ctx.id = null;</span>
+<span class="fc" id="L260">            ctx.ignorablePaths = extensionSchemas.keySet().stream()</span>
+<span class="fc bfc" id="L261" title="All 4 branches covered.">                    .filter(id -&gt; !extensionId.equals(id) &amp;&amp; id.startsWith(extensionId))</span>
+<span class="fc" id="L262">                    .collect(Collectors.toList());</span>
+<span class="fc" id="L263">            PlexusConfiguration extXml = convert(config, ctx);</span>
+<span class="fc" id="L264">            ctx.currentPath.pop();</span>
+<span class="fc" id="L265">            xmlConfig.addChild(extXml);</span>
+<span class="fc" id="L266">        }</span>
+
+<span class="fc" id="L268">        return xmlConfig;</span>
+    }
+
+    private static PlexusConfiguration
+    convertNewStyleConfigToXml(Map&lt;String, ModelNode&gt; extensionSchemas, ModelNode jsonConfig) throws IOException {
+<span class="nc" id="L273">        PlexusConfiguration xmlConfig = new XmlPlexusConfiguration(&quot;analysisConfiguration&quot;);</span>
+
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        for (ModelNode extConfig : jsonConfig.asList()) {</span>
+<span class="nc" id="L276">            String extensionId = extConfig.get(&quot;extension&quot;).asString();</span>
+<span class="nc" id="L277">            ModelNode configuration = extConfig.get(&quot;configuration&quot;);</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">            String id = extConfig.hasDefined(&quot;id&quot;) ? extConfig.get(&quot;id&quot;).asString() : null;</span>
+
+<span class="nc" id="L280">            ModelNode schema = extensionSchemas.get(extensionId);</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">            if (schema == null) {</span>
+<span class="nc" id="L282">                continue;</span>
+            }
+
+<span class="nc" id="L285">            ConversionContext ctx = new ConversionContext();</span>
+<span class="nc" id="L286">            ctx.rootSchema = schema;</span>
+<span class="nc" id="L287">            ctx.currentSchema = schema;</span>
+<span class="nc" id="L288">            ctx.pushTag(extensionId);</span>
+<span class="nc" id="L289">            ctx.id = id;</span>
+            //we don't assign the ignorable paths, because this must not be tracked in a new-style configuration
+<span class="nc" id="L291">            PlexusConfiguration extXml = convert(configuration, ctx);</span>
+<span class="nc" id="L292">            ctx.currentPath.pop();</span>
+<span class="nc" id="L293">            xmlConfig.addChild(extXml);</span>
+<span class="nc" id="L294">        }</span>
+
+<span class="nc" id="L296">        return xmlConfig;</span>
+    }
+
+<span class="fc" id="L299">    private static final class ConversionContext {</span>
+        String id;
+        String tagName;
+        ModelNode currentSchema;
+        ModelNode rootSchema;
+        Collection&lt;String&gt; ignorablePaths;
+<span class="fc" id="L305">        Deque&lt;String&gt; currentPath = new ArrayDeque&lt;&gt;(4);</span>
+
+        void pushTag(String tag) {
+<span class="fc" id="L308">            this.tagName = tag;</span>
+<span class="fc" id="L309">            currentPath.push(tag);</span>
+<span class="fc" id="L310">        }</span>
+
+        String getCurrentPathString() {
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">            if (currentPath.isEmpty()) {</span>
+<span class="nc" id="L314">                return &quot;&quot;;</span>
+            }
+
+<span class="fc" id="L317">            StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L319">            Iterator&lt;String&gt; it = currentPath.descendingIterator();</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">            if (it.hasNext()) {</span>
+<span class="fc" id="L321">                sb.append(it.next());</span>
+            }
+
+<span class="fc bfc" id="L324" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L325">                sb.append('.').append(it.next());</span>
+            }
+
+<span class="fc" id="L328">            return sb.toString();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

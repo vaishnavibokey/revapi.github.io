@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigurationValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.configuration</a> &gt; <span class="el_source">ConfigurationValidator.java</span></div><h1>ConfigurationValidator.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2017 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.configuration;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.ref.WeakReference;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.script.SimpleScriptContext;
+
+import org.jboss.dmr.ModelNode;
+
+/**
+ * @see #validate(org.jboss.dmr.ModelNode, Configurable)
+ *
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="fc" id="L47">public final class ConfigurationValidator {</span>
+
+    private static class PartialValidationResult {
+        final String rootPath;
+        final ModelNode results;
+
+<span class="fc" id="L53">        private PartialValidationResult(String rootPath, ModelNode results) {</span>
+<span class="fc" id="L54">            this.rootPath = rootPath;</span>
+<span class="fc" id="L55">            this.results = results;</span>
+<span class="fc" id="L56">        }</span>
+    }
+
+    private WeakReference&lt;ScriptEngine&gt; jsEngine;
+
+    /**
+     * Validates that the full configuration contains valid configuration for given configurable.
+     *
+     * @param fullConfiguration the full configuration containing properties for all configurables
+     * @param configurable      the configurable to validate the configuration for
+     *
+     * @return the result of the validation.
+     *
+     * @throws ConfigurationException if reading the JSON schemas of the configurable failed
+     */
+    public ValidationResult validate(@Nonnull ModelNode fullConfiguration, @Nonnull Configurable configurable)
+        throws ConfigurationException {
+        try {
+<span class="pc bpc" id="L74" title="2 of 3 branches missed.">            switch (fullConfiguration.getType()) {</span>
+                case LIST:
+<span class="fc" id="L76">                    return _validate(fullConfiguration, configurable);</span>
+                case UNDEFINED:
+<span class="nc" id="L78">                    return ValidationResult.success();</span>
+                default:
+<span class="nc" id="L80">                    throw new ConfigurationException(&quot;Expecting a JSON array as the configuration object.&quot;);</span>
+            }
+<span class="nc" id="L82">        } catch (IOException | ScriptException e) {</span>
+<span class="nc" id="L83">            throw new ConfigurationException(&quot;Failed to validate configuration.&quot;, e);</span>
+        }
+    }
+
+    /**
+     * Validates the provided configuration against the provided schema.
+     * @param extensionConfiguration the actual configuration of some extension (not wrapped in the identifying object
+     *                               as is the case with the full configuration provided to
+     *                               {@link #validate(ModelNode, Configurable)}.
+     * @param configurationSchema the schema to validate the configuration against
+     * @return the results of the validation
+     * @throws ConfigurationException if an error occurs during the processing of the data or schema as opposed to
+     * a simple validation failure which would be captured in the returned object
+     */
+    public ValidationResult validate(@Nonnull ModelNode extensionConfiguration, @Nonnull ModelNode configurationSchema)
+            throws ConfigurationException {
+        try {
+<span class="nc" id="L100">            StringWriter output = new StringWriter();</span>
+
+<span class="nc" id="L102">            ScriptEngine js = getJsEngine(output);</span>
+
+<span class="nc" id="L104">            String schema = configurationSchema.toJSONString(true);</span>
+<span class="nc" id="L105">            String config = extensionConfiguration.toJSONString(true);</span>
+
+<span class="nc" id="L107">            Bindings variables = js.createBindings();</span>
+
+<span class="nc" id="L109">            js.eval(&quot;var data = &quot; + config + &quot;;&quot;, variables);</span>
+            try {
+<span class="nc" id="L111">                js.eval(&quot;var schema = &quot; + schema + &quot;;&quot;, variables);</span>
+<span class="nc" id="L112">            } catch (ScriptException e) {</span>
+<span class="nc" id="L113">                throw new IllegalArgumentException(&quot;Failed to parse the schema: &quot; + schema, e);</span>
+<span class="nc" id="L114">            }</span>
+
+<span class="nc" id="L116">            variables.put(&quot;tv4&quot;, js.getContext().getAttribute(&quot;tv4&quot;, ScriptContext.GLOBAL_SCOPE));</span>
+
+<span class="nc" id="L118">            Object resultObject = js.eval(&quot;tv4.validateMultiple(data, schema)&quot;, variables);</span>
+<span class="nc" id="L119">            ModelNode result = JSONUtil.toModelNode(resultObject);</span>
+
+<span class="nc" id="L121">            PartialValidationResult r = new PartialValidationResult(&quot;/&quot;, result);</span>
+
+<span class="nc" id="L123">            return convert(Collections.singletonList(r));</span>
+<span class="nc" id="L124">        } catch (IOException | ScriptException e) {</span>
+<span class="nc" id="L125">            throw new ConfigurationException(&quot;Failed to validate configuration.&quot;, e);</span>
+        }
+    }
+
+    private ValidationResult _validate(ModelNode fullConfiguration, Configurable configurable)
+            throws IOException, ScriptException {
+<span class="fc" id="L131">        String extensionId = configurable.getExtensionId();</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if (extensionId == null) {</span>
+<span class="fc" id="L133">            return ValidationResult.success();</span>
+        }
+
+<span class="fc" id="L136">        StringWriter output = new StringWriter();</span>
+
+<span class="fc" id="L138">        ScriptEngine js = getJsEngine(output);</span>
+
+<span class="fc" id="L140">        List&lt;PartialValidationResult&gt; validationResults = new ArrayList&lt;&gt;();</span>
+
+        String schema;
+<span class="fc" id="L143">        try (Reader rdr = configurable.getJSONSchema()) {</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">            if (rdr == null) {</span>
+<span class="nc" id="L145">                return ValidationResult.success();</span>
+            }
+<span class="fc" id="L147">            schema = read(rdr);</span>
+        }
+
+<span class="fc" id="L150">        int idx = 0;</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        for (ModelNode extensionConfig : fullConfiguration.asList()) {</span>
+<span class="fc" id="L152">            ModelNode currentExtensionId = extensionConfig.get(&quot;extension&quot;);</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">            if (!currentExtensionId.isDefined()) {</span>
+<span class="nc" id="L154">                throw new ConfigurationException(</span>
+                        &quot;Found invalid configuration object without \&quot;extension\&quot; identifier.&quot;);
+            }
+
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            if (!extensionId.equals(currentExtensionId.asString())) {</span>
+<span class="fc" id="L159">                idx++;</span>
+<span class="fc" id="L160">                continue;</span>
+            }
+
+<span class="fc" id="L163">            ModelNode currentConfig = extensionConfig.get(&quot;configuration&quot;);</span>
+
+<span class="fc" id="L165">            StringWriter configJSONWrt = new StringWriter();</span>
+<span class="fc" id="L166">            PrintWriter wrt = new PrintWriter(configJSONWrt);</span>
+<span class="fc" id="L167">            currentConfig.writeJSONString(wrt, true);</span>
+
+<span class="fc" id="L169">            String config = configJSONWrt.toString();</span>
+
+<span class="fc" id="L171">            Bindings variables = js.createBindings();</span>
+
+<span class="fc" id="L173">            js.eval(&quot;var data = &quot; + config + &quot;;&quot;, variables);</span>
+            try {
+<span class="fc" id="L175">                js.eval(&quot;var schema = &quot; + schema + &quot;;&quot;, variables);</span>
+<span class="nc" id="L176">            } catch (ScriptException e) {</span>
+<span class="nc" id="L177">                throw new IllegalArgumentException(&quot;Failed to parse the schema: &quot; + schema, e);</span>
+<span class="fc" id="L178">            }</span>
+
+<span class="fc" id="L180">            variables.put(&quot;tv4&quot;, js.getContext().getAttribute(&quot;tv4&quot;, ScriptContext.GLOBAL_SCOPE));</span>
+
+<span class="fc" id="L182">            Object resultObject = js.eval(&quot;tv4.validateMultiple(data, schema)&quot;, variables);</span>
+<span class="fc" id="L183">            ModelNode result = JSONUtil.toModelNode(resultObject);</span>
+
+<span class="fc" id="L185">            PartialValidationResult r = new PartialValidationResult(&quot;[&quot; + idx + &quot;].configuration&quot;, result);</span>
+
+<span class="fc" id="L187">            validationResults.add(r);</span>
+<span class="fc" id="L188">            idx++;</span>
+<span class="fc" id="L189">        }</span>
+
+<span class="fc" id="L191">        return convert(validationResults);</span>
+    }
+
+    private ValidationResult convert(List&lt;PartialValidationResult&gt; results) {
+<span class="fc" id="L195">        ModelNode result = new ModelNode();</span>
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        for (PartialValidationResult r : results) {</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">            if (r.results.has(&quot;errors&quot;)) {</span>
+<span class="fc" id="L199">                List&lt;ModelNode&gt; errors = r.results.get(&quot;errors&quot;).asList();</span>
+<span class="fc bfc" id="L200" title="All 2 branches covered.">                for (ModelNode error : errors) {</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">                    if (error.has(&quot;dataPath&quot;)) {</span>
+<span class="fc" id="L202">                        error.get(&quot;dataPath&quot;)</span>
+<span class="fc" id="L203">                            .set(&quot;/&quot; + r.rootPath.replace(&quot;.&quot;, &quot;/&quot;) + error.get(&quot;dataPath&quot;).asString());</span>
+                    }
+<span class="fc" id="L205">                }</span>
+            }
+
+<span class="fc" id="L208">            boolean valid =</span>
+<span class="pc bpc" id="L209" title="1 of 6 branches missed.">                r.results.get(&quot;valid&quot;).asBoolean() &amp;&amp; ((!result.has(&quot;valid&quot;)) || result.get(&quot;valid&quot;).asBoolean());</span>
+
+<span class="fc" id="L211">            result.get(&quot;valid&quot;).set(valid);</span>
+
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (result.has(&quot;errors&quot;)) {</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">                for (ModelNode e : r.results.get(&quot;errors&quot;).asList()) {</span>
+<span class="nc" id="L215">                    result.get(&quot;errors&quot;).add(e);</span>
+<span class="pc" id="L216">                }</span>
+            } else {
+<span class="fc" id="L218">                result.get(&quot;errors&quot;).set(r.results.get(&quot;errors&quot;));</span>
+            }
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">            if (result.has(&quot;missing&quot;)) {</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">                for (ModelNode m : r.results.get(&quot;missing&quot;).asList()) {</span>
+<span class="nc" id="L223">                    result.get(&quot;missing&quot;).add(m.asString());</span>
+<span class="pc" id="L224">                }</span>
+            } else {
+<span class="fc" id="L226">                result.get(&quot;missing&quot;).set(r.results.get(&quot;missing&quot;));</span>
+            }
+<span class="fc" id="L228">        }</span>
+
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">        return result.isDefined() ? ValidationResult.fromTv4Results(result) : new ValidationResult(null, null);</span>
+    }
+
+    private ScriptEngine getJsEngine(Writer output) throws IOException, ScriptException {
+<span class="fc" id="L234">        ScriptEngine ret = null;</span>
+
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (jsEngine != null) {</span>
+<span class="fc" id="L237">            ret = jsEngine.get();</span>
+        }
+
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (ret == null) {</span>
+<span class="fc" id="L241">            ret = new ScriptEngineManager().getEngineByName(&quot;javascript&quot;);</span>
+<span class="fc" id="L242">            ScriptContext ctx = new SimpleScriptContext();</span>
+
+<span class="fc" id="L244">            Bindings globalScope = ret.createBindings();</span>
+<span class="fc" id="L245">            ctx.setBindings(globalScope, ScriptContext.GLOBAL_SCOPE);</span>
+
+<span class="fc" id="L247">            initTv4(ret, globalScope);</span>
+
+<span class="fc" id="L249">            ret.setContext(ctx);</span>
+
+<span class="fc" id="L251">            jsEngine = new WeakReference&lt;&gt;(ret);</span>
+        }
+
+<span class="fc" id="L254">        ret.getContext().setWriter(output);</span>
+<span class="fc" id="L255">        ret.getContext().setErrorWriter(output);</span>
+
+<span class="fc" id="L257">        return ret;</span>
+    }
+
+    private void initTv4(ScriptEngine engine, Bindings bindings) throws IOException, ScriptException {
+<span class="fc" id="L261">        try (Reader rdr = new InputStreamReader(getClass().getResourceAsStream(&quot;/tv4.min.js&quot;),</span>
+<span class="fc" id="L262">                Charset.forName(&quot;UTF-8&quot;))) {</span>
+<span class="fc" id="L263">            engine.eval(rdr, bindings);</span>
+        }
+<span class="fc" id="L265">    }</span>
+
+    private static String read(Reader rdr) throws IOException {
+<span class="fc" id="L268">        StringBuilder bld = new StringBuilder();</span>
+<span class="fc" id="L269">        char[] buffer = new char[4096];</span>
+
+        int cnt;
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        while ((cnt = rdr.read(buffer)) != -1) {</span>
+<span class="fc" id="L273">            bld.append(buffer, 0, cnt);</span>
+        }
+
+<span class="fc" id="L276">        return bld.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

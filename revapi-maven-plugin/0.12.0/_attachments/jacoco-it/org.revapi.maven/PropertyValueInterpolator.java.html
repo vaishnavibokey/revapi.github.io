@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyValueInterpolator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">PropertyValueInterpolator.java</span></div><h1>PropertyValueInterpolator.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
+
+import org.apache.maven.model.Model;
+import org.apache.maven.model.interpolation.MavenBuildTimestamp;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.interpolation.AbstractValueSource;
+import org.codehaus.plexus.interpolation.EnvarBasedValueSource;
+import org.codehaus.plexus.interpolation.MapBasedValueSource;
+import org.codehaus.plexus.interpolation.ObjectBasedValueSource;
+import org.codehaus.plexus.interpolation.PrefixedObjectValueSource;
+import org.codehaus.plexus.interpolation.PrefixedValueSourceWrapper;
+import org.codehaus.plexus.interpolation.PropertiesBasedValueSource;
+import org.codehaus.plexus.interpolation.ValueSource;
+
+/**
+ * This serves no other purpose but to make available the standard value sources for interpolating the properites
+ * in the Revapi configuration files.
+ */
+public final class PropertyValueInterpolator {
+<span class="fc" id="L46">    private static final List&lt;String&gt; PROJECT_PREFIXES = asList(&quot;project.&quot;, &quot;pom.&quot;);</span>
+
+    private final List&lt;ValueSource&gt; valueSources;
+
+<span class="nc" id="L50">    public PropertyValueInterpolator(Properties props) {</span>
+<span class="nc" id="L51">        valueSources = singletonList(new PropertiesBasedValueSource(props));</span>
+<span class="nc" id="L52">    }</span>
+
+<span class="fc" id="L54">    public PropertyValueInterpolator(MavenProject project) {</span>
+        // this is more or less copied from org.apache.maven.model.interpolation.AbstractStringBasedModelInterpolator
+<span class="fc" id="L56">        this.valueSources = new ArrayList&lt;&gt;(8);</span>
+
+<span class="fc" id="L58">        MavenBuildTimestamp now = new MavenBuildTimestamp();</span>
+
+<span class="fc" id="L60">        Model model = project.getModel();</span>
+<span class="fc" id="L61">        Properties modelProperties = model.getProperties();</span>
+<span class="fc" id="L62">        File projectDir = project.getBasedir();</span>
+
+<span class="fc" id="L64">        ValueSource prefixedProjectValues = new PrefixedObjectValueSource(PROJECT_PREFIXES, model, false);</span>
+<span class="fc" id="L65">        valueSources.add(prefixedProjectValues);</span>
+
+<span class="fc" id="L67">        ValueSource unprefixedProjectValues = new ObjectBasedValueSource(model);</span>
+<span class="fc" id="L68">        valueSources.add(unprefixedProjectValues);</span>
+
+<span class="fc" id="L70">        ValueSource basedirValueSource = new PrefixedValueSourceWrapper(new AbstractValueSource(false) {</span>
+            public Object getValue(String expression) {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                if (&quot;basedir&quot;.equals(expression)) {</span>
+<span class="nc" id="L73">                    return projectDir.getAbsolutePath();</span>
+                }
+<span class="nc" id="L75">                return null;</span>
+            }
+        }, PROJECT_PREFIXES, true);
+<span class="fc" id="L78">        valueSources.add(basedirValueSource);</span>
+
+<span class="fc" id="L80">        ValueSource baseUriValueSource = new PrefixedValueSourceWrapper(new AbstractValueSource(false) {</span>
+            public Object getValue(String expression) {
+<span class="nc bnc" id="L82" title="All 2 branches missed.">                if (&quot;baseUri&quot;.equals(expression)) {</span>
+<span class="nc" id="L83">                    return projectDir.getAbsoluteFile().toURI().toString();</span>
+                }
+<span class="nc" id="L85">                return null;</span>
+            }
+        }, PROJECT_PREFIXES, false);
+<span class="fc" id="L88">        valueSources.add(baseUriValueSource);</span>
+
+<span class="fc" id="L90">        ValueSource buildTimeStampValueSource = new PrefixedValueSourceWrapper(new AbstractValueSource(false) {</span>
+            public Object getValue(String expression) {
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                if (&quot;build.timestamp&quot;.equals(expression)) {</span>
+<span class="nc" id="L93">                    return now.formattedTimestamp();</span>
+                }
+<span class="nc" id="L95">                return null;</span>
+            }
+<span class="fc" id="L97">        }, singletonList(&quot;maven.&quot;), true);</span>
+<span class="fc" id="L98">        valueSources.add(buildTimeStampValueSource);</span>
+
+
+<span class="fc" id="L101">        valueSources.add(new MapBasedValueSource(System.getProperties()));</span>
+
+<span class="fc" id="L103">        valueSources.add(new MapBasedValueSource(modelProperties));</span>
+
+        try {
+<span class="fc" id="L106">            valueSources.add(new EnvarBasedValueSource(false));</span>
+<span class="nc" id="L107">        } catch (IOException e) {</span>
+<span class="nc" id="L108">            throw new IllegalStateException(&quot;Could not construct environment variable value source for property interpolation.&quot;);</span>
+<span class="fc" id="L109">        }</span>
+
+<span class="fc" id="L111">    }</span>
+
+    public String interpolate(String name) {
+<span class="fc" id="L114">        return valueSources.stream()</span>
+<span class="fc" id="L115">                .map(s -&gt; s.getValue(name))</span>
+<span class="fc" id="L116">                .filter(Objects::nonNull)</span>
+<span class="fc" id="L117">                .map(Object::toString)</span>
+<span class="fc" id="L118">                .findFirst().orElse(null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
