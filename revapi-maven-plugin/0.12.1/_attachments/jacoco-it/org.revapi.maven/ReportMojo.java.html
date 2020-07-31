@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportMojo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">ReportMojo.java</span></div><h1>ReportMojo.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import java.text.MessageFormat;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+
+import org.apache.maven.doxia.sink.Sink;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.reporting.AbstractMavenReport;
+import org.apache.maven.reporting.MavenReportException;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.revapi.API;
+import org.revapi.AnalysisResult;
+import org.revapi.Archive;
+import org.revapi.CompatibilityType;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Element;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+@Mojo(name = &quot;report&quot;, defaultPhase = LifecyclePhase.SITE,
+        requiresDependencyCollection = ResolutionScope.COMPILE_PLUS_RUNTIME)
+<span class="fc" id="L53">public class ReportMojo extends AbstractMavenReport {</span>
+    /**
+     * The JSON or XML configuration of the extensions pipeline. This enables the users easily specify which extensions
+     * should be included/excluded in the Revapi analysis pipeline and also to define transformation blocks - a way
+     * of grouping transforms together to enable more fine grained control over how differences are transformed.
+     *
+     * @since 0.11.0
+     */
+    @Parameter(property = Props.pipelineConfiguration.NAME, defaultValue = Props.pipelineConfiguration.DEFAULT_VALUE)
+    protected PlexusConfiguration pipelineConfiguration;
+
+    /**
+     * The JSON or XML configuration of various analysis options. The available options depend on what
+     * analyzers are present on the plugin classpath through the {@code &amp;lt;dependencies&amp;gt;}.
+     * Consult &lt;a href=&quot;examples/configuration.html&quot;&gt;configuration documentation&lt;/a&gt; for more details.
+     *
+     * &lt;p&gt;These settings take precedence over the configuration loaded from {@code analysisConfigurationFiles}.
+     */
+    @Parameter(property = Props.analysisConfiguration.NAME, defaultValue = Props.analysisConfiguration.DEFAULT_VALUE)
+    protected PlexusConfiguration analysisConfiguration;
+
+    /**
+     * The list of files containing the configuration of various analysis options.
+     * The available options depend on what analyzers are present on the plugins classpath through the
+     * {@code &amp;lt;dependencies&amp;gt;}.
+     *
+     * &lt;p&gt;The {@code analysisConfiguration} can override the settings present in the files.
+     *
+     * &lt;p&gt;The list is either a list of strings or has the following form:
+     * &lt;pre&gt;&lt;code&gt;
+     *    &amp;lt;analysisConfigurationFiles&amp;gt;
+     *        &amp;lt;configurationFile&amp;gt;
+     *            &amp;lt;path&amp;gt;path/to/the/file/relative/to/project/base/dir&amp;lt;/path&amp;gt;
+     *            &amp;lt;resource&amp;gt;path/to/the/file/in/one/of/the/dependencies&amp;lt;/resource&amp;gt;
+     *            &amp;lt;roots&amp;gt;
+     *                &amp;lt;root&amp;gt;configuration/root1&amp;lt;/root&amp;gt;
+     *                &amp;lt;root&amp;gt;configuration/root2&amp;lt;/root&amp;gt;
+     *                ...
+     *            &amp;lt;/roots&amp;gt;
+     *        &amp;lt;/configurationFile&amp;gt;
+     *        ...
+     *    &amp;lt;/analysisConfigurationFiles&amp;gt;
+     * &lt;/code&gt;&lt;/pre&gt;
+     *
+     * where
+     * &lt;ul&gt;
+     *     &lt;li&gt;{@code path} is the path on the filesystem,&lt;/li&gt;
+     *     &lt;li&gt;{@code resource} is the path to the resource file in one of the artifacts the plugin depends on&lt;/li&gt;
+     *     &lt;li&gt;{@code roots} is optional and specifies the subtrees of the JSON/XML config that should be used for
+     *     configuration. If not specified, the whole file is taken into account.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Either {@code path} or {@code resource} has to be specified but not both. The {@code configuration/root1} and
+     * {@code configuration/root2} are paths to the roots of the configuration inside that JSON/XML config file. This
+     * might be used in cases where multiple configurations are stored within a single file and you want to use
+     * a particular one.
+     *
+     * &lt;p&gt;An example of this might be a config file which contains API changes to be ignored in all past versions of a
+     * library. The classes to be ignored are specified in a configuration that is specific for each version:
+     * &lt;pre&gt;&lt;code&gt;
+     *     {
+     *         &quot;0.1.0&quot; : [
+     *             {
+     *                 &quot;extension&quot;: &quot;revapi.ignore&quot;,
+     *                 &quot;configuration&quot;: [
+     *                     {
+     *                         &quot;code&quot; : &quot;java.method.addedToInterface&quot;,
+     *                         &quot;new&quot; : &quot;method void com.example.MyInterface::newMethod()&quot;,
+     *                         &quot;justification&quot; : &quot;This interface is not supposed to be implemented by clients.&quot;
+     *                     },
+     *                     ...
+     *                 ]
+     *             }
+     *         ],
+     *         &quot;0.2.0&quot; : [
+     *             ...
+     *         ]
+     *     }
+     * &lt;/code&gt;&lt;/pre&gt;
+     */
+    @Parameter(property = Props.analysisConfigurationFiles.NAME, defaultValue = Props.analysisConfigurationFiles.DEFAULT_VALUE)
+    protected Object[] analysisConfigurationFiles;
+
+    /**
+     * Set to false if you want to tolerate files referenced in the {@code analysisConfigurationFiles} missing on the
+     * filesystem and therefore not contributing to the analysis configuration.
+     *
+     * &lt;p&gt;The default is {@code true}, which means that a missing analysis configuration file will fail the build.
+     */
+    @Parameter(property = Props.failOnMissingConfigurationFiles.NAME, defaultValue = Props.failOnMissingConfigurationFiles.DEFAULT_VALUE)
+    protected boolean failOnMissingConfigurationFiles;
+
+    /**
+     * The coordinates of the old artifacts. Defaults to single artifact with the latest released version of the
+     * current project.
+     * &lt;p/&gt;
+     * If the this property is null, the {@link #oldVersion} property is checked for a value of the old version of the
+     * artifact being built.
+     *
+     * @see #oldVersion
+     */
+    @Parameter(property = Props.oldArtifacts.NAME, defaultValue = Props.oldArtifacts.DEFAULT_VALUE)
+    protected String[] oldArtifacts;
+
+    /**
+     * If you don't want to compare a different artifact than the one being built, specifying the just the old version
+     * is simpler way of specifying the old artifact.
+     * &lt;p/&gt;
+     * The default value is &quot;RELEASE&quot; meaning that the old version is the last released version of the artifact being
+     * built.
+     */
+    @Parameter(property = Props.oldVersion.NAME, defaultValue = Props.oldVersion.DEFAULT_VALUE)
+    protected String oldVersion;
+
+    /**
+     * The coordinates of the new artifacts. These are the full GAVs of the artifacts, which means that you can compare
+     * different artifacts than the one being built. If you merely want to specify the artifact being built, use
+     * {@link #newVersion} property instead.
+     */
+    @Parameter(property = Props.newArtifacts.NAME, defaultValue = Props.newArtifacts.DEFAULT_VALUE)
+    protected String[] newArtifacts;
+
+    /**
+     * The new version of the artifact. Defaults to &quot;${project.version}&quot;.
+     */
+    @Parameter(property = Props.newVersion.NAME, defaultValue = Props.newVersion.DEFAULT_VALUE)
+    protected String newVersion;
+
+    /**
+     * Problems with this or higher severity will be included in the report.
+     * Possible values: equivalent, nonBreaking, potentiallyBreaking, breaking.
+     *
+     * @deprecated use {@link #reportCriticality} instead
+     */
+    @Deprecated
+    @Parameter(property = Props.reportSeverity.NAME, defaultValue = Props.reportSeverity.DEFAULT_VALUE)
+    protected FailSeverity reportSeverity;
+
+    /**
+     * The minimum criticality of the differences that should be included in the report. This has to be one of
+     * the criticalities configured in the pipeline configuration (if the pipeline configuration doesn't define any,
+     * the following are  the default ones: {@code allowed}, {@code documented}, {@code highlight}, {@code error}).
+     *
+     * If not defined, the value is derived from {@link #reportSeverity} using the severity-to-criticality mapping
+     * (which is again configured in the pipeline configuration. If not defined in the pipeline configuration
+     * explicitly, the default mapping is the following: {@code EQUIVALENT} = {@code allowed}, {@code NON_BREAKING} =
+     * {@code documented}, {@code POTENTIALLY_BREAKING} = {@code error}, {@code BREAKING} = error.
+     */
+    @Parameter(property = Props.reportCriticality.NAME)
+    protected String reportCriticality;
+
+    /**
+     * Whether to skip the mojo execution.
+     */
+    @Parameter(property = Props.skip.NAME, defaultValue = Props.skip.DEFAULT_VALUE)
+    protected boolean skip;
+
+    @Parameter(property = &quot;revapi.outputDirectory&quot;, defaultValue = &quot;${project.reporting.outputDirectory}&quot;,
+        required = true, readonly = true)
+    protected String outputDirectory;
+
+    /**
+     * Whether to include the dependencies in the API checks. This is the default thing to do because your API might
+     * be exposing classes from the dependencies and thus classes from your dependencies could become part of your API.
+     * &lt;p&gt;
+     * However, setting this to false might be useful in situations where you have checked your dependencies in another
+     * module and don't want do that again. In that case, you might want to configure Revapi to ignore missing classes
+     * because it might find the classes from your dependencies as used in your API and would complain that it could not
+     * find it. See &lt;a href=&quot;http://revapi.org/modules/revapi-java/extensions/java.html&quot;&gt;the docs&lt;/a&gt;.
+     */
+    @Parameter(property = Props.checkDependencies.NAME, defaultValue = Props.checkDependencies.DEFAULT_VALUE)
+    protected boolean checkDependencies;
+
+    /**
+     * When establishing the API classes, Revapi by default also looks through the {@code provided} dependencies.
+     * The reason for this is that even though such dependencies do not appear in the transitive dependency set
+     * established by maven, they need to be present both on the compilation and runtime classpath of the module.
+     * Therefore, the classes in the module are free to expose classes from a provided dependency as API elements.
+     *
+     * &lt;p&gt;In rare circumstances this is not a desired behavior though. It is undesired if for example the classes from
+     * the provided dependency are used only for establishing desired build order or when they are used in some
+     * non-standard scenarios during the build and actually not needed at runtime.
+     *
+     * &lt;p&gt;Note that this property only influences the resolution of provided dependencies of the main artifacts, not
+     * the transitively reachable provided dependencies. For those, use the {@link #resolveTransitiveProvidedDependencies}
+     * parameter.
+     */
+    @Parameter(property = Props.resolveProvidedDependencies.NAME, defaultValue = Props.resolveProvidedDependencies.DEFAULT_VALUE)
+    protected boolean resolveProvidedDependencies;
+
+    /**
+     * In addition to {@link #resolveProvidedDependencies} this property further controls how provided dependencies
+     * are resolved. Using this property you can control how the indirect, transitively reachable, provided dependencies
+     * are treated. The default is to not consider them, which is almost always the right thing to do. It might be
+     * necessary to set this property to {@code true} in the rare circumstances where the API of the main artifacts
+     * includes types from such transitively included provided dependencies. Such occurrence will manifest itself by
+     * Revapi considering such types as missing (which is by default reported as a potentially breaking change). When
+     * you then resolve the transitive provided dependencies (by setting this parameter to true), Revapi will be able to
+     * find such types and do a proper analysis of them.
+     */
+    @Parameter(property = Props.resolveTransitiveProvidedDependencies.NAME, defaultValue = Props.resolveTransitiveProvidedDependencies.DEFAULT_VALUE)
+    protected boolean resolveTransitiveProvidedDependencies;
+
+    /**
+     * If set, this property demands a format of the version string when the {@link #oldVersion} or {@link #newVersion}
+     * parameters are set to {@code RELEASE} or {@code LATEST} special version strings.
+     * &lt;p&gt;
+     * Because Maven will report the newest non-snapshot version as the latest release, we might end up comparing a
+     * {@code .Beta} or other pre-release versions with the new version. This might not be what you want and setting the
+     * versionFormat will make sure that a newest version conforming to the version format is used instead of the one
+     * resolved by Maven by default.
+     * &lt;p&gt;
+     * This parameter is a regular expression pattern that the version string needs to match in order to be considered
+     * a {@code RELEASE}.
+     */
+    @Parameter(property = Props.versionFormat.NAME, defaultValue = Props.versionFormat.DEFAULT_VALUE)
+    protected String versionFormat;
+
+    @Component
+    protected RepositorySystem repositorySystem;
+
+    @Parameter(defaultValue = &quot;${repositorySystemSession}&quot;, readonly = true)
+    protected RepositorySystemSession repositorySystemSession;
+
+    /**
+     * If true (the default) revapi will always download the information about the latest version from the remote
+     * repositories (instead of using locally cached info). This will respect the offline settings.
+     */
+    @Parameter(property = Props.alwaysCheckForReleaseVersion.NAME, defaultValue = Props.alwaysCheckForReleaseVersion.DEFAULT_VALUE)
+    protected boolean alwaysCheckForReleaseVersion;
+
+    /**
+     * If true, the build will fail if one of the old or new artifacts fails to be resolved. Defaults to false.
+     */
+    @Parameter(property = Props.failOnUnresolvedArtifacts.NAME, defaultValue = Props.failOnUnresolvedArtifacts.DEFAULT_VALUE)
+    protected boolean failOnUnresolvedArtifacts;
+
+    /**
+     * If true, the build will fail if some of the dependencies of the old or new artifacts fail to be resolved.
+     * Defaults to false.
+     */
+    @Parameter(property = Props.failOnUnresolvedDependencies.NAME, defaultValue = Props.failOnUnresolvedDependencies.DEFAULT_VALUE)
+    protected boolean failOnUnresolvedDependencies;
+
+    /**
+     * Set this to false if you want to use the goal to generate other kind of output than the default report for the
+     * Maven-generated site. You can generate such output by using different reporting extensions (like
+     * revapi-reporter-text).
+     */
+    @Parameter(property = Props.generateSiteReport.NAME, defaultValue = Props.generateSiteReport.DEFAULT_VALUE)
+    protected boolean generateSiteReport;
+
+    /**
+     * A comma-separated list of extensions (fully-qualified class names thereof) that are not taken into account during
+     * API analysis. By default, all extensions that are found on the classpath are used.
+     * &lt;p&gt;
+     * You can modify this set if you use another extensions that change the found differences in a way that the
+     * determined new version would not correspond to what it should be.
+     */
+    @Parameter(property = Props.disallowedExtensions.NAME, defaultValue = Props.disallowedExtensions.DEFAULT_VALUE)
+    protected String disallowedExtensions;
+
+    /**
+     * If set to true, the Maven properties will be expanded in the configuration before it is supplied to Revapi.
+     * I.e. any {@code ${var}} appearing in the configuration &lt;b&gt;values&lt;/b&gt; will be replaced with the value of the
+     * {@code var} property as known to Maven. If the property is not defined, the expansion doesn't take place.
+     *
+     * @since 0.11.6
+     */
+    @Parameter(property = Props.expandProperties.NAME, defaultValue = Props.expandProperties.DEFAULT_VALUE)
+    protected boolean expandProperties;
+
+    private API oldAPI;
+    private API newAPI;
+    private AnalysisResult analysisResult;
+
+    @Override
+    protected String getOutputDirectory() {
+<span class="fc" id="L330">        return outputDirectory;</span>
+    }
+
+    @Override
+    protected MavenProject getProject() {
+<span class="fc" id="L335">        return project;</span>
+    }
+
+    @Override public boolean canGenerateReport() {
+<span class="fc" id="L339">        return project.getArtifact().getArtifactHandler().isAddedToClasspath();</span>
+    }
+
+    @Override
+    protected void executeReport(Locale locale) throws MavenReportException {
+<span class="fc" id="L344">        ensureAnalyzed(locale);</span>
+
+<span class="pc bpc" id="L346" title="1 of 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L347">            return;</span>
+        }
+
+<span class="pc bpc" id="L350" title="2 of 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
+<span class="nc" id="L351">            getLog().warn(&quot;Could not determine the artifacts to compare. If you're comparing the&quot; +</span>
+                    &quot; currently built version, have you run the package goal?&quot;);
+<span class="nc" id="L353">            return;</span>
+        }
+
+<span class="pc bpc" id="L356" title="1 of 2 branches missed.">        if (generateSiteReport) {</span>
+<span class="fc" id="L357">            Sink sink = getSink();</span>
+<span class="fc" id="L358">            ResourceBundle bundle = getBundle(locale);</span>
+
+<span class="fc" id="L360">            ReportTimeReporter reporter =</span>
+<span class="fc" id="L361">                    analysisResult.getExtensions().getFirstExtension(ReportTimeReporter.class, null);</span>
+
+<span class="fc" id="L363">            startReport(sink, bundle);</span>
+<span class="fc" id="L364">            reportBody(reporter, oldAPI, newAPI, sink, bundle);</span>
+<span class="fc" id="L365">            endReport(sink);</span>
+        }
+<span class="fc" id="L367">    }</span>
+
+    protected void startReport(Sink sink, ResourceBundle messages) {
+<span class="fc" id="L370">        sink.head();</span>
+<span class="fc" id="L371">        sink.title();</span>
+<span class="fc" id="L372">        sink.text(messages.getString(&quot;report.revapi.title&quot;));</span>
+<span class="fc" id="L373">        sink.title_();</span>
+<span class="fc" id="L374">        sink.head_();</span>
+
+<span class="fc" id="L376">        sink.body();</span>
+
+<span class="fc" id="L378">        sink.section1();</span>
+<span class="fc" id="L379">        sink.sectionTitle1();</span>
+<span class="fc" id="L380">        sink.rawText(messages.getString(&quot;report.revapi.title&quot;));</span>
+<span class="fc" id="L381">        sink.sectionTitle1_();</span>
+<span class="fc" id="L382">    }</span>
+
+    protected void endReport(Sink sink) {
+<span class="fc" id="L385">        sink.section1_();</span>
+<span class="fc" id="L386">        sink.body_();</span>
+<span class="fc" id="L387">    }</span>
+
+    protected void reportBody(ReportTimeReporter reporterWithResults, API oldAPI, API newAPI, Sink sink,
+            ResourceBundle messages) {
+<span class="fc" id="L391">        sink.paragraph();</span>
+<span class="fc" id="L392">        sink.text(getDescription(messages, oldAPI, newAPI));</span>
+<span class="fc" id="L393">        sink.paragraph_();</span>
+
+<span class="fc" id="L395">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.BREAKING), sink, messages,</span>
+                &quot;report.revapi.changes.breaking&quot;);
+<span class="fc" id="L397">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.POTENTIALLY_BREAKING), sink,</span>
+                messages, &quot;report.revapi.changes.potentiallyBreaking&quot;);
+<span class="fc" id="L399">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.NON_BREAKING), sink, messages,</span>
+                &quot;report.revapi.changes.nonBreaking&quot;);
+<span class="fc" id="L401">        reportDifferences(reporterWithResults.reportsBySeverity.get(DifferenceSeverity.EQUIVALENT), sink, messages,</span>
+                &quot;report.revapi.changes.equivalent&quot;);
+<span class="fc" id="L403">    }</span>
+
+    @Override
+    public String getOutputName() {
+<span class="fc" id="L407">        return &quot;revapi-report&quot;;</span>
+    }
+
+    @Override
+    public String getName(Locale locale) {
+<span class="fc" id="L412">        return getBundle(locale).getString(&quot;report.revapi.name&quot;);</span>
+    }
+
+    @Override
+    public String getDescription(Locale locale) {
+<span class="fc" id="L417">        ensureAnalyzed(locale);</span>
+
+<span class="pc bpc" id="L419" title="2 of 4 branches missed.">        if (oldAPI == null || newAPI == null) {</span>
+<span class="nc" id="L420">            getLog().debug(&quot;Was unable to determine the old and new artifacts to compare while determining&quot; +</span>
+                    &quot; the report description.&quot;);
+<span class="nc" id="L422">            return null;</span>
+        } else {
+<span class="fc" id="L424">            return getDescription(getBundle(locale), oldAPI, newAPI);</span>
+        }
+    }
+
+    private String getDescription(ResourceBundle messages, API oldAPI, API newAPI) {
+<span class="fc" id="L429">        String message = messages.getString(&quot;report.revapi.description&quot;);</span>
+<span class="fc" id="L430">        return MessageFormat.format(message, niceList(oldAPI.getArchives()), niceList(newAPI.getArchives()));</span>
+    }
+
+    protected Analyzer prepareAnalyzer(Locale locale) {
+<span class="fc" id="L434">        Map&lt;String, Object&gt; contextData = null;</span>
+<span class="pc bpc" id="L435" title="1 of 2 branches missed.">        if (generateSiteReport) {</span>
+<span class="fc" id="L436">            contextData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L437">            contextData.put(ReportTimeReporter.MIN_SEVERITY_KEY, reportSeverity.asDifferenceSeverity());</span>
+        }
+
+<span class="fc" id="L440">        AnalyzerBuilder.Result res = AnalyzerBuilder.forGavs(this.oldArtifacts, this.newArtifacts)</span>
+<span class="fc" id="L441">                .withAlwaysCheckForReleasedVersion(this.alwaysCheckForReleaseVersion)</span>
+<span class="fc" id="L442">                .withPipelineConfiguration(PipelineConfigurationParser.parse(this.pipelineConfiguration))</span>
+<span class="fc" id="L443">                .withAnalysisConfiguration(this.analysisConfiguration)</span>
+<span class="fc" id="L444">                .withAnalysisConfigurationFiles(this.analysisConfigurationFiles)</span>
+<span class="fc" id="L445">                .withCheckDependencies(this.checkDependencies)</span>
+<span class="fc" id="L446">                .withResolveProvidedDependencies(this.resolveProvidedDependencies)</span>
+<span class="fc" id="L447">                .withResolveTransitiveProvidedDependencies(this.resolveTransitiveProvidedDependencies)</span>
+<span class="fc" id="L448">                .withDisallowedExtensions(this.disallowedExtensions)</span>
+<span class="fc" id="L449">                .withFailOnMissingConfigurationFiles(this.failOnMissingConfigurationFiles)</span>
+<span class="fc" id="L450">                .withFailOnUnresolvedArtifacts(this.failOnUnresolvedArtifacts)</span>
+<span class="fc" id="L451">                .withFailOnUnresolvedDependencies(this.failOnUnresolvedDependencies)</span>
+<span class="fc" id="L452">                .withLocale(locale)</span>
+<span class="fc" id="L453">                .withLog(getLog())</span>
+<span class="fc" id="L454">                .withNewVersion(this.newVersion)</span>
+<span class="fc" id="L455">                .withOldVersion(this.oldVersion)</span>
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">                .withProject(this.project)</span>
+<span class="fc" id="L457">                .withReporter(generateSiteReport ? ReportTimeReporter.class : null)</span>
+<span class="fc" id="L458">                .withRepositorySystem(this.repositorySystem)</span>
+<span class="fc" id="L459">                .withRepositorySystemSession(this.repositorySystemSession)</span>
+<span class="fc" id="L460">                .withSkip(this.skip)</span>
+<span class="fc" id="L461">                .withVersionFormat(this.versionFormat)</span>
+<span class="fc" id="L462">                .withContextData(contextData)</span>
+<span class="fc" id="L463">                .withExpandProperties(expandProperties)</span>
+<span class="fc" id="L464">                .build();</span>
+
+<span class="pc bpc" id="L466" title="1 of 2 branches missed.">        if (res.skip) {</span>
+<span class="nc" id="L467">            this.skip = true;</span>
+        }
+
+<span class="fc" id="L470">        this.oldArtifacts = res.oldArtifacts;</span>
+<span class="fc" id="L471">        this.newArtifacts = res.newArtifacts;</span>
+
+<span class="fc" id="L473">        return res.analyzer;</span>
+    }
+
+    private void ensureAnalyzed(Locale locale) {
+<span class="pc bpc" id="L477" title="1 of 4 branches missed.">        if (!skip &amp;&amp; analysisResult == null) {</span>
+<span class="fc" id="L478">            Analyzer analyzer = prepareAnalyzer(locale);</span>
+<span class="pc bpc" id="L479" title="1 of 2 branches missed.">            if (analyzer == null) {</span>
+<span class="nc" id="L480">                return;</span>
+            }
+
+<span class="fc" id="L483">            try (AnalysisResult res = analyzer.analyze()) {</span>
+<span class="fc" id="L484">                res.throwIfFailed();</span>
+
+<span class="fc" id="L486">                oldAPI = analyzer.getResolvedOldApi();</span>
+<span class="fc" id="L487">                newAPI = analyzer.getResolvedNewApi();</span>
+
+<span class="fc" id="L489">                analysisResult = res;</span>
+<span class="nc" id="L490">            } catch (Exception e) {</span>
+<span class="nc" id="L491">                throw new IllegalStateException(&quot;Failed to generate report.&quot;, e);</span>
+<span class="fc" id="L492">            }</span>
+        }
+<span class="fc" id="L494">    }</span>
+
+    protected ResourceBundle getBundle(Locale locale) {
+<span class="fc" id="L497">        return ResourceBundle.getBundle(&quot;revapi-report&quot;, locale, this.getClass().getClassLoader());</span>
+    }
+
+    protected String niceList(Iterable&lt;? extends Archive&gt; archives) {
+<span class="fc" id="L501">        StringBuilder bld = new StringBuilder();</span>
+
+<span class="fc" id="L503">        Iterator&lt;? extends Archive&gt; it = archives.iterator();</span>
+
+<span class="pc bpc" id="L505" title="1 of 2 branches missed.">        if (it.hasNext()) {</span>
+<span class="fc" id="L506">            bld.append(it.next().getName());</span>
+        } else {
+<span class="nc" id="L508">            return &quot;&quot;;</span>
+        }
+
+<span class="pc bpc" id="L511" title="1 of 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L512">            bld.append(&quot;, &quot;).append(it.next().getName());</span>
+        }
+
+<span class="fc" id="L515">        return bld.toString();</span>
+    }
+
+    private void reportDifferences(
+        EnumMap&lt;CompatibilityType, List&lt;ReportTimeReporter.DifferenceReport&gt;&gt; diffsPerType, Sink sink,
+        ResourceBundle bundle, String typeKey) {
+
+<span class="pc bpc" id="L522" title="1 of 4 branches missed.">        if (diffsPerType == null || diffsPerType.isEmpty()) {</span>
+<span class="fc" id="L523">            return;</span>
+        }
+
+<span class="fc" id="L526">        sink.section2();</span>
+<span class="fc" id="L527">        sink.sectionTitle2();</span>
+<span class="fc" id="L528">        sink.text(bundle.getString(typeKey));</span>
+<span class="fc" id="L529">        sink.sectionTitle2_();</span>
+
+<span class="fc" id="L531">        reportDifferences(diffsPerType.get(CompatibilityType.BINARY), sink, bundle,</span>
+            &quot;report.revapi.compatibilityType.binary&quot;);
+<span class="fc" id="L533">        reportDifferences(diffsPerType.get(CompatibilityType.SOURCE), sink, bundle,</span>
+            &quot;report.revapi.compatibilityType.source&quot;);
+<span class="fc" id="L535">        reportDifferences(diffsPerType.get(CompatibilityType.SEMANTIC), sink, bundle,</span>
+            &quot;report.revapi.compatibilityType.semantic&quot;);
+<span class="fc" id="L537">        reportDifferences(diffsPerType.get(CompatibilityType.OTHER), sink, bundle,</span>
+            &quot;report.revapi.compatibilityType.other&quot;);
+
+<span class="fc" id="L540">        sink.section2_();</span>
+<span class="fc" id="L541">    }</span>
+
+    private void reportDifferences(List&lt;ReportTimeReporter.DifferenceReport&gt; diffs, Sink sink, ResourceBundle bundle,
+        String typeKey) {
+
+<span class="pc bpc" id="L546" title="1 of 4 branches missed.">        if (diffs == null || diffs.isEmpty()) {</span>
+<span class="fc" id="L547">            return;</span>
+        }
+
+<span class="fc" id="L550">        sink.section3();</span>
+<span class="fc" id="L551">        sink.sectionTitle3();</span>
+<span class="fc" id="L552">        sink.text(bundle.getString(typeKey));</span>
+<span class="fc" id="L553">        sink.sectionTitle3_();</span>
+
+<span class="fc" id="L555">        sink.table();</span>
+
+<span class="fc" id="L557">        sink.tableRow();</span>
+
+<span class="fc" id="L559">        sink.tableHeaderCell();</span>
+<span class="fc" id="L560">        sink.text(bundle.getString(&quot;report.revapi.difference.code&quot;));</span>
+<span class="fc" id="L561">        sink.tableHeaderCell_();</span>
+
+<span class="fc" id="L563">        sink.tableHeaderCell();</span>
+<span class="fc" id="L564">        sink.text(bundle.getString(&quot;report.revapi.difference.element&quot;));</span>
+<span class="fc" id="L565">        sink.tableHeaderCell_();</span>
+
+<span class="fc" id="L567">        sink.tableHeaderCell();</span>
+<span class="fc" id="L568">        sink.text(bundle.getString(&quot;report.revapi.difference.description&quot;));</span>
+<span class="fc" id="L569">        sink.tableHeaderCell_();</span>
+
+<span class="fc" id="L571">        sink.tableHeaderCell();</span>
+<span class="fc" id="L572">        sink.text(bundle.getString(&quot;report.revapi.difference.justification&quot;));</span>
+<span class="fc" id="L573">        sink.tableHeaderCell_();</span>
+
+<span class="fc" id="L575">        sink.tableRow_();</span>
+
+<span class="fc" id="L577">        diffs.sort((d1, d2) -&gt; {</span>
+<span class="fc" id="L578">            String c1 = d1.difference.code;</span>
+<span class="fc" id="L579">            String c2 = d2.difference.code;</span>
+
+<span class="fc" id="L581">            int cmp = c1.compareTo(c2);</span>
+<span class="pc bpc" id="L582" title="1 of 2 branches missed.">            if (cmp != 0) {</span>
+<span class="fc" id="L583">                return cmp;</span>
+            }
+
+<span class="nc bnc" id="L586" title="All 2 branches missed.">            Element e1 = d1.newElement == null ? d1.oldElement : d1.newElement;</span>
+<span class="nc bnc" id="L587" title="All 2 branches missed.">            Element e2 = d2.newElement == null ? d2.oldElement : d2.newElement;</span>
+
+<span class="nc" id="L589">            cmp = e1.getClass().getName().compareTo(e2.getClass().getName());</span>
+<span class="nc bnc" id="L590" title="All 2 branches missed.">            if (cmp != 0) {</span>
+<span class="nc" id="L591">                return cmp;</span>
+            }
+
+<span class="nc" id="L594">            return e1.getFullHumanReadableString().compareTo(e2.getFullHumanReadableString());</span>
+        });
+
+<span class="fc bfc" id="L597" title="All 2 branches covered.">        for (ReportTimeReporter.DifferenceReport d : diffs) {</span>
+<span class="fc bfc" id="L598" title="All 2 branches covered.">            String element = d.oldElement == null ? (d.newElement.getFullHumanReadableString()) :</span>
+<span class="fc" id="L599">                d.oldElement.getFullHumanReadableString();</span>
+
+<span class="fc" id="L601">            sink.tableRow();</span>
+
+<span class="fc" id="L603">            sink.tableCell();</span>
+<span class="fc" id="L604">            sink.monospaced();</span>
+<span class="fc" id="L605">            sink.text(d.difference.code);</span>
+<span class="fc" id="L606">            sink.monospaced_();</span>
+<span class="fc" id="L607">            sink.tableCell_();</span>
+
+<span class="fc" id="L609">            sink.tableCell();</span>
+<span class="fc" id="L610">            sink.monospaced();</span>
+<span class="fc" id="L611">            sink.bold();</span>
+<span class="fc" id="L612">            sink.text(element);</span>
+<span class="fc" id="L613">            sink.bold_();</span>
+<span class="fc" id="L614">            sink.monospaced_();</span>
+
+<span class="fc" id="L616">            sink.tableCell();</span>
+<span class="fc" id="L617">            sink.text(d.difference.description);</span>
+<span class="fc" id="L618">            sink.tableCell_();</span>
+
+<span class="fc" id="L620">            sink.tableCell();</span>
+<span class="fc" id="L621">            sink.text(d.difference.justification);</span>
+<span class="fc" id="L622">            sink.tableCell_();</span>
+
+<span class="fc" id="L624">            sink.tableRow_();</span>
+<span class="fc" id="L625">        }</span>
+
+<span class="fc" id="L627">        sink.table_();</span>
+
+<span class="fc" id="L629">        sink.section3_();</span>
+<span class="fc" id="L630">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

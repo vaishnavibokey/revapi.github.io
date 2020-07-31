@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalysisConfigurationGatherer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">AnalysisConfigurationGatherer.java</span></div><h1>AnalysisConfigurationGatherer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Supplier;
+
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.codehaus.plexus.configuration.xml.XmlPlexusConfiguration;
+import org.codehaus.plexus.util.xml.Xpp3DomBuilder;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ValueExpression;
+import org.jboss.dmr.ValueExpressionResolver;
+import org.revapi.AnalysisContext;
+import org.revapi.Revapi;
+import org.revapi.configuration.JSONUtil;
+import org.revapi.configuration.XmlToJson;
+
+final class AnalysisConfigurationGatherer {
+    private final PlexusConfiguration analysisConfiguration;
+
+    private final Object[] analysisConfigurationFiles;
+
+    private final boolean failOnMissingConfigurationFiles;
+
+    private final boolean expandProperties;
+
+    private final ValueExpressionResolver resolver;
+
+    private final File relativePathBaseDir;
+
+    private final Log log;
+
+    AnalysisConfigurationGatherer(PlexusConfiguration analysisConfiguration,
+            Object[] analysisConfigurationFiles, boolean failOnMissingConfigurationFiles, boolean expandProperties,
+<span class="fc" id="L65">            PropertyValueInterpolator interpolator, File relativePathBaseDir, Log log) {</span>
+<span class="fc" id="L66">        this.analysisConfiguration = analysisConfiguration;</span>
+<span class="fc" id="L67">        this.analysisConfigurationFiles = analysisConfigurationFiles;</span>
+<span class="fc" id="L68">        this.failOnMissingConfigurationFiles = failOnMissingConfigurationFiles;</span>
+<span class="fc" id="L69">        this.expandProperties = expandProperties;</span>
+<span class="fc" id="L70">        this.log = log;</span>
+<span class="fc" id="L71">        this.resolver = new PropertyExpressionResolver(interpolator);</span>
+<span class="fc" id="L72">        this.relativePathBaseDir = relativePathBaseDir;</span>
+<span class="fc" id="L73">    }</span>
+
+    void gatherConfig(Revapi revapi, AnalysisContext.Builder ctxBld) throws MojoExecutionException {
+<span class="pc bpc" id="L76" title="1 of 4 branches missed.">        if (analysisConfigurationFiles != null &amp;&amp; analysisConfigurationFiles.length &gt; 0) {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            for (Object pathOrConfigFile : analysisConfigurationFiles) {</span>
+                ConfigurationFile configFile;
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                if (pathOrConfigFile instanceof String) {</span>
+<span class="fc" id="L80">                    configFile = new ConfigurationFile();</span>
+<span class="fc" id="L81">                    configFile.setPath((String) pathOrConfigFile);</span>
+                } else {
+<span class="fc" id="L83">                    configFile = (ConfigurationFile) pathOrConfigFile;</span>
+                }
+
+<span class="fc" id="L86">                String path = configFile.getPath();</span>
+<span class="fc" id="L87">                String resource = configFile.getResource();</span>
+
+<span class="pc bpc" id="L89" title="1 of 4 branches missed.">                if (path == null &amp;&amp; resource == null) {</span>
+<span class="nc" id="L90">                    throw new MojoExecutionException(</span>
+                            &quot;Either 'path' or 'resource' has to be specified in a configurationFile definition.&quot;);
+<span class="pc bpc" id="L92" title="1 of 4 branches missed.">                } else if (path != null &amp;&amp; resource != null) {</span>
+<span class="nc" id="L93">                    throw new MojoExecutionException(</span>
+                            &quot;Either 'path' or 'resource' has to be specified in a configurationFile definition but&quot; +
+                                    &quot; not both.&quot;);
+                }
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                String readErrorMessage = &quot;Error while processing the configuration file on &quot;</span>
+                        + (path == null ? &quot;classpath &quot; + resource : &quot;path &quot; + path);
+
+                Supplier&lt;Iterator&lt;InputStream&gt;&gt; configFileContents;
+
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                if (path != null) {</span>
+<span class="fc" id="L104">                    File f = new File(path);</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">                    if (!f.isAbsolute()) {</span>
+<span class="nc" id="L106">                        f = new File(relativePathBaseDir, path);</span>
+                    }
+
+<span class="pc bpc" id="L109" title="2 of 4 branches missed.">                    if (!f.isFile() || !f.canRead()) {</span>
+<span class="nc" id="L110">                        String message = &quot;Could not locate analysis configuration file '&quot; + f.getAbsolutePath() + &quot;'.&quot;;</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                        if (failOnMissingConfigurationFiles) {</span>
+<span class="nc" id="L112">                            throw new MojoExecutionException(message);</span>
+                        } else {
+<span class="nc" id="L114">                            log.debug(message);</span>
+<span class="nc" id="L115">                            continue;</span>
+                        }
+                    }
+
+<span class="fc" id="L119">                    final File ff = f;</span>
+<span class="fc" id="L120">                    configFileContents = () -&gt; {</span>
+                        try {
+<span class="fc" id="L122">                            return Collections.&lt;InputStream&gt;singletonList(new FileInputStream(ff)).iterator();</span>
+<span class="nc" id="L123">                        } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L124">                            throw new IllegalArgumentException(&quot;Failed to read the configuration file '&quot;</span>
+<span class="nc" id="L125">                                    + ff.getAbsolutePath() + &quot;'.&quot;, e);</span>
+                        }
+                    };
+<span class="fc" id="L128">                } else {</span>
+<span class="fc" id="L129">                     configFileContents =</span>
+                            () -&gt; {
+                                try {
+<span class="fc" id="L132">                                    return Collections.list(getClass().getClassLoader().getResources(resource))</span>
+<span class="fc" id="L133">                                            .stream()</span>
+<span class="fc" id="L134">                                            .map(url -&gt; {</span>
+                                                try {
+<span class="fc" id="L136">                                                    return url.openStream();</span>
+<span class="nc" id="L137">                                                } catch (IOException e) {</span>
+<span class="nc" id="L138">                                                    throw new IllegalArgumentException(</span>
+                                                            &quot;Failed to read the classpath resource '&quot; + url + &quot;'.&quot;);
+                                                }
+<span class="fc" id="L141">                                            }).iterator();</span>
+<span class="nc" id="L142">                                } catch (IOException e) {</span>
+<span class="nc" id="L143">                                    throw new IllegalArgumentException(</span>
+                                            &quot;Failed to locate classpath resources on path '&quot; + resource + &quot;'.&quot;);
+                                }
+                            };
+                }
+
+<span class="fc" id="L149">                Iterator&lt;InputStream&gt; it = configFileContents.get();</span>
+<span class="fc" id="L150">                List&lt;Integer&gt; nonJsonIndexes = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L151">                int idx = 0;</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                while (it.hasNext()) {</span>
+                    ModelNode config;
+<span class="fc" id="L154">                    try (InputStream in = it.next()) {</span>
+<span class="fc" id="L155">                        config = readJson(in);</span>
+<span class="nc" id="L156">                    } catch (IllegalArgumentException | IOException e) {</span>
+<span class="nc" id="L157">                        throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
+<span class="fc" id="L158">                    }</span>
+
+<span class="fc bfc" id="L160" title="All 2 branches covered.">                    if (config == null) {</span>
+<span class="fc" id="L161">                        nonJsonIndexes.add(idx);</span>
+<span class="fc" id="L162">                        continue;</span>
+                    }
+
+<span class="fc" id="L165">                    expandVariables(config);</span>
+
+<span class="fc" id="L167">                    mergeJsonConfigFile(ctxBld, configFile, config);</span>
+
+<span class="fc" id="L169">                    idx++;</span>
+<span class="fc" id="L170">                }</span>
+
+<span class="fc bfc" id="L172" title="All 2 branches covered.">                if (!nonJsonIndexes.isEmpty()) {</span>
+<span class="fc" id="L173">                    idx = 0;</span>
+<span class="fc" id="L174">                    it = configFileContents.get();</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">                    while (it.hasNext()) {</span>
+<span class="fc" id="L176">                        try (Reader rdr = new InputStreamReader(it.next())) {</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">                            if (nonJsonIndexes.contains(idx)) {</span>
+<span class="fc" id="L178">                                mergeXmlConfigFile(revapi, ctxBld, configFile, rdr);</span>
+                            }
+<span class="nc" id="L180">                        } catch (IllegalArgumentException | IOException | XmlPullParserException e) {</span>
+<span class="nc" id="L181">                            throw new MojoExecutionException(readErrorMessage, e.getCause());</span>
+<span class="fc" id="L182">                        }</span>
+
+<span class="fc" id="L184">                        idx++;</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (analysisConfiguration != null) {</span>
+<span class="fc" id="L191">            String text = analysisConfiguration.getValue();</span>
+<span class="pc bpc" id="L192" title="1 of 4 branches missed.">            if (text == null || text.isEmpty()) {</span>
+<span class="fc" id="L193">                convertNewStyleConfigFromXml(ctxBld, revapi);</span>
+            } else {
+<span class="fc" id="L195">                ctxBld.mergeConfiguration(expandVariables(ModelNode.fromJSONString(JSONUtil.stripComments(text))));</span>
+            }
+        }
+<span class="fc" id="L198">    }</span>
+
+    private void mergeXmlConfigFile(Revapi revapi, AnalysisContext.Builder ctxBld, ConfigurationFile configFile, Reader rdr)
+            throws IOException, XmlPullParserException {
+<span class="fc" id="L202">        XmlToJson&lt;PlexusConfiguration&gt; conv = new XmlToJson&lt;&gt;(revapi, PlexusConfiguration::getName,</span>
+<span class="fc" id="L203">                PlexusConfiguration::getValue, PlexusConfiguration::getAttribute, x -&gt; Arrays.asList(x.getChildren()));</span>
+
+<span class="fc" id="L205">        PlexusConfiguration xml = new XmlPlexusConfiguration(Xpp3DomBuilder.build(rdr));</span>
+
+<span class="fc" id="L207">        String[] roots = configFile.getRoots();</span>
+
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        if (roots == null) {</span>
+<span class="fc" id="L210">            ctxBld.mergeConfiguration(expandVariables(conv.convert(xml)));</span>
+        } else {
+            roots:
+<span class="nc bnc" id="L213" title="All 2 branches missed.">            for (String r : roots) {</span>
+<span class="nc" id="L214">                PlexusConfiguration root = xml;</span>
+<span class="nc" id="L215">                boolean first = true;</span>
+<span class="nc" id="L216">                String[] rootPath = r.split(&quot;/&quot;);</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                for (String name : rootPath) {</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                    if (first) {</span>
+<span class="nc" id="L219">                        first = false;</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">                        if (!name.equals(root.getName())) {</span>
+<span class="nc" id="L221">                            continue roots;</span>
+                        }
+                    } else {
+<span class="nc" id="L224">                        root = root.getChild(name);</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                        if (root == null) {</span>
+<span class="nc" id="L226">                            continue roots;</span>
+                        }
+                    }
+                }
+
+<span class="nc" id="L231">                ctxBld.mergeConfiguration(expandVariables(conv.convert(root)));</span>
+            }
+        }
+<span class="fc" id="L234">    }</span>
+
+    private void mergeJsonConfigFile(AnalysisContext.Builder ctxBld, ConfigurationFile configFile, ModelNode config) {
+<span class="fc" id="L237">        String[] roots = configFile.getRoots();</span>
+
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if (roots == null) {</span>
+<span class="fc" id="L240">            ctxBld.mergeConfiguration(config);</span>
+        } else {
+<span class="nc bnc" id="L242" title="All 2 branches missed.">            for (String r : roots) {</span>
+<span class="nc" id="L243">                String[] rootPath = r.split(&quot;/&quot;);</span>
+<span class="nc" id="L244">                ModelNode root = config.get(rootPath);</span>
+
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                if (!root.isDefined()) {</span>
+<span class="nc" id="L247">                    continue;</span>
+                }
+
+<span class="nc" id="L250">                ctxBld.mergeConfiguration(root);</span>
+            }
+        }
+<span class="fc" id="L253">    }</span>
+
+    private void convertNewStyleConfigFromXml(AnalysisContext.Builder bld, Revapi revapi) {
+<span class="fc" id="L256">        XmlToJson&lt;PlexusConfiguration&gt; conv = new XmlToJson&lt;&gt;(revapi, PlexusConfiguration::getName,</span>
+<span class="fc" id="L257">                PlexusConfiguration::getValue, PlexusConfiguration::getAttribute, x -&gt; Arrays.asList(x.getChildren()));</span>
+
+<span class="fc" id="L259">        bld.mergeConfiguration(expandVariables(conv.convert(analysisConfiguration)));</span>
+<span class="fc" id="L260">    }</span>
+
+    private ModelNode readJson(InputStream in) {
+        try {
+<span class="fc" id="L264">            return ModelNode.fromJSONStream(JSONUtil.stripComments(in, StandardCharsets.UTF_8));</span>
+<span class="fc" id="L265">        } catch (IOException e) {</span>
+<span class="fc" id="L266">            return null;</span>
+        }
+    }
+
+    private ModelNode expandVariables(ModelNode config) {
+<span class="fc bfc" id="L271" title="All 2 branches covered.">        if (!expandProperties) {</span>
+<span class="fc" id="L272">            return config;</span>
+        }
+
+<span class="fc bfc" id="L275" title="All 3 branches covered.">        switch (config.getType()) {</span>
+        case LIST:
+<span class="fc" id="L277">            config.asList().forEach(this::expandVariables);</span>
+<span class="fc" id="L278">            break;</span>
+        case OBJECT:
+<span class="fc bfc" id="L280" title="All 2 branches covered.">            for (String key : config.asObject().keys()) {</span>
+<span class="fc" id="L281">                expandVariables(config.get(key));</span>
+<span class="fc" id="L282">            }</span>
+<span class="fc" id="L283">            break;</span>
+        default:
+<span class="fc" id="L285">            expandVariable(config, resolver);</span>
+        }
+
+<span class="fc" id="L288">        return config;</span>
+    }
+
+    private static void expandVariable(ModelNode node, ValueExpressionResolver resolver) {
+<span class="fc" id="L292">        ValueExpression val = new ValueExpression(node.asString());</span>
+<span class="pc bpc" id="L293" title="7 of 8 branches missed.">        switch (node.getType()) {</span>
+        case STRING:
+<span class="fc" id="L295">            node.set(val.resolveString(resolver));</span>
+<span class="fc" id="L296">            break;</span>
+        case BOOLEAN:
+<span class="nc" id="L298">            node.set(val.resolveBoolean(resolver));</span>
+<span class="nc" id="L299">            break;</span>
+        case LONG:
+<span class="nc" id="L301">            node.set(val.resolveLong(resolver));</span>
+<span class="nc" id="L302">            break;</span>
+        case DOUBLE:
+<span class="nc" id="L304">            node.set(val.resolveBigDecimal(resolver).doubleValue());</span>
+<span class="nc" id="L305">            break;</span>
+        case INT:
+<span class="nc" id="L307">            node.set(val.resolveInt(resolver));</span>
+<span class="nc" id="L308">            break;</span>
+        case BIG_DECIMAL:
+<span class="nc" id="L310">            node.set(val.resolveBigDecimal(resolver));</span>
+<span class="nc" id="L311">            break;</span>
+        case BIG_INTEGER:
+<span class="nc" id="L313">            node.set(val.resolveBigDecimal(resolver).toBigInteger());</span>
+            break;
+        }
+<span class="fc" id="L316">    }</span>
+
+    private static final class PropertyExpressionResolver extends ValueExpressionResolver {
+        private final PropertyValueInterpolator interpolator;
+
+<span class="fc" id="L321">        private PropertyExpressionResolver(PropertyValueInterpolator interpolator) {</span>
+<span class="fc" id="L322">            this.interpolator = interpolator;</span>
+<span class="fc" id="L323">        }</span>
+
+        @Override
+        protected String resolvePart(String name) {
+<span class="fc" id="L327">            return interpolator.interpolate(name);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

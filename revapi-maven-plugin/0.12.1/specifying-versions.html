@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Specifying Versions To Check :: Revapi</title>
+    <link rel="canonical" href="https://revapi.org/revapi-maven-plugin/specifying-versions.html">
+    <meta name="generator" content="Antora 2.3.3">
+<link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/news.css">
+<link rel="stylesheet" href="../../_/css/additions.css">
+
+<link rel="alternate" type="application/rss+xml" title="Revapi RSS" href="../../_/../revapi-site/master/news/_attachments/news.atom" />
+<link rel="stylesheet" href="../../_/css/search.css">
+  </head>
+  <body class="article">
+<header class="header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="https://revapi.org">Revapi</a>
+              <div class="navbar-item">
+                <input id="search-input" type="text" placeholder="Search docs">
+              </div>
+            <button class="navbar-burger" data-target="topbar-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div id="topbar-nav" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="../../revapi-site/index.html/../news/index.html">News</a>
+                <a class="navbar-item" href="../../revapi-site/index.html/../downloads.html">Downloads</a>
+                <a class="navbar-item" href="https://diff.revapi.org">Online Check</a>
+                <a class="navbar-item" href="https://github.com/revapi/revapi"><img src="../../_/img/github.svg" alt="Github Repository"/></a>
+                <a class="navbar-item" href="https://twitter.com/revapi_org"><img src="../../_/img/twitter.svg" alt="Twitter"/></a>
+                <a class="navbar-item" href="../../_/../revapi-site/0/news/_attachments/news.atom"><img src="../../_/img/rss.svg" alt="RSS"/></a>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="revapi-maven-plugin" data-version="0.12.1">
+  <aside class="nav">
+    <div class="panels">
+    <div class="nav-panel-menu is-active" data-panel="menu">
+        <nav class="nav-menu">
+                <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/faq.html">FAQ</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/architecture.html">Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/extensions.html">Extensions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/building.html">Building</a>
+  </li>
+</ul>
+  </li>
+</ul>
+            <ul class="nav-list">
+                <li class="nav-item" data-depth="0">
+                    <hr/>
+                    <i class="nav-text">Modules</i>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-ant-task/index.html">
+                                    <span class="nav-text">Ant Task</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi/index.html">
+                                    <span class="nav-text">API</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-basic-features/index.html">
+                                    <span class="nav-text">Basic Features</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-standalone/index.html">
+                                    <span class="nav-text">CLI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-file-base/index.html">
+                                    <span class="nav-text">File Reporter Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java/index.html">
+                                    <span class="nav-text">Java Extension</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java-spi/index.html">
+                                    <span class="nav-text">Java Extension SPI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-json/index.html">
+                                    <span class="nav-text">JSON Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item is-active" data-depth="0">
+                                <a class="nav-link" href="../index.html">
+                                    <span class="nav-text">Maven Plugin</span>
+                                </a>
+                                    <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="specifying-versions.html">Specifying Versions</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="configuring-revapi.html">Configuration Approaches</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="reporting.html">Generating Reports</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/index.html">Maven Site</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/apidocs/index.html">Javadoc</a>
+  </li>
+</ul>
+  </li>
+</ul>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-text/index.html">
+                                    <span class="nav-text">Text Reporter</span>
+                                </a>
+                            </li>
+                </li>
+            </ul>
+        </nav>
+    </div>
+<div class="nav-panel-explore" data-panel="explore" style="display: none">
+  <div class="context">
+    <span class="title">Maven Plugin</span>
+    <span class="version">0.12.1</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <span class="title">Ant Task</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-ant-task/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">API</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Basic Features</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-basic-features/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">CLI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-standalone/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.7/index.html">0.9.7</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.6/index.html">0.9.6</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">File Reporter Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-file-base/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Extension</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.0/index.html">0.22.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Extension SPI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java-spi/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.0/index.html">0.21.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-json/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <span class="title">Maven Plugin</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../index.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Revapi Site</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-site/index.html">master</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Text Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-text/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../revapi-site/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Maven Plugin</a></li>
+    <li><a href="specifying-versions.html">Specifying Versions</a></li>
+  </ul>
+</nav>
+  Version:
+<div class="page-versions">
+    <button class="version-menu-toggle" title="Versions of the component">
+        0.12.1
+    </button>
+  <div class="version-menu">
+        <a class="version" href="../specifying-versions.html">
+
+            latest
+        </a>
+        <a class="version is-current" href="specifying-versions.html">
+
+            0.12.1
+        </a>
+        <a class="version" href="../0.12.0/specifying-versions.html">
+
+            0.12.0
+        </a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/revapi/revapi/edit/master/revapi-maven-plugin/src/site/modules/ROOT/pages/specifying-versions.adoc" title="Edit the latest version of this page">Edit this page</a></div>
+</div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Specifying Versions To Check</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, Revapi will automagically figure out the latest released version of your project and check the code that&#8217;s
+been built against it.</p>
+</div>
+<div class="paragraph">
+<p>This is assumed to be the most common usecase and as such requires no additional configuration. But it always is not
+exactly what you want.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_specific_old_version"><a class="anchor" href="#_specific_old_version"></a>Specific Old Version</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can choose to explicitly select the old version to check. This is useful in scenarios where you need tell
+specifically the old version and Maven rules for determining the latest release does not pick the right one.</p>
+</div>
+<div class="paragraph">
+<p>You can use one of the following configuration parameters of Revapi maven plugin:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>oldArtifacts</code> - This can be used to precisely specify the GAV (or more GAVs) of the artifact(s) representing your old
+version.</p>
+</li>
+<li>
+<p><code>oldVersion</code> - Using this, Revapi will reuse the groupId, artifactId, type and classifier of your currently built
+artifact and will use the specified version. I.e. using this, you can easily specify the older version of your artifact
+to check against.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Both of these parameters have their command-line names, too. Please consult the <code>check</code> goal
+<a href="_attachments/check-mojo.html">docs</a> for details.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_specific_new_version"><a class="anchor" href="#_specific_new_version"></a>Specific New Version</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is not a very common usecase but you can also specify the new version of the API (i.e. something different than
+what the Maven just built). Use <code>newArtifacts</code> or <code>newVersion</code> parameters with similar meaning to the <code>old</code> variants.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_leaving_out_pre_releases"><a class="anchor" href="#_leaving_out_pre_releases"></a>Leaving Out Pre-releases</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Frequently, you will release alpha or beta versions before you release the final version of your project.
+Maven will consider any non-snapshot release as the latest, but that&#8217;s possibly not what you want to check against.</p>
+</div>
+<div class="paragraph">
+<p>After you release a beta, you still want your project to be checked against the last final release, not against the
+beta.</p>
+</div>
+<div class="paragraph">
+<p>You could explicitly specify the <code>oldVersion</code> to be your last final release but the caveat of that is that you will
+have to remember to change that after you release your new final release (so that your new final release becomes the
+new baseline for the future development).</p>
+</div>
+<div class="paragraph">
+<p>There is a simpler way though.</p>
+</div>
+<div class="paragraph">
+<p>You can use the <code>versionFormat</code> <a href="_attachments/check-mojo.html#versionFormat">configuration parameter</a> to specify how the
+version string of the latest release must look like.</p>
+</div>
+<div class="paragraph">
+<p>For example if you use "GA" as the suffix of your final releases and you released <code>1.0.GA</code>, <code>2.0.Alpha</code> and <code>2.0.Beta</code>,
+you can configure Revapi maven plugin like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;configuration&gt;
+  &lt;versionFormat&gt;.*\.GA&lt;/versionFormat&gt;
+&lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and Revapi will use the latest release that matches that regular expression (which would be <code>1.0.GA</code>) instead of the
+latest release as reported by Maven (which would be <code>2.0.Beta</code>).</p>
+</div>
+<div class="paragraph">
+<p>Note that the version format applies to both old and new versions and is only taken into account if the version string
+is one of the Maven&#8217;s special version specifiers - <code>RELEASE</code> or <code>LATEST</code> (<code>RELEASE</code> is the default value of <code>oldVersion</code>
+configuration parameter, so the above configuration will take effect).</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_comparing_specific_artifacts"><a class="anchor" href="#_comparing_specific_artifacts"></a>Comparing Specific Artifacts</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default Revapi checks the currently built artifact against the latest released version of it. This actually is
+equivalent to running the maven plugin with the following set up:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;{page-component-version}&lt;/version&gt;
+  &lt;configuration&gt;
+    &lt;oldArtifacts&gt;
+        &lt;artifact&gt;${project.groupId}:${project.artifactId}:RELEASE&lt;/artifact&gt;
+    &lt;/oldArtifacts&gt;
+    &lt;newArtifacts&gt;
+        &lt;artifact&gt;${project.groupId}:${project.artifactId}:${project.version}&lt;/artifact&gt;
+    &lt;/newArtifacts&gt;
+  &lt;/configuration&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;goals&gt;&lt;goal&gt;check&lt;/goal&gt;&lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I.e. the <code>oldArtifacts</code> are set up to include the current project with the <code>RELEASE</code> version, which is Maven&#8217;s way of
+saying "this project in the latest released version". The <code>newArtifacts</code> specifies the currently built project.</p>
+</div>
+<div class="paragraph">
+<p>The above example implies a couple of things:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>you can include more than one artifact to be included in the analysis</p>
+</li>
+<li>
+<p>you don&#8217;t have to specify the "supplementary archives" - the dependencies of the artifacts are automatically
+obtained from Maven and used during the analysis so that the complete classpath is used</p>
+</li>
+<li>
+<p>you&#8217;re not constrained to check the artifacts of the current project - in fact you could have a separate "check"
+module that would perform API checks completely separately from other modules in the project.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_updating_version_in_pom_xml"><a class="anchor" href="#_updating_version_in_pom_xml"></a>Updating Version In <code>pom.xml</code></h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Goal details page: <a href="_attachments/update-versions-mojo.html">here</a>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Revapi needs two artifacts to compare against each other to determine the API differences and therefore the required
+version changes. By default the new artifact is the project being built so the artifacts need to be actually produced
+prior to running revapi. This is usually done in the <code>package</code> phase, which is therefore run prior to any Revapi goal.</p>
+</div>
+<div class="paragraph">
+<p>When updating the version, the plugin takes into consideration the configuration of Revapi as declared in the
+<code>pom.xml</code> but does not use certain extensions that would make some of the differences disappear (like
+the <a href="../../revapi-basic-features/semver-ignore.html" class="page">semver-ignore extension</a>). This list of extensions is
+configurable using the <code>disallowedExtensions</code> configuration property, see the goal&#8217;s
+<a href="_attachments/update-versions-mojo.html">detail page</a> for further info.</p>
+</div>
+<div class="paragraph">
+<p>For a single-module project, updating the versions is very simple:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>mvn revapi:update-versions</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>version</code> in <code>pom.xml</code> will be updated according to the API changes and the semantic versioning rules.</p>
+</div>
+<div class="paragraph">
+<p>For multi-module project, one has more options. If each of the modules in the project is independently versioned,
+then the invocation is the same as for the single-module project, but if you version the child modules uniformly with
+the parent (i.e. you set <code>autoVersionSubmodules</code> to <code>true</code> when releasing using the maven release plugin), you should
+set the <code>singleVersionForAllModules</code> of revapi to <code>true</code>, too. Generally, <code>autoVersionSubmodules</code> and
+<code>singleVersionForAllModules</code> should be set to the same value.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>mvn revapi:update-versions -Drevapi.singleVersionForAllModules=true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will check the API differences in all the child modules and will determine the version of the whole based on the
+"biggest" change. I.e. if one child module breaks the API then the major version will be increased in all modules even
+though the rest of the child modules might not have changed at all.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_updating_versions_in_release_properties"><a class="anchor" href="#_updating_versions_in_release_properties"></a>Updating Versions In <code>release.properties</code></h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Goal details page: <a href="_attachments/update-release-properties-mojo.html">here</a>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This works identically to the <a href="#_updating_version_in_pom_xml">update versions goal</a> but instead of updating the version
+directly in the <code>pom.xml</code> files, it creates or updates the <code>release.properties</code> file. This will then be read by the
+maven release plugin during the release process.</p>
+</div>
+<div class="paragraph">
+<p>Thus, running:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>mvn revapi:update-release-properties &amp;&amp; mvn release:prepare</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>will automatically set the release and development versions for you according to the <a href="http://semver.org">semver</a>
+versioning rules.</p>
+</div>
+</div>
+</div>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+    <p>Copyright 2014-2020 Lukas Krejci.</p>
+    <p>This site was built using <a href="https://antora.org">Antora 2.3.3</a>.</p>
+</footer>
+<script>
+  window.antora = window.antora || {}
+  window.antora.basePath = '../..'
+  window.antora.pagePath = '/revapi-maven-plugin/0.12.1/specifying-versions.html'
+</script>
+<script src="../../_/js/site.js"></script>
+  <script src="../../_/js/vendor/lunr.js"></script>
+  <script src="../../_/js/vendor/search.js"></script>
+  <script async src="../../_/../search-index.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script>
+    function toggleVersionSelector(id) {
+        var sel = document.getElementById(id)
+        if (!sel) {
+            return
+        }
+
+        if (sel.style.display == 'none') {
+            sel.style.display = 'block';
+        } else {
+            sel.style.display = 'none';
+        }
+    }
+</script>  </body>
+</html>

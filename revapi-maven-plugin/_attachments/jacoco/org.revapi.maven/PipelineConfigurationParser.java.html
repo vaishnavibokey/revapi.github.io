@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PipelineConfigurationParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">PipelineConfigurationParser.java</span></div><h1>PipelineConfigurationParser.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import static java.util.stream.Collectors.toList;
+
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.jboss.dmr.ModelNode;
+import org.revapi.Criticality;
+import org.revapi.DifferenceSeverity;
+import org.revapi.PipelineConfiguration;
+
+final class PipelineConfigurationParser {
+
+    private PipelineConfigurationParser() {
+
+    }
+
+    static PipelineConfiguration.Builder parse(PlexusConfiguration pipelineConfiguration) {
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        String jsonConfig = pipelineConfiguration == null ? null : pipelineConfiguration.getValue();</span>
+
+        PipelineConfiguration.Builder ret;
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (jsonConfig == null) {</span>
+            // we're seeing XML. PipelineConfiguration is a set &quot;format&quot;, not something dynamic as the extension
+            // configurations. We can therefore try to parse it straight away.
+<span class="nc" id="L45">            ret = parsePipelineConfigurationXML(pipelineConfiguration);</span>
+        } else {
+<span class="nc" id="L47">            ModelNode json = ModelNode.fromJSONString(jsonConfig);</span>
+<span class="nc" id="L48">            ret = PipelineConfiguration.parse(json);</span>
+        }
+
+        // important to NOT add any extensions here yet. That's the job of the pipelineModifier that is responsible
+        // to construct
+<span class="nc" id="L53">        return ret;</span>
+
+    }
+
+    private static PipelineConfiguration.Builder parsePipelineConfigurationXML(PlexusConfiguration pipelineConfiguration) {
+<span class="nc" id="L58">        PipelineConfiguration.Builder bld = PipelineConfiguration.builder();</span>
+
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (pipelineConfiguration == null) {</span>
+<span class="nc" id="L61">            return bld;</span>
+        }
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        for (PlexusConfiguration c : pipelineConfiguration.getChildren()) {</span>
+<span class="nc bnc" id="L65" title="All 8 branches missed.">            switch (c.getName()) {</span>
+            case &quot;analyzers&quot;:
+<span class="nc" id="L67">                parseIncludeExclude(c, bld::addAnalyzerExtensionIdInclude, bld::addAnalyzerExtensionIdExclude);</span>
+<span class="nc" id="L68">                break;</span>
+            case &quot;reporters&quot;:
+<span class="nc" id="L70">                parseIncludeExclude(c, bld::addReporterExtensionIdInclude, bld::addReporterExtensionIdExclude);</span>
+<span class="nc" id="L71">                break;</span>
+            case &quot;filters&quot;:
+<span class="nc" id="L73">                parseIncludeExclude(c, bld::addFilterExtensionIdInclude, bld::addFilterExtensionIdExclude);</span>
+<span class="nc" id="L74">                break;</span>
+            case &quot;transforms&quot;:
+<span class="nc" id="L76">                parseIncludeExclude(c, bld::addTransformExtensionIdInclude, bld::addTransformExtensionIdExclude);</span>
+<span class="nc" id="L77">                break;</span>
+            case &quot;transformBlocks&quot;:
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                for (PlexusConfiguration b : c.getChildren()) {</span>
+<span class="nc" id="L80">                    List&lt;String&gt; blockIds = Stream.of(b.getChildren())</span>
+<span class="nc" id="L81">                            .map(PlexusConfiguration::getValue).collect(toList());</span>
+<span class="nc" id="L82">                    bld.addTransformationBlock(blockIds);</span>
+                }
+<span class="nc" id="L84">                break;</span>
+            case &quot;criticalities&quot;:
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                for (PlexusConfiguration t : c.getChildren()) {</span>
+<span class="nc" id="L87">                    String name = t.getChild(&quot;name&quot;).getValue();</span>
+<span class="nc" id="L88">                    int level = Integer.parseInt(t.getChild(&quot;level&quot;).getValue());</span>
+<span class="nc" id="L89">                    bld.addCriticality(new Criticality(name, level));</span>
+                }
+<span class="nc" id="L91">                break;</span>
+            case &quot;severityMapping&quot;:
+<span class="nc bnc" id="L93" title="All 2 branches missed.">                for (PlexusConfiguration m : c.getChildren()) {</span>
+<span class="nc" id="L94">                    String severityName = m.getName();</span>
+<span class="nc" id="L95">                    String criticalityName = m.getValue();</span>
+<span class="nc" id="L96">                    DifferenceSeverity severity = DifferenceSeverity.fromCamelCase(severityName);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    if (severity == null) {</span>
+<span class="nc" id="L98">                        throw new IllegalArgumentException(&quot;Unknown severity encountered while processing the&quot; +</span>
+                                &quot; severityMapping: &quot; + severityName);
+                    }
+
+<span class="nc" id="L102">                    bld.addUntypedSeverityMapping(severity, criticalityName);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L107">        return bld;</span>
+    }
+
+    private static void parseIncludeExclude(PlexusConfiguration parent, Consumer&lt;String&gt; handleInclude,
+            Consumer&lt;String&gt; handleExclude) {
+
+<span class="nc" id="L113">        PlexusConfiguration include = parent.getChild(&quot;include&quot;);</span>
+<span class="nc" id="L114">        PlexusConfiguration exclude = parent.getChild(&quot;exclude&quot;);</span>
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (include != null) {</span>
+<span class="nc" id="L117">            Stream.of(include.getChildren()).forEach(c -&gt; handleInclude.accept(c.getValue()));</span>
+        }
+
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (exclude != null) {</span>
+<span class="nc" id="L121">            Stream.of(exclude.getChildren()).forEach(c -&gt; handleExclude.accept(c.getValue()));</span>
+        }
+<span class="nc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

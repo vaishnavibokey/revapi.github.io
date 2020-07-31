@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DifferencesTransform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">DifferencesTransform.java</span></div><h1>DifferencesTransform.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.basic;
+
+import static java.util.Collections.emptyMap;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.jboss.dmr.ModelNode;
+import org.revapi.AnalysisContext;
+import org.revapi.CompatibilityType;
+import org.revapi.Criticality;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class DifferencesTransform extends AbstractDifferenceReferringTransform {
+<span class="fc" id="L42">    private static final Logger LOG = LoggerFactory.getLogger(DifferencesTransform.class);</span>
+
+    private ModelNode bulkClassify;
+    private ModelNode bulkIgnore;
+    private ModelNode bulkJustification;
+    private ModelNode bulkAttachments;
+    private ModelNode bulkCriticality;
+
+    public DifferencesTransform() {
+<span class="fc" id="L51">        super(&quot;revapi.differences&quot;);</span>
+<span class="fc" id="L52">    }</span>
+
+    protected DifferencesTransform(String extensionId) {
+<span class="fc" id="L55">        super(extensionId);</span>
+<span class="fc" id="L56">    }</span>
+
+    private static Map&lt;CompatibilityType, DifferenceSeverity&gt; parseClassification(ModelNode config) {
+<span class="fc" id="L59">        Map&lt;CompatibilityType, DifferenceSeverity&gt; classification = new EnumMap&lt;&gt;(CompatibilityType.class);</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        for (CompatibilityType ct : CompatibilityType.values()) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (config.has(ct.name())) {</span>
+<span class="fc" id="L62">                String val = config.get(ct.name()).asString();</span>
+<span class="fc" id="L63">                DifferenceSeverity sev = DifferenceSeverity.valueOf(val);</span>
+<span class="fc" id="L64">                classification.put(ct, sev);</span>
+            }
+        }
+
+<span class="fc" id="L68">        return classification;</span>
+    }
+
+    @Nonnull
+    @Override
+    protected DifferenceMatchRecipe newRecipe(ModelNode configNode) throws IllegalArgumentException {
+<span class="fc" id="L74">        configNode = configNode.clone();</span>
+
+<span class="fc bfc" id="L76" title="All 4 branches covered.">        if (!configNode.hasDefined(&quot;ignore&quot;) &amp;&amp; bulkIgnore.isDefined()) {</span>
+<span class="fc" id="L77">            configNode.get(&quot;ignore&quot;).set(bulkIgnore.asBoolean());</span>
+        }
+
+<span class="fc bfc" id="L80" title="All 4 branches covered.">        if (!configNode.hasDefined(&quot;justification&quot;) &amp;&amp; bulkJustification.isDefined()) {</span>
+<span class="fc" id="L81">            configNode.get(&quot;justification&quot;).set(bulkJustification.asString());</span>
+        }
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (configNode.hasDefined(&quot;classify&quot;)) {</span>
+<span class="fc" id="L85">            ModelNode classify = configNode.get(&quot;classify&quot;);</span>
+<span class="pc bpc" id="L86" title="3 of 4 branches missed.">            if (!classify.hasDefined(&quot;SOURCE&quot;) &amp;&amp; bulkClassify.hasDefined(&quot;SOURCE&quot;)) {</span>
+<span class="nc" id="L87">                classify.get(&quot;SOURCE&quot;).set(bulkClassify.get(&quot;SOURCE&quot;).asString());</span>
+            }
+<span class="pc bpc" id="L89" title="3 of 4 branches missed.">            if (!classify.hasDefined(&quot;BINARY&quot;) &amp;&amp; bulkClassify.hasDefined(&quot;BINARY&quot;)) {</span>
+<span class="nc" id="L90">                classify.get(&quot;BINARY&quot;).set(bulkClassify.get(&quot;BINARY&quot;).asString());</span>
+            }
+<span class="pc bpc" id="L92" title="3 of 4 branches missed.">            if (!classify.hasDefined(&quot;SEMANTIC&quot;) &amp;&amp; bulkClassify.hasDefined(&quot;SEMANTIC&quot;)) {</span>
+<span class="nc" id="L93">                classify.get(&quot;SEMANTIC&quot;).set(bulkClassify.get(&quot;SEMANTIC&quot;).asString());</span>
+            }
+<span class="pc bpc" id="L95" title="3 of 4 branches missed.">            if (!classify.hasDefined(&quot;OTHER&quot;) &amp;&amp; bulkClassify.hasDefined(&quot;OTHER&quot;)) {</span>
+<span class="nc" id="L96">                classify.get(&quot;OTHER&quot;).set(bulkClassify.get(&quot;OTHER&quot;).asString());</span>
+            }
+<span class="fc" id="L98">        } else {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (bulkClassify.isDefined()) {</span>
+<span class="fc" id="L100">                configNode.get(&quot;classify&quot;).set(bulkClassify.asObject());</span>
+            }
+        }
+
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (configNode.hasDefined(&quot;attachments&quot;)) {</span>
+<span class="fc" id="L105">            ModelNode attachments = configNode.get(&quot;attachments&quot;);</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">            if (bulkAttachments.isDefined()) {</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                for (String key : bulkAttachments.keys()) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                    if (!attachments.hasDefined(key)) {</span>
+<span class="nc" id="L109">                        attachments.get(key).set(bulkAttachments.get(key));</span>
+                    }
+<span class="nc" id="L111">                }</span>
+            }
+<span class="fc" id="L113">        } else {</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (bulkAttachments.isDefined()) {</span>
+<span class="fc" id="L115">                configNode.get(&quot;attachments&quot;).set(bulkAttachments.asObject());</span>
+            }
+        }
+
+<span class="fc bfc" id="L119" title="All 4 branches covered.">        if (!configNode.hasDefined(&quot;criticality&quot;) &amp;&amp; bulkCriticality.isDefined()) {</span>
+<span class="fc" id="L120">            configNode.get(&quot;criticality&quot;).set(bulkCriticality.asString());</span>
+        }
+
+<span class="fc" id="L123">        return new DifferenceRecipe(configNode, analysisContext);</span>
+    }
+
+    @Override
+    public void close() throws Exception {
+<span class="nc" id="L128">    }</span>
+
+    @Override
+    protected ModelNode getRecipesConfigurationAndInitialize() {
+<span class="fc" id="L132">        ModelNode configNode = analysisContext.getConfiguration();</span>
+<span class="fc" id="L133">        bulkClassify = configNode.get(&quot;classify&quot;);</span>
+<span class="fc" id="L134">        bulkIgnore = configNode.get(&quot;ignore&quot;);</span>
+<span class="fc" id="L135">        bulkJustification = configNode.get(&quot;justification&quot;);</span>
+<span class="fc" id="L136">        bulkAttachments = configNode.get(&quot;attachments&quot;);</span>
+<span class="fc" id="L137">        bulkCriticality = configNode.get(&quot;criticality&quot;);</span>
+
+<span class="fc" id="L139">        return configNode.get(&quot;differences&quot;);</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="nc" id="L145">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/differences-schema.json&quot;),</span>
+                StandardCharsets.UTF_8);
+    }
+
+    public static class DifferenceRecipe extends DifferenceMatchRecipe {
+        protected final boolean ignore;
+        protected final String justification;
+        protected final Map&lt;CompatibilityType, DifferenceSeverity&gt; classification;
+        protected final Map&lt;String, String&gt; newAttachments;
+        protected final Criticality criticality;
+
+        public DifferenceRecipe(ModelNode config, AnalysisContext ctx) {
+<span class="fc" id="L157">            super(config, &quot;classify&quot;, &quot;ignore&quot;, &quot;justification&quot;, &quot;attachments&quot;, &quot;criticality&quot;);</span>
+<span class="fc" id="L158">            ignore = config.get(&quot;ignore&quot;).asBoolean(false);</span>
+<span class="fc" id="L159">            justification = config.get(&quot;justification&quot;).asString(null);</span>
+<span class="fc" id="L160">            classification = parseClassification(config.get(&quot;classify&quot;));</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">            if (config.hasDefined(&quot;attachments&quot;)) {</span>
+<span class="fc" id="L162">                ModelNode attachments = config.get(&quot;attachments&quot;);</span>
+<span class="fc" id="L163">                newAttachments = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                for (String key : attachments.keys()) {</span>
+<span class="fc" id="L165">                    newAttachments.put(key, attachments.get(key).asString(null));</span>
+<span class="fc" id="L166">                }</span>
+<span class="fc" id="L167">            } else {</span>
+<span class="fc" id="L168">                newAttachments = emptyMap();</span>
+            }
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">            if (config.hasDefined(&quot;criticality&quot;)) {</span>
+<span class="fc" id="L172">                String name = config.get(&quot;criticality&quot;).asString();</span>
+<span class="fc" id="L173">                criticality = ctx.getCriticalityByName(name);</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">                if (criticality == null) {</span>
+<span class="nc" id="L175">                    LOG.warn(&quot;Unknown criticality '&quot; + name + &quot;' used in difference match recipe. Letting the&quot; +</span>
+                            &quot; analysis continue but the results might be skewed.&quot;);
+                }
+<span class="fc" id="L178">            } else {</span>
+<span class="fc" id="L179">                criticality = null;</span>
+            }
+<span class="fc" id="L181">        }</span>
+
+        @Override
+        public Difference transformMatching(Difference difference, Element oldElement, Element newElement) {
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            if (ignore) {</span>
+<span class="fc" id="L186">                return null;</span>
+            }
+
+            // avoid creating a copy when no updates would be made...
+<span class="pc bpc" id="L190" title="1 of 8 branches missed.">            if (justification == null &amp;&amp; classification.isEmpty() &amp;&amp; newAttachments.isEmpty() &amp;&amp; criticality == null) {</span>
+<span class="nc" id="L191">                return difference;</span>
+            }
+
+<span class="fc" id="L194">            Difference.Builder copy = Difference.copy(difference);</span>
+
+<span class="fc bfc" id="L196" title="All 2 branches covered.">            if (justification != null) {</span>
+<span class="fc" id="L197">                copy.withJustification(justification);</span>
+            }
+
+<span class="fc bfc" id="L200" title="All 2 branches covered.">            if (criticality != null) {</span>
+<span class="fc" id="L201">                copy.withCriticality(criticality);</span>
+            }
+
+<span class="fc" id="L204">            copy.addClassifications(classification);</span>
+
+<span class="fc" id="L206">            copy.addAttachments(newAttachments);</span>
+
+<span class="fc" id="L208">            return copy.build();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
