@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalysisContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">AnalysisContext.java</span></div><h1>AnalysisContext.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.revapi.configuration.Configurable;
+import org.revapi.configuration.JSONUtil;
+
+/**
+ * An analysis context is an aggregation of the APIs to check and configuration for the analysis.
+ *
+ * &lt;p&gt;The analysis context can also contain arbitrary data that can be then accessed by the extensions. This can be used
+ * to pass runtime data to the extensions that cannot be captured by their configurations.
+ *
+ * &lt;p&gt;The configuration accepted by the builder is actually of 2 forms.
+ * &lt;ol&gt;
+ * &lt;li&gt;The &quot;old style&quot; configuration where each extension could be configured at most once
+ * &lt;li&gt;The &quot;new style&quot; configuration that enables multiple configurations for each extension and is more easily
+ * translatable to XML.
+ * &lt;/ol&gt;
+ * &lt;p&gt;
+ * In the old format, the configuration of an extension was nested inside objects corresponding to its exploded
+ * extension id. E.g. if the extension had an id of &quot;my.extension&quot;, the configuration would look like:
+ * &lt;pre&gt;&lt;code&gt;
+ *     {
+ *         &quot;my&quot;: {
+ *             &quot;extension&quot;: {
+ *                 ... the actual configuration of the extension ...
+ *             }
+ *         }
+ *     }
+ * &lt;/code&gt;&lt;/pre&gt;
+ * The original idea for doing things this way was that such configuration is easily mergeable
+ * (e.g. when configuration is split across multiple files). There can be only one configuration for each extension and
+ * each extension resides in a different &quot;section&quot; of the configuration. The nesting provides for a seemingly logical
+ * structure of the configuration.
+ *
+ * &lt;p&gt;On the other hand the new configuration format is different. It stresses the possibility of having more than 1
+ * configuration for an extension and is more easily translatable into XML. On the other hand it is not that well nested
+ * as the old configuration style so it might not look that well logically structured. The new configuration looks like
+ * this:
+ * &lt;pre&gt;&lt;code&gt;
+ *     [
+ *         {
+ *             &quot;extension&quot;: &quot;my.extension&quot;,
+ *             &quot;id&quot;: &quot;optional-id&quot;,
+ *             &quot;configuration&quot;: {
+ *                 ... the actual configuration of the extension ...
+ *             }
+ *         },
+ *         {
+ *             &quot;extension&quot;: &quot;other.extension&quot;,
+ *             &quot;configuration&quot;: {
+ *                 ... the actual configuration of the extension ...
+ *             }
+ *         }
+ *     ]
+ * &lt;/code&gt;&lt;/pre&gt;
+ * Notice that configurations for different extensions (as well as different configurations for the same extension) are
+ * contained in a top level list. The configurations of different extensions are therefore no longer nested inside each
+ * other, but are &quot;laid out&quot; sequentially.
+ *
+ * &lt;p&gt;Each such configuration can optionally be identified by an arbitrary ID which can be used during merging of
+ * configuration from multiple sources.
+ *
+ * &lt;p&gt;&lt;b&gt;Merging Configurations&lt;/b&gt;
+ *
+ * &lt;p&gt;As was the case with the old style configurations, the new style configurations can also be merged into each other
+ * enabling composition of the final analysis configuration from multiple sources. Because each extension can be
+ * configured multiple times in the new style configuration, the identification of the configs to merge is slightly more
+ * complicated than it used to.
+ *
+ * &lt;p&gt;As long as the &quot;master&quot; configuration and &quot;mergee&quot; configuration contain ids for each configuration of each
+ * extension things are simple. Configurations for the same extension with the same ID are merged together, otherwise
+ * their added to the list of all extension configurations.
+ *
+ * &lt;p&gt;Things get a little bit more complex when the configurations don't have an explicit ID. This use case is supported
+ * for seamless conversion from old style configuration (where it didn't make sense to have any kind of configuration
+ * ID) to new style configurations that we support now (after all there are quite some clients already having their
+ * configurations set up and it would be bad to force them to rewrite them all).
+ *
+ * &lt;p&gt;Simply put, id-less configurations are mergeable as long as the master configuration contains only a single
+ * configuration for given extension and there is just 1 id-less configuration for given extension in the &quot;mergee&quot;.
+ *
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public final class AnalysisContext {
+
+    private final Locale locale;
+    private final ModelNode configuration;
+    private final API oldApi;
+    private final API newApi;
+    private final Map&lt;String, Object&gt; data;
+    private final Map&lt;DifferenceSeverity, Criticality&gt; defaultSeverityMapping;
+    private final Map&lt;String, Criticality&gt; criticalityByName;
+
+    /**
+     * Constructor
+     *
+     * @param locale        the locale the analysis reporters should use
+     * @param configuration configuration represented as DMR node
+     * @param oldApi        the old API
+     * @param newApi        the new API
+     * @param data          the data that should be attached to the analysis context
+     */
+    private AnalysisContext(@Nonnull Locale locale, @Nullable ModelNode configuration, @Nonnull API oldApi,
+            @Nonnull API newApi, @Nonnull Map&lt;String, Object&gt; data, Collection&lt;Criticality&gt; knownCriticalities,
+<span class="fc" id="L148">            Map&lt;DifferenceSeverity, Criticality&gt; defaultSeverityMapping) {</span>
+<span class="fc" id="L149">        this.locale = locale;</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (configuration == null) {</span>
+<span class="fc" id="L151">            this.configuration = new ModelNode();</span>
+<span class="fc" id="L152">            this.configuration.setEmptyList();</span>
+        } else {
+<span class="fc" id="L154">            this.configuration = configuration;</span>
+        }
+<span class="fc" id="L156">        this.oldApi = oldApi;</span>
+<span class="fc" id="L157">        this.newApi = newApi;</span>
+<span class="fc" id="L158">        this.data = data;</span>
+<span class="fc" id="L159">        this.criticalityByName = knownCriticalities.stream().collect(toMap(Criticality::getName, identity()));</span>
+<span class="fc" id="L160">        this.defaultSeverityMapping = defaultSeverityMapping;</span>
+<span class="fc" id="L161">    }</span>
+
+    /**
+     * Returns a new analysis context builder that extracts the information about the available extensions from
+     * the provided Revapi instance.
+     *
+     * &lt;p&gt;The extensions have to be known so that both old and new style of configuration can be usefully worked with.
+     *
+     * @param revapi the revapi instance to read the available extensions from
+     * @return a new analysis context builder
+     */
+    public static Builder builder(Revapi revapi) {
+<span class="fc" id="L173">        return builder(revapi.getPipelineConfiguration());</span>
+    }
+
+
+    /**
+     * Returns a new analysis context builder that extracts the information about the available extensions from
+     * the provided pipeline configuration.
+     *
+     * &lt;p&gt;The extensions have to be known so that both old and new style of configuration can be usefully worked with.
+     *
+     * @param pipelineConfiguration the pipeline configuration to initialize from
+     * @return a new analysis context builder
+     */
+    public static Builder builder(PipelineConfiguration pipelineConfiguration) {
+<span class="fc" id="L187">        List&lt;String&gt; knownExtensionIds = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L189">        addExtensionIds(pipelineConfiguration.getApiAnalyzerTypes(), knownExtensionIds);</span>
+<span class="fc" id="L190">        addExtensionIds(pipelineConfiguration.getTransformTypes(), knownExtensionIds);</span>
+<span class="fc" id="L191">        addExtensionIds(pipelineConfiguration.getFilterTypes(), knownExtensionIds);</span>
+<span class="fc" id="L192">        addExtensionIds(pipelineConfiguration.getReporterTypes(), knownExtensionIds);</span>
+
+<span class="fc" id="L194">        return new Builder(knownExtensionIds, pipelineConfiguration.getCriticalities(),</span>
+<span class="fc" id="L195">                pipelineConfiguration.getSeverityMapping());</span>
+    }
+
+    /**
+     * This method can be used to instantiate a new analysis context builder without the need for prior instantiation
+     * of Revapi. Such builder is only able to process a new-style configuration though!
+     *
+     * &lt;p&gt;This analysis context will also always uses the default criticalities and severity-to-criticality mapping.
+     *
+     * @return a new analysis context builder
+     */
+    public static Builder builder() {
+<span class="fc" id="L207">        return new Builder(null, Criticality.defaultCriticalities(), Criticality.defaultSeverityMapping());</span>
+    }
+
+    /**
+     * This is generally only useful for extensions that delegate some of their functionality to other &quot;internal&quot;
+     * extensions of their own that they need to configure.
+     *
+     * @param configuration the configuration to be supplied with the returned analysis context.
+     * @return an analysis context that is a clone of this instance but its configuration is replaced with the provided
+     * one.
+     */
+    public AnalysisContext copyWithConfiguration(ModelNode configuration) {
+<span class="fc" id="L219">        return new AnalysisContext(this.locale, configuration, this.oldApi, this.newApi, this.data,</span>
+<span class="fc" id="L220">                this.criticalityByName.values(), this.defaultSeverityMapping);</span>
+    }
+
+    @Nonnull
+    public Locale getLocale() {
+<span class="nc" id="L225">        return locale;</span>
+    }
+
+    @Nonnull
+    public ModelNode getConfiguration() {
+<span class="fc" id="L230">        return configuration;</span>
+    }
+
+    @Nonnull
+    public API getOldApi() {
+<span class="fc" id="L235">        return oldApi;</span>
+    }
+
+    @Nonnull
+    public API getNewApi() {
+<span class="fc" id="L240">        return newApi;</span>
+    }
+
+    @Nullable
+    public Object getData(String key) {
+<span class="nc" id="L245">        return data.get(key);</span>
+    }
+
+    @Nullable
+    public Criticality getCriticalityByName(String name) {
+<span class="nc" id="L250">        return criticalityByName.get(name);</span>
+    }
+
+    public Criticality getDefaultCriticality(DifferenceSeverity severity) {
+<span class="fc" id="L254">        return defaultSeverityMapping.get(severity);</span>
+    }
+
+    private static &lt;T extends Configurable&gt;
+    void addExtensionIds(Collection&lt;Class&lt;? extends T&gt;&gt; cs, List&lt;String&gt; extensionIds) {
+<span class="fc" id="L259">        cs.stream()</span>
+<span class="fc" id="L260">                .map(AnalysisContext::instantiate)</span>
+<span class="fc" id="L261">                .map(Configurable::getExtensionId)</span>
+<span class="fc" id="L262">                .filter(Objects::nonNull)</span>
+<span class="fc" id="L263">                .forEach(extensionIds::add);</span>
+<span class="fc" id="L264">    }</span>
+
+    private static &lt;T&gt; T instantiate(Class&lt;T&gt; cls) {
+        try {
+<span class="fc" id="L268">            return cls.newInstance();</span>
+<span class="nc" id="L269">        } catch (InstantiationException | IllegalAccessException e) {</span>
+<span class="nc" id="L270">            throw new IllegalStateException(&quot;Class &quot; + cls + &quot; does not have a public no-arg constructor.&quot;, e);</span>
+        }
+    }
+
+    public static final class Builder {
+        private final List&lt;String&gt; knownExtensionIds;
+        private final Set&lt;Criticality&gt; knownCriticalities;
+
+<span class="fc" id="L278">        private Locale locale = Locale.getDefault();</span>
+        private API oldApi;
+        private API newApi;
+        private ModelNode configuration;
+<span class="fc" id="L282">        private Map&lt;String, Object&gt; data = new HashMap&lt;&gt;(2);</span>
+        private final Map&lt;DifferenceSeverity, Criticality&gt; defaultSeverityMapping;
+
+        private Builder(List&lt;String&gt; knownExtensionIds, Set&lt;Criticality&gt; knownCriticalities,
+<span class="fc" id="L286">                Map&lt;DifferenceSeverity, Criticality&gt; defaultSeverityMapping) {</span>
+<span class="fc" id="L287">            this.knownExtensionIds = knownExtensionIds;</span>
+<span class="fc" id="L288">            this.knownCriticalities = knownCriticalities;</span>
+<span class="fc" id="L289">            this.defaultSeverityMapping = defaultSeverityMapping;</span>
+<span class="fc" id="L290">        }</span>
+
+        public Builder withLocale(Locale locale) {
+<span class="nc" id="L293">            this.locale = locale;</span>
+<span class="nc" id="L294">            return this;</span>
+        }
+
+        public Builder withOldAPI(API api) {
+<span class="fc" id="L298">            this.oldApi = api;</span>
+<span class="fc" id="L299">            return this;</span>
+        }
+
+        public Builder withNewAPI(API api) {
+<span class="fc" id="L303">            this.newApi = api;</span>
+<span class="fc" id="L304">            return this;</span>
+        }
+
+        public Builder withConfiguration(ModelNode data) {
+<span class="fc" id="L308">            this.configuration = convertToNewStyle(data);</span>
+<span class="fc" id="L309">            return this;</span>
+        }
+
+        public Builder withConfigurationFromJSON(String json) {
+<span class="fc" id="L313">            this.configuration = convertToNewStyle(ModelNode.fromJSONString(JSONUtil.stripComments(json)));</span>
+<span class="fc" id="L314">            return this;</span>
+        }
+
+        public Builder withConfigurationFromJSONStream(InputStream jsonStream) throws IOException {
+<span class="nc" id="L318">            this.configuration = convertToNewStyle(ModelNode</span>
+<span class="nc" id="L319">                    .fromJSONStream(JSONUtil.stripComments(jsonStream, StandardCharsets.UTF_8)));</span>
+<span class="nc" id="L320">            return this;</span>
+        }
+
+        /**
+         * Tries to merge the provided configuration into the already existing one.
+         *
+         * &lt;p&gt;See the {@link AnalysisContext} documentation for detailed explanation of the merging logic.
+         *
+         * @param config the configuration to merge
+         * @return this builder
+         */
+        public Builder mergeConfiguration(ModelNode config) {
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">            if (configuration == null) {</span>
+<span class="nc" id="L333">                configuration = new ModelNode();</span>
+<span class="nc" id="L334">                configuration.setEmptyList();</span>
+            }
+<span class="fc" id="L336">            mergeConfigs(this.configuration, convertToNewStyle(config));</span>
+<span class="fc" id="L337">            return this;</span>
+        }
+
+        public Builder mergeConfigurationFromJSON(String json) {
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">            if (configuration == null) {</span>
+<span class="nc" id="L342">                configuration = new ModelNode();</span>
+<span class="nc" id="L343">                configuration.setEmptyList();</span>
+            }
+<span class="fc" id="L345">            mergeConfigs(configuration, convertToNewStyle(ModelNode.fromJSONString(JSONUtil.stripComments(json))));</span>
+<span class="fc" id="L346">            return this;</span>
+        }
+
+        public Builder mergeConfigurationFromJSONStream(InputStream jsonStream) throws IOException {
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (configuration == null) {</span>
+<span class="nc" id="L351">                configuration = new ModelNode();</span>
+<span class="nc" id="L352">                configuration.setEmptyList();</span>
+            }
+<span class="nc" id="L354">            InputStream str = JSONUtil.stripComments(jsonStream, StandardCharsets.UTF_8);</span>
+<span class="nc" id="L355">            mergeConfigs(configuration, ModelNode.fromJSONStream(str));</span>
+<span class="nc" id="L356">            return this;</span>
+        }
+
+        public Builder withData(Map&lt;String, Object&gt; data) {
+<span class="nc" id="L360">            this.data.putAll(data);</span>
+<span class="nc" id="L361">            return this;</span>
+        }
+
+        public Builder withData(String key, Object value) {
+<span class="nc" id="L365">            this.data.put(key, value);</span>
+<span class="nc" id="L366">            return this;</span>
+        }
+
+        public AnalysisContext build() {
+<span class="fc" id="L370">            return new AnalysisContext(locale, configuration, oldApi, newApi, data, knownCriticalities,</span>
+                    defaultSeverityMapping);
+        }
+
+        private ModelNode convertToNewStyle(ModelNode configuration) {
+<span class="fc bfc" id="L375" title="All 2 branches covered.">            if (configuration.getType() == ModelType.LIST) {</span>
+<span class="fc" id="L376">                Map&lt;String, Set&lt;String&gt;&gt; idsByExtension = new HashMap&lt;&gt;(4);</span>
+<span class="fc bfc" id="L377" title="All 2 branches covered.">                for (ModelNode c : configuration.asList()) {</span>
+
+<span class="fc bfc" id="L379" title="All 2 branches covered.">                    if (c.hasDefined(&quot;id&quot;)) {</span>
+<span class="fc" id="L380">                        String extension = c.get(&quot;extension&quot;).asString();</span>
+<span class="fc" id="L381">                        String id = c.get(&quot;id&quot;).asString();</span>
+
+<span class="fc" id="L383">                        boolean added = idsByExtension.computeIfAbsent(extension, x -&gt; new HashSet&lt;&gt;(2)).add(id);</span>
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">                        if (!added) {</span>
+<span class="nc" id="L385">                            throw new IllegalArgumentException(</span>
+                                    &quot;A configuration cannot contain 2 extension configurations with the same id. &quot; +
+                                            &quot;At least 2 extension configurations of extension '&quot; + extension +
+                                            &quot;' have the id '&quot; + id + &quot;'.&quot;);
+                        }
+                    }
+<span class="fc" id="L391">                }</span>
+
+<span class="fc" id="L393">                return configuration;</span>
+            }
+
+<span class="pc bpc" id="L396" title="1 of 2 branches missed.">            if (knownExtensionIds == null) {</span>
+<span class="nc" id="L397">                throw new IllegalArgumentException(</span>
+                        &quot;The analysis context builder wasn't supplied with the list of known extension ids,&quot; +
+                                &quot; so it only can process new-style configurations.&quot;);
+            }
+
+<span class="fc" id="L402">            ModelNode newStyleConfig = new ModelNode();</span>
+<span class="fc" id="L403">            newStyleConfig.setEmptyList();</span>
+
+            extensionScan:
+<span class="fc bfc" id="L406" title="All 2 branches covered.">            for (String extensionId : knownExtensionIds) {</span>
+<span class="fc" id="L407">                String[] explodedId = extensionId.split(&quot;\\.&quot;);</span>
+
+<span class="fc" id="L409">                ModelNode extConfig = configuration;</span>
+<span class="fc bfc" id="L410" title="All 2 branches covered.">                for (String segment : explodedId) {</span>
+<span class="fc bfc" id="L411" title="All 2 branches covered.">                    if (!extConfig.hasDefined(segment)) {</span>
+<span class="fc" id="L412">                        continue extensionScan;</span>
+                    } else {
+<span class="fc" id="L414">                        extConfig = extConfig.get(segment);</span>
+                    }
+                }
+
+<span class="fc" id="L418">                ModelNode extNewStyle = new ModelNode();</span>
+<span class="fc" id="L419">                extNewStyle.get(&quot;extension&quot;).set(extensionId);</span>
+<span class="fc" id="L420">                extNewStyle.get(&quot;configuration&quot;).set(extConfig);</span>
+
+<span class="fc" id="L422">                newStyleConfig.add(extNewStyle);</span>
+<span class="fc" id="L423">            }</span>
+
+<span class="fc" id="L425">            return newStyleConfig;</span>
+        }
+
+        private static void splitByExtensionAndId(List&lt;ModelNode&gt; configs,
+                Map&lt;String, Map&lt;String, ModelNode&gt;&gt; byExtensionAndId,
+                Map&lt;String, List&lt;ModelNode&gt;&gt; idlessByExtension) {
+<span class="fc bfc" id="L431" title="All 2 branches covered.">            for (ModelNode c : configs) {</span>
+<span class="fc" id="L432">                String extensionId = c.get(&quot;extension&quot;).asString();</span>
+<span class="fc bfc" id="L433" title="All 2 branches covered.">                if (!c.hasDefined(&quot;id&quot;)) {</span>
+<span class="fc" id="L434">                    idlessByExtension.computeIfAbsent(extensionId, x -&gt; new ArrayList&lt;&gt;(2)).add(c);</span>
+<span class="fc" id="L435">                    continue;</span>
+                }
+
+<span class="fc" id="L438">                String id = c.get(&quot;id&quot;).asString();</span>
+
+<span class="fc" id="L440">                byExtensionAndId.computeIfAbsent(extensionId, x -&gt; new HashMap&lt;&gt;(2)).compute(id, (i, n) -&gt; {</span>
+<span class="pc bpc" id="L441" title="1 of 2 branches missed.">                    if (n == null) {</span>
+<span class="fc" id="L442">                        return c;</span>
+                    } else {
+<span class="nc" id="L444">                        throw new IllegalArgumentException(</span>
+                                &quot;There cannot be 2 or more configurations with the same ID.&quot;);
+                    }
+                });
+<span class="fc" id="L448">            }</span>
+<span class="fc" id="L449">        }</span>
+
+        private static void mergeConfigs(ModelNode a, ModelNode b) {
+<span class="fc" id="L452">            Map&lt;String, Map&lt;String, ModelNode&gt;&gt; aByExtensionAndId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L453">            Map&lt;String, List&lt;ModelNode&gt;&gt; idlessAByExtensionId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L454">            splitByExtensionAndId(a.asList(), aByExtensionAndId, idlessAByExtensionId);</span>
+
+<span class="fc" id="L456">            Map&lt;String, Map&lt;String, ModelNode&gt;&gt; bByExtensionAndId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L457">            Map&lt;String, List&lt;ModelNode&gt;&gt; idlessBByExtensionId = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L458">            splitByExtensionAndId(b.asList(), bByExtensionAndId, idlessBByExtensionId);</span>
+
+            //we cannot merge if:
+            //1) &quot;a&quot; contains 2 or more (idless or not) for an extension and b contains at least 1 idless for an extension
+            //2) &quot;a&quot; contains at least 1 for an extension and b contains 2 or more idless for an extension
+<span class="fc" id="L463">            Stream.concat(aByExtensionAndId.keySet().stream(), idlessAByExtensionId.keySet().stream()).forEach(ext -&gt; {</span>
+<span class="fc" id="L464">                int aCnt = idlessAByExtensionId.getOrDefault(ext, emptyList()).size()</span>
+<span class="fc" id="L465">                        + aByExtensionAndId.getOrDefault(ext, emptyMap()).size();</span>
+
+<span class="fc" id="L467">                int bCnt = idlessBByExtensionId.getOrDefault(ext, emptyList()).size();</span>
+
+                //rule 1
+<span class="pc bpc" id="L470" title="1 of 4 branches missed.">                if (aCnt &gt; 1 &amp;&amp; bCnt &gt; 0) {</span>
+<span class="fc" id="L471">                    throw new IllegalArgumentException(</span>
+                            &quot;The configuration already contains more than 1 configuration for extension &quot; +
+                                    ext + &quot;. Cannot determine which one of them to merge&quot; +
+                                    &quot; the new configuration(s) (which don't have an explicit ID) into.&quot;);
+                }
+
+                //rule 2
+<span class="pc bpc" id="L478" title="1 of 4 branches missed.">                if (aCnt &gt; 0 &amp;&amp; bCnt &gt; 1) {</span>
+<span class="fc" id="L479">                    throw new IllegalArgumentException(</span>
+                            &quot;The configuration already contains 1 or more configurations for extension &quot; +
+                                    ext + &quot;. At the same time, the configuration to merge already contains 2 or more&quot; +
+                                    &quot; configurations for the same extension without an explicit ID.&quot; +
+                                    &quot; Cannot figure out how to merge these together.&quot;);
+                }
+<span class="fc" id="L485">            });</span>
+
+<span class="fc" id="L487">            int bcIdx = 0;</span>
+<span class="fc bfc" id="L488" title="All 2 branches covered.">            for (ModelNode bc : b.asList()) {</span>
+<span class="fc bfc" id="L489" title="All 2 branches covered.">                String bcId = bc.hasDefined(&quot;id&quot;) ? bc.get(&quot;id&quot;).asString() : null;</span>
+<span class="fc" id="L490">                String bcExtension = bc.get(&quot;extension&quot;).asString();</span>
+
+<span class="fc bfc" id="L492" title="All 2 branches covered.">                if (bcId == null) {</span>
+<span class="fc" id="L493">                    List&lt;ModelNode&gt; idless = idlessAByExtensionId.get(bcExtension);</span>
+<span class="fc bfc" id="L494" title="All 2 branches covered.">                    if (idless != null) {</span>
+<span class="pc bpc" id="L495" title="1 of 2 branches missed.">                        if (idless.size() == 1) {</span>
+<span class="fc" id="L496">                            List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L497">                            path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
+<span class="fc" id="L498">                            mergeNodes(bcExtension, null, path, idless.get(0).get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
+<span class="fc" id="L499">                        }</span>
+                    } else {
+<span class="fc" id="L501">                        Map&lt;String, ModelNode&gt; aExtensions = aByExtensionAndId.get(bcExtension);</span>
+<span class="fc bfc" id="L502" title="All 2 branches covered.">                        if (aExtensions == null) {</span>
+<span class="fc" id="L503">                            a.add(bc);</span>
+<span class="fc" id="L504">                            continue;</span>
+                        }
+
+<span class="fc" id="L507">                        List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L508">                        path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
+
+<span class="fc" id="L510">                        ModelNode aConfig = aExtensions.values().iterator().next();</span>
+<span class="fc" id="L511">                        mergeNodes(bcExtension, null, path, aConfig.get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
+                    }
+<span class="fc" id="L513">                } else {</span>
+<span class="fc" id="L514">                    Map&lt;String, ModelNode&gt; aExtensions = aByExtensionAndId.get(bcExtension);</span>
+<span class="pc bpc" id="L515" title="1 of 2 branches missed.">                    if (aExtensions == null) {</span>
+<span class="nc" id="L516">                        a.add(bc);</span>
+<span class="nc" id="L517">                        continue;</span>
+                    }
+
+<span class="fc" id="L520">                    ModelNode aConfig = aExtensions.get(bcId);</span>
+
+<span class="fc bfc" id="L522" title="All 2 branches covered.">                    if (aConfig == null) {</span>
+<span class="fc" id="L523">                        a.add(bc);</span>
+                    } else {
+<span class="fc" id="L525">                        List&lt;String&gt; path = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L526">                        path.addAll(Arrays.asList(&quot;[&quot; + bcIdx + &quot;]&quot;, &quot;configuration&quot;));</span>
+<span class="fc" id="L527">                        mergeNodes(bcExtension, bcId, path, aConfig.get(&quot;configuration&quot;), bc.get(&quot;configuration&quot;));</span>
+                    }
+                }
+
+<span class="fc" id="L531">                bcIdx++;</span>
+<span class="fc" id="L532">            }</span>
+<span class="fc" id="L533">        }</span>
+
+        private static void mergeNodes(String extension, String id, List&lt;String&gt; path, ModelNode a, ModelNode b) {
+<span class="fc bfc" id="L536" title="All 3 branches covered.">            switch (b.getType()) {</span>
+                case LIST:
+<span class="fc bfc" id="L538" title="All 2 branches covered.">                    for (ModelNode v : b.asList()) {</span>
+<span class="fc" id="L539">                        a.add(v.clone());</span>
+<span class="fc" id="L540">                    }</span>
+<span class="fc" id="L541">                    break;</span>
+                case OBJECT:
+<span class="fc bfc" id="L543" title="All 2 branches covered.">                    for (String k : b.keys()) {</span>
+<span class="fc" id="L544">                        ModelNode ak = a.get(k);</span>
+<span class="fc" id="L545">                        path.add(k);</span>
+<span class="fc" id="L546">                        mergeNodes(extension, id, path, ak, b.get(k));</span>
+<span class="fc" id="L547">                        path.remove(path.size() - 1);</span>
+<span class="fc" id="L548">                    }</span>
+<span class="fc" id="L549">                    break;</span>
+                default:
+<span class="pc bpc" id="L551" title="1 of 2 branches missed.">                    if (a.isDefined()) {</span>
+<span class="nc" id="L552">                        String p = path.stream().collect(Collectors.joining(&quot;/&quot;));</span>
+<span class="nc" id="L553">                        throw new IllegalArgumentException(</span>
+                                &quot;A conflict detected while merging configurations of extension '&quot; + extension +
+                                        &quot;' with id '&quot; + id + &quot;'. A value on path '&quot; + p + &quot;' would overwrite an already existing one.&quot;);
+                    } else {
+<span class="fc" id="L557">                        a.set(b);</span>
+                    }
+            }
+<span class="fc" id="L560">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
