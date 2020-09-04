@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormalTypeParametersChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.generics</a> &gt; <span class="el_source">FormalTypeParametersChanged.java</span></div><h1>FormalTypeParametersChanged.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2018 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.generics;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.lang.model.element.Parameterizable;
+import javax.lang.model.element.TypeParameterElement;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaMethodElement;
+import org.revapi.java.spi.JavaModelElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">public final class FormalTypeParametersChanged extends CheckBase {</span>
+
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L47">        return EnumSet.of(Type.CLASS, Type.METHOD);</span>
+    }
+
+    @Override
+    protected void doVisitClass(@Nullable JavaTypeElement oldType, @Nullable JavaTypeElement newType) {
+<span class="fc" id="L52">        doVisit(oldType, newType);</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    protected void doVisitMethod(@Nullable JavaMethodElement oldMethod, @Nullable JavaMethodElement newMethod) {
+<span class="fc" id="L57">        doVisit(oldMethod, newMethod);</span>
+<span class="fc" id="L58">    }</span>
+
+    private void doVisit(@Nullable JavaModelElement oldElement, @Nullable JavaModelElement newElement) {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (!isBothAccessible(oldElement, newElement)) {</span>
+<span class="fc" id="L62">            return;</span>
+        }
+
+<span class="pc bpc" id="L65" title="2 of 4 branches missed.">        assert oldElement != null;</span>
+<span class="pc bpc" id="L66" title="2 of 4 branches missed.">        assert newElement != null;</span>
+
+<span class="fc" id="L68">        Parameterizable oldEl = (Parameterizable) oldElement.getDeclaringElement();</span>
+<span class="fc" id="L69">        Parameterizable newEl = (Parameterizable) newElement.getDeclaringElement();</span>
+
+<span class="fc" id="L71">        List&lt;? extends TypeParameterElement&gt; oldPars = oldEl.getTypeParameters();</span>
+<span class="fc" id="L72">        List&lt;? extends TypeParameterElement&gt; newPars = newEl.getTypeParameters();</span>
+
+<span class="pc bpc" id="L74" title="1 of 4 branches missed.">        if (oldPars.size() == 0 &amp;&amp; oldPars.size() == newPars.size()) {</span>
+<span class="fc" id="L75">            return;</span>
+        }
+
+<span class="fc" id="L78">        List&lt;TypeParameterElement&gt; added = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L79">        List&lt;TypeParameterElement&gt; removed = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L80">        Map&lt;TypeParameterElement, TypeParameterElement&gt; changed = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc" id="L82">        Iterator&lt;? extends TypeParameterElement&gt; oldIt = oldPars.iterator();</span>
+<span class="fc" id="L83">        Iterator&lt;? extends TypeParameterElement&gt; newIt = newPars.iterator();</span>
+
+<span class="fc bfc" id="L85" title="All 4 branches covered.">        while (oldIt.hasNext() &amp;&amp; newIt.hasNext()) {</span>
+<span class="fc" id="L86">            TypeParameterElement oldT = oldIt.next();</span>
+<span class="fc" id="L87">            TypeParameterElement newT = newIt.next();</span>
+<span class="fc" id="L88">            String oldS = Util.toUniqueString(oldT.asType());</span>
+<span class="fc" id="L89">            String newS = Util.toUniqueString(newT.asType());</span>
+
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (!oldS.equals(newS)) {</span>
+<span class="fc" id="L92">                changed.put(oldT, newT);</span>
+            }
+<span class="fc" id="L94">        }</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        while (oldIt.hasNext()) {</span>
+<span class="fc" id="L97">            removed.add(oldIt.next());</span>
+        }
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        while (newIt.hasNext()) {</span>
+<span class="fc" id="L101">            added.add(newIt.next());</span>
+        }
+
+<span class="fc bfc" id="L104" title="All 6 branches covered.">        if (!added.isEmpty() || !removed.isEmpty() || !changed.isEmpty()) {</span>
+<span class="fc" id="L105">            pushActive(oldElement, newElement, added, removed, changed);</span>
+        }
+<span class="fc" id="L107">    }</span>
+
+    @Nullable
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L112">        ActiveElements&lt;JavaModelElement&gt; els = popIfActive();</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (els == null) {</span>
+<span class="fc" id="L114">            return null;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L118">        List&lt;TypeParameterElement&gt; added = (List&lt;TypeParameterElement&gt;) els.context[0];</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L120">        List&lt;TypeParameterElement&gt; removed = (List&lt;TypeParameterElement&gt;) els.context[1];</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L122">        Map&lt;TypeParameterElement, TypeParameterElement&gt; changed =</span>
+            (Map&lt;TypeParameterElement, TypeParameterElement&gt;) els.context[2];
+
+<span class="fc" id="L125">        Parameterizable oldT = (Parameterizable) els.oldElement.getDeclaringElement();</span>
+
+<span class="fc" id="L127">        List&lt;Difference&gt; diffs = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if (oldT.getTypeParameters().isEmpty()) {</span>
+<span class="nc" id="L129">            diffs.add(createDifference(Code.GENERICS_ELEMENT_NOW_PARAMETERIZED,</span>
+<span class="nc" id="L130">                    Code.attachmentsFor(els.oldElement, els.newElement)));</span>
+        }
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        for (TypeParameterElement e : added) {</span>
+<span class="fc" id="L134">            diffs.add(</span>
+<span class="fc" id="L135">                createDifferenceWithExplicitParams(Code.GENERICS_FORMAL_TYPE_PARAMETER_ADDED,</span>
+<span class="fc" id="L136">                        Code.attachmentsFor(els.oldElement, els.newElement,</span>
+<span class="fc" id="L137">                                &quot;typeParameter&quot;, Util.toHumanReadableString(e)),</span>
+<span class="fc" id="L138">                        Util.toHumanReadableString(e))</span>
+            );
+<span class="fc" id="L140">        }</span>
+
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        for (TypeParameterElement e : removed) {</span>
+<span class="fc" id="L143">            diffs.add(createDifferenceWithExplicitParams(Code.GENERICS_FORMAL_TYPE_PARAMETER_REMOVED,</span>
+<span class="fc" id="L144">                    Code.attachmentsFor(els.oldElement, els.newElement,</span>
+<span class="fc" id="L145">                            &quot;typeParameter&quot;, Util.toHumanReadableString(e)),</span>
+<span class="fc" id="L146">                    Util.toHumanReadableString(e)));</span>
+<span class="fc" id="L147">        }</span>
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        for (Map.Entry&lt;TypeParameterElement, TypeParameterElement&gt; e : changed.entrySet()) {</span>
+<span class="fc" id="L150">            String oldP = Util.toHumanReadableString(e.getKey());</span>
+<span class="fc" id="L151">            String newP = Util.toHumanReadableString(e.getValue());</span>
+<span class="fc" id="L152">            diffs.add(createDifferenceWithExplicitParams(Code.GENERICS_FORMAL_TYPE_PARAMETER_CHANGED,</span>
+<span class="fc" id="L153">                    Code.attachmentsFor(els.oldElement, els.newElement,</span>
+                            &quot;oldTypeParameter&quot;, oldP,
+                            &quot;newTypeParameter&quot;, newP),
+                    oldP, newP));
+<span class="fc" id="L157">        }</span>
+
+<span class="fc" id="L159">        return diffs;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
