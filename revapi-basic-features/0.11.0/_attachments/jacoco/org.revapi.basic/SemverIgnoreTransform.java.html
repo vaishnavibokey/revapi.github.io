@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SemverIgnoreTransform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">SemverIgnoreTransform.java</span></div><h1>SemverIgnoreTransform.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.basic;
+
+import static java.util.stream.Collectors.toList;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.AnalysisContext;
+import org.revapi.Archive;
+import org.revapi.CompatibilityType;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.DifferenceTransform;
+import org.revapi.Element;
+import org.revapi.TransformationResult;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.3.7
+ */
+<span class="fc" id="L48">public class SemverIgnoreTransform&lt;E extends Element&lt;E&gt;&gt; implements DifferenceTransform&lt;E&gt; {</span>
+    private boolean enabled;
+    private DifferenceSeverity allowedSeverity;
+    private List&lt;String&gt; passThroughDifferences;
+
+    @Nonnull @Override public Pattern[] getDifferenceCodePatterns() {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        return enabled ? new Pattern[]{Pattern.compile(&quot;.*&quot;)} : new Pattern[0];</span>
+    }
+
+    @Override
+    public TransformationResult tryTransform(@Nullable E oldElement, @Nullable E newElement,
+            Difference difference) {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (!enabled) {</span>
+<span class="fc" id="L61">            return TransformationResult.keep();</span>
+        }
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (passThroughDifferences.contains(difference.code)) {</span>
+<span class="fc" id="L65">            return TransformationResult.keep();</span>
+        }
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (allowedSeverity == null) {</span>
+<span class="fc" id="L69">            return TransformationResult.replaceWith(asBreaking(difference));</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        } else if (allowedSeverity == DifferenceSeverity.BREAKING) {</span>
+<span class="fc" id="L71">            return TransformationResult.discard();</span>
+        } else {
+<span class="fc" id="L73">            DifferenceSeverity diffSeverity = getMaxSeverity(difference);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if (allowedSeverity.ordinal() - diffSeverity.ordinal() &gt;= 0) {</span>
+<span class="fc" id="L75">                return TransformationResult.discard();</span>
+            } else {
+<span class="fc" id="L77">                return TransformationResult.replaceWith(asBreaking(difference));</span>
+            }
+        }
+    }
+
+    private Difference asBreaking(Difference d) {
+<span class="fc" id="L83">        Difference.Builder bld = Difference.copy(d)</span>
+<span class="fc" id="L84">                .addClassification(CompatibilityType.OTHER, DifferenceSeverity.BREAKING)</span>
+<span class="fc" id="L85">                .addAttachment(&quot;breaksSemanticVersioning&quot;, &quot;true&quot;);</span>
+
+<span class="pc bpc" id="L87" title="2 of 4 branches missed.">        if (d.description == null || !d.description.endsWith(&quot;(breaks semantic versioning)&quot;)) {</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            bld.withDescription(d.description == null</span>
+<span class="nc" id="L89">                    ? &quot;(breaks semantic versioning)&quot;</span>
+<span class="fc" id="L90">                    : (d.description + &quot; (breaks semantic versioning)&quot;));</span>
+        }
+
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (!d.name.startsWith(&quot;Incompatible with the current version: &quot;)) {</span>
+<span class="fc" id="L94">            bld.withName(&quot;Incompatible with the current version: &quot; + d.name);</span>
+        }
+
+<span class="fc" id="L97">        return bld.build();</span>
+    }
+
+    private DifferenceSeverity getMaxSeverity(Difference diff) {
+<span class="pc" id="L101">        return diff.classification.values().stream().max((d1, d2) -&gt; d1.ordinal() - d2.ordinal()).get();</span>
+    }
+
+    @Override public void close() throws Exception {
+<span class="nc" id="L105">    }</span>
+
+    @Nullable @Override public String getExtensionId() {
+<span class="fc" id="L108">        return &quot;revapi.semver.ignore&quot;;</span>
+    }
+
+    @Nullable @Override public Reader getJSONSchema() {
+<span class="nc" id="L112">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/semver-ignore-schema.json&quot;),</span>
+                StandardCharsets.UTF_8);
+    }
+
+    @Override public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L117">        JsonNode node = analysisContext.getConfigurationNode();</span>
+
+<span class="fc" id="L119">        enabled = node.path(&quot;enabled&quot;).asBoolean(false);</span>
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (enabled) {</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if (hasMultipleElements(analysisContext.getOldApi().getArchives())</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">                    || hasMultipleElements(analysisContext.getNewApi().getArchives())) {</span>
+<span class="nc" id="L124">                throw new IllegalArgumentException(</span>
+                        &quot;The semver extension doesn't handle changes in multiple archives at once.&quot;);
+            }
+
+<span class="fc" id="L128">            Iterator&lt;? extends Archive&gt; oldArchives = analysisContext.getOldApi().getArchives().iterator();</span>
+<span class="fc" id="L129">            Iterator&lt;? extends Archive&gt; newArchives = analysisContext.getNewApi().getArchives().iterator();</span>
+
+<span class="pc bpc" id="L131" title="1 of 4 branches missed.">            if (!oldArchives.hasNext() || !newArchives.hasNext()) {</span>
+<span class="fc" id="L132">                enabled = false;</span>
+<span class="fc" id="L133">                return;</span>
+            }
+
+<span class="fc" id="L136">            Archive oldArchive = oldArchives.next();</span>
+<span class="fc" id="L137">            Archive newArchive = newArchives.next();</span>
+
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">            if (!(oldArchive instanceof Archive.Versioned)) {</span>
+<span class="nc" id="L140">                throw new IllegalArgumentException(&quot;Old archive doesn't support extracting the version.&quot;);</span>
+            }
+
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">            if (!(newArchive instanceof Archive.Versioned)) {</span>
+<span class="nc" id="L144">                throw new IllegalArgumentException(&quot;New archive doesn't support extracting the version.&quot;);</span>
+            }
+
+<span class="fc" id="L147">            String oldVersionString = ((Archive.Versioned) oldArchive).getVersion();</span>
+<span class="fc" id="L148">            String newVersionString = ((Archive.Versioned) newArchive).getVersion();</span>
+
+<span class="fc" id="L150">            Version oldVersion = Version.parse(oldVersionString);</span>
+<span class="fc" id="L151">            Version newVersion = Version.parse(newVersionString);</span>
+
+<span class="pc bpc" id="L153" title="1 of 6 branches missed.">            if (newVersion.major == 0 &amp;&amp; oldVersion.major == 0 &amp;&amp; !node.hasNonNull(&quot;versionIncreaseAllows&quot;)) {</span>
+<span class="fc" id="L154">                DifferenceSeverity minorChangeAllowed = asSeverity(node.path(&quot;versionIncreaseAllows&quot;).path(&quot;minor&quot;), DifferenceSeverity.BREAKING);</span>
+<span class="fc" id="L155">                DifferenceSeverity patchVersionAllowed = asSeverity(node.path(&quot;versionIncreaseAllows&quot;).path(&quot;patch&quot;), DifferenceSeverity.NON_BREAKING);</span>
+
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                if (newVersion.minor &gt; oldVersion.minor) {</span>
+<span class="fc" id="L158">                    allowedSeverity = minorChangeAllowed;</span>
+<span class="pc bpc" id="L159" title="2 of 4 branches missed.">                } else if (newVersion.minor == oldVersion.minor &amp;&amp; newVersion.patch &gt; oldVersion.patch) {</span>
+<span class="fc" id="L160">                    allowedSeverity = patchVersionAllowed;</span>
+                } else {
+<span class="nc" id="L162">                    allowedSeverity = null;</span>
+                }
+<span class="fc" id="L164">            } else {</span>
+<span class="fc" id="L165">                DifferenceSeverity majorChangeAllowed = asSeverity(node.path(&quot;versionIncreaseAllows&quot;).path(&quot;major&quot;), DifferenceSeverity.BREAKING);</span>
+<span class="fc" id="L166">                DifferenceSeverity minorChangeAllowed = asSeverity(node.path(&quot;versionIncreaseAllows&quot;).path(&quot;minor&quot;), DifferenceSeverity.NON_BREAKING);</span>
+<span class="fc" id="L167">                DifferenceSeverity patchVersionAllowed = asSeverity(node.path(&quot;versionIncreaseAllows&quot;).path(&quot;patch&quot;), DifferenceSeverity.EQUIVALENT);</span>
+
+<span class="fc bfc" id="L169" title="All 2 branches covered.">                if (newVersion.major &gt; oldVersion.major) {</span>
+<span class="fc" id="L170">                    allowedSeverity = majorChangeAllowed;</span>
+<span class="pc bpc" id="L171" title="1 of 4 branches missed.">                } else if (newVersion.major == oldVersion.major &amp;&amp; newVersion.minor &gt; oldVersion.minor) {</span>
+<span class="fc" id="L172">                    allowedSeverity = minorChangeAllowed;</span>
+                } else {
+<span class="fc" id="L174">                    allowedSeverity = patchVersionAllowed;</span>
+                }
+            }
+
+<span class="fc" id="L178">            passThroughDifferences = Collections.emptyList();</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">            if (node.hasNonNull(&quot;passThroughDifferences&quot;)) {</span>
+<span class="fc" id="L180">                passThroughDifferences =</span>
+<span class="fc" id="L181">                        StreamSupport.stream(node.path(&quot;passThroughDifferences&quot;).spliterator(), false)</span>
+<span class="fc" id="L182">                                .map(JsonNode::asText).collect(toList());</span>
+            }
+        }
+<span class="fc" id="L185">    }</span>
+
+    private boolean hasMultipleElements(Iterable&lt;?&gt; it) {
+<span class="fc" id="L188">        Iterator&lt;?&gt; i = it.iterator();</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        if (!i.hasNext()) {</span>
+<span class="fc" id="L190">            return false;</span>
+        }
+
+<span class="fc" id="L193">        i.next();</span>
+
+<span class="fc" id="L195">        return i.hasNext();</span>
+    }
+
+    private static final class Version {
+<span class="fc" id="L199">        private static final Pattern SEMVER_PATTERN =</span>
+<span class="fc" id="L200">                Pattern.compile(&quot;(\\d+)(\\.(\\d+)(?:\\.)?(\\d*))?(\\.|-|\\+)?([0-9A-Za-z-.]*)?&quot;);</span>
+
+        final int major;
+        final int minor;
+        final int patch;
+        final String sep;
+        final String suffix;
+
+        static Version parse(String version) {
+<span class="fc" id="L209">            Matcher m = SEMVER_PATTERN.matcher(version);</span>
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">            if (!m.matches()) {</span>
+<span class="nc" id="L211">                throw new IllegalArgumentException(&quot;Could not parse the version string '&quot; + version</span>
+                        + &quot;'. It does not follow the semver schema.&quot;);
+            }
+
+<span class="fc" id="L215">            int major = Integer.valueOf(m.group(1));</span>
+<span class="fc" id="L216">            String minorMatch = m.group(3);</span>
+<span class="pc bpc" id="L217" title="2 of 4 branches missed.">            int minor = minorMatch == null || minorMatch.isEmpty() ? 0 : Integer.valueOf(minorMatch);</span>
+<span class="fc" id="L218">            int patch = 0;</span>
+<span class="fc" id="L219">            String patchMatch = m.group(4);</span>
+<span class="pc bpc" id="L220" title="2 of 4 branches missed.">            if (patchMatch != null &amp;&amp; !patchMatch.isEmpty()) {</span>
+<span class="fc" id="L221">                patch = Integer.valueOf(patchMatch);</span>
+            }
+<span class="fc" id="L223">            String sep = m.group(5);</span>
+<span class="fc" id="L224">            String suffix = m.group(6);</span>
+
+<span class="pc bpc" id="L226" title="3 of 4 branches missed.">            if (sep != null &amp;&amp; sep.isEmpty()) {</span>
+<span class="nc" id="L227">                sep = null;</span>
+            }
+
+<span class="pc bpc" id="L230" title="2 of 4 branches missed.">            if (suffix != null &amp;&amp; suffix.isEmpty()) {</span>
+<span class="fc" id="L231">                suffix = null;</span>
+            }
+
+<span class="fc" id="L234">            return new Version(major, minor, patch, sep, suffix);</span>
+        }
+
+<span class="fc" id="L237">        Version(int major, int minor, int patch, String sep, String suffix) {</span>
+<span class="fc" id="L238">            this.major = major;</span>
+<span class="fc" id="L239">            this.minor = minor;</span>
+<span class="fc" id="L240">            this.patch = patch;</span>
+<span class="fc" id="L241">            this.sep = sep;</span>
+<span class="fc" id="L242">            this.suffix = suffix;</span>
+<span class="fc" id="L243">        }</span>
+    }
+
+    private static DifferenceSeverity asSeverity(JsonNode configNode, DifferenceSeverity defaultValue) {
+<span class="fc bfc" id="L247" title="All 2 branches covered.">        if (configNode.isMissingNode()) {</span>
+<span class="fc" id="L248">            return defaultValue;</span>
+        } else {
+<span class="pc bpc" id="L250" title="3 of 6 branches missed.">            switch (configNode.asText()) {</span>
+                case &quot;none&quot;:
+<span class="fc" id="L252">                    return null;</span>
+                case &quot;equivalent&quot;:
+<span class="nc" id="L254">                    return DifferenceSeverity.EQUIVALENT;</span>
+                case &quot;nonBreaking&quot;:
+<span class="fc" id="L256">                    return DifferenceSeverity.NON_BREAKING;</span>
+                case &quot;potentiallyBreaking&quot;:
+<span class="fc" id="L258">                    return DifferenceSeverity.POTENTIALLY_BREAKING;</span>
+                case &quot;breaking&quot;:
+<span class="nc" id="L260">                    return DifferenceSeverity.BREAKING;</span>
+                default:
+<span class="nc" id="L262">                    return defaultValue;</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

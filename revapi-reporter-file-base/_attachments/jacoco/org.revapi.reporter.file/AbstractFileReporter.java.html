@@ -27,12 +27,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Deque;
-import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
 import org.revapi.AnalysisContext;
-import org.revapi.Criticality;
+import org.revapi.Difference;
 import org.revapi.DifferenceSeverity;
 import org.revapi.Element;
 import org.revapi.Report;
@@ -46,11 +45,10 @@ import org.slf4j.LoggerFactory;
  * (including &quot;out&quot; and &quot;err&quot; as special file names for standard output and standard error) and whether to
  * overwrite or append to an existing file.
  */
-<span class="fc" id="L49">public abstract class AbstractFileReporter implements Reporter {</span>
-<span class="fc" id="L50">    private static final Logger LOG = LoggerFactory.getLogger(AbstractFileReporter.class);</span>
+<span class="fc" id="L48">public abstract class AbstractFileReporter implements Reporter {</span>
+<span class="fc" id="L49">    private static final Logger LOG = LoggerFactory.getLogger(AbstractFileReporter.class);</span>
 
     protected DifferenceSeverity minLevel;
-    protected Criticality minCriticality;
     protected PrintWriter output;
     protected File file;
 
@@ -58,7 +56,7 @@ import org.slf4j.LoggerFactory;
     protected boolean keepEmptyFile;
 
     protected AnalysisContext analysis;
-<span class="fc" id="L61">    private boolean reportsInOutput = false;</span>
+<span class="fc" id="L59">    private boolean reportsInOutput = false;</span>
 
 
     /**
@@ -67,9 +65,9 @@ import org.slf4j.LoggerFactory;
      * @param wrt the output writer
      */
     protected void setOutput(PrintWriter wrt) {
-<span class="nc" id="L70">        this.output = wrt;</span>
-<span class="nc" id="L71">        this.shouldClose = true;</span>
-<span class="nc" id="L72">    }</span>
+<span class="nc" id="L68">        this.output = wrt;</span>
+<span class="nc" id="L69">        this.shouldClose = true;</span>
+<span class="nc" id="L70">    }</span>
 
     /**
      * Subclasses should write the reports to the {@link #output} in this method. This method MUST NOT close the
@@ -79,91 +77,76 @@ import org.slf4j.LoggerFactory;
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysis) {
-<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (this.analysis != null) {</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (this.analysis != null) {</span>
             try {
-<span class="nc" id="L84">                flushReports();</span>
-<span class="nc" id="L85">            } catch (IOException e) {</span>
-<span class="nc" id="L86">                throw new IllegalStateException(&quot;Failed to output previous analysis report.&quot;);</span>
-<span class="nc" id="L87">            }</span>
+<span class="nc" id="L82">                flushReports();</span>
+<span class="nc" id="L83">            } catch (IOException e) {</span>
+<span class="nc" id="L84">                throw new IllegalStateException(&quot;Failed to output previous analysis report.&quot;);</span>
+<span class="nc" id="L85">            }</span>
         }
 
-<span class="fc" id="L90">        this.analysis = analysis;</span>
+<span class="fc" id="L88">        this.analysis = analysis;</span>
 
-<span class="fc" id="L92">        String minLevel = analysis.getConfiguration().get(&quot;minSeverity&quot;).asString(null);</span>
-<span class="fc" id="L93">        String minCrit = analysis.getConfiguration().get(&quot;minCriticality&quot;).asString(null);</span>
-<span class="fc" id="L94">        String output = analysis.getConfiguration().get(&quot;output&quot;).asString(null);</span>
-<span class="fc bfc" id="L95" title="All 2 branches covered.">        output = output == null ? &quot;out&quot; : output;</span>
+<span class="fc" id="L90">        String minLevel = analysis.getConfiguration().get(&quot;minSeverity&quot;).asString();</span>
+<span class="fc" id="L91">        String output = analysis.getConfiguration().get(&quot;output&quot;).asString();</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        output = &quot;undefined&quot;.equals(output) ? &quot;out&quot; : output;</span>
 
-<span class="fc" id="L97">        boolean append = analysis.getConfiguration().get(&quot;append&quot;).asBoolean(false);</span>
-<span class="pc bpc" id="L98" title="1 of 4 branches missed.">        keepEmptyFile = append || analysis.getConfiguration().get(&quot;keepEmptyFile&quot;).asBoolean(true);</span>
+<span class="fc" id="L94">        boolean append = analysis.getConfiguration().get(&quot;append&quot;).asBoolean(false);</span>
+<span class="pc bpc" id="L95" title="1 of 4 branches missed.">        keepEmptyFile = append || analysis.getConfiguration().get(&quot;keepEmptyFile&quot;).asBoolean(true);</span>
 
-<span class="pc bpc" id="L100" title="2 of 4 branches missed.">        if (minLevel == null &amp;&amp; minCrit == null) {</span>
-<span class="fc" id="L101">            LOG.warn(&quot;At least one of `minLevel` and `minCriticality` should to be defined. Defaulting to&quot; +</span>
-                    &quot; the obsolete behavior of reporting all potentially breaking elements.&quot;);
-<span class="fc" id="L103">            this.minLevel = DifferenceSeverity.POTENTIALLY_BREAKING;</span>
-        }
-
-<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (minLevel != null) {</span>
-<span class="nc" id="L107">            this.minLevel = DifferenceSeverity.valueOf(minLevel);</span>
-        }
-
-<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (minCrit != null) {</span>
-<span class="nc" id="L111">            this.minCriticality = analysis.getCriticalityByName(minCrit);</span>
-<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (minCriticality == null) {</span>
-<span class="nc" id="L113">                throw new IllegalArgumentException(&quot;Unknown criticality '&quot; + minCrit + &quot;'.&quot;);</span>
-            }
-        }
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        this.minLevel = &quot;undefined&quot;.equals(minLevel) ? DifferenceSeverity.POTENTIALLY_BREAKING :</span>
+<span class="pc" id="L98">                DifferenceSeverity.valueOf(minLevel);</span>
 
         OutputStream out;
 
-<span class="fc bfc" id="L119" title="All 3 branches covered.">        switch (output) {</span>
+<span class="fc bfc" id="L102" title="All 3 branches covered.">        switch (output) {</span>
         case &quot;out&quot;:
-<span class="fc" id="L121">            out = System.out;</span>
-<span class="fc" id="L122">            break;</span>
+<span class="fc" id="L104">            out = System.out;</span>
+<span class="fc" id="L105">            break;</span>
         case &quot;err&quot;:
-<span class="fc" id="L124">            out = System.err;</span>
-<span class="fc" id="L125">            break;</span>
+<span class="fc" id="L107">            out = System.err;</span>
+<span class="fc" id="L108">            break;</span>
         default:
-<span class="fc" id="L127">            file = new File(output);</span>
-<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (file.exists()) {</span>
-<span class="pc bpc" id="L129" title="1 of 2 branches missed.">                if (!file.isFile()) {</span>
-<span class="nc" id="L130">                    LOG.warn(</span>
-<span class="nc" id="L131">                            &quot;The configured file, '&quot; + file.getAbsolutePath() + &quot;' is not a file.&quot; +</span>
+<span class="fc" id="L110">            file = new File(output);</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (file.exists()) {</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">                if (!file.isFile()) {</span>
+<span class="nc" id="L113">                    LOG.warn(</span>
+<span class="nc" id="L114">                            &quot;The configured file, '&quot; + file.getAbsolutePath() + &quot;' is not a file.&quot; +</span>
                                     &quot; Defaulting the output to standard output.&quot;);
-<span class="nc" id="L133">                    out = System.out;</span>
-<span class="nc" id="L134">                    break;</span>
-<span class="pc bpc" id="L135" title="1 of 2 branches missed.">                } else if (!file.canWrite()) {</span>
-<span class="nc" id="L136">                    LOG.warn(</span>
-<span class="nc" id="L137">                            &quot;The configured file, '&quot; + file.getAbsolutePath() + &quot;' is not a writable.&quot; +</span>
+<span class="nc" id="L116">                    out = System.out;</span>
+<span class="nc" id="L117">                    break;</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">                } else if (!file.canWrite()) {</span>
+<span class="nc" id="L119">                    LOG.warn(</span>
+<span class="nc" id="L120">                            &quot;The configured file, '&quot; + file.getAbsolutePath() + &quot;' is not a writable.&quot; +</span>
                                     &quot; Defaulting the output to standard output.&quot;);
-<span class="nc" id="L139">                    out = System.out;</span>
-<span class="nc" id="L140">                    break;</span>
+<span class="nc" id="L122">                    out = System.out;</span>
+<span class="nc" id="L123">                    break;</span>
                 }
             } else {
-<span class="fc" id="L143">                File parent = file.getParentFile();</span>
-<span class="fc bfc" id="L144" title="All 4 branches covered.">                if (parent != null &amp;&amp; !parent.exists()) {</span>
-<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                    if (!parent.mkdirs()) {</span>
-<span class="nc" id="L146">                        LOG.warn(&quot;Failed to create directory structure to write to the configured output file '&quot; +</span>
-<span class="nc" id="L147">                                file.getAbsolutePath() + &quot;'. Defaulting the output to standard output.&quot;);</span>
-<span class="nc" id="L148">                        out = System.out;</span>
-<span class="nc" id="L149">                        break;</span>
+<span class="fc" id="L126">                File parent = file.getParentFile();</span>
+<span class="fc bfc" id="L127" title="All 4 branches covered.">                if (parent != null &amp;&amp; !parent.exists()) {</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">                    if (!parent.mkdirs()) {</span>
+<span class="nc" id="L129">                        LOG.warn(&quot;Failed to create directory structure to write to the configured output file '&quot; +</span>
+<span class="nc" id="L130">                                file.getAbsolutePath() + &quot;'. Defaulting the output to standard output.&quot;);</span>
+<span class="nc" id="L131">                        out = System.out;</span>
+<span class="nc" id="L132">                        break;</span>
                     }
                 }
             }
 
             try {
-<span class="fc" id="L155">                out = new FileOutputStream(output, append);</span>
-<span class="nc" id="L156">            } catch (FileNotFoundException e) {</span>
-<span class="nc" id="L157">                LOG.warn(&quot;Failed to create the configured output file '&quot; + file.getAbsolutePath() + &quot;'.&quot; +</span>
+<span class="fc" id="L138">                out = new FileOutputStream(output, append);</span>
+<span class="nc" id="L139">            } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L140">                LOG.warn(&quot;Failed to create the configured output file '&quot; + file.getAbsolutePath() + &quot;'.&quot; +</span>
                         &quot; Defaulting the output to standard output.&quot;, e);
-<span class="nc" id="L159">                out = System.out;</span>
-<span class="fc" id="L160">            }</span>
+<span class="nc" id="L142">                out = System.out;</span>
+<span class="fc" id="L143">            }</span>
         }
 
-<span class="fc bfc" id="L163" title="All 4 branches covered.">        shouldClose = out != System.out &amp;&amp; out != System.err;</span>
+<span class="fc bfc" id="L146" title="All 4 branches covered.">        shouldClose = out != System.out &amp;&amp; out != System.err;</span>
 
-<span class="fc" id="L165">        this.output = createOutputWriter(out, analysis);</span>
-<span class="fc" id="L166">    }</span>
+<span class="fc" id="L148">        this.output = createOutputWriter(out, analysis);</span>
+<span class="fc" id="L149">    }</span>
 
     /**
      * Creates a print writer to be used as an output from the supplied output stream.
@@ -176,7 +159,7 @@ import org.slf4j.LoggerFactory;
      * @return a print writer to be used as output
      */
     protected PrintWriter createOutputWriter(OutputStream stream, AnalysisContext ctx) {
-<span class="fc" id="L179">        return new PrintWriter(new OutputStreamWriter(stream, StandardCharsets.UTF_8));</span>
+<span class="fc" id="L162">        return new PrintWriter(new OutputStreamWriter(stream, StandardCharsets.UTF_8));</span>
     }
 
     /**
@@ -186,45 +169,28 @@ import org.slf4j.LoggerFactory;
      */
     @Override
     public void report(@Nonnull Report report) {
-<span class="fc" id="L189">        LOG.trace(&quot;Received report {}&quot;, report);</span>
+<span class="fc" id="L172">        LOG.trace(&quot;Received report {}&quot;, report);</span>
 
-<span class="pc bpc" id="L191" title="1 of 2 branches missed.">        if (report.getDifferences().isEmpty()) {</span>
-<span class="fc" id="L192">            return;</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if (report.getDifferences().isEmpty()) {</span>
+<span class="fc" id="L175">            return;</span>
         }
 
-<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (isReportable(report)) {</span>
-<span class="nc" id="L196">            reportsInOutput = true;</span>
-<span class="nc" id="L197">            doReport(report);</span>
-        }
-<span class="nc" id="L199">    }</span>
+<span class="nc" id="L178">        DifferenceSeverity maxReportedSeverity = DifferenceSeverity.NON_BREAKING;</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        for (Difference d : report.getDifferences()) {</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            for (DifferenceSeverity c : d.classification.values()) {</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                if (c.compareTo(maxReportedSeverity) &gt; 0) {</span>
+<span class="nc" id="L182">                    maxReportedSeverity = c;</span>
+                }
+<span class="nc" id="L184">            }</span>
+<span class="nc" id="L185">        }</span>
 
-    protected boolean isReportable(Report report) {
-<span class="nc" id="L202">        boolean ret = true;</span>
-
-        // it is guaranteed in initialize() that one of these is not null
-<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (minLevel != null) {</span>
-<span class="nc" id="L206">            ret = isReportableBySeverity(report);</span>
-        }
-
-<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (minCriticality != null) {</span>
-<span class="nc bnc" id="L210" title="All 4 branches missed.">            ret = ret &amp;&amp; isReportableByCriticality(report);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (maxReportedSeverity.compareTo(minLevel) &lt; 0) {</span>
+<span class="nc" id="L188">            return;</span>
         }
 
-<span class="nc" id="L213">        return ret;</span>
-    }
-
-    private boolean isReportableBySeverity(Report report) {
-<span class="nc" id="L217">        return report.getDifferences().stream()</span>
-<span class="nc" id="L218">                .flatMap(d -&gt; d.classification.values().stream())</span>
-<span class="nc bnc" id="L219" title="All 2 branches missed.">                .anyMatch(s -&gt; s.compareTo(minLevel) &gt;= 0);</span>
-    }
-
-    private boolean isReportableByCriticality(Report report) {
-<span class="nc" id="L223">        return report.getDifferences().stream()</span>
-<span class="nc" id="L224">                .map(d -&gt; d.criticality)</span>
-<span class="nc" id="L225">                .filter(Objects::nonNull)</span>
-<span class="nc bnc" id="L226" title="All 2 branches missed.">                .anyMatch(c -&gt; c.getLevel() &gt;= minCriticality.getLevel());</span>
-    }
+<span class="nc" id="L191">        reportsInOutput = true;</span>
+<span class="nc" id="L192">        doReport(report);</span>
+<span class="nc" id="L193">    }</span>
 
     /**
      * The report contains differences of at least the configured severity. This method is called from
@@ -234,48 +200,48 @@ import org.slf4j.LoggerFactory;
 
     @Override
     public void close() throws IOException {
-<span class="fc" id="L237">        flushReports();</span>
+<span class="fc" id="L203">        flushReports();</span>
 
-<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if (shouldClose) {</span>
-<span class="fc" id="L240">            output.close();</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (shouldClose) {</span>
+<span class="fc" id="L206">            output.close();</span>
         }
 
-<span class="pc bpc" id="L243" title="2 of 6 branches missed.">        if (!keepEmptyFile &amp;&amp; !reportsInOutput &amp;&amp; file != null) {</span>
-<span class="pc bpc" id="L244" title="1 of 2 branches missed.">            if (!file.delete()) {</span>
-<span class="nc" id="L245">                LOG.warn(&quot;Failed to delete an empty output file: &quot; + file.getAbsolutePath());</span>
+<span class="pc bpc" id="L209" title="2 of 6 branches missed.">        if (!keepEmptyFile &amp;&amp; !reportsInOutput &amp;&amp; file != null) {</span>
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">            if (!file.delete()) {</span>
+<span class="nc" id="L211">                LOG.warn(&quot;Failed to delete an empty output file: &quot; + file.getAbsolutePath());</span>
             }
         }
-<span class="fc" id="L248">    }</span>
+<span class="fc" id="L214">    }</span>
 
     /**
      * @return a comparator that can be used to sort the reports in the order of the compared elements.
      */
     protected Comparator&lt;Report&gt; getReportsByElementOrderComparator() {
-<span class="nc" id="L254">        return (r1, r2) -&gt; {</span>
-<span class="nc bnc" id="L255" title="All 2 branches missed.">            Element r1El = r1.getOldElement() == null ? r1.getNewElement() : r1.getOldElement();</span>
-<span class="nc bnc" id="L256" title="All 2 branches missed.">            Element r2El = r2.getOldElement() == null ? r2.getNewElement() : r2.getOldElement();</span>
+<span class="nc" id="L220">        return (r1, r2) -&gt; {</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">            Element r1El = r1.getOldElement() == null ? r1.getNewElement() : r1.getOldElement();</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            Element r2El = r2.getOldElement() == null ? r2.getNewElement() : r2.getOldElement();</span>
 
-<span class="nc" id="L258">            Deque&lt;Element&gt; r1Ancestry = new ArrayDeque&lt;&gt;();</span>
-<span class="nc" id="L259">            Deque&lt;Element&gt; r2Ancestry = new ArrayDeque&lt;&gt;();</span>
+<span class="nc" id="L224">            Deque&lt;Element&gt; r1Ancestry = new ArrayDeque&lt;&gt;();</span>
+<span class="nc" id="L225">            Deque&lt;Element&gt; r2Ancestry = new ArrayDeque&lt;&gt;();</span>
 
-<span class="nc bnc" id="L261" title="All 2 branches missed.">            while (r1El != null) {</span>
-<span class="nc" id="L262">                r1Ancestry.push(r1El);</span>
-<span class="nc" id="L263">                r1El = r1El.getParent();</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            while (r1El != null) {</span>
+<span class="nc" id="L228">                r1Ancestry.push(r1El);</span>
+<span class="nc" id="L229">                r1El = r1El.getParent();</span>
             }
 
-<span class="nc bnc" id="L266" title="All 2 branches missed.">            while (r2El != null) {</span>
-<span class="nc" id="L267">                r2Ancestry.push(r2El);</span>
-<span class="nc" id="L268">                r2El = r2El.getParent();</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">            while (r2El != null) {</span>
+<span class="nc" id="L233">                r2Ancestry.push(r2El);</span>
+<span class="nc" id="L234">                r2El = r2El.getParent();</span>
             }
 
-<span class="nc bnc" id="L271" title="All 4 branches missed.">            while (!r1Ancestry.isEmpty() &amp;&amp; !r2Ancestry.isEmpty()) {</span>
-<span class="nc" id="L272">                int order = r1Ancestry.pop().compareTo(r2Ancestry.pop());</span>
-<span class="nc bnc" id="L273" title="All 2 branches missed.">                if (order != 0) {</span>
-<span class="nc" id="L274">                    return order;</span>
+<span class="nc bnc" id="L237" title="All 4 branches missed.">            while (!r1Ancestry.isEmpty() &amp;&amp; !r2Ancestry.isEmpty()) {</span>
+<span class="nc" id="L238">                int order = r1Ancestry.pop().compareTo(r2Ancestry.pop());</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">                if (order != 0) {</span>
+<span class="nc" id="L240">                    return order;</span>
                 }
-<span class="nc" id="L276">            }</span>
+<span class="nc" id="L242">            }</span>
 
-<span class="nc" id="L278">            return r1Ancestry.size() - r2Ancestry.size();</span>
+<span class="nc" id="L244">            return r1Ancestry.size() - r2Ancestry.size();</span>
         };
     }
 }

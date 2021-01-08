@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractIncludeExcludeFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.filters</a> &gt; <span class="el_source">AbstractIncludeExcludeFilter.java</span></div><h1>AbstractIncludeExcludeFilter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.filters;
+
+import static java.util.stream.Collectors.toList;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.AnalysisContext;
+import org.revapi.Element;
+import org.revapi.ElementFilter;
+import org.revapi.java.spi.JavaAnnotationElement;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.java.spi.JavaModelElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.7.0
+ * @deprecated use the generic revapi filter + java matchers to achieve the same as is done here
+ */
+@Deprecated
+abstract class AbstractIncludeExcludeFilter implements ElementFilter {
+<span class="fc" id="L52">    private static final Logger LOG = LoggerFactory.getLogger(AbstractIncludeExcludeFilter.class);</span>
+
+    private final String configurationRootPath;
+    private final String schemaPath;
+<span class="fc" id="L56">    private final IdentityHashMap&lt;Object, InclusionState&gt; elementResults = new IdentityHashMap&lt;&gt;();</span>
+    protected Predicate&lt;String&gt; includeTest;
+    protected Predicate&lt;String&gt; excludeTest;
+    protected boolean doNothing;
+
+<span class="fc" id="L61">    protected AbstractIncludeExcludeFilter(String configurationRootPath, String schemaPath) {</span>
+<span class="fc" id="L62">        this.configurationRootPath = configurationRootPath;</span>
+<span class="fc" id="L63">        this.schemaPath = schemaPath;</span>
+<span class="fc" id="L64">    }</span>
+
+    protected Predicate&lt;String&gt; composeTest(List&lt;String&gt; fullMatches, List&lt;Pattern&gt; patterns) {
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        if (fullMatches != null &amp;&amp; fullMatches.size() &gt; 0) {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            return s -&gt; Collections.binarySearch(fullMatches, s) &gt;= 0;</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">        } else if (patterns != null &amp;&amp; patterns.size() &gt; 0) {</span>
+<span class="nc" id="L70">            return s -&gt; patterns.stream().anyMatch(p -&gt; p.matcher(s).matches());</span>
+        } else {
+<span class="nc" id="L72">            return null;</span>
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L78">        elementResults.clear();</span>
+<span class="fc" id="L79">    }</span>
+
+    @Override
+    public @Nullable String getExtensionId() {
+<span class="fc" id="L83">        return configurationRootPath;</span>
+    }
+
+    @Override
+    @Nullable
+    public Reader getJSONSchema() {
+<span class="fc" id="L89">        return new InputStreamReader(getClass().getResourceAsStream(schemaPath), StandardCharsets.UTF_8);</span>
+    }
+
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L95">        JsonNode root = analysisContext.getConfigurationNode();</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (root.isNull()) {</span>
+<span class="fc" id="L97">            doNothing = true;</span>
+<span class="fc" id="L98">            return;</span>
+        }
+
+<span class="nc" id="L101">        JsonNode regex = root.path(&quot;regex&quot;);</span>
+<span class="nc" id="L102">        boolean regexes = regex.asBoolean(false);</span>
+
+<span class="nc" id="L104">        List&lt;String&gt; fullMatches = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L105">        List&lt;Pattern&gt; patterns = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L107">        readMatches(root.path(&quot;exclude&quot;), regexes, fullMatches, patterns);</span>
+
+<span class="nc" id="L109">        validateConfiguration(true, fullMatches, patterns, regexes);</span>
+
+<span class="nc" id="L111">        this.excludeTest = composeTest(fullMatches, patterns);</span>
+
+<span class="nc" id="L113">        fullMatches = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L114">        patterns = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L116">        readMatches(root.path(&quot;include&quot;), regexes, fullMatches, patterns);</span>
+
+<span class="nc" id="L118">        validateConfiguration(false, fullMatches, patterns, regexes);</span>
+
+<span class="nc" id="L120">        this.includeTest = composeTest(fullMatches, patterns);</span>
+
+<span class="nc bnc" id="L122" title="All 4 branches missed.">        doNothing = includeTest == null &amp;&amp; excludeTest == null;</span>
+
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (!doNothing) {</span>
+<span class="nc" id="L125">            LOG.warn(&quot;Filtering using the revapi.java.filter.annotated has been deprecated in favor of revapi.filter&quot; +</span>
+                    &quot; in combination with the java matchers.&quot;);
+        }
+<span class="nc" id="L128">    }</span>
+
+    protected abstract void validateConfiguration(boolean excludes, List&lt;String&gt; fullMatches, List&lt;Pattern&gt; patterns,
+            boolean regexes);
+
+    private void readMatches(JsonNode array, boolean regexes, List&lt;String&gt; fullMatches, List&lt;Pattern&gt; patterns) {
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (!array.isArray()) {</span>
+<span class="nc" id="L135">            return;</span>
+        }
+
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        for (JsonNode ann : array) {</span>
+<span class="nc" id="L139">            String name = ann.asText();</span>
+
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (regexes) {</span>
+<span class="nc" id="L142">                patterns.add(Pattern.compile(name));</span>
+            } else {
+<span class="nc" id="L144">                fullMatches.add(name);</span>
+            }
+<span class="nc" id="L146">        }</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (!regexes) {</span>
+<span class="nc" id="L149">            Collections.sort(fullMatches);</span>
+        }
+<span class="nc" id="L151">    }</span>
+
+
+    @Override
+    public boolean applies(@Nullable Element&lt;?&gt; element) {
+<span class="fc" id="L156">        return decide(element);</span>
+    }
+
+    @Override
+    public boolean shouldDescendInto(@Nullable Object element) {
+<span class="fc" id="L161">        return true;</span>
+    }
+
+    @SuppressWarnings(&quot;ConstantConditions&quot;)
+    private boolean decide(@Nullable Object element) {
+        //we don't exclude anything that we don't handle...
+<span class="pc bpc" id="L167" title="3 of 4 branches missed.">        if (doNothing || !(element instanceof JavaElement)) {</span>
+<span class="fc" id="L168">            return true;</span>
+        }
+
+<span class="nc" id="L171">        InclusionState ret = elementResults.get(element);</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (ret != null) {</span>
+<span class="nc" id="L173">            return ret.toBoolean();</span>
+        }
+
+<span class="nc" id="L176">        JavaElement el = (JavaElement) element;</span>
+
+        //exploit the fact that parent elements are always filtered before the children
+<span class="nc" id="L179">        Element parent = el.getParent();</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        InclusionState parentInclusionState = parent == null ? InclusionState.UNDECIDED</span>
+<span class="nc" id="L181">                : elementResults.get(parent);</span>
+
+        //if we have no record of the parent inclusion, then this is a top-level class. Assume it wants to be included.
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (parentInclusionState == null) {</span>
+<span class="nc" id="L185">            parentInclusionState = InclusionState.UNDECIDED;</span>
+        }
+
+        //this is a java element, but not a model-based element - i.e. this is an annotation.
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (!(element instanceof JavaModelElement)) {</span>
+<span class="nc" id="L190">            return decideAnnotation((JavaAnnotationElement) element, parentInclusionState);</span>
+        }
+
+<span class="nc" id="L193">        JavaModelElement javaElement = (JavaModelElement) element;</span>
+
+<span class="nc" id="L195">        Stream&lt;String&gt; tested = getTestedElementRepresentations(javaElement);</span>
+
+        //let's first assume we're going to inherit the parent's inclusion state
+<span class="nc" id="L198">        ret = parentInclusionState;</span>
+
+        //now see if we need to change that assumption
+<span class="nc bnc" id="L201" title="All 4 branches missed.">        switch (parentInclusionState) {</span>
+        case INCLUDED:
+            //the parent was explicitly included in the results. We therefore only need to check if the annotations
+            //on this element should be excluded
+<span class="nc bnc" id="L205" title="All 2 branches missed.">            if (excludeTest != null) {</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                if (tested.anyMatch(s -&gt; excludeTest.test(s))) {</span>
+<span class="nc" id="L207">                    ret = InclusionState.EXCLUDED;</span>
+                }
+            }
+            break;
+        case EXCLUDED:
+<span class="nc bnc" id="L212" title="All 2 branches missed.">            if (!canBeReIncluded(javaElement)) {</span>
+<span class="nc" id="L213">                break;</span>
+            }
+            //the child element can be re-included, so the full suite of tests need to be run.
+            //i.e. this fall-through is intentional.
+        case UNDECIDED:
+            //ok, the parent is undecided. This means we have to do the full checks on this element.
+<span class="nc" id="L219">            List&lt;String&gt; testedList = null;</span>
+<span class="nc bnc" id="L220" title="All 4 branches missed.">            if (includeTest != null &amp;&amp; excludeTest != null) {</span>
+<span class="nc" id="L221">                testedList = tested.collect(toList());</span>
+<span class="nc" id="L222">                tested = testedList.stream();</span>
+            }
+
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            if (includeTest != null) {</span>
+                //ok, there is an include test but the parent is undecided. This means that the parent actually
+                //didn't match the include test. Let's check with this element.
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                ret = tested.anyMatch(s -&gt; includeTest.test(s))</span>
+<span class="nc" id="L229">                        ? InclusionState.INCLUDED</span>
+<span class="nc" id="L230">                        : InclusionState.EXCLUDED;</span>
+            }
+
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            if (excludeTest != null) {</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                if (testedList != null) {</span>
+<span class="nc" id="L235">                    tested = testedList.stream();</span>
+                }
+
+                //there is an exclude test but the parent is undecided. This means that the exclude check didn't
+                //match the parent. Let's check again with this element.
+
+<span class="nc bnc" id="L241" title="All 2 branches missed.">                if (tested.anyMatch(s -&gt; excludeTest.test(s))) {</span>
+<span class="nc" id="L242">                    ret = InclusionState.EXCLUDED;</span>
+                }
+            }
+            break;
+        }
+
+<span class="nc" id="L248">        elementResults.put(element, ret);</span>
+<span class="nc" id="L249">        return ret.toBoolean();</span>
+    }
+
+    boolean decideAnnotation(JavaAnnotationElement annotation, InclusionState parentInclusionState) {
+        //annotations cannot be annotated but it would also be awkward to check a method and NOT its annotations...
+        //therefore we just include the annotations based on the inclusion state of the annotated element.
+<span class="nc" id="L255">        return parentInclusionState.toBoolean();</span>
+    }
+
+    protected abstract boolean canBeReIncluded(JavaModelElement element);
+
+    protected abstract Stream&lt;String&gt; getTestedElementRepresentations(JavaModelElement element);
+
+<span class="nc" id="L262">    protected enum InclusionState {</span>
+        /**
+         * The element was explicitly determined to be included
+         */
+<span class="nc" id="L266">        INCLUDED,</span>
+
+        /**
+         * The element was explicitly determined to be excluded
+         */
+<span class="nc" id="L271">        EXCLUDED,</span>
+
+        /**
+         * There was no precise decision possible on the element
+         */
+<span class="nc" id="L276">        UNDECIDED;</span>
+
+
+        boolean toBoolean() {
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            switch (this) {</span>
+            case INCLUDED:
+            case UNDECIDED:
+<span class="nc" id="L283">                return true;</span>
+            default:
+<span class="nc" id="L285">                return false;</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

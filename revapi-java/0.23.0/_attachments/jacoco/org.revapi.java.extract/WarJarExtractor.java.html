@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WarJarExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.extract</a> &gt; <span class="el_source">WarJarExtractor.java</span></div><h1>WarJarExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.extract;
+
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toSet;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
+import java.util.zip.Deflater;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.AnalysisContext;
+import org.revapi.Archive;
+import org.revapi.java.spi.JarExtractor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * If the provided archive is a ZIP file (which also means a JAR file) and it contains entries in the WEB-INF/classes
+ * directory then only those entries are considered for API analysis.
+ *
+ * &lt;p&gt;Can be configured using {@code include} and {@code exclude} lists of regexes on archive names so that user can
+ * switch this extractor off if need be.
+ *
+ * &lt;p&gt;&lt;b&gt;Extension ID:&lt;/b&gt; {@code war}
+ */
+<span class="fc" id="L63">public class WarJarExtractor implements JarExtractor {</span>
+<span class="fc" id="L64">    private static final Logger LOG = LoggerFactory.getLogger(WarJarExtractor.class);</span>
+
+    private boolean doNothing;
+    private Map&lt;Pattern, Set&lt;String&gt;&gt; scan;
+
+    @Override
+    public Optional&lt;InputStream&gt; extract(Archive archive) {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (doNothing) {</span>
+<span class="nc" id="L72">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L75">        Set&lt;String&gt; pathPatterns = getPrefixesToExtract(archive.getName());</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (pathPatterns.isEmpty()) {</span>
+<span class="nc" id="L77">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L80">        Path path = null;</span>
+<span class="fc" id="L81">        try (ZipInputStream orig = new ZipInputStream(archive.openStream())) {</span>
+<span class="fc" id="L82">            path = Files.createTempFile(&quot;revapi-java-jarextract-war&quot;, null);</span>
+
+<span class="fc" id="L84">            boolean isWarFile = false;</span>
+<span class="fc" id="L85">            try (ZipOutputStream croppedZip = new ZipOutputStream(new FileOutputStream(path.toFile()))) {</span>
+<span class="fc" id="L86">                croppedZip.setLevel(Deflater.NO_COMPRESSION);</span>
+<span class="fc" id="L87">                croppedZip.setMethod(ZipOutputStream.DEFLATED);</span>
+
+<span class="fc" id="L89">                byte[] buf = new byte[32768];</span>
+
+<span class="fc" id="L91">                ZipEntry inEntry = orig.getNextEntry();</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                while (inEntry != null) {</span>
+<span class="fc" id="L93">                    int prefixLen = getMatchedPathPrefixLength(inEntry.getName(), pathPatterns);</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                    if (prefixLen &gt;= 0) {</span>
+<span class="nc" id="L95">                        isWarFile = true;</span>
+<span class="nc" id="L96">                        ZipEntry outEntry = new ZipEntry(inEntry.getName().substring(prefixLen));</span>
+
+<span class="nc" id="L98">                        croppedZip.putNextEntry(outEntry);</span>
+
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                        if (!inEntry.isDirectory()) {</span>
+                            int cnt;
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                            while ((cnt = orig.read(buf)) != -1) {</span>
+<span class="nc" id="L103">                                croppedZip.write(buf, 0, cnt);</span>
+                            }
+                        }
+
+<span class="nc" id="L107">                        croppedZip.closeEntry();</span>
+                    }
+
+<span class="fc" id="L110">                    inEntry = orig.getNextEntry();</span>
+<span class="fc" id="L111">                }</span>
+            }
+
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            if (isWarFile) {</span>
+<span class="nc" id="L115">                Path finalPath = path;</span>
+<span class="nc" id="L116">                return Optional.of(new FileInputStream(path.toFile()) {</span>
+                    @Override
+                    public void close() throws IOException {
+<span class="nc" id="L119">                        super.close();</span>
+<span class="nc" id="L120">                        Files.delete(finalPath);</span>
+<span class="nc" id="L121">                    }</span>
+                });
+            } else {
+<span class="fc" id="L124">                cleanPath(path);</span>
+<span class="fc" id="L125">                return Optional.empty();</span>
+            }
+<span class="nc" id="L127">        } catch (IOException e) {</span>
+<span class="nc" id="L128">            cleanPath(path);</span>
+<span class="nc" id="L129">            return Optional.empty();</span>
+        }
+    }
+
+    private int getMatchedPathPrefixLength(String entryName, Set&lt;String&gt; prefixes) {
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        for (String prefix : prefixes) {</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">            if (entryName.startsWith(prefix)) {</span>
+<span class="nc" id="L136">                return prefix.length();</span>
+            }
+<span class="fc" id="L138">        }</span>
+
+<span class="fc" id="L140">        return  -1;</span>
+    }
+
+    private void cleanPath(Path path) {
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        if (path != null) {</span>
+            try {
+<span class="fc" id="L146">                Files.delete(path);</span>
+<span class="nc" id="L147">            } catch (IOException e1) {</span>
+<span class="nc" id="L148">                LOG.warn(&quot;Failed to delete temporary file &quot; + path, e1);</span>
+<span class="fc" id="L149">            }</span>
+        }
+<span class="fc" id="L151">    }</span>
+
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L155">        return &quot;war&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="nc" id="L161">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/warJarExtract-config-schema.json&quot;),</span>
+                StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L167">        JsonNode scan = analysisContext.getConfigurationNode().path(&quot;scan&quot;);</span>
+<span class="fc" id="L168">        JsonNode disabled = analysisContext.getConfigurationNode().path(&quot;disabled&quot;);</span>
+
+<span class="fc" id="L170">        doNothing = disabled.asBoolean(false);</span>
+
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (doNothing) {</span>
+<span class="nc" id="L173">            return;</span>
+        }
+
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (scan.isArray()) {</span>
+<span class="nc" id="L177">            this.scan = new HashMap&lt;&gt;(scan.size(), 1f);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            for(JsonNode record : scan) {</span>
+<span class="nc" id="L179">                JsonNode archiveNode = record.path(&quot;archive&quot;);</span>
+<span class="nc" id="L180">                JsonNode prefixesNode = record.path(&quot;prefixes&quot;);</span>
+
+<span class="nc bnc" id="L182" title="All 4 branches missed.">                if (archiveNode.isMissingNode() || prefixesNode.isMissingNode()) {</span>
+<span class="nc" id="L183">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L186" title="All 4 branches missed.">                if (!archiveNode.isTextual() || !prefixesNode.isArray()) {</span>
+<span class="nc" id="L187">                    continue;</span>
+                }
+
+<span class="nc" id="L190">                Pattern archive = Pattern.compile(archiveNode.asText());</span>
+<span class="nc" id="L191">                Set&lt;String&gt; prefixes = StreamSupport.stream(prefixesNode.spliterator(), false)</span>
+<span class="nc" id="L192">                        .map(JsonNode::asText)</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                        .map(v -&gt; v.endsWith(&quot;/&quot;) ? v : (v + &quot;/&quot;))</span>
+<span class="nc" id="L194">                        .collect(toSet());</span>
+
+<span class="nc" id="L196">                this.scan.put(archive, prefixes);</span>
+<span class="nc" id="L197">            }</span>
+        } else {
+            // set the default scan
+<span class="fc" id="L200">            this.scan = new HashMap&lt;&gt;(1, 1f);</span>
+<span class="fc" id="L201">            this.scan.put(Pattern.compile(&quot;.*&quot;), new HashSet&lt;&gt;(singletonList(&quot;/WEB-INF/classes/&quot;)));</span>
+        }
+<span class="fc" id="L203">    }</span>
+
+    private Set&lt;String&gt; getPrefixesToExtract(String archiveName) {
+<span class="fc" id="L206">        Set&lt;String&gt; ret = null;</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        for (Map.Entry&lt;Pattern, Set&lt;String&gt;&gt; e : scan.entrySet()) {</span>
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">            if (e.getKey().matcher(archiveName).matches()) {</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">                if (ret == null) {</span>
+<span class="fc" id="L210">                    ret = new HashSet&lt;&gt;(e.getValue());</span>
+                } else {
+<span class="nc" id="L212">                    ret.addAll(e.getValue());</span>
+                }
+            }
+<span class="fc" id="L215">        }</span>
+
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">        return ret == null ? emptySet() : ret;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

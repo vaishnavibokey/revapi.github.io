@@ -61,7 +61,7 @@
     <a class="nav-link" href="../revapi/configuration.html">Configuration</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="../revapi-site/extensions.html">Extensions</a>
+    <a class="nav-link" href="../revapi/extending-revapi.html">Extending Revapi</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="../revapi-site/building.html">Building</a>
@@ -98,24 +98,32 @@
                                     <span class="nav-text">File Reporter Base</span>
                                 </a>
                             </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../revapi-jackson/index.html">
+                                    <span class="nav-text">Jackson Analyzer Base</span>
+                                </a>
+                            </li>
                             <li class="nav-item is-active" data-depth="0">
                                 <a class="nav-link" href="index.html">
-                                    <span class="nav-text">Java Extension</span>
+                                    <span class="nav-text">Java Analyzer</span>
                                 </a>
                                     <ul class="nav-list">
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="differences.html">Detected Differences</a>
+    <a class="nav-link" href="differences.html">List of API Differences</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="element-filters.html">Class &amp; Package Filtering</a>
+    <a class="nav-link" href="configuration.html">Configuration</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="annotation-based-filter.html">Annotation-based Filtering</a>
+    <a class="nav-link" href="annotation-based-filter.html">Filtering based on annotations</a>
   </li>
   <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="non-jar-archives.html">Other Archive Types</a>
+    <a class="nav-link" href="non-jar-archives.html">Handling Other Types of Archives</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="element-matching.html">Matching and Filtering Java Elements</a>
   </li>
   <li class="nav-item" data-depth="1">
     <a class="nav-link" href="_attachments/apidocs/index.html">Javadoc</a>
@@ -126,7 +134,12 @@
                             </li>
                             <li class="nav-item" data-depth="0">
                                 <a class="nav-link" href="../revapi-java-spi/index.html">
-                                    <span class="nav-text">Java Extension SPI</span>
+                                    <span class="nav-text">Java Analyzer SPI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../revapi-json/index.html">
+                                    <span class="nav-text">JSON Analyzer</span>
                                 </a>
                             </li>
                             <li class="nav-item" data-depth="0">
@@ -144,13 +157,18 @@
                                     <span class="nav-text">Text Reporter</span>
                                 </a>
                             </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../revapi-yaml/index.html">
+                                    <span class="nav-text">YAML Analyzer</span>
+                                </a>
+                            </li>
                 </li>
             </ul>
         </nav>
     </div>
 <div class="nav-panel-explore" data-panel="explore" style="display: none">
   <div class="context">
-    <span class="title">Java Extension</span>
+    <span class="title">Java Analyzer</span>
     <span class="version">master</span>
   </div>
   <ul class="components">
@@ -159,6 +177,9 @@
       <ul class="versions">
         <li class="version is-latest">
           <a href="../revapi-ant-task/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-ant-task/0.11.0/index.html">0.11.0</a>
         </li>
         <li class="version">
           <a href="../revapi-ant-task/0.10.2/index.html">0.10.2</a>
@@ -178,6 +199,9 @@
           <a href="../revapi/index.html">master</a>
         </li>
         <li class="version">
+          <a href="../revapi/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
           <a href="../revapi/0.12.0/index.html">0.12.0</a>
         </li>
       </ul>
@@ -187,6 +211,9 @@
       <ul class="versions">
         <li class="version is-latest">
           <a href="../revapi-basic-features/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-basic-features/0.11.0/index.html">0.11.0</a>
         </li>
         <li class="version">
           <a href="../revapi-basic-features/0.10.2/index.html">0.10.2</a>
@@ -206,6 +233,9 @@
           <a href="../revapi-standalone/index.html">master</a>
         </li>
         <li class="version">
+          <a href="../revapi-standalone/0.10.0/index.html">0.10.0</a>
+        </li>
+        <li class="version">
           <a href="../revapi-standalone/0.9.8/index.html">0.9.8</a>
         </li>
         <li class="version">
@@ -223,6 +253,9 @@
           <a href="../revapi-reporter-file-base/index.html">master</a>
         </li>
         <li class="version">
+          <a href="../revapi-reporter-file-base/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
           <a href="../revapi-reporter-file-base/0.2.1/index.html">0.2.1</a>
         </li>
         <li class="version">
@@ -230,11 +263,25 @@
         </li>
       </ul>
     </li>
+    <li class="component">
+      <span class="title">Jackson Analyzer Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../revapi-jackson/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-jackson/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
     <li class="component is-current">
-      <span class="title">Java Extension</span>
+      <span class="title">Java Analyzer</span>
       <ul class="versions">
         <li class="version is-current is-latest">
           <a href="index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="0.23.0/index.html">0.23.0</a>
         </li>
         <li class="version">
           <a href="0.22.1/index.html">0.22.1</a>
@@ -245,10 +292,13 @@
       </ul>
     </li>
     <li class="component">
-      <span class="title">Java Extension SPI</span>
+      <span class="title">Java Analyzer SPI</span>
       <ul class="versions">
         <li class="version is-latest">
           <a href="../revapi-java-spi/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-java-spi/0.22.0/index.html">0.22.0</a>
         </li>
         <li class="version">
           <a href="../revapi-java-spi/0.21.1/index.html">0.21.1</a>
@@ -259,10 +309,24 @@
       </ul>
     </li>
     <li class="component">
+      <span class="title">JSON Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../revapi-json/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-json/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
       <span class="title">JSON Reporter</span>
       <ul class="versions">
         <li class="version is-latest">
           <a href="../revapi-reporter-json/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-reporter-json/0.3.0/index.html">0.3.0</a>
         </li>
         <li class="version">
           <a href="../revapi-reporter-json/0.2.1/index.html">0.2.1</a>
@@ -277,6 +341,9 @@
       <ul class="versions">
         <li class="version is-latest">
           <a href="../revapi-maven-plugin/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-maven-plugin/0.13.0/index.html">0.13.0</a>
         </li>
         <li class="version">
           <a href="../revapi-maven-plugin/0.12.2/index.html">0.12.2</a>
@@ -304,10 +371,24 @@
           <a href="../revapi-reporter-text/index.html">master</a>
         </li>
         <li class="version">
+          <a href="../revapi-reporter-text/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
           <a href="../revapi-reporter-text/0.12.1/index.html">0.12.1</a>
         </li>
         <li class="version">
           <a href="../revapi-reporter-text/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">YAML Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../revapi-yaml/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../revapi-yaml/0.1.0/index.html">0.1.0</a>
         </li>
       </ul>
     </li>
@@ -322,8 +403,8 @@
   <a href="../revapi-site/index.html" class="home-link"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
-    <li><a href="index.html">Java Extension</a></li>
-    <li><a href="differences.html">Detected Differences</a></li>
+    <li><a href="index.html">Java Analyzer</a></li>
+    <li><a href="differences.html">List of API Differences</a></li>
   </ul>
 </nav>
   Version:
@@ -335,6 +416,10 @@
         <a class="version is-current" href="differences.html">
 
             latest
+        </a>
+        <a class="version" href="0.23.0/differences.html">
+
+            0.23.0
         </a>
         <a class="version" href="0.22.1/differences.html">
 
@@ -642,7 +727,7 @@ any class in the <code>my</code> package (or any other subpackage).</p>
 </table>
 <div class="paragraph">
 <p>Additionally, if the analyzer is configured to report example use chains for given difference (see the java extension
-<a href="extensions/java.html">configuration</a>), there will be 1 or 2 more parameters with the example use chains present:
+<a href="configuration.html" class="page">configuration</a>), there will be 1 or 2 more parameters with the example use chains present:
 <code>exampleUseChainInOldApi</code> and/or <code>exampleUseChainInNewApi</code>.</p>
 </div>
 </div>
@@ -3577,7 +3662,7 @@ serialized and deserialized. Changing the value of the <code>serialVersionUID</c
 be able to deserialize objects that were serialized using the old version of the class.</p>
 </div>
 <div class="paragraph">
-<p>This check can be configured the same way as <a href="#Field serialVersionUID Unchanged">[Field serialVersionUID Unchanged]</a>.</p>
+<p>This check can be configured the same way as <a href="#_field_serialversionuid_unchanged__java_field_serialversionuidunchanged">[_field_serialversionuid_unchanged__java_field_serialversionuidunchanged]</a>.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -4229,13 +4314,14 @@ old SPI implementation.</p>
 </tbody>
 </table>
 <div class="paragraph">
-<p>While technically a variant of <a href="#a_method_added_to_interface">Method Added To Interface</a>, this is similar in
-consequences to <a href="#a_default_value_removed_from_method">Default Value Removed From Method</a>. This is not binary
-incompatible, there can be no code compiled against the previous version of the API that would try to access or use
-the new attribute in any way. This is source incompatible though, because any code that declares annotations
-according to the old version of the API will fail to compile against the new version of the API because it will not
-define explicit value for the new attribute. This also breaks semantics because any element annotated without such
-attribute won&#8217;t be possible to process using a processor that depends on the new version of the API and therefore
+<p>While technically a variant of <a href="#_method_added_to_interface<em>java_method_addedtointerface">Method Added To Interface</a>,
+this is similar in consequences to
+<a href="#_default_value_removed_from_method</em>java_method_defaultvalueremoved">Default Value Removed From Method</a>.
+This is not binary incompatible, there can be no code compiled against the previous version of the API that would try to
+access or use the new attribute in any way. This is source incompatible though, because any code that declares
+annotations according to the old version of the API will fail to compile against the new version of the API because it
+will not define explicit value for the new attribute. This also breaks semantics because any element annotated without
+such attribute won&#8217;t be possible to process using a processor that depends on the new version of the API and therefore
 assumes an explicit value for the annotation attribute.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -4654,8 +4740,7 @@ Note that if the super class is part of the API, the removal of the method from 
 </table>
 <div class="paragraph">
 <p>A method that was declared in the class in the old version is now declared in one of its super types.
-If such move should represent a compatibility breakage it is reported differently, like for example
-<a href="#a_method_replaced_by_abstract_in_superclass">Method Replaced By Abstract In Superclass</a>.
+If such move should represent a compatibility breakage it is reported differently.
 Otherwise this is a compatible change and is reported for completeness' sake.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -4722,7 +4807,7 @@ Otherwise this is a compatible change and is reported for completeness' sake.</p
 </tbody>
 </table>
 <div class="paragraph">
-<p>This is identical to <a href="#a_method_removed">Method Removed</a> but specialized for annotation types.</p>
+<p>This is identical to <a href="#_method_removed__java_method_removed">Method Removed</a> but specialized for annotation types.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -5685,6 +5770,18 @@ is strictly bigger than the old one and the old one is implicitly convertible to
 </tr>
 </tbody>
 </table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This difference is not reported when overloads matching is turned off.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_method_parameter_type_parameter_changed_java_method_parametertypeparameterchanged"><a class="anchor" href="#_method_parameter_type_parameter_changed_java_method_parametertypeparameterchanged"></a>Method Parameter Type Parameter Changed - <code>java.method.parameterTypeParameterChanged</code></h3>
@@ -5756,6 +5853,18 @@ type changed. This is binary compatible because of the type erasure but it can b
 </tr>
 </tbody>
 </table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This difference is not reported when overloads matching is turned off.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_method_now_throws_a_checked_exception_java_method_exception_checkedadded"><a class="anchor" href="#_method_now_throws_a_checked_exception_java_method_exception_checkedadded"></a>Method Now Throws a Checked Exception - <code>java.method.exception.checkedAdded</code></h3>
@@ -6413,7 +6522,7 @@ declared against the old version of the API will use wrong constraints.</p>
 </main>
 </div>
 <footer class="footer">
-    <p>Copyright 2014-2020 Lukas Krejci.</p>
+    <p>Copyright 2014-2021 Lukas Krejci.</p>
     <p>This site was built using <a href="https://antora.org">Antora 2.3.3</a>.</p>
 </footer>
 <script>

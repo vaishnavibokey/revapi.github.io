@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MatchingProgress.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">MatchingProgress.java</span></div><h1>MatchingProgress.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.basic;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
+
+import org.revapi.Difference;
+import org.revapi.DifferenceTransform;
+import org.revapi.Element;
+import org.revapi.FilterFinishResult;
+import org.revapi.FilterMatch;
+import org.revapi.FilterStartResult;
+import org.revapi.TreeFilter;
+
+public abstract class MatchingProgress&lt;E extends Element&lt;E&gt;&gt; implements DifferenceTransform.TraversalTracker&lt;E&gt; {
+    protected final boolean regex;
+    protected final String code;
+    protected final Pattern codeRegex;
+    protected final TreeFilter&lt;E&gt; oldFilter;
+    protected final TreeFilter&lt;E&gt; newFilter;
+    protected final Map&lt;String, String&gt; attachments;
+    protected final Map&lt;String, Pattern&gt; attachmentRegexes;
+
+<span class="fc" id="L44">    protected final Map&lt;E, Set&lt;E&gt;&gt; decidedlyMatchingElementPairs = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L45">    protected final Map&lt;E, Set&lt;E&gt;&gt; undecidedElementPairs = new HashMap&lt;&gt;();</span>
+
+    public MatchingProgress(boolean regex, String code, Pattern codeRegex, TreeFilter&lt;E&gt; oldFilter,
+<span class="fc" id="L48">            TreeFilter&lt;E&gt; newFilter, Map&lt;String, String&gt; attachments, Map&lt;String, Pattern&gt; attachmentRegexes) {</span>
+<span class="fc" id="L49">        this.regex = regex;</span>
+<span class="fc" id="L50">        this.code = code;</span>
+<span class="fc" id="L51">        this.codeRegex = codeRegex;</span>
+<span class="fc" id="L52">        this.oldFilter = oldFilter;</span>
+<span class="fc" id="L53">        this.newFilter = newFilter;</span>
+<span class="fc" id="L54">        this.attachments = attachments;</span>
+<span class="fc" id="L55">        this.attachmentRegexes = attachmentRegexes;</span>
+<span class="fc" id="L56">    }</span>
+
+    public boolean startElements(@Nullable E oldElement, @Nullable E newElement) {
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        FilterStartResult oldRes = oldElement == null</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                ? (oldFilter == null ? FilterStartResult.matchAndDescend() : FilterStartResult.doesntMatch())</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                : (oldFilter == null ? FilterStartResult.matchAndDescend() : oldFilter.start(oldElement));</span>
+
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        FilterStartResult newRes = newElement == null</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                ? (newFilter == null ? FilterStartResult.matchAndDescend() : FilterStartResult.doesntMatch())</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                : (newFilter == null ? FilterStartResult.matchAndDescend() : newFilter.start(newElement));</span>
+
+<span class="fc bfc" id="L67" title="All 4 branches covered.">        if (oldRes.getMatch().toBoolean(false) &amp;&amp; newRes.getMatch().toBoolean(false)) {</span>
+<span class="fc" id="L68">            decidedlyMatchingElementPairs.computeIfAbsent(oldElement, __ -&gt; new HashSet&lt;&gt;()).add(newElement);</span>
+<span class="pc bpc" id="L69" title="2 of 4 branches missed.">        } else if (oldRes.getMatch() == FilterMatch.UNDECIDED || newRes.getMatch() == FilterMatch.UNDECIDED) {</span>
+<span class="nc" id="L70">            undecidedElementPairs.computeIfAbsent(oldElement, __ -&gt; new HashSet&lt;&gt;()).add(newElement);</span>
+        }
+
+<span class="fc" id="L73">        return true;</span>
+    }
+
+    public void endElements(@Nullable E oldElement, @Nullable E newElement) {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        FilterMatch oldMatch = oldElement == null</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                ? (oldFilter == null ? FilterMatch.MATCHES : FilterMatch.DOESNT_MATCH)</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                : (oldFilter == null ? FilterMatch.MATCHES : oldFilter.finish(oldElement).getMatch());</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        FilterMatch newMatch = newElement == null</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                ? (newFilter == null ? FilterMatch.MATCHES : FilterMatch.DOESNT_MATCH)</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                : (newFilter == null ? FilterMatch.MATCHES : newFilter.finish(newElement).getMatch());</span>
+
+<span class="fc bfc" id="L85" title="All 4 branches covered.">        if (oldMatch.toBoolean(false) &amp;&amp; newMatch.toBoolean(false)) {</span>
+<span class="pc" id="L86">            decidedlyMatchingElementPairs.computeIfAbsent(oldElement, __ -&gt; new HashSet&lt;&gt;()).add(newElement);</span>
+<span class="fc" id="L87">            Set&lt;E&gt; undecidedNews = undecidedElementPairs.get(oldElement);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (undecidedNews != null) {</span>
+<span class="nc" id="L89">                undecidedNews.remove(newElement);</span>
+            }
+        }
+<span class="fc" id="L92">    }</span>
+
+    @Override
+    public void endTraversal() {
+<span class="fc" id="L96">        Map&lt;E, Set&lt;E&gt;&gt; decided = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (oldFilter != null) {</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            for (Map.Entry&lt;E, FilterFinishResult&gt; e : oldFilter.finish().entrySet()) {</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                if (!e.getValue().getMatch().toBoolean(false)) {</span>
+<span class="nc" id="L100">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                for (Map.Entry&lt;E, Set&lt;E&gt;&gt; undecidedE : undecidedElementPairs.entrySet()) {</span>
+<span class="nc" id="L104">                    E oldEl = undecidedE.getKey();</span>
+<span class="nc bnc" id="L105" title="All 4 branches missed.">                    if (oldEl == null || oldEl.equals(e.getKey())) {</span>
+<span class="nc" id="L106">                        decided.computeIfAbsent(oldEl, __ -&gt; new HashSet&lt;&gt;()).addAll(undecidedE.getValue());</span>
+                    }
+<span class="nc" id="L108">                }</span>
+<span class="nc" id="L109">            }</span>
+        }
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (newFilter != null) {</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">            for (Map.Entry&lt;E, FilterFinishResult&gt; e : newFilter.finish().entrySet()) {</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                if (!e.getValue().getMatch().toBoolean(false)) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                    for(Set&lt;E&gt; news : decided.values()) {</span>
+<span class="nc" id="L116">                        news.remove(e.getKey());</span>
+<span class="nc" id="L117">                    }</span>
+                }
+<span class="nc" id="L119">            }</span>
+        }
+
+<span class="pc" id="L122">        decided.forEach((o, ns) -&gt; decidedlyMatchingElementPairs.computeIfAbsent(o, __ -&gt; new HashSet&lt;&gt;()).addAll(ns));</span>
+<span class="fc" id="L123">    }</span>
+
+    public boolean matches(Difference difference, Element&lt;?&gt; oldElement, Element&lt;?&gt; newElement) {
+        //transforms are called after the complete element forests are constructed and analyzed, so we don't
+        //expect any UNDECIDED matches from the matchers. If there is one, just consider it a false.
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        boolean codeMatch = regex</span>
+<span class="fc" id="L130">                ? codeRegex.matcher(difference.code).matches()</span>
+<span class="fc" id="L131">                : code.equals(difference.code);</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (!codeMatch) {</span>
+<span class="fc" id="L134">            return false;</span>
+        }
+
+<span class="fc" id="L137">        Set&lt;E&gt; news = decidedlyMatchingElementPairs.get(oldElement);</span>
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">        boolean elementsMatch = news != null &amp;&amp; news.contains(newElement);</span>
+
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        while (!elementsMatch) {</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            oldElement = oldElement == null ? null : oldElement.getParent();</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            newElement = newElement == null ? null : newElement.getParent();</span>
+
+<span class="fc bfc" id="L144" title="All 4 branches covered.">            if (oldElement == null &amp;&amp; newElement == null) {</span>
+<span class="fc" id="L145">                break;</span>
+            }
+
+<span class="fc" id="L148">            news = decidedlyMatchingElementPairs.get(oldElement);</span>
+<span class="pc bpc" id="L149" title="2 of 4 branches missed.">            elementsMatch = news != null &amp;&amp; news.contains(newElement);</span>
+        }
+
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (!elementsMatch) {</span>
+<span class="fc" id="L153">            return false;</span>
+        }
+
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (regex) {</span>
+            //regexes empty | attachments empty | allMatched
+            //            0 |                 0 | each regex matches
+            //            0 |                 1 | false
+            //            1 |                 0 | true
+            //            1 |                 1 | true
+<span class="fc bfc" id="L162" title="All 4 branches covered.">            boolean allMatched = attachmentRegexes.isEmpty() || !difference.attachments.isEmpty();</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            for (Map.Entry&lt;String, String&gt; e: difference.attachments.entrySet()) {</span>
+<span class="fc" id="L164">                String key = e.getKey();</span>
+<span class="fc" id="L165">                String val = e.getValue();</span>
+
+<span class="fc" id="L167">                Pattern match = attachmentRegexes.get(key);</span>
+<span class="pc bpc" id="L168" title="1 of 4 branches missed.">                if (match != null &amp;&amp; !match.matcher(val).matches()) {</span>
+<span class="nc" id="L169">                    return false;</span>
+                } else {
+<span class="fc" id="L171">                    allMatched = true;</span>
+                }
+<span class="fc" id="L173">            }</span>
+
+<span class="fc" id="L175">            return allMatched;</span>
+        } else {
+<span class="pc bpc" id="L177" title="1 of 4 branches missed.">            boolean allMatched = attachments.isEmpty() || !difference.attachments.isEmpty();</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            for (Map.Entry&lt;String, String&gt; e : difference.attachments.entrySet()) {</span>
+<span class="fc" id="L179">                String key = e.getKey();</span>
+<span class="fc" id="L180">                String val = e.getValue();</span>
+
+<span class="fc" id="L182">                String match = attachments.get(key);</span>
+<span class="pc bpc" id="L183" title="1 of 4 branches missed.">                if (match != null &amp;&amp; !match.equals(val)) {</span>
+<span class="fc" id="L184">                    return false;</span>
+                } else {
+<span class="fc" id="L186">                    allMatched = true;</span>
+                }
+<span class="fc" id="L188">            }</span>
+
+<span class="fc" id="L190">            return allMatched;</span>
+        }
+    }
+
+    public abstract @Nullable Difference transformMatching(Difference difference, Element&lt;?&gt; oldElement,
+            Element&lt;?&gt; newElement);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

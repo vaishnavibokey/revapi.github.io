@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaArchiveAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java</a> &gt; <span class="el_source">JavaArchiveAnalyzer.java</span></div><h1>JavaArchiveAnalyzer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java;
+
+import java.io.StringWriter;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.API;
+import org.revapi.ApiAnalyzer;
+import org.revapi.ArchiveAnalyzer;
+import org.revapi.ElementForest;
+import org.revapi.TreeFilter;
+import org.revapi.java.compilation.CompilationFuture;
+import org.revapi.java.compilation.CompilationValve;
+import org.revapi.java.compilation.Compiler;
+import org.revapi.java.compilation.ProbingEnvironment;
+import org.revapi.java.model.JavaElementForest;
+import org.revapi.java.model.TypeElement;
+import org.revapi.java.spi.JarExtractor;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.UseSite;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public final class JavaArchiveAnalyzer implements ArchiveAnalyzer&lt;JavaElement&gt; {
+    private final JavaApiAnalyzer apiAnalyzer;
+    private final API api;
+    private final ExecutorService executor;
+    private final ProbingEnvironment probingEnvironment;
+    private final AnalysisConfiguration.MissingClassReporting missingClassReporting;
+    private final boolean ignoreMissingAnnotations;
+    private final Iterable&lt;JarExtractor&gt; jarExtractors;
+    private CompilationValve compilationValve;
+
+    /**
+     * @deprecated only to support the obsolete package and class filtering
+     */
+    @Deprecated
+    private final @Nullable TreeFilter&lt;JavaElement&gt; implicitFilter;
+
+    public JavaArchiveAnalyzer(JavaApiAnalyzer apiAnalyzer, API api, Iterable&lt;JarExtractor&gt; jarExtractors,
+            ExecutorService compilationExecutor, AnalysisConfiguration.MissingClassReporting missingClassReporting,
+<span class="fc" id="L66">            boolean ignoreMissingAnnotations, @Nullable TreeFilter&lt;JavaElement&gt; implicitFilter) {</span>
+<span class="fc" id="L67">        this.apiAnalyzer = apiAnalyzer;</span>
+<span class="fc" id="L68">        this.api = api;</span>
+<span class="fc" id="L69">        this.jarExtractors = jarExtractors;</span>
+<span class="fc" id="L70">        this.executor = compilationExecutor;</span>
+<span class="fc" id="L71">        this.missingClassReporting = missingClassReporting;</span>
+<span class="fc" id="L72">        this.ignoreMissingAnnotations = ignoreMissingAnnotations;</span>
+<span class="fc" id="L73">        this.probingEnvironment = new ProbingEnvironment(api);</span>
+<span class="fc" id="L74">        this.implicitFilter = implicitFilter;</span>
+<span class="fc" id="L75">    }</span>
+
+    @Override
+    public ApiAnalyzer&lt;JavaElement&gt; getApiAnalyzer() {
+<span class="nc" id="L79">        return apiAnalyzer;</span>
+    }
+
+    @Override
+    public API getApi() {
+<span class="nc" id="L84">        return api;</span>
+    }
+
+    @Nonnull
+    @Override
+    public JavaElementForest analyze(TreeFilter&lt;JavaElement&gt; filter) {
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (Timing.LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L91">            Timing.LOG.debug(&quot;Starting analysis of &quot; + api);</span>
+        }
+
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        TreeFilter&lt;JavaElement&gt; finalFilter = implicitFilter == null</span>
+<span class="fc" id="L95">                ? filter</span>
+<span class="pc" id="L96">                : TreeFilter.union(filter, implicitFilter);</span>
+
+<span class="fc" id="L98">        StringWriter output = new StringWriter();</span>
+<span class="fc" id="L99">        Compiler compiler = new Compiler(executor, output, jarExtractors, api.getArchives(),</span>
+<span class="fc" id="L100">                api.getSupplementaryArchives(),</span>
+                finalFilter);
+        try {
+<span class="fc" id="L103">            compilationValve = compiler</span>
+<span class="fc" id="L104">                .compile(probingEnvironment, missingClassReporting, ignoreMissingAnnotations);</span>
+
+<span class="fc" id="L106">            probingEnvironment.getTree()</span>
+<span class="fc" id="L107">                .setCompilationFuture(new CompilationFuture(compilationValve, output));</span>
+
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (Timing.LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L110">                Timing.LOG.debug(&quot;Preliminary API tree produced for &quot; + api);</span>
+            }
+<span class="fc" id="L112">            return probingEnvironment.getTree();</span>
+<span class="nc" id="L113">        } catch (Exception e) {</span>
+<span class="nc" id="L114">            throw new IllegalStateException(&quot;Failed to analyze archives in api &quot; + api, e);</span>
+        }
+    }
+
+    @Override
+    public void prune(ElementForest&lt;JavaElement&gt; forest) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (!(forest instanceof JavaElementForest)) {</span>
+<span class="nc" id="L121">            return;</span>
+        }
+
+        boolean changed;
+
+<span class="fc" id="L126">        Set&lt;TypeElement&gt; toRemove = new HashSet&lt;&gt;();</span>
+
+        do {
+<span class="fc" id="L129">            Iterator&lt;TypeElement&gt; it = forest.stream(TypeElement.class, true, null).iterator();</span>
+
+<span class="fc" id="L131">            toRemove.clear();</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L134">                TypeElement type = it.next();</span>
+
+<span class="fc" id="L136">                boolean remove = true;</span>
+
+<span class="fc" id="L138">                Iterator&lt;UseSite&gt; usit = type.getUseSites().iterator();</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                while (usit.hasNext()) {</span>
+<span class="fc" id="L140">                    UseSite useSite = usit.next();</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                    if (isInForest(forest, useSite.getSite())) {</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                        if (useSite.getUseType().isMovingToApi()) {</span>
+<span class="fc" id="L143">                            remove = false;</span>
+                        }
+                    } else {
+<span class="fc" id="L146">                        usit.remove();</span>
+                    }
+<span class="fc" id="L148">                }</span>
+
+                // keep the types that are in the API because they are, not just because something dragged them into it.
+<span class="fc bfc" id="L151" title="All 2 branches covered.">                if (isInApi(type)) {</span>
+<span class="fc" id="L152">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L155" title="All 2 branches covered.">                if (remove) {</span>
+<span class="fc" id="L156">                    toRemove.add(type);</span>
+                }
+<span class="fc" id="L158">            }</span>
+
+<span class="fc bfc" id="L160" title="All 2 branches covered.">            changed = !toRemove.isEmpty();</span>
+
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            for (TypeElement t : toRemove) {</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">                if (t.getParent() == null) {</span>
+<span class="fc" id="L164">                    forest.getRoots().remove(t);</span>
+                } else {
+<span class="fc" id="L166">                    t.getParent().getChildren().remove(t);</span>
+                }
+
+<span class="fc" id="L169">                t.getUsedTypes().entrySet().removeIf(e -&gt; {</span>
+<span class="fc" id="L170">                    UseSite.Type useType = e.getKey();</span>
+<span class="fc" id="L171">                    e.getValue().entrySet().removeIf(e2 -&gt; {</span>
+<span class="fc" id="L172">                        JavaTypeElement usedType = e2.getKey();</span>
+<span class="fc" id="L173">                        usedType.getUseSites().removeIf(us -&gt; {</span>
+                            //noinspection SuspiciousMethodCalls
+<span class="fc bfc" id="L175" title="All 4 branches covered.">                            return us.getUseType() == useType &amp;&amp; e2.getValue().contains(us.getSite());</span>
+                        });
+
+<span class="fc" id="L178">                        return usedType.getUseSites().isEmpty();</span>
+                    });
+
+<span class="fc" id="L181">                    return e.getValue().isEmpty();</span>
+                });
+<span class="fc" id="L183">            }</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        } while (changed);</span>
+<span class="fc" id="L185">    }</span>
+
+    public ProbingEnvironment getProbingEnvironment() {
+<span class="fc" id="L188">        return probingEnvironment;</span>
+    }
+
+    public CompilationValve getCompilationValve() {
+<span class="fc" id="L192">        return compilationValve;</span>
+    }
+
+    private static boolean isInForest(ElementForest&lt;JavaElement&gt; forest, JavaElement element) {
+<span class="fc" id="L196">        JavaElement parent = element.getParent();</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        while (parent != null) {</span>
+<span class="fc" id="L198">            element = parent;</span>
+<span class="fc" id="L199">            parent = parent.getParent();</span>
+        }
+
+<span class="fc" id="L202">        return forest.getRoots().contains(element);</span>
+    }
+
+    private static boolean isInApi(TypeElement element) {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        while (element != null) {</span>
+<span class="fc bfc" id="L207" title="All 4 branches covered.">            if (element.isInAPI() &amp;&amp; !element.isInApiThroughUse()) {</span>
+<span class="fc" id="L208">                return true;</span>
+            }
+
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            if (element.getParent() instanceof TypeElement) {</span>
+<span class="fc" id="L212">                element = (TypeElement) element.getParent();</span>
+            } else {
+<span class="fc" id="L214">                element = null;</span>
+            }
+        }
+
+<span class="fc" id="L218">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

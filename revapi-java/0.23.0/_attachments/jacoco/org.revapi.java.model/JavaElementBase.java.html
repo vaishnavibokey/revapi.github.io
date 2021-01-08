@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaElementBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">JavaElementBase.java</span></div><h1>JavaElementBase.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.model;
+
+import java.util.Optional;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.lang.model.element.Element;
+import javax.lang.model.type.TypeMirror;
+
+import org.revapi.API;
+import org.revapi.Archive;
+import org.revapi.java.compilation.ProbingEnvironment;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.java.spi.JavaModelElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public abstract class JavaElementBase&lt;E extends Element, T extends TypeMirror&gt; extends AbstractJavaElement
+        implements JavaModelElement {
+
+    protected final E element;
+    protected final T representation;
+    private String comparableSignature;
+<span class="fc" id="L44">    private boolean inherited = false;</span>
+    private String stringRepre;
+
+    JavaElementBase(ProbingEnvironment env, Archive archive, E element, T representation) {
+<span class="fc" id="L48">        super(env);</span>
+<span class="fc" id="L49">        this.element = element;</span>
+<span class="fc" id="L50">        setArchive(archive);</span>
+<span class="fc" id="L51">        this.representation = representation;</span>
+<span class="fc" id="L52">    }</span>
+
+    @Nonnull
+    protected abstract String getHumanReadableElementType();
+
+    @Nullable
+    @Override
+    public JavaModelElement getParent() {
+<span class="fc" id="L60">        return (JavaModelElement) super.getParent();</span>
+    }
+
+    @Override
+    public void setParent(@Nullable JavaElement parent) {
+<span class="pc bpc" id="L65" title="1 of 4 branches missed.">        if (parent != null &amp;&amp; !(parent instanceof JavaModelElement)) {</span>
+<span class="nc" id="L66">            throw new IllegalArgumentException(&quot;A parent must be a java model element.&quot;);</span>
+        }
+<span class="fc" id="L68">        super.setParent(parent);</span>
+<span class="fc" id="L69">    }</span>
+
+    @Nonnull
+    @Override
+    public API getApi() {
+<span class="nc" id="L74">        return environment.getApi();</span>
+    }
+
+    @Override
+    public int compareTo(@Nonnull JavaElement o) {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (getClass() != o.getClass()) {</span>
+<span class="fc" id="L80">            return JavaElementFactory.compareByType(this, o);</span>
+        }
+
+<span class="fc" id="L83">        return getComparableSignature().compareTo(((JavaElementBase&lt;?, ?&gt;) o).getComparableSignature());</span>
+    }
+
+    public E getDeclaringElement() {
+<span class="fc" id="L87">        return element;</span>
+    }
+
+    @Override
+    public T getModelRepresentation() {
+<span class="fc" id="L92">        return representation;</span>
+    }
+
+    @Override
+    public boolean isInherited() {
+<span class="fc" id="L97">        return inherited;</span>
+    }
+
+    public void setInherited(boolean inherited) {
+<span class="fc" id="L101">        this.inherited = inherited;</span>
+<span class="fc" id="L102">    }</span>
+
+    @Nonnull
+    @Override
+    public final String getFullHumanReadableString() {
+<span class="fc bfc" id="L107" title="All 4 branches covered.">        if (environment.isScanningComplete() &amp;&amp; stringRepre != null) {</span>
+<span class="fc" id="L108">            return stringRepre;</span>
+        }
+
+<span class="fc" id="L111">        String ret = createFullHumanReadableString();</span>
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (environment.isScanningComplete()) {</span>
+<span class="fc" id="L114">            stringRepre = ret;</span>
+        }
+
+<span class="fc" id="L117">        return ret;</span>
+    }
+
+    protected String createFullHumanReadableString() {
+<span class="fc" id="L121">        String decl = Util.toHumanReadableString(getDeclaringElement());</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (isInherited()) {</span>
+<span class="fc" id="L123">            org.revapi.Element parent = getParent();</span>
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">            while (parent != null &amp;&amp; !(parent instanceof JavaTypeElement)) {</span>
+<span class="fc" id="L125">                parent = parent.getParent();</span>
+            }
+<span class="fc" id="L127">            JavaTypeElement parentType = (JavaTypeElement) parent;</span>
+
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">            if (parentType != null) {</span>
+<span class="fc" id="L130">                decl += &quot; @ &quot; + Util.toHumanReadableString(parentType.getDeclaringElement());</span>
+            }
+        }
+<span class="fc" id="L133">        return getHumanReadableElementType() + &quot; &quot; + decl;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L138">        return getDeclaringElement().hashCode() * getModelRepresentation().hashCode();</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (obj == this) {</span>
+<span class="fc" id="L144">            return true;</span>
+        }
+
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        return obj instanceof JavaElementBase &amp;&amp;</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                getFullHumanReadableString().equals(((JavaElementBase&lt;?, ?&gt;) obj).getFullHumanReadableString());</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L153">        return getFullHumanReadableString();</span>
+    }
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public JavaElementBase&lt;E, T&gt; clone() {
+<span class="fc" id="L159">        return (JavaElementBase&lt;E, T&gt;) super.clone();</span>
+    }
+
+    /**
+     * Clones this element and tries to add it under the new parent. If the parent already contains an element
+     * equivalent to this one, the returned optional is empty, otherwise it contains the clone.
+     *
+     * @param newParent the parent to add the clone to
+     * @return optional with the clone or an empty optional if the new parent already contains an equivalent element
+     */
+    public Optional&lt;JavaElementBase&lt;E, T&gt;&gt; cloneUnder(JavaElementBase&lt;?, ?&gt; newParent) {
+<span class="fc" id="L170">        JavaElementBase&lt;E, T&gt; copy = clone();</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (newParent.getChildren().add(copy)) {</span>
+<span class="fc" id="L172">            return Optional.of(copy);</span>
+        } else {
+<span class="fc" id="L174">            return Optional.empty();</span>
+        }
+    }
+
+    protected String getComparableSignature() {
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (comparableSignature == null) {</span>
+<span class="fc" id="L180">            comparableSignature = createComparableSignature();</span>
+        }
+
+<span class="fc" id="L183">        return comparableSignature;</span>
+    }
+
+    protected abstract String createComparableSignature();
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

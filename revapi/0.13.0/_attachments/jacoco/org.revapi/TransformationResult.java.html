@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransformationResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">TransformationResult.java</span></div><h1>TransformationResult.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2019 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import static org.revapi.TransformationResult.Resolution.REPLACE;
+
+import java.util.Collections;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+/**
+ * The result of an transformation. The result might or might not be resolved when the
+ * {@link DifferenceTransform#tryTransform(Element, Element, Difference)} is called.
+ */
+public final class TransformationResult {
+<span class="fc" id="L31">    private static final TransformationResult DISCARD = new TransformationResult(Resolution.DISCARD, null);</span>
+<span class="fc" id="L32">    private static final TransformationResult KEEP = new TransformationResult(Resolution.KEEP, null);</span>
+<span class="fc" id="L33">    private static final TransformationResult UNDECIDED = new TransformationResult(Resolution.UNDECIDED, null);</span>
+
+    private final Resolution resolution;
+    private final Set&lt;Difference&gt; differences;
+
+    /**
+     * @return result to keep the difference as is
+     */
+    public static TransformationResult keep() {
+<span class="fc" id="L42">        return KEEP;</span>
+    }
+
+    /**
+     * @return result to discard the difference
+     */
+    public static TransformationResult discard() {
+<span class="fc" id="L49">        return DISCARD;</span>
+    }
+
+    /**
+     * @return result to retry the transformation later due to lack of information at the moment
+     */
+    public static TransformationResult undecided() {
+<span class="nc" id="L56">        return UNDECIDED;</span>
+    }
+
+    /**
+     * @param newDifferences the new set of differences to replace the old with
+     * @return result to replace the difference with new ones
+     */
+    public static TransformationResult replaceWith(Set&lt;Difference&gt; newDifferences) {
+<span class="fc" id="L64">        return new TransformationResult(REPLACE, newDifferences);</span>
+    }
+
+    /**
+     * Same as {@link #replaceWith(Set)} only for replacing with just a single difference.
+     *
+     * @param newDifference the difference to transform the original difference to
+     * @return the transformation result
+     */
+    public static TransformationResult replaceWith(Difference newDifference) {
+<span class="fc" id="L74">        return replaceWith(Collections.singleton(newDifference));</span>
+    }
+
+<span class="fc" id="L77">    private TransformationResult(Resolution resolution, @Nullable Set&lt;Difference&gt; differences) {</span>
+<span class="fc" id="L78">        this.resolution = resolution;</span>
+<span class="fc" id="L79">        this.differences = differences;</span>
+<span class="fc" id="L80">    }</span>
+
+    /**
+     * @return true if the transformation was resolved, false otherwise
+     */
+    public Resolution getResolution() {
+<span class="fc" id="L86">        return resolution;</span>
+    }
+
+    /**
+     * The difference passed to
+     * the {@link DifferenceTransform#tryTransform(Element, Element, Difference)} method will be
+     * replaced by the differences returned from this method.
+     *
+     * &lt;p&gt;{@code null} and an empty set are treated equivalently.
+     *
+     * &lt;p&gt;This method is only returns meaningful data when the resolution is {@link Resolution#REPLACE}.
+     */
+    public @Nullable Set&lt;Difference&gt; getDifferences() {
+<span class="fc" id="L99">        return differences;</span>
+    }
+
+    /**
+     * The resolution of the difference transformation
+     */
+<span class="fc" id="L105">    public enum Resolution {</span>
+<span class="fc" id="L106">        DISCARD, KEEP, REPLACE, UNDECIDED</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
