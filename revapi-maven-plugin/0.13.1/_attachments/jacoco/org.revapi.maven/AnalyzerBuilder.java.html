@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalyzerBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">AnalyzerBuilder.java</span></div><h1>AnalyzerBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.revapi.ApiAnalyzer;
+import org.revapi.DifferenceTransform;
+import org.revapi.ElementFilter;
+import org.revapi.ElementMatcher;
+import org.revapi.PipelineConfiguration;
+import org.revapi.Reporter;
+import org.revapi.Revapi;
+import org.revapi.ServiceTypeLoader;
+import org.revapi.TreeFilterProvider;
+
+/**
+ * Common {@link Analyzer} instantiation logic for mojos.
+ *
+ * @author Lukas Krejci
+ * @since 0.8.0
+ */
+class AnalyzerBuilder {
+
+    private Log log;
+    private Locale locale;
+    private MavenProject project;
+    private boolean skip;
+    private String[] oldGavs;
+    private String[] newGavs;
+    private final Artifact[] oldArtifacts;
+    private final Artifact[] newArtifacts;
+    private String oldVersion;
+    private String newVersion;
+    private String disallowedExtensions;
+    private Class&lt;? extends Reporter&gt; reporterType;
+    private PipelineConfiguration.Builder pipelineConfiguration;
+    private PlexusConfiguration analysisConfiguration;
+    private Object[] analysisConfigurationFiles;
+    private RepositorySystem repositorySystem;
+    private RepositorySystemSession repositorySystemSession;
+    private boolean failOnMissingConfigurationFiles;
+    private boolean failOnUnresolvedArtifacts;
+    private boolean failOnUnresolvedDependencies;
+    private boolean alwaysCheckForReleaseVersion;
+    private boolean checkDependencies;
+    private boolean resolveProvidedDependencies;
+    private boolean resolveTransitiveProvidedDependencies;
+    private boolean expandProperties;
+    private String versionFormat;
+    private Revapi revapi;
+<span class="nc" id="L79">    private Map&lt;String, Object&gt; contextData = new HashMap&lt;&gt;(2);</span>
+
+    static AnalyzerBuilder forGavs(String[] oldGavs, String[] newGavs) {
+<span class="nc" id="L82">        return new AnalyzerBuilder(oldGavs, newGavs, null, null);</span>
+    }
+
+    static AnalyzerBuilder forArtifacts(Artifact[] oldArtifacts, Artifact[] newArtifacts) {
+<span class="nc" id="L86">        return new AnalyzerBuilder(null, null, oldArtifacts, newArtifacts);</span>
+    }
+
+<span class="nc" id="L89">    private AnalyzerBuilder(String[] oldGavs, String[] newGavs, Artifact[] oldArtifacts, Artifact[] newArtifacts) {</span>
+<span class="nc" id="L90">        this.oldGavs = oldGavs;</span>
+<span class="nc" id="L91">        this.newGavs = newGavs;</span>
+<span class="nc" id="L92">        this.oldArtifacts = oldArtifacts;</span>
+<span class="nc" id="L93">        this.newArtifacts = newArtifacts;</span>
+<span class="nc" id="L94">    }</span>
+
+    AnalyzerBuilder withProject(MavenProject project) {
+<span class="nc" id="L97">        this.project = project;</span>
+<span class="nc" id="L98">        return this;</span>
+    }
+
+    AnalyzerBuilder withSkip(boolean skip) {
+<span class="nc" id="L102">        this.skip = skip;</span>
+<span class="nc" id="L103">        return this;</span>
+    }
+
+    AnalyzerBuilder withOldVersion(String oldVersion) {
+<span class="nc" id="L107">        this.oldVersion = oldVersion;</span>
+<span class="nc" id="L108">        return this;</span>
+    }
+
+    AnalyzerBuilder withNewVersion(String newVersion) {
+<span class="nc" id="L112">        this.newVersion = newVersion;</span>
+<span class="nc" id="L113">        return this;</span>
+    }
+
+    AnalyzerBuilder withDisallowedExtensions(String disallowedExtensions) {
+<span class="nc" id="L117">        this.disallowedExtensions = disallowedExtensions;</span>
+<span class="nc" id="L118">        return this;</span>
+    }
+
+    AnalyzerBuilder withReporter(Class&lt;? extends Reporter&gt; reporter) {
+<span class="nc" id="L122">        this.reporterType = reporter;</span>
+<span class="nc" id="L123">        return this;</span>
+    }
+
+    AnalyzerBuilder withLocale(Locale locale) {
+<span class="nc" id="L127">        this.locale = locale;</span>
+<span class="nc" id="L128">        return this;</span>
+    }
+
+    AnalyzerBuilder withPipelineConfiguration(PipelineConfiguration.Builder pipelineConfiguration) {
+<span class="nc" id="L132">        this.pipelineConfiguration = pipelineConfiguration;</span>
+<span class="nc" id="L133">        return this;</span>
+    }
+
+    AnalyzerBuilder withAnalysisConfiguration(PlexusConfiguration analysisConfiguration) {
+<span class="nc" id="L137">        this.analysisConfiguration = analysisConfiguration;</span>
+<span class="nc" id="L138">        return this;</span>
+    }
+
+    AnalyzerBuilder withAnalysisConfigurationFiles(Object[] analysisConfigurationFiles) {
+<span class="nc" id="L142">        this.analysisConfigurationFiles = analysisConfigurationFiles;</span>
+<span class="nc" id="L143">        return this;</span>
+    }
+
+    AnalyzerBuilder withRepositorySystem(RepositorySystem repositorySystem) {
+<span class="nc" id="L147">        this.repositorySystem = repositorySystem;</span>
+<span class="nc" id="L148">        return this;</span>
+    }
+
+    AnalyzerBuilder withRepositorySystemSession(RepositorySystemSession repositorySystemSession) {
+<span class="nc" id="L152">        this.repositorySystemSession = repositorySystemSession;</span>
+<span class="nc" id="L153">        return this;</span>
+    }
+
+    AnalyzerBuilder withFailOnMissingConfigurationFiles(boolean failOnMissingConfigurationFiles) {
+<span class="nc" id="L157">        this.failOnMissingConfigurationFiles = failOnMissingConfigurationFiles;</span>
+<span class="nc" id="L158">        return this;</span>
+    }
+
+    AnalyzerBuilder withFailOnUnresolvedDependencies(boolean failOnUnresolvedDependencies) {
+<span class="nc" id="L162">        this.failOnUnresolvedDependencies = failOnUnresolvedDependencies;</span>
+<span class="nc" id="L163">        return this;</span>
+    }
+
+    AnalyzerBuilder withFailOnUnresolvedArtifacts(boolean failOnUnresolvedArtifacts) {
+<span class="nc" id="L167">        this.failOnUnresolvedArtifacts = failOnUnresolvedArtifacts;</span>
+<span class="nc" id="L168">        return this;</span>
+    }
+
+    AnalyzerBuilder withAlwaysCheckForReleasedVersion(boolean alwaysCheckForReleaseVersion) {
+<span class="nc" id="L172">        this.alwaysCheckForReleaseVersion = alwaysCheckForReleaseVersion;</span>
+<span class="nc" id="L173">        return this;</span>
+    }
+
+    AnalyzerBuilder withCheckDependencies(boolean checkDependencies) {
+<span class="nc" id="L177">        this.checkDependencies = checkDependencies;</span>
+<span class="nc" id="L178">        return this;</span>
+    }
+
+    AnalyzerBuilder withResolveProvidedDependencies(boolean resolveProvidedDependencies) {
+<span class="nc" id="L182">        this.resolveProvidedDependencies = resolveProvidedDependencies;</span>
+<span class="nc" id="L183">        return this;</span>
+    }
+
+    AnalyzerBuilder withResolveTransitiveProvidedDependencies(boolean resolveTransitiveProvidedDependencies) {
+<span class="nc" id="L187">        this.resolveTransitiveProvidedDependencies = resolveTransitiveProvidedDependencies;</span>
+<span class="nc" id="L188">        return this;</span>
+    }
+
+    AnalyzerBuilder withExpandProperties(boolean expandProperties) {
+<span class="nc" id="L192">        this.expandProperties = expandProperties;</span>
+<span class="nc" id="L193">        return this;</span>
+    }
+
+    AnalyzerBuilder withVersionFormat(String versionFormat) {
+<span class="nc" id="L197">        this.versionFormat = versionFormat;</span>
+<span class="nc" id="L198">        return this;</span>
+    }
+
+    AnalyzerBuilder withLog(Log log) {
+<span class="nc" id="L202">        this.log = log;</span>
+<span class="nc" id="L203">        return this;</span>
+    }
+
+    AnalyzerBuilder withRevapiInstance(Revapi revapi) {
+<span class="nc" id="L207">        this.revapi = revapi;</span>
+<span class="nc" id="L208">        return this;</span>
+    }
+
+    AnalyzerBuilder withContextData(Map&lt;String, Object&gt; contextData) {
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (contextData != null) {</span>
+<span class="nc" id="L213">            this.contextData.putAll(contextData);</span>
+        }
+<span class="nc" id="L215">        return this;</span>
+    }
+
+    public Result build() {
+<span class="nc" id="L219">        Result res = new Result();</span>
+
+<span class="nc" id="L221">        initializeComparisonArtifacts();</span>
+
+<span class="nc" id="L223">        res.newArtifacts = newGavs;</span>
+<span class="nc" id="L224">        res.oldArtifacts = oldGavs;</span>
+
+<span class="nc" id="L226">        res.skip = skip;</span>
+
+<span class="nc" id="L228">        res.analyzer = prepareAnalyzer();</span>
+
+<span class="nc" id="L230">        return res;</span>
+    }
+
+    private Analyzer prepareAnalyzer() {
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L235">            return null;</span>
+        }
+
+
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        final List&lt;String&gt; disallowedExtensions = this.disallowedExtensions == null</span>
+<span class="nc" id="L240">                ? Collections.emptyList()</span>
+<span class="nc" id="L241">                : Arrays.asList(this.disallowedExtensions.split(&quot;\\s*,\\s*&quot;));</span>
+
+<span class="nc" id="L243">        Consumer&lt;PipelineConfiguration.Builder&gt; pipelineModifier =</span>
+<span class="nc" id="L244">                applyDisallowedExtensionsToPipeline(disallowedExtensions);</span>
+
+<span class="nc" id="L246">        return new Analyzer(pipelineConfiguration, analysisConfiguration, analysisConfigurationFiles, oldArtifacts,</span>
+                newArtifacts, oldGavs, newGavs, project, repositorySystem, repositorySystemSession, reporterType,
+                contextData, locale, log, failOnMissingConfigurationFiles, failOnUnresolvedArtifacts,
+                failOnUnresolvedDependencies, alwaysCheckForReleaseVersion, checkDependencies,
+                resolveProvidedDependencies, resolveTransitiveProvidedDependencies, expandProperties, versionFormat,
+                pipelineModifier, revapi);
+    }
+
+    private void initializeComparisonArtifacts() {
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (oldArtifacts == null) {</span>
+<span class="nc" id="L256">            initializeComparisonGavs();</span>
+        }
+<span class="nc" id="L258">    }</span>
+
+    private void initializeComparisonGavs() {
+<span class="nc bnc" id="L261" title="All 6 branches missed.">        if (newGavs != null &amp;&amp; newGavs.length == 1 &amp;&amp; &quot;BUILD&quot;.equals(newGavs[0])) {</span>
+<span class="nc" id="L262">            log.warn(&quot;\&quot;BUILD\&quot; coordinates are deprecated. Just leave \&quot;newArtifacts\&quot; undefined and specify&quot; +</span>
+                    &quot; \&quot;${project.version}\&quot; as the value for \&quot;newVersion\&quot; (which is the default, so you don't&quot; +
+                    &quot; actually have to do that either).&quot;);
+<span class="nc" id="L265">            oldGavs = null;</span>
+        }
+
+<span class="nc bnc" id="L268" title="All 4 branches missed.">        if (oldGavs == null || oldGavs.length == 0) {</span>
+            //non-intuitively, we need to initialize the artifacts even if we will not proceed with the analysis itself
+            //that's because we need know the versions when figuring out the version modifications -
+            //see AbstractVersionModifyingMojo
+<span class="nc" id="L272">            oldGavs = new String[]{</span>
+<span class="nc" id="L273">                    Analyzer.getProjectArtifactCoordinates(project, oldVersion)};</span>
+        }
+
+<span class="nc bnc" id="L276" title="All 4 branches missed.">        if (newGavs == null || newGavs.length == 0) {</span>
+<span class="nc" id="L277">            newGavs = new String[]{</span>
+<span class="nc" id="L278">                    Analyzer.getProjectArtifactCoordinates(project, newVersion)};</span>
+        }
+<span class="nc" id="L280">   }</span>
+
+    private static Consumer&lt;PipelineConfiguration.Builder&gt;
+    applyDisallowedExtensionsToPipeline(List&lt;String&gt; disallowedExtensions) {
+<span class="nc" id="L284">        return (bld) -&gt; {</span>
+<span class="nc" id="L285">            List&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L286">            List&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; filters = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L287">            List&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L288">            List&lt;Class&lt;? extends Reporter&gt;&gt; reporters = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L289">            List&lt;Class&lt;? extends ElementFilter&gt;&gt; legacyFilters = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L290">            List&lt;Class&lt;? extends ElementMatcher&gt;&gt; matchers = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L292">            addAllAllowed(analyzers, ServiceTypeLoader.load(ApiAnalyzer.class), disallowedExtensions);</span>
+<span class="nc" id="L293">            addAllAllowed(filters, ServiceTypeLoader.load(TreeFilterProvider.class), disallowedExtensions);</span>
+<span class="nc" id="L294">            addAllAllowed(transforms, ServiceTypeLoader.load(DifferenceTransform.class), disallowedExtensions);</span>
+<span class="nc" id="L295">            addAllAllowed(reporters, ServiceTypeLoader.load(Reporter.class), disallowedExtensions);</span>
+<span class="nc" id="L296">            addAllAllowed(legacyFilters, ServiceTypeLoader.load(ElementFilter.class), disallowedExtensions);</span>
+<span class="nc" id="L297">            addAllAllowed(matchers, ServiceTypeLoader.load(ElementMatcher.class), disallowedExtensions);</span>
+
+<span class="nc" id="L299">            filters.addAll(legacyFilters);</span>
+
+<span class="nc" id="L301">            bld.withAnalyzers(analyzers).withFilters(filters).withTransforms(transforms).withReporters(reporters)</span>
+<span class="nc" id="L302">                .withMatchers(matchers);</span>
+<span class="nc" id="L303">        };</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T&gt; void addAllAllowed(List&lt;Class&lt;? extends T&gt;&gt; list, Iterable&lt;Class&lt;? extends T&gt;&gt; candidates,
+                                          List&lt;String&gt; disallowedClassNames) {
+<span class="nc bnc" id="L309" title="All 2 branches missed.">        for (Class&lt;? extends T&gt; c : candidates) {</span>
+<span class="nc bnc" id="L310" title="All 4 branches missed.">            if (c != null &amp;&amp; !disallowedClassNames.contains(c.getName())) {</span>
+<span class="nc" id="L311">                list.add(c);</span>
+            }
+<span class="nc" id="L313">        }</span>
+<span class="nc" id="L314">    }</span>
+
+    static class Result {
+        boolean skip;
+        String[] oldArtifacts;
+        String[] newArtifacts;
+        Analyzer analyzer;
+
+        private Result() {}
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

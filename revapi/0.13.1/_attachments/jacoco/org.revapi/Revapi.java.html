@@ -1,0 +1,949 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Revapi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">Revapi.java</span></div><h1>Revapi.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import static java.util.Collections.emptySortedSet;
+import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.singletonList;
+import static java.util.Comparator.comparingInt;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+
+import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.function.BiFunction;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import org.revapi.AnalysisResult.ExtensionInstance;
+import org.revapi.configuration.Configurable;
+import org.revapi.configuration.ConfigurationValidator;
+import org.revapi.configuration.JSONUtil;
+import org.revapi.configuration.ValidationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * The main entry point to the library. The instance of this class is initialized with the different extensions and then
+ * can run analyses on APIs with different configurations using the {@link #analyze(AnalysisContext)} method.
+ *
+ * @author Lukas Krejci
+ * @since 1.0
+ */
+public final class Revapi {
+<span class="fc" id="L69">    private static final Logger LOG = LoggerFactory.getLogger(Revapi.class);</span>
+<span class="fc" id="L70">    static final Logger TIMING_LOG = LoggerFactory.getLogger(&quot;revapi.analysis.timing&quot;);</span>
+    private static final long MAX_TRANSFORMATION_ITERATIONS = 1_000_000;
+
+    private final PipelineConfiguration pipelineConfiguration;
+    private final ConfigurationValidator configurationValidator;
+<span class="fc" id="L75">    private final Map&lt;String, Set&lt;List&lt;DifferenceTransform&lt;?&gt;&gt;&gt;&gt; matchingTransformsCache = new HashMap&lt;&gt;();</span>
+
+    /**
+     * Use the {@link #builder()} instead.
+     *
+     * @param pipelineConfiguration the configuration of the analysis pipeline
+     * @throws java.lang.IllegalArgumentException if any of the parameters is null
+     */
+<span class="fc" id="L83">    public Revapi(PipelineConfiguration pipelineConfiguration) {</span>
+<span class="fc" id="L84">        this.pipelineConfiguration = pipelineConfiguration;</span>
+<span class="fc" id="L85">        this.configurationValidator = new ConfigurationValidator();</span>
+<span class="fc" id="L86">    }</span>
+
+    @Nonnull
+    public static Builder builder() {
+<span class="fc" id="L90">        return new Builder();</span>
+    }
+
+    /**
+     * Validates the configuration of the analysis context.
+     *
+     * @param analysisContext the analysis context
+     * @return the validation result
+     */
+    public ValidationResult validateConfiguration(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L100">        TIMING_LOG.debug(&quot;Validation starts&quot;);</span>
+
+<span class="fc" id="L102">        ValidationResult validation = ValidationResult.success();</span>
+
+        // even though we're not using the extensions much during validation and we actually don't run any analysis
+        // at all, let's just use the same method for instantiating the extensions as during the analysis even though we
+        // actually don't need the extensions classified by their type.
+<span class="fc" id="L107">        AnalysisResult.Extensions exts = prepareAnalysis(analysisContext);</span>
+<span class="fc" id="L108">        validation = validate(analysisContext, validation, exts);</span>
+
+<span class="fc" id="L110">        TIMING_LOG.debug(&quot;Validation finished&quot;);</span>
+
+<span class="fc" id="L112">        return validation;</span>
+    }
+
+    public PipelineConfiguration getPipelineConfiguration() {
+<span class="fc" id="L116">        return pipelineConfiguration;</span>
+    }
+
+    /**
+     * This instantiates the individual extensions and assigns the configurations to each one of them. The caller of
+     * this method gains insight on what extensions with what configurations would be executed by the analysis.
+     *
+     * &lt;p&gt;Note that the extensions are instantiated but NOT initialized after this call.
+     *
+     * @param analysisContext the analysis context containing the &quot;global&quot; configuration of all extensions
+     * @return the instantiated extensions and their individual configurations
+     */
+    public AnalysisResult.Extensions prepareAnalysis(AnalysisContext analysisContext) {
+<span class="fc" id="L129">        Map&lt;ExtensionInstance&lt;TreeFilterProvider&gt;, AnalysisContext&gt; filters = splitByConfiguration(analysisContext,</span>
+<span class="fc" id="L130">                pipelineConfiguration.getTreeFilterTypes(), pipelineConfiguration.getIncludedFilterExtensionIds(),</span>
+<span class="fc" id="L131">                pipelineConfiguration.getExcludedFilterExtensionIds());</span>
+<span class="fc" id="L132">        Map&lt;ExtensionInstance&lt;Reporter&gt;, AnalysisContext&gt; reporters = splitByConfiguration(analysisContext,</span>
+<span class="fc" id="L133">                pipelineConfiguration.getReporterTypes(), pipelineConfiguration.getIncludedReporterExtensionIds(),</span>
+<span class="fc" id="L134">                pipelineConfiguration.getExcludedReporterExtensionIds());</span>
+<span class="fc" id="L135">        Map&lt;ExtensionInstance&lt;ApiAnalyzer&lt;?&gt;&gt;, AnalysisContext&gt; analyzers = splitByConfiguration(analysisContext,</span>
+<span class="fc" id="L136">                pipelineConfiguration.getApiAnalyzerTypes(), pipelineConfiguration.getIncludedAnalyzerExtensionIds(),</span>
+<span class="fc" id="L137">                pipelineConfiguration.getExcludedAnalyzerExtensionIds());</span>
+<span class="fc" id="L138">        Map&lt;ExtensionInstance&lt;DifferenceTransform&lt;?&gt;&gt;, AnalysisContext&gt; transforms = splitByConfiguration(analysisContext,</span>
+<span class="fc" id="L139">                pipelineConfiguration.getTransformTypes(), pipelineConfiguration.getIncludedTransformExtensionIds(),</span>
+<span class="fc" id="L140">                pipelineConfiguration.getExcludedTransformExtensionIds());</span>
+<span class="fc" id="L141">        Map&lt;ExtensionInstance&lt;ElementMatcher&gt;, AnalysisContext&gt; matchers = splitByConfiguration(analysisContext,</span>
+<span class="fc" id="L142">                pipelineConfiguration.getMatcherTypes(), pipelineConfiguration.getIncludedMatcherExtensionIds(),</span>
+<span class="fc" id="L143">                pipelineConfiguration.getExcludedMatcherExtensionIds());</span>
+
+<span class="fc" id="L145">        BiFunction&lt;Object, AnalysisContext, AnalysisContext&gt; addMatchers =</span>
+<span class="fc" id="L146">                (__, ctx) -&gt; ctx.copyWithMatchers(matchers.keySet().stream().map(ExtensionInstance::getInstance)</span>
+<span class="fc" id="L147">                        .collect(toSet()));</span>
+
+<span class="fc" id="L149">        filters.replaceAll(addMatchers);</span>
+<span class="fc" id="L150">        reporters.replaceAll(addMatchers);</span>
+<span class="fc" id="L151">        analyzers.replaceAll(addMatchers);</span>
+<span class="fc" id="L152">        transforms.replaceAll(addMatchers);</span>
+<span class="fc" id="L153">        matchers.replaceAll(addMatchers);</span>
+
+<span class="fc" id="L155">        return new AnalysisResult.Extensions(analyzers, filters, reporters, transforms, matchers);</span>
+    }
+
+    /**
+     * Performs the analysis configured by the given analysis context.
+     * &lt;p&gt;
+     * Make sure to call the {@link AnalysisResult#close()} method (or perform the analysis in try-with-resources
+     * block).
+     *
+     * @param analysisContext describes the analysis to be performed
+     * @return a result object that has to be closed for the analysis to conclude
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public AnalysisResult analyze(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L169">        TIMING_LOG.debug(&quot;Analysis starts&quot;);</span>
+
+<span class="fc" id="L171">        AnalysisResult.Extensions extensions = prepareAnalysis(analysisContext);</span>
+
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (extensions.getAnalyzers().isEmpty()) {</span>
+<span class="nc" id="L174">            throw new IllegalArgumentException(&quot;At least one analyzer needs to be present. Make sure there is at&quot; +</span>
+                    &quot; least one on the classpath and that the extension filters do not exclude all of them.&quot;);
+        }
+
+<span class="fc" id="L178">        extensions.stream()</span>
+<span class="fc" id="L179">                .map(e -&gt; (Map.Entry&lt;ExtensionInstance&lt;Configurable&gt;, AnalysisContext&gt;) (Map.Entry) e)</span>
+<span class="fc" id="L180">                .forEach(e -&gt; {</span>
+<span class="fc" id="L181">                    ExtensionInstance&lt;Configurable&gt; i = e.getKey();</span>
+
+                    try {
+<span class="fc" id="L184">                        i.getInstance().initialize(e.getValue());</span>
+<span class="nc" id="L185">                    } catch (Exception ex) {</span>
+<span class="nc" id="L186">                        throw new IllegalStateException(&quot;Extension &quot; + i.getInstance().getExtensionId()</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                                + (i.getId() == null ? &quot;&quot; : &quot;(id=&quot; + i.getId() + &quot;)&quot;)</span>
+<span class="nc" id="L188">                                + &quot; failed to initialize: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L189">                    }</span>
+<span class="fc" id="L190">                });</span>
+
+<span class="fc" id="L192">        AnalysisProgress progress = new AnalysisProgress(extensions, pipelineConfiguration, analysisContext.getOldApi(),</span>
+<span class="fc" id="L193">                analysisContext.getNewApi());</span>
+
+<span class="fc" id="L195">        TIMING_LOG.debug(&quot;Initialization complete.&quot;);</span>
+
+<span class="fc" id="L197">        matchingTransformsCache.clear();</span>
+
+<span class="fc" id="L199">        Exception error = null;</span>
+        try {
+<span class="fc bfc" id="L201" title="All 2 branches covered.">            for (ExtensionInstance&lt;ApiAnalyzer&lt;?&gt;&gt; ia : extensions.getAnalyzers().keySet()) {</span>
+<span class="fc" id="L202">                analyzeWith(ia.getInstance(), progress);</span>
+<span class="fc" id="L203">                progress.reports.clear();</span>
+<span class="fc" id="L204">            }</span>
+<span class="fc" id="L205">        } catch (Exception t) {</span>
+<span class="fc" id="L206">            error = t;</span>
+<span class="fc" id="L207">        }</span>
+
+<span class="fc" id="L209">        return new AnalysisResult(error, extensions);</span>
+    }
+
+    private &lt;T extends Configurable&gt; Map&lt;ExtensionInstance&lt;T&gt;, AnalysisContext&gt;
+    splitByConfiguration(AnalysisContext fullConfig, Set&lt;Class&lt;? extends T&gt;&gt; configurables,
+            List&lt;String&gt; extensionIdIncludes, List&lt;String&gt; extensionIdExcludes) {
+
+<span class="fc" id="L216">        Map&lt;ExtensionInstance&lt;T&gt;, AnalysisContext&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        for (Class&lt;? extends T&gt; cc : configurables) {</span>
+<span class="fc" id="L218">            T c = instantiate(cc);</span>
+<span class="fc" id="L219">            String extensionId = c.getExtensionId();</span>
+
+<span class="fc bfc" id="L221" title="All 2 branches covered.">            if (extensionId == null) {</span>
+<span class="fc" id="L222">                extensionId = &quot;$$%%(@#_)I#@)(*)(#$)(@#$__IMPROBABLE, right??!?!?!&quot;;</span>
+            }
+
+            // apply the filtering
+<span class="fc bfc" id="L226" title="All 4 branches covered.">            if (!extensionIdIncludes.isEmpty() &amp;&amp; !extensionIdIncludes.contains(extensionId)) {</span>
+<span class="fc" id="L227">                continue;</span>
+            }
+
+<span class="fc bfc" id="L230" title="All 2 branches covered.">            if (extensionIdExcludes.contains(extensionId)) {</span>
+<span class="fc" id="L231">                continue;</span>
+            }
+
+<span class="fc" id="L234">            T inst = null;</span>
+<span class="fc" id="L235">            boolean configured = false;</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">            for (JsonNode config : fullConfig.getConfigurationNode()) {</span>
+<span class="pc bpc" id="L237" title="1 of 2 branches missed.">                if (config.path(&quot;extension&quot;).isMissingNode()) {</span>
+<span class="nc" id="L238">                    throw new IllegalArgumentException(&quot;Invalid configuration: missing the extension name.&quot;);</span>
+                }
+<span class="fc" id="L240">                String configExtension = config.get(&quot;extension&quot;).asText();</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                if (!extensionId.equals(configExtension)) {</span>
+<span class="fc" id="L242">                    continue;</span>
+                }
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                if (inst == null) {</span>
+<span class="fc" id="L245">                    inst = c;</span>
+                } else {
+<span class="fc" id="L247">                    inst = instantiate(cc);</span>
+                }
+
+<span class="fc" id="L250">                JsonNode idNode = config.get(&quot;id&quot;);</span>
+
+<span class="fc bfc" id="L252" title="All 2 branches covered.">                String instanceId = !JSONUtil.isNullOrUndefined(idNode) ? idNode.asText() : null;</span>
+
+<span class="fc" id="L254">                ExtensionInstance&lt;T&gt; key = new ExtensionInstance&lt;&gt;(inst, instanceId);</span>
+
+<span class="fc" id="L256">                map.put(key, fullConfig.copyWithConfiguration(config.get(&quot;configuration&quot;).deepCopy()));</span>
+
+<span class="fc" id="L258">                configured = true;</span>
+<span class="fc" id="L259">            }</span>
+
+<span class="fc bfc" id="L261" title="All 2 branches covered.">            if (!configured) {</span>
+<span class="fc" id="L262">                map.put(new ExtensionInstance&lt;&gt;(c, null), fullConfig.copyWithConfiguration(JsonNodeFactory.instance.nullNode()));</span>
+            }
+<span class="fc" id="L264">        }</span>
+
+<span class="fc" id="L266">        return map;</span>
+    }
+
+    private ValidationResult validate(@Nonnull AnalysisContext analysisContext, ValidationResult validationResult,
+            AnalysisResult.Extensions configurables) {
+<span class="fc bfc" id="L271" title="All 2 branches covered.">        for (Map.Entry&lt;ExtensionInstance&lt;?&gt;, AnalysisContext&gt; e : configurables) {</span>
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">            if (!(e.getKey().getInstance() instanceof Configurable)) {</span>
+<span class="nc" id="L273">                continue;</span>
+            }
+
+<span class="fc" id="L276">            Configurable c = (Configurable) e.getKey().getInstance();</span>
+<span class="fc" id="L277">            ValidationResult partial = configurationValidator.validate(analysisContext.getConfigurationNode(), c);</span>
+<span class="fc" id="L278">            validationResult = validationResult.merge(partial);</span>
+<span class="fc" id="L279">        }</span>
+
+<span class="fc" id="L281">        return validationResult;</span>
+    }
+
+    private &lt;E extends Element&lt;E&gt;&gt;void analyzeWith(ApiAnalyzer&lt;E&gt; apiAnalyzer, AnalysisProgress config)
+            throws Exception {
+
+<span class="fc" id="L287">        API oldApi = config.oldApi;</span>
+<span class="fc" id="L288">        API newApi = config.newApi;</span>
+
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">        if (TIMING_LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L291">            TIMING_LOG.debug(&quot;Commencing analysis using &quot; + apiAnalyzer + &quot; on:\nOld API:\n&quot; + oldApi + &quot;\n\nNew API:\n&quot;</span>
+                    + newApi);
+        }
+
+<span class="fc" id="L295">        ArchiveAnalyzer&lt;E&gt; oldAnalyzer = apiAnalyzer.getArchiveAnalyzer(oldApi);</span>
+<span class="fc" id="L296">        ArchiveAnalyzer&lt;E&gt; newAnalyzer = apiAnalyzer.getArchiveAnalyzer(newApi);</span>
+
+<span class="fc" id="L298">        TreeFilterProvider filter = unionFilter(config.extensions);</span>
+
+<span class="fc" id="L300">        TIMING_LOG.debug(&quot;Obtaining API trees.&quot;);</span>
+
+<span class="fc" id="L302">        ElementForest&lt;E&gt; oldTree = analyzeAndPrune(oldAnalyzer, filter);</span>
+<span class="fc" id="L303">        ElementForest&lt;E&gt; newTree = analyzeAndPrune(newAnalyzer, filter);</span>
+
+<span class="fc" id="L305">        TIMING_LOG.debug(&quot;API trees obtained&quot;);</span>
+
+<span class="fc" id="L307">        try (DifferenceAnalyzer&lt;E&gt; elementDifferenceAnalyzer = apiAnalyzer.getDifferenceAnalyzer(oldAnalyzer, newAnalyzer)) {</span>
+<span class="fc" id="L308">            TIMING_LOG.debug(&quot;Obtaining API roots&quot;);</span>
+<span class="fc" id="L309">            SortedSet&lt;E&gt; as = oldTree.getRoots();</span>
+<span class="fc" id="L310">            SortedSet&lt;E&gt; bs = newTree.getRoots();</span>
+<span class="fc" id="L311">            TIMING_LOG.debug(&quot;API roots obtained&quot;);</span>
+
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">            if (LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L314">                LOG.debug(&quot;Old tree: {}&quot;, oldTree);</span>
+<span class="nc" id="L315">                LOG.debug(&quot;New tree: {}&quot;, newTree);</span>
+            }
+
+<span class="fc" id="L318">            TIMING_LOG.debug(&quot;Opening difference analyzer&quot;);</span>
+<span class="fc" id="L319">            elementDifferenceAnalyzer.open();</span>
+
+<span class="fc" id="L321">            Map&lt;DifferenceTransform&lt;?&gt;, Optional&lt;DifferenceTransform.TraversalTracker&lt;E&gt;&gt;&gt; allTransforms =</span>
+<span class="fc" id="L322">                    config.extensions.getTransforms().keySet().stream()</span>
+<span class="fc" id="L323">                            .map(ExtensionInstance::getInstance)</span>
+<span class="fc" id="L324">                            .collect(toMap(</span>
+<span class="fc" id="L325">                                    i -&gt; (DifferenceTransform&lt;?&gt;) i,</span>
+<span class="fc" id="L326">                                    i -&gt; i.startTraversal(apiAnalyzer, oldAnalyzer, newAnalyzer)));</span>
+
+<span class="fc" id="L328">            List&lt;DifferenceTransform.TraversalTracker&lt;E&gt;&gt; activeTransforms = allTransforms.values().stream()</span>
+<span class="fc" id="L329">                            .filter(Optional::isPresent)</span>
+<span class="fc" id="L330">                            .map(Optional::get)</span>
+<span class="fc" id="L331">                            .collect(toList());</span>
+
+<span class="fc" id="L333">            analyze(apiAnalyzer.getCorrespondenceDeducer(), elementDifferenceAnalyzer, as, bs,</span>
+                    activeTransforms, config);
+
+<span class="fc" id="L336">            allTransforms.values().forEach(tr -&gt; tr.ifPresent(DifferenceTransform.TraversalTracker::endTraversal));</span>
+
+<span class="fc" id="L338">            Set&lt;Reporter&gt; reporters = config.extensions.getReporters().keySet().stream()</span>
+<span class="fc" id="L339">                    .map(ExtensionInstance::getInstance).collect(toSet());</span>
+
+<span class="fc" id="L341">            config.reports.forEach(r -&gt; {</span>
+<span class="fc" id="L342">                transform(r, allTransforms.keySet(), null, false, config);</span>
+
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">                if (!r.getDifferences().isEmpty()) {</span>
+<span class="fc" id="L345">                    Stats.of(&quot;reports&quot;).start();</span>
+
+                    // make sure all the differences have a non-null criticality before being sent to the reporters
+<span class="fc" id="L348">                    ListIterator&lt;Difference&gt; it = r.getDifferences().listIterator();</span>
+<span class="fc bfc" id="L349" title="All 2 branches covered.">                    while (it.hasNext()) {</span>
+<span class="fc" id="L350">                        Difference orig = it.next();</span>
+<span class="pc bpc" id="L351" title="1 of 2 branches missed.">                        if (orig.criticality == null) {</span>
+<span class="fc" id="L352">                            DifferenceSeverity maxSeverity = orig.classification.values().stream()</span>
+<span class="fc" id="L353">                                    .max(comparingInt(Enum::ordinal))</span>
+<span class="fc" id="L354">                                    .orElse(DifferenceSeverity.EQUIVALENT);</span>
+
+                            // all extensions share the criticality mapping and we're guaranteed to have at least 1 api analyzer
+<span class="fc" id="L357">                            AnalysisContext ctx = config.extensions.getFirstConfigurationOrNull(ApiAnalyzer.class);</span>
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">                            if (ctx == null) {</span>
+<span class="nc" id="L359">                                throw new IllegalStateException(&quot;There should be at least 1 API analyzer during the analysis&quot; +</span>
+                                        &quot;progress.&quot;);
+                            }
+
+<span class="fc" id="L363">                            Difference.Builder d = Difference.copy(orig)</span>
+<span class="fc" id="L364">                                    .withCriticality(ctx.getDefaultCriticality(maxSeverity));</span>
+
+<span class="fc" id="L366">                            it.set(d.build());</span>
+                        }
+<span class="fc" id="L368">                    }</span>
+
+<span class="fc bfc" id="L370" title="All 2 branches covered.">                    for (Reporter reporter : reporters) {</span>
+<span class="fc" id="L371">                        reporter.report(r);</span>
+<span class="fc" id="L372">                    }</span>
+<span class="fc" id="L373">                    Stats.of(&quot;reports&quot;).end(r);</span>
+                }
+<span class="fc" id="L375">            });</span>
+
+<span class="fc" id="L377">            allTransforms.forEach((trans, track) -&gt; {</span>
+<span class="fc" id="L378">                trans.endTraversal(track.orElse(null));</span>
+<span class="fc" id="L379">            });</span>
+
+<span class="fc" id="L381">            TIMING_LOG.debug(&quot;Closing difference analyzer&quot;);</span>
+        }
+
+<span class="fc" id="L384">        TIMING_LOG.debug(&quot;Difference analyzer closed&quot;);</span>
+<span class="fc" id="L385">    }</span>
+
+    private &lt;E extends Element&lt;E&gt;&gt; ElementForest&lt;E&gt; analyzeAndPrune(ArchiveAnalyzer&lt;E&gt; analyzer, TreeFilterProvider filter) {
+<span class="fc" id="L388">        TreeFilter&lt;E&gt; tf = filter.filterFor(analyzer).orElseGet(TreeFilter::matchAndDescend);</span>
+<span class="fc" id="L389">        ElementForest&lt;E&gt; forest = analyzer.analyze(tf);</span>
+<span class="fc" id="L390">        analyzer.prune(forest);</span>
+
+<span class="fc" id="L392">        return forest;</span>
+    }
+
+    private &lt;E extends Element&lt;E&gt;&gt; void analyze(CorrespondenceComparatorDeducer&lt;E&gt; deducer, DifferenceAnalyzer&lt;E&gt; elementDifferenceAnalyzer,
+            SortedSet&lt;E&gt; as, SortedSet&lt;E&gt; bs,
+            Collection&lt;DifferenceTransform.TraversalTracker&lt;E&gt;&gt; activeTransforms, AnalysisProgress progress) {
+
+<span class="fc" id="L399">        List&lt;E&gt; sortedAs = new ArrayList&lt;&gt;(as);</span>
+<span class="fc" id="L400">        List&lt;E&gt; sortedBs = new ArrayList&lt;&gt;(bs);</span>
+
+<span class="fc" id="L402">        Stats.of(&quot;sorts&quot;).start();</span>
+<span class="fc" id="L403">        Comparator&lt;? super E&gt; comp = deducer.sortAndGetCorrespondenceComparator(sortedAs, sortedBs);</span>
+<span class="fc" id="L404">        Stats.of(&quot;sorts&quot;).end(sortedAs, sortedBs);</span>
+
+<span class="fc" id="L406">        CoIterator&lt;E&gt; it = new CoIterator&lt;&gt;(sortedAs.iterator(), sortedBs.iterator(), comp);</span>
+
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc" id="L409">            it.next();</span>
+
+<span class="fc" id="L411">            E a = it.getLeft();</span>
+<span class="fc" id="L412">            E b = it.getRight();</span>
+
+<span class="fc" id="L414">            LOG.trace(&quot;Inspecting {} and {}&quot;, a, b);</span>
+
+            long beginDuration;
+<span class="fc" id="L417">            Stats.of(&quot;analyses&quot;).start();</span>
+<span class="fc" id="L418">            Stats.of(&quot;analysisBegins&quot;).start();</span>
+
+<span class="fc" id="L420">            List&lt;DifferenceTransform.TraversalTracker&lt;E&gt;&gt; childTransforms = activeTransforms.stream()</span>
+<span class="pc bpc" id="L421" title="2 of 4 branches missed.">                    .filter(t -&gt; (a != null &amp;&amp; b != null) | t.startElements(a, b)) //intentional non-short-circuit &quot;or&quot;</span>
+<span class="fc" id="L422">                    .collect(toList());</span>
+
+<span class="fc" id="L424">            elementDifferenceAnalyzer.beginAnalysis(a, b);</span>
+
+<span class="fc" id="L426">            Stats.of(&quot;analysisBegins&quot;).end(a, b);</span>
+<span class="fc" id="L427">            beginDuration = Stats.of(&quot;analyses&quot;).reset();</span>
+
+<span class="pc bpc" id="L429" title="2 of 4 branches missed.">            boolean shouldDescend = a != null &amp;&amp; b != null;</span>
+<span class="pc bpc" id="L430" title="1 of 2 branches missed.">            if (!shouldDescend) {</span>
+<span class="nc bnc" id="L431" title="All 4 branches missed.">                shouldDescend = !childTransforms.isEmpty() || elementDifferenceAnalyzer. isDescendRequired(a, b);</span>
+            }
+
+<span class="pc bpc" id="L434" title="1 of 2 branches missed.">            if (shouldDescend) {</span>
+<span class="fc" id="L435">                LOG.trace(&quot;Descending into {}, {} pair.&quot;, a, b);</span>
+<span class="fc" id="L436">                analyze(deducer, elementDifferenceAnalyzer,</span>
+<span class="pc bpc" id="L437" title="1 of 2 branches missed.">                        a == null ? emptySortedSet() : a.getChildren(),</span>
+<span class="pc bpc" id="L438" title="1 of 2 branches missed.">                        b == null ? emptySortedSet() : b.getChildren(),</span>
+                        childTransforms, progress);
+            } else {
+<span class="nc" id="L441">                LOG.trace(&quot;Filters disallowed descending into {} and {}.&quot;, a, b);</span>
+            }
+
+<span class="fc" id="L444">            Stats.of(&quot;analyses&quot;).start();</span>
+<span class="fc" id="L445">            Stats.of(&quot;analysisEnds&quot;).start();</span>
+
+<span class="fc" id="L447">            Report r = elementDifferenceAnalyzer.endAnalysis(a, b);</span>
+<span class="pc bpc" id="L448" title="2 of 4 branches missed.">            if (r != null &amp;&amp; !r.getDifferences().isEmpty()) {</span>
+<span class="fc" id="L449">                addDefaultAttachments(r, progress);</span>
+<span class="fc" id="L450">                progress.reports.add(r);</span>
+            }
+
+<span class="fc" id="L453">            Stats.of(&quot;analysisEnds&quot;).end(a, b);</span>
+<span class="fc" id="L454">            Stats.of(&quot;analyses&quot;).end(beginDuration, new AbstractMap.SimpleEntry&lt;&gt;(a, b));</span>
+
+<span class="fc bfc" id="L456" title="All 2 branches covered.">            for (DifferenceTransform.TraversalTracker&lt;E&gt; t : activeTransforms) {</span>
+<span class="fc" id="L457">                t.endElements(a, b);</span>
+<span class="fc" id="L458">            }</span>
+<span class="fc" id="L459">        }</span>
+<span class="fc" id="L460">    }</span>
+
+    private void addDefaultAttachments(Report r, AnalysisProgress progress) {
+<span class="fc" id="L463">        Element&lt;?&gt; oldElement = r.getOldElement();</span>
+<span class="fc" id="L464">        Element&lt;?&gt; newElement = r.getNewElement();</span>
+<span class="fc" id="L465">        API oldApi = progress.oldApi;</span>
+<span class="fc" id="L466">        API newApi = progress.newApi;</span>
+
+<span class="fc" id="L468">        ListIterator&lt;Difference&gt; it = r.getDifferences().listIterator();</span>
+<span class="fc bfc" id="L469" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc" id="L470">            Difference.Builder d = Difference.copy(it.next());</span>
+<span class="pc bpc" id="L471" title="1 of 4 branches missed.">            if (oldElement != null &amp;&amp; oldElement.getArchive() != null) {</span>
+<span class="fc" id="L472">                d.addAttachment(&quot;oldArchive&quot;, oldElement.getArchive().getName());</span>
+<span class="fc" id="L473">                d.addAttachment(&quot;oldArchiveRole&quot;, oldApi.getArchiveRole(oldElement.getArchive()).name().toLowerCase());</span>
+            }
+
+<span class="pc bpc" id="L476" title="1 of 4 branches missed.">            if (newElement != null &amp;&amp; newElement.getArchive() != null) {</span>
+<span class="fc" id="L477">                d.addAttachment(&quot;newArchive&quot;, newElement.getArchive().getName());</span>
+<span class="fc" id="L478">                d.addAttachment(&quot;newArchiveRole&quot;, newApi.getArchiveRole(newElement.getArchive()).name().toLowerCase());</span>
+            }
+
+<span class="fc" id="L481">            it.set(d.build());</span>
+<span class="fc" id="L482">        }</span>
+<span class="fc" id="L483">    }</span>
+
+    private &lt;T&gt; T instantiate(Class&lt;? extends T&gt; type) {
+        try {
+<span class="fc" id="L487">            return type.getDeclaredConstructor().newInstance();</span>
+<span class="nc" id="L488">        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {</span>
+<span class="nc" id="L489">            throw new IllegalStateException(&quot;Failed to instantiate extension: &quot; + type, e);</span>
+        }
+    }
+
+    private TreeFilterProvider unionFilter(AnalysisResult.Extensions extensions) {
+<span class="fc" id="L494">        return new TreeFilterProvider() {</span>
+            @Override
+            public &lt;E extends Element&lt;E&gt;&gt; Optional&lt;TreeFilter&lt;E&gt;&gt; filterFor(ArchiveAnalyzer&lt;E&gt; archiveAnalyzer) {
+<span class="fc" id="L497">                List&lt;TreeFilter&lt;E&gt;&gt; applicables = extensions.getFilters().keySet().stream()</span>
+<span class="pc" id="L498">                        .map(f -&gt; f.getInstance().filterFor(archiveAnalyzer).orElse(null))</span>
+<span class="fc" id="L499">                        .filter(Objects::nonNull)</span>
+<span class="fc" id="L500">                        .collect(toList());</span>
+
+<span class="fc" id="L502">                return Optional.of(TreeFilter.union(applicables));</span>
+            }
+
+            @Override
+            public void close() throws Exception {
+<span class="nc" id="L507">                List&lt;Exception&gt; failures = new ArrayList&lt;&gt;(1);</span>
+
+<span class="nc" id="L509">                extensions.getFilters().keySet().forEach(f -&gt; {</span>
+                    try {
+<span class="nc" id="L511">                        f.getInstance().close();</span>
+<span class="nc" id="L512">                    } catch (Exception e) {</span>
+<span class="nc" id="L513">                        failures.add(e);</span>
+<span class="nc" id="L514">                    }</span>
+<span class="nc" id="L515">                });</span>
+
+<span class="nc bnc" id="L517" title="All 2 branches missed.">                if (!failures.isEmpty()) {</span>
+<span class="nc" id="L518">                    Iterator&lt;Exception&gt; it = failures.iterator();</span>
+<span class="nc" id="L519">                    Exception ex = new Exception(it.next());</span>
+<span class="nc" id="L520">                    it.forEachRemaining(ex::addSuppressed);</span>
+<span class="nc" id="L521">                    throw ex;</span>
+                }
+<span class="nc" id="L523">            }</span>
+
+            @Nullable
+            @Override
+            public String getExtensionId() {
+<span class="nc" id="L528">                return null;</span>
+            }
+
+            @Nullable
+            @Override
+            public Reader getJSONSchema() {
+<span class="nc" id="L534">                return null;</span>
+            }
+
+            @Override
+            public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="nc" id="L539">                extensions.getFilters().forEach((i, __) -&gt; i.getInstance().initialize(analysisContext));</span>
+<span class="nc" id="L540">            }</span>
+        };
+    }
+
+    @SafeVarargs
+    private static &lt;T&gt; Stream&lt;T&gt; concat(Stream&lt;? extends T&gt;... streams) {
+<span class="nc bnc" id="L546" title="All 2 branches missed.">        if (streams.length == 0) {</span>
+<span class="nc" id="L547">            return Stream.empty();</span>
+        } else {
+<span class="nc" id="L549">            return concat(streams[0], streams, 1);</span>
+        }
+    }
+
+    private static &lt;T&gt; Stream&lt;T&gt; concat(Stream&lt;? extends T&gt; head, Stream&lt;? extends T&gt;[] all, int from) {
+<span class="nc bnc" id="L554" title="All 2 branches missed.">        if (from == all.length - 1) {</span>
+<span class="nc" id="L555">            return Stream.concat(head, all[from]);</span>
+        } else {
+<span class="nc" id="L557">            return Stream.concat(head, concat(all[from], all, from + 1));</span>
+        }
+    }
+
+    private &lt;E extends Element&lt;E&gt;&gt; void transform(Report report, Collection&lt;DifferenceTransform&lt;?&gt;&gt; eligibleTransforms,
+            Collection&lt;Report&gt; undecidedReports, boolean collectUndecided, AnalysisProgress progress) {
+
+<span class="pc bpc" id="L564" title="1 of 2 branches missed.">        if (report == null) {</span>
+<span class="nc" id="L565">            return;</span>
+        }
+
+<span class="fc" id="L568">        Stats.of(&quot;transforms&quot;).start();</span>
+
+<span class="fc" id="L570">        Element&lt;?&gt; oldElement = report.getOldElement();</span>
+<span class="fc" id="L571">        Element&lt;?&gt; newElement = report.getNewElement();</span>
+
+<span class="fc" id="L573">        int iteration = 0;</span>
+        boolean listChanged;
+        do {
+<span class="fc" id="L576">            listChanged = false;</span>
+
+<span class="fc" id="L578">            ListIterator&lt;Difference&gt; it = report.getDifferences().listIterator();</span>
+<span class="fc" id="L579">            List&lt;Difference&gt; transformed = new ArrayList&lt;&gt;(1); //this will hopefully be the max of transforms</span>
+<span class="fc bfc" id="L580" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L581">                Difference d = it.next();</span>
+<span class="fc" id="L582">                transformed.clear();</span>
+<span class="fc" id="L583">                boolean differenceChanged = false;</span>
+<span class="fc" id="L584">                boolean undecided = false;</span>
+
+<span class="fc" id="L586">                LOG.debug(&quot;Transformation iteration {}&quot;, iteration);</span>
+
+<span class="fc bfc" id="L588" title="All 2 branches covered.">                for (List&lt;DifferenceTransform&lt;?&gt;&gt; tb : getTransformsForDifference(d, eligibleTransforms, progress)) {</span>
+<span class="fc" id="L589">                    List&lt;Difference&gt; blockResults = new ArrayList&lt;&gt;(singletonList(d));</span>
+
+<span class="fc bfc" id="L591" title="All 2 branches covered.">                    for (DifferenceTransform&lt;?&gt; t : tb) {</span>
+<span class="fc" id="L592">                        ListIterator&lt;Difference&gt; blockResultsIt = blockResults.listIterator();</span>
+
+                        // it is the responsibility of the transform to declare the proper type.
+                        // it will get a ClassCastException if it fails to declare a type that is common to all differences
+                        // it can handle
+                        @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L598">                        DifferenceTransform transform = t;</span>
+
+<span class="fc bfc" id="L600" title="All 2 branches covered.">                        while (blockResultsIt.hasNext()) {</span>
+<span class="fc" id="L601">                            Difference currentDiff = blockResultsIt.next();</span>
+                            TransformationResult res;
+                            try {
+                                //noinspection unchecked
+<span class="fc" id="L605">                                res = transform.tryTransform(oldElement, newElement, currentDiff);</span>
+<span class="nc" id="L606">                            } catch (Exception e) {</span>
+<span class="nc" id="L607">                                res = TransformationResult.keep();</span>
+<span class="nc" id="L608">                                LOG.warn(&quot;Difference transform &quot; + t + &quot; of class '&quot; + t.getClass() + &quot; threw an&quot; +</span>
+                                        &quot; exception while processing difference &quot; + currentDiff + &quot; on old element &quot; +
+<span class="nc" id="L610">                                        report.getOldElement() + &quot; and new element &quot; + report.getNewElement(), e);</span>
+<span class="fc" id="L611">                            }</span>
+
+<span class="pc bpc" id="L613" title="2 of 5 branches missed.">                            switch (res.getResolution()) {</span>
+                            case KEEP:
+                                // good, let's continue with the next transform in the block
+<span class="fc" id="L616">                                break;</span>
+                            case REPLACE:
+<span class="fc" id="L618">                                blockResultsIt.remove();</span>
+<span class="pc bpc" id="L619" title="1 of 2 branches missed.">                                if (res.getDifferences() != null) {</span>
+<span class="pc bpc" id="L620" title="1 of 2 branches missed.">                                    if (LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L621">                                        LOG.debug(&quot;Difference transform {} transforms {} to {}&quot;, t.getClass(),</span>
+<span class="nc" id="L622">                                                currentDiff, res.getDifferences());</span>
+                                    }
+<span class="fc" id="L624">                                    res.getDifferences().forEach(blockResultsIt::add);</span>
+                                }
+                                break;
+                            case DISCARD:
+<span class="fc" id="L628">                                blockResultsIt.remove();</span>
+<span class="fc" id="L629">                                break;</span>
+                            case UNDECIDED:
+                                // when we're not collecting the undecided reports, this is the same as KEEP
+<span class="nc bnc" id="L632" title="All 2 branches missed.">                                if (collectUndecided) {</span>
+<span class="nc" id="L633">                                    undecidedReports.add(report);</span>
+<span class="nc" id="L634">                                    undecided = true;</span>
+                                }
+                                break;
+                            }
+<span class="fc" id="L638">                        }</span>
+<span class="fc" id="L639">                    }</span>
+
+                    // ignore if the transforms in the block swallowed all the differences
+<span class="fc bfc" id="L642" title="All 2 branches covered.">                    if (blockResults.isEmpty()) {</span>
+<span class="fc" id="L643">                        differenceChanged = true;</span>
+<span class="pc bpc" id="L644" title="1 of 4 branches missed.">                    } else if (blockResults.size() &gt; 1 || !d.equals(blockResults.get(0))) {</span>
+<span class="pc bpc" id="L645" title="1 of 2 branches missed.">                        if (LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L646">                            LOG.debug(&quot;Difference transform(s) {} transform {} to {}&quot;, tb, d, blockResults);</span>
+                        }
+
+<span class="fc" id="L649">                        transformed.addAll(blockResults);</span>
+<span class="fc" id="L650">                        differenceChanged = true;</span>
+                    }
+<span class="fc" id="L652">                }</span>
+
+<span class="pc bpc" id="L654" title="1 of 4 branches missed.">                if (!undecided &amp;&amp; differenceChanged) {</span>
+<span class="fc" id="L655">                    listChanged = true;</span>
+                    //we need to remove the element in either case
+<span class="fc" id="L657">                    it.remove();</span>
+<span class="pc bpc" id="L658" title="1 of 2 branches missed.">                    if (!transformed.isEmpty()) {</span>
+                        //if it was not removed, but transformed, let's add the transformed difference in the place of
+                        //our currently removed element
+<span class="fc bfc" id="L661" title="All 2 branches covered.">                        for (Difference td : transformed) {</span>
+                            //this adds the new element *before* the currently pointed to index...
+<span class="fc" id="L663">                            it.add(td);</span>
+                            //we want to check the newly added difference, so we need the iterator to point at it...
+<span class="fc" id="L665">                            it.previous();</span>
+<span class="fc" id="L666">                        }</span>
+                    }
+                }
+
+<span class="fc" id="L670">                iteration++;</span>
+
+<span class="pc bpc" id="L672" title="1 of 2 branches missed.">                if (iteration % 1000 == 0) {</span>
+<span class="nc" id="L673">                    LOG.warn(&quot;Transformation of differences in match report &quot; + report + &quot; has cycled &quot; + iteration +</span>
+                            &quot; times. Maybe we're in an infinite loop with differences transforming back and forth?&quot;);
+                }
+
+<span class="pc bpc" id="L677" title="1 of 2 branches missed.">                if (iteration == MAX_TRANSFORMATION_ITERATIONS) {</span>
+<span class="nc" id="L678">                    throw new IllegalStateException(&quot;Transformation failed to settle in &quot; + MAX_TRANSFORMATION_ITERATIONS +</span>
+                            &quot; iterations. This is most probably an error in difference transform configuration that&quot; +
+                            &quot; cycles between two or more changes back and forth.&quot;);
+                }
+<span class="fc" id="L682">            }</span>
+<span class="fc bfc" id="L683" title="All 2 branches covered.">        } while (listChanged);</span>
+
+<span class="fc" id="L685">        Stats.of(&quot;transforms&quot;).end(report);</span>
+<span class="fc" id="L686">    }</span>
+
+    private Set&lt;List&lt;DifferenceTransform&lt;?&gt;&gt;&gt; getTransformsForDifference(Difference diff,
+            Collection&lt;DifferenceTransform&lt;?&gt;&gt; transforms, AnalysisProgress config) {
+<span class="fc" id="L690">        Set&lt;List&lt;DifferenceTransform&lt;?&gt;&gt;&gt; ret = matchingTransformsCache.get(diff.code);</span>
+<span class="fc bfc" id="L691" title="All 2 branches covered.">        if (ret == null) {</span>
+<span class="fc" id="L692">            ret = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L693" title="All 2 branches covered.">            for (List&lt;DifferenceTransform&lt;?&gt;&gt; ts : config.transformBlocks) {</span>
+<span class="fc" id="L694">                List&lt;DifferenceTransform&lt;?&gt;&gt; actualTs = new ArrayList&lt;&gt;(ts.size());</span>
+<span class="fc bfc" id="L695" title="All 2 branches covered.">                for (DifferenceTransform&lt;?&gt; t : ts) {</span>
+<span class="pc bpc" id="L696" title="1 of 2 branches missed.">                    for (Pattern p : t.getDifferenceCodePatterns()) {</span>
+<span class="pc bpc" id="L697" title="1 of 2 branches missed.">                        if (p.matcher(diff.code).matches()) {</span>
+<span class="fc" id="L698">                            actualTs.add(t);</span>
+
+<span class="fc" id="L700">                            break;</span>
+                        }
+                    }
+<span class="fc" id="L703">                }</span>
+<span class="fc" id="L704">                ret.add(actualTs);</span>
+<span class="fc" id="L705">            }</span>
+<span class="fc" id="L706">            matchingTransformsCache.put(diff.code, ret);</span>
+        }
+
+<span class="fc" id="L709">        ret.forEach(l -&gt; l.retainAll(transforms));</span>
+
+<span class="fc" id="L711">        return ret;</span>
+    }
+
+    /**
+     * This builder is merely a proxy to the {@link PipelineConfiguration} and its builder. It is provided just for
+     * convenience (and also to keep backwards compatibility ;) ).
+     *
+     * @deprecated favor the {@link PipelineConfiguration.Builder}
+     */
+    @Deprecated
+<span class="fc" id="L721">    public static final class Builder {</span>
+<span class="fc" id="L722">        private final PipelineConfiguration.Builder pb = PipelineConfiguration.builder();</span>
+
+        @Nonnull
+        public Builder withAnalyzersFromThreadContextClassLoader() {
+<span class="nc" id="L726">            pb.withAnalyzersFromThreadContextClassLoader();</span>
+<span class="nc" id="L727">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withAnalyzersFrom(@Nonnull ClassLoader cl) {
+<span class="nc" id="L732">            pb.withAnalyzersFrom(cl);</span>
+<span class="nc" id="L733">            return this;</span>
+        }
+
+        @SafeVarargs
+        @Nonnull
+        public final Builder withAnalyzers(Class&lt;? extends ApiAnalyzer&gt;... analyzers) {
+<span class="fc" id="L739">            pb.withAnalyzers(analyzers);</span>
+<span class="fc" id="L740">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withAnalyzers(@Nonnull Iterable&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers) {
+<span class="nc" id="L745">            pb.withAnalyzers(analyzers);</span>
+<span class="nc" id="L746">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withReportersFromThreadContextClassLoader() {
+<span class="nc" id="L751">            pb.withReportersFromThreadContextClassLoader();</span>
+<span class="nc" id="L752">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withReportersFrom(@Nonnull ClassLoader cl) {
+<span class="nc" id="L757">            pb.withReportersFrom(cl);</span>
+<span class="nc" id="L758">            return this;</span>
+        }
+
+        @SafeVarargs
+        @Nonnull
+        public final Builder withReporters(Class&lt;? extends Reporter&gt;... reporters) {
+<span class="fc" id="L764">            pb.withReporters(reporters);</span>
+<span class="fc" id="L765">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withReporters(@Nonnull Iterable&lt;Class&lt;? extends Reporter&gt;&gt; reporters) {
+<span class="nc" id="L770">            pb.withReporters(reporters);</span>
+<span class="nc" id="L771">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withTransformsFromThreadContextClassLoader() {
+<span class="nc" id="L776">            pb.withTransformsFromThreadContextClassLoader();</span>
+<span class="nc" id="L777">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withTransformsFrom(@Nonnull ClassLoader cl) {
+<span class="nc" id="L782">            pb.withTransformsFrom(cl);</span>
+<span class="nc" id="L783">            return this;</span>
+        }
+
+        @SafeVarargs
+        @Nonnull
+        public final Builder withTransforms(Class&lt;? extends DifferenceTransform&gt;... transforms) {
+<span class="fc" id="L789">            pb.withTransforms(transforms);</span>
+<span class="fc" id="L790">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withTransforms(@Nonnull Iterable&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms) {
+<span class="nc" id="L795">            pb.withTransforms(transforms);</span>
+<span class="nc" id="L796">            return this;</span>
+        }
+
+        @Nonnull
+        @SuppressWarnings({&quot;unchecked&quot;, &quot;RedundantCast&quot;})
+        public Builder withFiltersFromThreadContextClassLoader() {
+<span class="nc" id="L802">            pb.withFiltersFromThreadContextClassLoader();</span>
+<span class="nc" id="L803">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withFiltersFrom(@Nonnull ClassLoader cl) {
+<span class="nc" id="L808">            pb.withFiltersFrom(cl);</span>
+<span class="nc" id="L809">            return this;</span>
+        }
+
+        @SafeVarargs
+        @Nonnull
+        public final Builder withFilters(Class&lt;? extends TreeFilterProvider&gt;... filters) {
+<span class="fc" id="L815">            pb.withFilters(filters);</span>
+<span class="fc" id="L816">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withFilters(@Nonnull Iterable&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; filters) {
+<span class="nc" id="L821">            pb.withFilters(filters);</span>
+<span class="nc" id="L822">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withMatchersFromThreadContextClassLoader() {
+<span class="nc" id="L827">            pb.withMatchersFromThreadContextClassLoader();</span>
+<span class="nc" id="L828">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withMatchersFrom(@Nonnull ClassLoader cl) {
+<span class="nc" id="L833">            pb.withMatchersFrom(cl);</span>
+<span class="nc" id="L834">            return this;</span>
+        }
+
+        @SafeVarargs
+        @Nonnull
+        public final Builder withMatchers(Class&lt;? extends ElementMatcher&gt;... matchers) {
+<span class="nc" id="L840">            pb.withMatchers(matchers);</span>
+<span class="nc" id="L841">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withMatchers(@Nonnull Iterable&lt;Class&lt;? extends ElementMatcher&gt;&gt; matchers) {
+<span class="nc" id="L846">            pb.withMatchers(matchers);</span>
+<span class="nc" id="L847">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withAllExtensionsFromThreadContextClassLoader() {
+<span class="nc" id="L852">            pb.withAllExtensionsFromThreadContextClassLoader();</span>
+<span class="nc" id="L853">            return this;</span>
+        }
+
+        @Nonnull
+        public Builder withAllExtensionsFrom(@Nonnull ClassLoader cl) {
+<span class="nc" id="L858">            pb.withAllExtensionsFrom(cl);</span>
+<span class="nc" id="L859">            return this;</span>
+        }
+
+        public Builder withTransformationBlocks(Set&lt;List&lt;String&gt;&gt; blocks) {
+<span class="nc" id="L863">            pb.withTransformationBlocks(blocks);</span>
+<span class="nc" id="L864">            return this;</span>
+        }
+
+        public Builder addTransformationBlock(List&lt;String&gt; block) {
+<span class="fc" id="L868">            pb.addTransformationBlock(block);</span>
+<span class="fc" id="L869">            return this;</span>
+        }
+
+        /**
+         * @return a new Revapi instance
+         * @throws IllegalStateException if there are no api analyzers or no reporters added.
+         */
+        @Nonnull
+        public Revapi build() throws IllegalStateException {
+<span class="fc" id="L878">            return new Revapi(pb.build());</span>
+        }
+    }
+
+    private static final class AnalysisProgress {
+        final AnalysisResult.Extensions extensions;
+        final Set&lt;List&lt;DifferenceTransform&lt;?&gt;&gt;&gt; transformBlocks;
+        final API oldApi;
+        final API newApi;
+        final List&lt;Report&gt; reports;
+
+        AnalysisProgress(AnalysisResult.Extensions extensions, PipelineConfiguration configuration,
+<span class="fc" id="L890">                API oldApi, API newApi) {</span>
+<span class="fc" id="L891">            this.extensions = extensions;</span>
+<span class="fc" id="L892">            this.oldApi = oldApi;</span>
+<span class="fc" id="L893">            this.newApi = newApi;</span>
+<span class="fc" id="L894">            this.transformBlocks = groupTransformsToBlocks(extensions, configuration);</span>
+<span class="fc" id="L895">            this.reports = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L896">        }</span>
+
+        private static Set&lt;List&lt;DifferenceTransform&lt;?&gt;&gt;&gt;
+        groupTransformsToBlocks(AnalysisResult.Extensions extensions, PipelineConfiguration configuration) {
+<span class="fc" id="L900">            Set&lt;List&lt;DifferenceTransform&lt;?&gt;&gt;&gt; ret = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L902">            Map&lt;String, List&lt;DifferenceTransform&lt;?&gt;&gt;&gt; transformsById = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L903">            Set&lt;DifferenceTransform&lt;?&gt;&gt; allTransforms = newSetFromMap(new IdentityHashMap&lt;&gt;());</span>
+<span class="fc bfc" id="L904" title="All 2 branches covered.">            for (ExtensionInstance&lt;DifferenceTransform&lt;?&gt;&gt; t : extensions.getTransforms().keySet()) {</span>
+<span class="fc" id="L905">                String configurationId = t.getId();</span>
+<span class="fc" id="L906">                String extensionId = t.getInstance().getExtensionId();</span>
+
+<span class="pc bpc" id="L908" title="1 of 2 branches missed.">                if (configurationId != null) {</span>
+<span class="nc" id="L909">                    transformsById.computeIfAbsent(configurationId, __ -&gt; new ArrayList&lt;&gt;()).add(t.getInstance());</span>
+                }
+<span class="fc" id="L911">                transformsById.computeIfAbsent(extensionId, __ -&gt; new ArrayList&lt;&gt;()).add(t.getInstance());</span>
+<span class="fc" id="L912">                allTransforms.add(t.getInstance());</span>
+<span class="fc" id="L913">            }</span>
+
+<span class="fc bfc" id="L915" title="All 2 branches covered.">            for (List&lt;String&gt; ids : configuration.getTransformationBlocks()) {</span>
+<span class="fc" id="L916">                List&lt;DifferenceTransform&lt;?&gt;&gt; ts = new ArrayList&lt;&gt;(ids.size());</span>
+
+<span class="fc bfc" id="L918" title="All 2 branches covered.">                for (String id : ids) {</span>
+<span class="fc" id="L919">                    List&lt;DifferenceTransform&lt;?&gt;&gt; candidates = transformsById.remove(id);</span>
+<span class="pc bpc" id="L920" title="1 of 2 branches missed.">                    if (candidates == null) {</span>
+<span class="nc" id="L921">                        throw new IllegalArgumentException(</span>
+                                &quot;Unrecognized id in the transformation block configuration: &quot; + id);
+<span class="pc bpc" id="L923" title="1 of 2 branches missed.">                    } else if (candidates.isEmpty()) {</span>
+<span class="nc" id="L924">                        throw new IllegalArgumentException(&quot;There is no transform with extension id or explicit id '&quot;</span>
+                                + id + &quot;'. Please fix the pipeline configuration.&quot;);
+<span class="pc bpc" id="L926" title="1 of 2 branches missed.">                    } else if (candidates.size() &gt; 1) {</span>
+<span class="nc" id="L927">                        throw new IllegalArgumentException(&quot;There is more than 1 transform with extension id or&quot; +</span>
+                                &quot; explicit id '&quot; + id + &quot;'. Please fix the pipeline configuration and use unique ids&quot; +
+                                &quot; for extension configurations.&quot;);
+                    } else {
+<span class="fc" id="L931">                        DifferenceTransform&lt;?&gt; t = candidates.get(0);</span>
+<span class="fc" id="L932">                        ts.add(t);</span>
+<span class="fc" id="L933">                        allTransforms.remove(t);</span>
+                    }
+<span class="fc" id="L935">                }</span>
+
+<span class="fc" id="L937">                ret.add(ts);</span>
+<span class="fc" id="L938">            }</span>
+
+            // now we're left with the transformations that are not grouped into any explicit blocks. Let's make them
+            // single-element blocks
+
+<span class="fc" id="L943">            allTransforms.forEach(t -&gt; ret.add(singletonList(t)));</span>
+
+<span class="fc" id="L945">            return ret;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

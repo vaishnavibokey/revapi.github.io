@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Compiler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.compilation</a> &gt; <span class="el_source">Compiler.java</span></div><h1>Compiler.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.compilation;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
+
+import org.revapi.Archive;
+import org.revapi.TreeFilter;
+import org.revapi.java.AnalysisConfiguration;
+import org.revapi.java.Timing;
+import org.revapi.java.spi.JarExtractor;
+import org.revapi.java.spi.JavaElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public final class Compiler {
+<span class="nc" id="L59">    private static final Logger LOG = LoggerFactory.getLogger(Compiler.class);</span>
+
+    private final JavaCompiler compiler;
+    private final Writer output;
+    private final Iterable&lt;? extends Archive&gt; classPath;
+    private final Iterable&lt;? extends Archive&gt; additionalClassPath;
+    private final ExecutorService executor;
+    private final TreeFilter&lt;JavaElement&gt; filter;
+    private final Iterable&lt;JarExtractor&gt; jarExtractors;
+
+    public Compiler(ExecutorService executor, Writer reportingOutput,
+            Iterable&lt;JarExtractor&gt; jarExtractors,
+            Iterable&lt;? extends Archive&gt; classPath,
+<span class="nc" id="L72">            Iterable&lt;? extends Archive&gt; additionalClassPath, TreeFilter&lt;JavaElement&gt; filter) {</span>
+<span class="nc" id="L73">        this.jarExtractors = jarExtractors;</span>
+
+<span class="nc" id="L75">        compiler = ToolProvider.getSystemJavaCompiler();</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (compiler == null) {</span>
+<span class="nc" id="L77">            throw new AssertionError(&quot;Could not obtain the system compiler. Is tools.jar on the classpath?&quot;);</span>
+        }
+
+<span class="nc" id="L80">        this.executor = executor;</span>
+<span class="nc" id="L81">        this.output = reportingOutput;</span>
+<span class="nc" id="L82">        this.classPath = classPath;</span>
+<span class="nc" id="L83">        this.additionalClassPath = additionalClassPath;</span>
+<span class="nc" id="L84">        this.filter = filter;</span>
+<span class="nc" id="L85">    }</span>
+
+    public CompilationValve compile(final ProbingEnvironment environment,
+            final AnalysisConfiguration.MissingClassReporting missingClassReporting,
+            final boolean ignoreMissingAnnotations)
+            throws Exception {
+
+<span class="nc" id="L92">        File targetPath = Files.createTempDirectory(&quot;revapi-java&quot;).toAbsolutePath().toFile();</span>
+
+<span class="nc" id="L94">        File sourceDir = new File(targetPath, &quot;sources&quot;);</span>
+<span class="nc" id="L95">        sourceDir.mkdir();</span>
+
+<span class="nc" id="L97">        File lib = new File(targetPath, &quot;lib&quot;);</span>
+<span class="nc" id="L98">        lib.mkdir();</span>
+
+        // make sure the classpath is in the same order as passed in
+<span class="nc" id="L101">        int classPathSize = size(classPath);</span>
+<span class="nc" id="L102">        int nofArchives = classPathSize + size(additionalClassPath);</span>
+
+<span class="nc" id="L104">        int prefixLength = (int) Math.log10(nofArchives) + 1;</span>
+
+<span class="nc" id="L106">        IdentityHashMap&lt;Archive, File&gt; classPathFiles = copyArchives(classPath, lib, 0, prefixLength);</span>
+<span class="nc" id="L107">        IdentityHashMap&lt;Archive, File&gt; additionClassPathFiles = copyArchives(additionalClassPath, lib, classPathSize, prefixLength);</span>
+
+<span class="nc" id="L109">        List&lt;String&gt; options = Arrays.asList(</span>
+<span class="nc" id="L110">            &quot;-d&quot;, sourceDir.toString(),</span>
+<span class="nc" id="L111">            &quot;-cp&quot;, composeClassPath(lib)</span>
+        );
+
+<span class="nc" id="L114">        List&lt;JavaFileObject&gt; sources = Arrays.&lt;JavaFileObject&gt;asList(</span>
+            new MarkerAnnotationObject(),
+            new ArchiveProbeObject()
+        );
+
+        //the locale and charset are actually not important, because the only sources we're providing
+        //are not file-based. The rest of the stuff the compiler will be touching is already compiled
+        //and therefore not affected by the charset.
+<span class="nc" id="L122">        StandardJavaFileManager fileManager = compiler</span>
+<span class="nc" id="L123">                .getStandardFileManager(null, Locale.getDefault(), Charset.forName(&quot;UTF-8&quot;));</span>
+
+<span class="nc" id="L125">        final JavaCompiler.CompilationTask task = compiler</span>
+<span class="nc" id="L126">            .getTask(output, fileManager, null, options, Collections.singletonList(ArchiveProbeObject.CLASS_NAME),</span>
+                sources);
+
+<span class="nc" id="L129">        ProbingAnnotationProcessor processor = new ProbingAnnotationProcessor(environment);</span>
+
+<span class="nc" id="L131">        task.setProcessors(Collections.singletonList(processor));</span>
+
+<span class="nc" id="L133">        Future&lt;Boolean&gt; future = processor.submitWithCompilationAwareness(executor, task, () -&gt; {</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            if (Timing.LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L135">                Timing.LOG.debug(&quot;About to crawl &quot; + environment.getApi());</span>
+            }
+
+            try {
+<span class="nc" id="L139">                new ClasspathScanner(fileManager, environment, classPathFiles, additionClassPathFiles,</span>
+<span class="nc" id="L140">                        missingClassReporting, ignoreMissingAnnotations, filter).initTree();</span>
+<span class="nc" id="L141">            } catch (IOException e) {</span>
+<span class="nc" id="L142">                throw new IllegalStateException(&quot;Failed to scan the classpath.&quot;, e);</span>
+<span class="nc" id="L143">            }</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (Timing.LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L146">                Timing.LOG.debug(&quot;Crawl finished for &quot; + environment.getApi());</span>
+            }
+<span class="nc" id="L148">        });</span>
+
+
+<span class="nc" id="L151">        return new CompilationValve(future, targetPath, environment, fileManager);</span>
+    }
+
+    private String composeClassPath(File classPathDir) {
+<span class="nc" id="L155">        StringBuilder bld = new StringBuilder();</span>
+
+<span class="nc" id="L157">        File[] jars = classPathDir.listFiles();</span>
+
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        if (jars == null || jars.length == 0) {</span>
+<span class="nc" id="L160">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L163">        List&lt;File&gt; sortedJars = new ArrayList&lt;&gt;(Arrays.asList(jars));</span>
+<span class="pc" id="L164">        Collections.sort(sortedJars, new Comparator&lt;File&gt;() {</span>
+            @Override
+            public int compare(File o1, File o2) {
+<span class="fc" id="L167">                return o1.getName().compareTo(o2.getName());</span>
+            }
+        });
+
+<span class="nc" id="L171">        Iterator&lt;File&gt; it = sortedJars.iterator();</span>
+
+<span class="nc" id="L173">        bld.append(it.next().getAbsolutePath());</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L175">            bld.append(File.pathSeparator).append(it.next().getAbsolutePath());</span>
+        }
+
+<span class="nc" id="L178">        return bld.toString();</span>
+    }
+
+    private IdentityHashMap&lt;Archive, File&gt;
+    copyArchives(Iterable&lt;? extends Archive&gt; archives, File parentDir, int startIdx, int prefixLength) {
+<span class="nc" id="L183">        IdentityHashMap&lt;Archive, File&gt; ret = new IdentityHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (archives == null) {</span>
+<span class="nc" id="L185">            return ret;</span>
+        }
+
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        for (Archive a : archives) {</span>
+<span class="nc" id="L189">            String name = formatName(startIdx++, prefixLength, a.getName());</span>
+<span class="nc" id="L190">            File f = new File(parentDir, name);</span>
+
+<span class="nc" id="L192">            ret.put(a, f);</span>
+
+<span class="nc bnc" id="L194" title="All 2 branches missed.">            if (f.exists()) {</span>
+<span class="nc" id="L195">                LOG.warn(</span>
+<span class="nc" id="L196">                    &quot;File &quot; + f.getAbsolutePath() + &quot; with the data of archive '&quot; + a.getName() + &quot;' already exists.&quot; +</span>
+                            &quot; Assume it already contains the bits we need.&quot;);
+<span class="nc" id="L198">                continue;</span>
+            }
+
+<span class="nc" id="L201">            Path target = new File(parentDir, name).toPath();</span>
+
+<span class="nc" id="L203">            try (InputStream data = extracted(a)) {</span>
+<span class="nc" id="L204">                Files.copy(data, target);</span>
+<span class="nc" id="L205">            } catch (IOException e) {</span>
+<span class="nc" id="L206">                throw new IllegalStateException(</span>
+<span class="nc" id="L207">                    &quot;Failed to copy class path element: &quot; + a.getName() + &quot; to &quot; + f.getAbsolutePath(), e);</span>
+<span class="nc" id="L208">            }</span>
+<span class="nc" id="L209">        }</span>
+
+<span class="nc" id="L211">        return ret;</span>
+    }
+
+    private InputStream extracted(Archive archive) throws IOException {
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        for (JarExtractor t : jarExtractors) {</span>
+<span class="nc" id="L216">            Optional&lt;InputStream&gt; extracted = t.extract(archive);</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            if (extracted.isPresent()) {</span>
+<span class="nc" id="L218">                return extracted.get();</span>
+            }
+<span class="nc" id="L220">        }</span>
+
+<span class="nc" id="L222">        return archive.openStream();</span>
+    }
+
+    private int size(Iterable&lt;?&gt; collection) {
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (collection == null) {</span>
+<span class="nc" id="L227">            return 0;</span>
+        }
+
+<span class="nc" id="L230">        int ret = 0;</span>
+<span class="nc" id="L231">        Iterator&lt;?&gt; it = collection.iterator();</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L233">            ret++;</span>
+<span class="nc" id="L234">            it.next();</span>
+        }
+
+<span class="nc" id="L237">        return ret;</span>
+    }
+
+    private String formatName(int idx, int prefixLength, String rootName) {
+        try {
+<span class="nc" id="L242">            return String.format(&quot;%0&quot; + prefixLength + &quot;d-%s&quot;, idx, UUID.nameUUIDFromBytes(rootName.getBytes(&quot;UTF-8&quot;)));</span>
+<span class="nc" id="L243">        } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L244">            throw new IllegalStateException(&quot;UTF-8 not supported.&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

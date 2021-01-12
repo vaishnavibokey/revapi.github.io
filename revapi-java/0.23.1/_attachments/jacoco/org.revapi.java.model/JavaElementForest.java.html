@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaElementForest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">JavaElementForest.java</span></div><h1>JavaElementForest.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.model;
+
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.API;
+import org.revapi.Element;
+import org.revapi.base.BaseElementForest;
+import org.revapi.java.Timing;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.query.Filter;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public final class JavaElementForest extends BaseElementForest&lt;JavaElement&gt; {
+
+    private Future&lt;?&gt; compilation;
+<span class="nc" id="L42">    private static final ThreadLocal&lt;Boolean&gt; UNSAFE_MODE = new ThreadLocal&lt;Boolean&gt;() {</span>
+        @Override
+        protected Boolean initialValue() {
+<span class="nc" id="L45">            return false;</span>
+        }
+    };
+
+    public JavaElementForest(API api) {
+<span class="nc" id="L50">        super(api);</span>
+<span class="nc" id="L51">    }</span>
+
+    public void setCompilationFuture(Future&lt;?&gt; compilation) {
+<span class="nc" id="L54">        this.compilation = compilation;</span>
+<span class="nc" id="L55">    }</span>
+
+    @Override
+    public SortedSet&lt;JavaElement&gt; getRoots() {
+<span class="nc" id="L59">        waitForCompilation();</span>
+<span class="nc" id="L60">        return super.getRoots();</span>
+    }
+
+    public SortedSet&lt;JavaElement&gt; getRootsUnsafe() {
+<span class="nc" id="L64">        boolean wasUnsafe = UNSAFE_MODE.get();</span>
+        try {
+<span class="nc" id="L66">            UNSAFE_MODE.set(true);</span>
+<span class="nc" id="L67">            return super.getRoots();</span>
+        } finally {
+<span class="nc" id="L69">            UNSAFE_MODE.set(wasUnsafe);</span>
+        }
+    }
+
+    @Nonnull
+    @Override
+    public &lt;T extends Element&lt;T&gt;&gt; Iterator&lt;T&gt; iterateOverElements(@Nonnull Class&lt;T&gt; resultType, boolean recurse,
+            @Nullable Filter&lt;? super T&gt; filter, @Nullable Element&lt;T&gt; searchRoot) {
+<span class="nc" id="L77">        waitForCompilation();</span>
+<span class="nc" id="L78">        return super.iterateOverElements(resultType, recurse, filter, searchRoot);</span>
+    }
+
+    @Nonnull
+    @Override
+    public &lt;T extends Element&lt;JavaElement&gt;&gt; Stream&lt;T&gt; stream(@Nonnull Class&lt;T&gt; resultType, boolean recurse,
+            @Nullable Element&lt;JavaElement&gt; searchRoot) {
+<span class="nc" id="L85">        waitForCompilation();</span>
+<span class="nc" id="L86">        return super.stream(resultType, recurse, searchRoot);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L91">        boolean unsafe = UNSAFE_MODE.get();</span>
+        try {
+<span class="nc" id="L93">            UNSAFE_MODE.set(true);</span>
+<span class="nc" id="L94">            return super.toString();</span>
+        } finally {
+<span class="nc" id="L96">            UNSAFE_MODE.set(unsafe);</span>
+        }
+    }
+
+    private void waitForCompilation() {
+        try {
+<span class="nc bnc" id="L102" title="All 4 branches missed.">            if (compilation != null &amp;&amp; !UNSAFE_MODE.get()) {</span>
+<span class="nc" id="L103">                compilation.get();</span>
+<span class="nc" id="L104">                compilation = null;</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                if (Timing.LOG.isDebugEnabled()) {</span>
+<span class="nc" id="L106">                    Timing.LOG.debug(&quot;Compilation completed for &quot; + getApi());</span>
+                }
+            }
+<span class="nc" id="L109">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L110">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L111">            throw new IllegalStateException(&quot;Interrupted while waiting for compilation to finish.&quot;);</span>
+<span class="nc" id="L112">        } catch (ExecutionException e) {</span>
+<span class="nc" id="L113">            throw new IllegalStateException(&quot;Failed to obtain class tree due to compilation failure.&quot;, e.getCause());</span>
+<span class="nc" id="L114">        }</span>
+<span class="nc" id="L115">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

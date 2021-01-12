@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseArchiveAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.base</a> &gt; <span class="el_source">BaseArchiveAnalyzer.java</span></div><h1>BaseArchiveAnalyzer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.base;
+
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.stream.Stream;
+
+import javax.annotation.Nullable;
+
+import org.revapi.API;
+import org.revapi.ApiAnalyzer;
+import org.revapi.ArchiveAnalyzer;
+import org.revapi.ElementForest;
+import org.revapi.FilterFinishResult;
+import org.revapi.FilterStartResult;
+import org.revapi.TreeFilter;
+
+/**
+ * A convenience base class for API analyzers. This class tries to simplify the element filtering performed during the
+ * analysis ({@link #analyze(TreeFilter)}) by requiring the subclasses to implement a more fine-grained &quot;discovery&quot; of
+ * elements ({@link #preAnalyze()}, {@link #discoverRoots(Object)}, {@link #discoverElements(Object, BaseElement)} and
+ * {@link #postAnalyze(Object)}).
+ *
+ * @param &lt;E&gt; the parent type of all elements produced by the API analyzer
+ *
+ * @see BaseEagerLoadingArchiveAnalyzer
+ * @see ZipArchiveAnalyzer
+ */
+public abstract class BaseArchiveAnalyzer&lt;F extends BaseElementForest&lt;E&gt;, E extends BaseElement&lt;E&gt;&gt;
+        implements ArchiveAnalyzer&lt;E&gt; {
+
+    private final ApiAnalyzer&lt;E&gt; apiAnalyzer;
+    private final API api;
+
+<span class="fc" id="L50">    public BaseArchiveAnalyzer(ApiAnalyzer&lt;E&gt; apiAnalyzer, API api) {</span>
+<span class="fc" id="L51">        this.apiAnalyzer = apiAnalyzer;</span>
+<span class="fc" id="L52">        this.api = api;</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public ApiAnalyzer&lt;E&gt; getApiAnalyzer() {
+<span class="nc" id="L57">        return apiAnalyzer;</span>
+    }
+
+    @Override
+    public API getApi() {
+<span class="fc" id="L62">        return api;</span>
+    }
+
+    @Override
+    public F analyze(TreeFilter&lt;E&gt; filter) {
+<span class="fc" id="L67">        Object context = preAnalyze();</span>
+
+        try {
+<span class="fc" id="L70">            F forest = newElementForest();</span>
+
+<span class="fc" id="L72">            discoverRoots(context).forEach(r -&gt; addTo(context, filter, forest.getRoots(), r));</span>
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            for (Map.Entry&lt;E, FilterFinishResult&gt; e : filter.finish().entrySet()) {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                if (!e.getValue().getMatch().toBoolean(false)) {</span>
+<span class="nc" id="L76">                    E parent = e.getKey().getParent();</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                    if (parent == null) {</span>
+<span class="nc" id="L78">                        forest.getRoots().remove(e.getKey());</span>
+                    } else {
+<span class="nc" id="L80">                        parent.getChildren().remove(e.getKey());</span>
+                    }
+                }
+<span class="nc" id="L83">            }</span>
+
+<span class="fc" id="L85">            return forest;</span>
+        } finally {
+<span class="fc" id="L87">            postAnalyze(context);</span>
+        }
+   }
+
+    @Override
+    public void prune(ElementForest&lt;E&gt; forest) {
+<span class="fc" id="L93">    }</span>
+
+    /**
+     * Creates a new empty element forest of given type.
+     */
+    protected abstract F newElementForest();
+
+    /**
+     * Called as the first thing in {@link #analyze(TreeFilter)}. Can be used by the subclasses to initialize themselves
+     * for the analysis.
+     *
+     * @return a context object that can be used by the other methods or null if no such thing is needed.
+     *
+     * @see #postAnalyze(Object)
+     */
+    @Nullable
+    protected Object preAnalyze() {
+<span class="fc" id="L110">        return null;</span>
+    }
+
+    /**
+     * Called as the last thing in {@link #analyze(TreeFilter)}. Can be used by the subclasses to clean up after the
+     * analysis.
+     *
+     * @param context the context object created in the {@link #preAnalyze()}
+     *
+     * @see #preAnalyze()
+     */
+    protected void postAnalyze(@Nullable Object context) {
+<span class="fc" id="L122">    }</span>
+
+    /**
+     * Discovers all the root elements in the relevant archives of the API. What is a relevant archive is
+     * determined by the implementor.
+     *
+     * This is called after {@link #preAnalyze()} and before all {@link #discoverElements(Object, BaseElement)} calls.
+     *
+     * @param context the optional context obtained from the {@link #preAnalyze()} method
+     * @return a stream of elements
+     */
+    protected abstract Stream&lt;E&gt; discoverRoots(@Nullable Object context);
+
+    /**
+     * Discovers new elements under the given parent element.
+     *
+     * @param parent the parent to discover children of
+     * @return a stream of elements
+     */
+    protected abstract Stream&lt;E&gt; discoverElements(@Nullable Object context, E parent);
+
+    /**
+     * Adds an element to the set of its potential siblings. This assumes the siblings are part of a
+     * {@link BaseElementForest} and therefore automatically update the parent-child relationships.
+     *
+     * &lt;p&gt;This method can be used to establish the right hierarchy of elements in the element forest.
+     *
+     * @param filter the filter that the element needs to match to be added to the siblings
+     * @param siblings the set of siblings
+     * @param element the element to potentially add to siblings
+     */
+    protected final void addTo(@Nullable Object context, TreeFilter&lt;E&gt; filter, SortedSet&lt;E&gt; siblings, E element) {
+<span class="fc" id="L154">        FilterStartResult startRes = filter.start(element);</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        if (startRes.getMatch().toBoolean(true)) {</span>
+<span class="fc" id="L156">            siblings.add(element);</span>
+        }
+
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        if (startRes.isDescend()) {</span>
+<span class="fc" id="L160">            discoverElements(context, element).forEach(e -&gt; {</span>
+<span class="fc" id="L161">                addTo(context, filter, element.getChildren(), e);</span>
+<span class="fc" id="L162">            });</span>
+        }
+
+<span class="fc" id="L165">        FilterFinishResult endRes = filter.finish(element);</span>
+<span class="pc bpc" id="L166" title="1 of 4 branches missed.">        if (endRes.getMatch() != startRes.getMatch() &amp;&amp; endRes.getMatch().toBoolean(true)) {</span>
+<span class="nc" id="L167">            siblings.add(element);</span>
+        }
+<span class="fc" id="L169">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

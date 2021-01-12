@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EditDistance.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">EditDistance.java</span></div><h1>EditDistance.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import static java.util.stream.Collectors.toList;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.BiPredicate;
+
+/**
+ * A helper class for {@link CorrespondenceComparatorDeducer#editDistance(BiPredicate)}.
+ * &lt;p&gt;Strongly inspired by
+ * &lt;a href=&quot;https://en.wikipedia.org/wiki/Wagner%E2%80%93Fischer_algorithm&quot;&gt;the wikipedia entry on the subject&lt;/a&gt;.
+ */
+<span class="nc" id="L31">final class EditDistance {</span>
+
+    static &lt;E&gt; List&lt;Pair&lt;E&gt;&gt; compute(List&lt;E&gt; left, List&lt;E&gt; right, BiPredicate&lt;? super E, ? super E&gt; equality) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (left.isEmpty()) {</span>
+<span class="fc" id="L35">            return right.stream().map(e -&gt; new Pair&lt;&gt;(null, e)).collect(toList());</span>
+        }
+
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (right.isEmpty()) {</span>
+<span class="fc" id="L39">            return left.stream().map(e -&gt; new Pair&lt;&gt;(e, null)).collect(toList());</span>
+        }
+
+<span class="fc" id="L42">        return resolveOperations(computeDistanceMatrix(left, right, equality), left, right);</span>
+    }
+
+    private static &lt;E&gt; List&lt;Pair&lt;E&gt;&gt; resolveOperations(int[][] distanceMatrix, List&lt;E&gt; left, List&lt;E&gt; right) {
+<span class="fc" id="L46">        int i = left.size();</span>
+<span class="fc" id="L47">        int j = right.size();</span>
+
+<span class="fc" id="L49">        List&lt;Pair&lt;E&gt;&gt; operations = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L50" title="1 of 4 branches missed.">        while (i &gt; 0 || j &gt; 0) {</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            int deletion = i &gt; 0 ? distanceMatrix[i - 1][j] : Integer.MAX_VALUE;</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">            int insertion = j &gt; 0 ? distanceMatrix[i][j - 1] : Integer.MAX_VALUE;</span>
+<span class="pc bpc" id="L53" title="2 of 4 branches missed.">            int substitution = (i &gt; 0 &amp;&amp; j &gt; 0) ? distanceMatrix[i - 1][j - 1] : Integer.MAX_VALUE;</span>
+
+<span class="fc bfc" id="L55" title="All 4 branches covered.">            if (deletion &lt; insertion &amp;&amp; deletion &lt; substitution) {</span>
+<span class="fc" id="L56">                operations.add(new Pair&lt;&gt;(left.get(i - 1), null));</span>
+<span class="fc" id="L57">                i--;</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            } else if (insertion &lt; substitution) {</span>
+<span class="nc" id="L59">                operations.add(new Pair&lt;&gt;(null, right.get(j - 1)));</span>
+<span class="nc" id="L60">                j--;</span>
+            } else {
+<span class="fc" id="L62">                operations.add(new Pair&lt;&gt;(left.get(i - 1), right.get(j - 1)));</span>
+<span class="fc" id="L63">                i--;</span>
+<span class="fc" id="L64">                j--;</span>
+            }
+<span class="fc" id="L66">        }</span>
+
+<span class="fc" id="L68">        Collections.reverse(operations);</span>
+<span class="fc" id="L69">        return operations;</span>
+    }
+
+    private static &lt;E&gt; int[][] computeDistanceMatrix(List&lt;E&gt; left, List&lt;E&gt; right,
+            BiPredicate&lt;? super E, ? super E&gt; equality) {
+<span class="fc" id="L74">        int llen = left.size();</span>
+<span class="fc" id="L75">        int rlen = right.size();</span>
+
+<span class="fc" id="L77">        int[][] distances = new int[llen + 1][rlen + 1];</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for (int j = 0; j &lt;= rlen; ++j) {</span>
+<span class="fc" id="L79">            distances[0][j] = j;</span>
+        }
+
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        for (int i = 1; i &lt;= llen; ++i) {</span>
+<span class="fc" id="L83">            distances[i][0] = i;</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">            for (int j = 1; j &lt;= rlen; ++j) {</span>
+<span class="fc" id="L85">                E le = left.get(i - 1);</span>
+<span class="fc" id="L86">                E re = right.get(j - 1);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                int substCost = equality.test(le, re) ? 0 : 1;</span>
+
+<span class="fc" id="L89">                int deletion = distances[i - 1][j] + 1;</span>
+<span class="fc" id="L90">                int insertion = distances[i][j - 1] + 1;</span>
+<span class="fc" id="L91">                int substitution = distances[i - 1][j - 1] + substCost;</span>
+
+<span class="fc" id="L93">                distances[i][j] = Math.min(deletion, Math.min(insertion, substitution));</span>
+            }
+        }
+
+<span class="fc" id="L97">        return distances;</span>
+    }
+
+    static final class Pair&lt;E&gt; {
+        final E left;
+        final E right;
+
+<span class="fc" id="L104">        Pair(E left, E right) {</span>
+<span class="fc" id="L105">            this.left = left;</span>
+<span class="fc" id="L106">            this.right = right;</span>
+<span class="fc" id="L107">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L111">            return left + &quot; -&gt; &quot; + right;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

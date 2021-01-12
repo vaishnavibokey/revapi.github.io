@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InheritanceChainChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.classes</a> &gt; <span class="el_source">InheritanceChainChanged.java</span></div><h1>InheritanceChainChanged.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2018 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/*
+     * Copyright 2014-2018 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.classes;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.lang.model.element.ElementVisitor;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.util.SimpleElementVisitor8;
+import javax.lang.model.util.SimpleTypeVisitor8;
+import javax.lang.model.util.Types;
+
+import org.revapi.CoIterator;
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.TypeEnvironment;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="nc" id="L66">public final class InheritanceChainChanged extends CheckBase {</span>
+
+<span class="nc" id="L68">    private static final TypeVisitor&lt;Boolean, Void&gt; IS_MISSING_VISITOR =</span>
+<span class="nc" id="L69">            new SimpleTypeVisitor8&lt;Boolean, Void&gt;(false) {</span>
+                @Override
+                public Boolean visitError(ErrorType t, Void __) {
+<span class="nc" id="L72">                    return true;</span>
+                }
+
+                @Override
+                public Boolean visitDeclared(DeclaredType t, Void aVoid) {
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                    return t.asElement().asType().getKind() == TypeKind.ERROR;</span>
+                }
+            };
+
+<span class="nc" id="L81">    private static final ElementVisitor&lt;Boolean, Void&gt; IS_THROWABLE_ELEMENT =</span>
+<span class="nc" id="L82">            new SimpleElementVisitor8&lt;Boolean, Void&gt;(false) {</span>
+                @Override
+                public Boolean visitType(TypeElement e, Void aVoid) {
+<span class="nc" id="L85">                    return e.getQualifiedName().contentEquals(&quot;java.lang.Throwable&quot;);</span>
+                }
+            };
+
+<span class="nc" id="L89">    private static final TypeVisitor&lt;Boolean, Void&gt; IS_THROWABLE =</span>
+<span class="nc" id="L90">            new SimpleTypeVisitor8&lt;Boolean, Void&gt;(false) {</span>
+                @Override
+                public Boolean visitDeclared(DeclaredType t, Void aVoid) {
+<span class="nc" id="L93">                    return t.asElement().accept(IS_THROWABLE_ELEMENT, null);</span>
+                }
+            };
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="nc" id="L99">        return EnumSet.of(Type.CLASS);</span>
+    }
+
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="nc" id="L104">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (types != null) {</span>
+
+<span class="nc" id="L107">            List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
+
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L110">            List&lt;TypeMirror&gt; oldSuperClasses = (List&lt;TypeMirror&gt;) types.context[0];</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L112">            List&lt;TypeMirror&gt; newSuperClasses = (List&lt;TypeMirror&gt;) types.context[1];</span>
+
+<span class="nc" id="L114">            reportMissingSuperTypes(ret, oldSuperClasses, Code.MISSING_OLD_SUPERTYPE, types);</span>
+<span class="nc" id="L115">            reportMissingSuperTypes(ret, newSuperClasses, Code.MISSING_NEW_SUPERTYPE, types);</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (!ret.isEmpty()) {</span>
+<span class="nc" id="L117">                return ret;</span>
+            }
+
+<span class="nc" id="L120">            Comparator&lt;TypeMirror&gt; typeNameComparator = Comparator.comparing(Util::toUniqueString);</span>
+
+<span class="nc" id="L122">            List&lt;TypeMirror&gt; removedSuperClasses = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L123">            List&lt;TypeMirror&gt; addedSuperClasses = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L125">            oldSuperClasses.sort(typeNameComparator);</span>
+<span class="nc" id="L126">            newSuperClasses.sort(typeNameComparator);</span>
+
+<span class="nc" id="L128">            CoIterator&lt;TypeMirror&gt; iterator = new CoIterator&lt;&gt;(oldSuperClasses.iterator(), newSuperClasses.iterator(),</span>
+                    typeNameComparator);
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            while (iterator.hasNext()) {</span>
+<span class="nc" id="L131">                iterator.next();</span>
+
+<span class="nc" id="L133">                TypeMirror oldType = iterator.getLeft();</span>
+<span class="nc" id="L134">                TypeMirror newType = iterator.getRight();</span>
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                if (oldType == null) {</span>
+<span class="nc" id="L137">                    addedSuperClasses.add(newType);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                } else if (newType == null) {</span>
+<span class="nc" id="L139">                    removedSuperClasses.add(oldType);</span>
+                }
+<span class="nc" id="L141">            }</span>
+
+            //this will give us the equivalent of removed/added superclasses but ordered by the inheritance chain
+            //not by name
+<span class="nc" id="L145">            removedSuperClasses = retainInCopy(oldSuperClasses, removedSuperClasses);</span>
+<span class="nc" id="L146">            addedSuperClasses = retainInCopy(newSuperClasses, addedSuperClasses);</span>
+
+<span class="nc" id="L148">            Iterator&lt;TypeMirror&gt; removedIt = removedSuperClasses.iterator();</span>
+<span class="nc" id="L149">            Iterator&lt;TypeMirror&gt; addedIt = addedSuperClasses.iterator();</span>
+
+            //always report the most concrete classes
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            if (removedIt.hasNext()) {</span>
+<span class="nc" id="L153">                removedIt.next();</span>
+            }
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            if (addedIt.hasNext()) {</span>
+<span class="nc" id="L157">                addedIt.next();</span>
+            }
+
+            //ok, now we only have super types left of the most concrete removed/added super class.
+            //we are only going to report those that changed their inheritance hierarchy in the other version of the API.
+<span class="nc" id="L162">            removeClassesWithEquivalentSuperClassChain(removedIt, getOldTypeEnvironment(), getNewTypeEnvironment());</span>
+<span class="nc" id="L163">            removeClassesWithEquivalentSuperClassChain(addedIt, getNewTypeEnvironment(), getOldTypeEnvironment());</span>
+
+<span class="nc bnc" id="L165" title="All 2 branches missed.">            for (TypeMirror t : removedSuperClasses) {</span>
+<span class="nc" id="L166">                String str = Util.toHumanReadableString(t);</span>
+<span class="nc" id="L167">                ret.add(createDifference(Code.CLASS_NO_LONGER_INHERITS_FROM_CLASS,</span>
+<span class="nc" id="L168">                        Code.attachmentsFor(types.oldElement, types.newElement, &quot;superClass&quot;, str)));</span>
+<span class="nc" id="L169">            }</span>
+
+<span class="nc bnc" id="L171" title="All 2 branches missed.">            for (TypeMirror t : addedSuperClasses) {</span>
+<span class="nc" id="L172">                String str = Util.toHumanReadableString(t);</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                Code code = types.oldElement.getDeclaringElement().getModifiers().contains(Modifier.FINAL)</span>
+                        ? Code.CLASS_FINAL_CLASS_INHERITS_FROM_NEW_CLASS
+                        : Code.CLASS_NON_FINAL_CLASS_INHERITS_FROM_NEW_CLASS;
+
+<span class="nc" id="L177">                ret.add(createDifference(code, Code.attachmentsFor(types.oldElement, types.newElement, &quot;superClass&quot;, str)));</span>
+<span class="nc" id="L178">            }</span>
+
+<span class="nc bnc" id="L180" title="All 4 branches missed.">            if (containsThrowable(oldSuperClasses) &amp;&amp; containsThrowable(newSuperClasses)) {</span>
+                // let's check for important exception type changes.
+
+<span class="nc" id="L183">                boolean oldUnchecked = isUncheckedThrowable(oldSuperClasses);</span>
+<span class="nc" id="L184">                boolean newUnchecked = isUncheckedThrowable(newSuperClasses);</span>
+
+<span class="nc bnc" id="L186" title="All 4 branches missed.">                if (oldUnchecked &amp;&amp; !newUnchecked) {</span>
+<span class="nc" id="L187">                    ret.add(createDifference(Code.CLASS_NOW_CHECKED_EXCEPTION,</span>
+<span class="nc" id="L188">                            Code.attachmentsFor(types.oldElement, types.newElement)));</span>
+                }
+            }
+
+<span class="nc" id="L192">            return ret;</span>
+        }
+
+<span class="nc" id="L195">        return null;</span>
+    }
+
+    @Override
+    protected void doVisitClass(JavaTypeElement oldEl, JavaTypeElement newEl) {
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (!isBothAccessible(oldEl, newEl)) {</span>
+<span class="nc" id="L201">            return;</span>
+        }
+
+<span class="nc" id="L204">        TypeElement oldType = oldEl.getDeclaringElement();</span>
+<span class="nc" id="L205">        TypeElement newType = newEl.getDeclaringElement();</span>
+
+<span class="nc" id="L207">        List&lt;TypeMirror&gt; oldSuperTypes = Util</span>
+<span class="nc" id="L208">                .getAllSuperClasses(getOldTypeEnvironment().getTypeUtils(), oldType.asType());</span>
+<span class="nc" id="L209">        List&lt;TypeMirror&gt; newSuperTypes = Util</span>
+<span class="nc" id="L210">                .getAllSuperClasses(getNewTypeEnvironment().getTypeUtils(), newType.asType());</span>
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (oldSuperTypes.size() != newSuperTypes.size()) {</span>
+<span class="nc" id="L213">            pushActive(oldEl, newEl, oldSuperTypes, newSuperTypes);</span>
+        } else {
+<span class="nc" id="L215">            Types oldTypes = getOldTypeEnvironment().getTypeUtils();</span>
+<span class="nc" id="L216">            Types newTypes = getNewTypeEnvironment().getTypeUtils();</span>
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            for (int i = 0; i &lt; oldSuperTypes.size(); ++i) {</span>
+                //need to erase them all so that we get only true type changes. formal type parameter changes
+                //are captured by SuperTypeParametersChanged check
+<span class="nc" id="L221">                TypeMirror oldSuperClass = oldTypes.erasure(oldSuperTypes.get(i));</span>
+<span class="nc" id="L222">                TypeMirror newSuperClass = newTypes.erasure(newSuperTypes.get(i));</span>
+
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                if (!Util.isSameType(oldSuperClass, newSuperClass)) {</span>
+<span class="nc" id="L225">                    pushActive(oldEl, newEl, oldSuperTypes, newSuperTypes);</span>
+<span class="nc" id="L226">                    break;</span>
+                }
+            }
+        }
+<span class="nc" id="L230">    }</span>
+
+    private boolean containsThrowable(List&lt;TypeMirror&gt; types) {
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        for (TypeMirror t : types) {</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">            if (IS_THROWABLE.visit(t)) {</span>
+<span class="nc" id="L235">                return true;</span>
+            }
+<span class="nc" id="L237">        }</span>
+
+<span class="nc" id="L239">        return false;</span>
+    }
+
+    private boolean isUncheckedThrowable(@Nonnull List&lt;TypeMirror&gt; superClassesOfType) {
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        for (TypeMirror sc : superClassesOfType) {</span>
+<span class="nc" id="L244">            String typeName = Util.toHumanReadableString(sc);</span>
+
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (&quot;java.lang.RuntimeException&quot;.equals(typeName)</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">                || &quot;java.lang.Error&quot;.equals(typeName)) {</span>
+<span class="nc" id="L248">                return true;</span>
+            }
+<span class="nc" id="L250">        }</span>
+
+<span class="nc" id="L252">        return false;</span>
+    }
+
+    private List&lt;String&gt; superClassChainAsUniqueStrings(@Nonnull TypeMirror cls, @Nonnull Types env) {
+<span class="nc" id="L256">        List&lt;TypeMirror&gt; supers = Util.getAllSuperClasses(env, cls);</span>
+<span class="nc" id="L257">        List&lt;String&gt; ret = new ArrayList&lt;&gt;(supers.size());</span>
+
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        for (TypeMirror s : supers) {</span>
+<span class="nc" id="L260">            ret.add(Util.toUniqueString(env.erasure(s)));</span>
+<span class="nc" id="L261">        }</span>
+
+<span class="nc" id="L263">        return ret;</span>
+    }
+
+    private void removeClassesWithEquivalentSuperClassChain(Iterator&lt;TypeMirror&gt; candidates,
+            TypeEnvironment candidateEnvironment, TypeEnvironment oppositeEnvironment) {
+
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        while (candidates.hasNext()) {</span>
+<span class="nc" id="L270">            boolean report = true;</span>
+
+<span class="nc" id="L272">            TypeMirror candidate = candidates.next();</span>
+<span class="nc" id="L273">            String typeName = Util.toHumanReadableString(candidate);</span>
+<span class="nc" id="L274">            TypeElement el = oppositeEnvironment.getElementUtils().getTypeElement(typeName);</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            if (el != null) {</span>
+<span class="nc" id="L276">                TypeMirror opposite = el.asType();</span>
+
+<span class="nc" id="L278">                List&lt;String&gt; candidateSuperChain = superClassChainAsUniqueStrings(candidate,</span>
+<span class="nc" id="L279">                        candidateEnvironment.getTypeUtils());</span>
+
+<span class="nc" id="L281">                List&lt;String&gt; oppositeSuperChain = superClassChainAsUniqueStrings(opposite,</span>
+<span class="nc" id="L282">                        oppositeEnvironment.getTypeUtils());</span>
+
+<span class="nc bnc" id="L284" title="All 2 branches missed.">                report = !candidateSuperChain.equals(oppositeSuperChain);</span>
+            }
+
+<span class="nc bnc" id="L287" title="All 2 branches missed.">            if (!report) {</span>
+<span class="nc" id="L288">                candidates.remove();</span>
+            }
+<span class="nc" id="L290">        }</span>
+<span class="nc" id="L291">    }</span>
+
+    private List&lt;TypeMirror&gt; retainInCopy(List&lt;TypeMirror&gt; all, List&lt;TypeMirror&gt; retained) {
+<span class="nc" id="L294">        List&lt;TypeMirror&gt; tmp = new ArrayList&lt;&gt;(all);</span>
+<span class="nc" id="L295">        tmp.retainAll(retained);</span>
+<span class="nc" id="L296">        return tmp;</span>
+    }
+
+    private void reportMissingSuperTypes(List&lt;Difference&gt; diffs, List&lt;TypeMirror&gt; superTypes, Code code,
+            ActiveElements&lt;?&gt; activeElements) {
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        for(TypeMirror t : superTypes) {</span>
+<span class="nc bnc" id="L302" title="All 2 branches missed.">            if (isMissing(t)) {</span>
+<span class="nc" id="L303">                String type = Util.toHumanReadableString(t);</span>
+<span class="nc" id="L304">                diffs.add(createDifferenceWithExplicitParams(code, Code.attachmentsFor(</span>
+                        activeElements.oldElement, activeElements.newElement,
+                        &quot;superClass&quot;, type), type));
+            }
+<span class="nc" id="L308">        }</span>
+<span class="nc" id="L309">    }</span>
+
+    private static boolean isMissing(TypeMirror type) {
+<span class="nc" id="L312">        return type.accept(IS_MISSING_VISITOR, null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

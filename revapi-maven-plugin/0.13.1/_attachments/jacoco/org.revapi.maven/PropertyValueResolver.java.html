@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyValueResolver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">PropertyValueResolver.java</span></div><h1>PropertyValueResolver.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
+
+import org.apache.maven.model.Model;
+import org.apache.maven.model.interpolation.MavenBuildTimestamp;
+import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.interpolation.AbstractValueSource;
+import org.codehaus.plexus.interpolation.EnvarBasedValueSource;
+import org.codehaus.plexus.interpolation.MapBasedValueSource;
+import org.codehaus.plexus.interpolation.ObjectBasedValueSource;
+import org.codehaus.plexus.interpolation.PrefixedObjectValueSource;
+import org.codehaus.plexus.interpolation.PrefixedValueSourceWrapper;
+import org.codehaus.plexus.interpolation.PropertiesBasedValueSource;
+import org.codehaus.plexus.interpolation.ValueSource;
+
+/**
+ * This serves no other purpose but to make available the standard value sources for interpolating the properties
+ * in the Revapi configuration files.
+ */
+public final class PropertyValueResolver {
+<span class="fc" id="L49">    private static final List&lt;String&gt; PROJECT_PREFIXES = asList(&quot;project.&quot;, &quot;pom.&quot;);</span>
+<span class="fc" id="L50">    private static final Pattern VAR_DETECTOR = Pattern.compile(&quot;\\$\\{.+}&quot;);</span>
+
+    // state machine states
+    private static final int INITIAL = 0;
+    private static final int GOT_DOLLAR = 1;
+    private static final int GOT_OPEN_BRACE = 2;
+    private static final int RESOLVED = 3;
+    private static final int DEFAULT = 4;
+
+    private final List&lt;ValueSource&gt; valueSources;
+
+    public PropertyValueResolver(Properties props) {
+<span class="fc" id="L62">        this(singletonList(new PropertiesBasedValueSource(props)));</span>
+<span class="fc" id="L63">    }</span>
+
+<span class="fc" id="L65">    public PropertyValueResolver(List&lt;ValueSource&gt; valueSources) {</span>
+<span class="fc" id="L66">        this.valueSources = valueSources;</span>
+<span class="fc" id="L67">    }</span>
+
+<span class="nc" id="L69">    public PropertyValueResolver(MavenProject project) {</span>
+        // this is more or less copied from org.apache.maven.model.interpolation.AbstractStringBasedModelInterpolator
+<span class="nc" id="L71">        this.valueSources = new ArrayList&lt;&gt;(8);</span>
+
+<span class="nc" id="L73">        MavenBuildTimestamp now = new MavenBuildTimestamp();</span>
+
+<span class="nc" id="L75">        Model model = project.getModel();</span>
+<span class="nc" id="L76">        Properties modelProperties = model.getProperties();</span>
+<span class="nc" id="L77">        File projectDir = project.getBasedir();</span>
+
+<span class="nc" id="L79">        ValueSource prefixedProjectValues = new PrefixedObjectValueSource(PROJECT_PREFIXES, model, false);</span>
+<span class="nc" id="L80">        valueSources.add(prefixedProjectValues);</span>
+
+<span class="nc" id="L82">        ValueSource unprefixedProjectValues = new ObjectBasedValueSource(model);</span>
+<span class="nc" id="L83">        valueSources.add(unprefixedProjectValues);</span>
+
+<span class="nc" id="L85">        ValueSource basedirValueSource = new PrefixedValueSourceWrapper(new AbstractValueSource(false) {</span>
+            public Object getValue(String expression) {
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (&quot;basedir&quot;.equals(expression)) {</span>
+<span class="nc" id="L88">                    return projectDir.getAbsolutePath();</span>
+                }
+<span class="nc" id="L90">                return null;</span>
+            }
+        }, PROJECT_PREFIXES, true);
+<span class="nc" id="L93">        valueSources.add(basedirValueSource);</span>
+
+<span class="nc" id="L95">        ValueSource baseUriValueSource = new PrefixedValueSourceWrapper(new AbstractValueSource(false) {</span>
+            public Object getValue(String expression) {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                if (&quot;baseUri&quot;.equals(expression)) {</span>
+<span class="nc" id="L98">                    return projectDir.getAbsoluteFile().toURI().toString();</span>
+                }
+<span class="nc" id="L100">                return null;</span>
+            }
+        }, PROJECT_PREFIXES, false);
+<span class="nc" id="L103">        valueSources.add(baseUriValueSource);</span>
+
+<span class="nc" id="L105">        ValueSource buildTimeStampValueSource = new PrefixedValueSourceWrapper(new AbstractValueSource(false) {</span>
+            public Object getValue(String expression) {
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                if (&quot;build.timestamp&quot;.equals(expression)) {</span>
+<span class="nc" id="L108">                    return now.formattedTimestamp();</span>
+                }
+<span class="nc" id="L110">                return null;</span>
+            }
+<span class="nc" id="L112">        }, singletonList(&quot;maven.&quot;), true);</span>
+<span class="nc" id="L113">        valueSources.add(buildTimeStampValueSource);</span>
+
+
+<span class="nc" id="L116">        valueSources.add(new MapBasedValueSource(System.getProperties()));</span>
+
+<span class="nc" id="L118">        valueSources.add(new MapBasedValueSource(modelProperties));</span>
+
+        try {
+<span class="nc" id="L121">            valueSources.add(new EnvarBasedValueSource(false));</span>
+<span class="nc" id="L122">        } catch (IOException e) {</span>
+<span class="nc" id="L123">            throw new IllegalStateException(&quot;Could not construct environment variable value source for property interpolation.&quot;);</span>
+<span class="nc" id="L124">        }</span>
+
+<span class="nc" id="L126">    }</span>
+
+    public boolean containsVariables(CharSequence expression) {
+<span class="fc" id="L129">        return VAR_DETECTOR.matcher(expression).find();</span>
+    }
+
+    // This is shamelessly copied from ValueExpressionResolver of JBoss DMR. Only slight modifications were made
+    // to avoid calling String.substring() where possible
+    public String resolve(CharSequence expression) {
+<span class="fc" id="L135">        final String expr = expression.toString();</span>
+<span class="fc" id="L136">        final StringBuilder builder = new StringBuilder();</span>
+<span class="fc" id="L137">        final int len = expr.length();</span>
+<span class="fc" id="L138">        int state = INITIAL;</span>
+<span class="fc" id="L139">        int start = -1;</span>
+<span class="fc" id="L140">        int nest = 0;</span>
+<span class="fc" id="L141">        int nameStart = -1;</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i = expr.offsetByCodePoints(i, 1)) {</span>
+<span class="fc" id="L143">            final int ch = expr.codePointAt(i);</span>
+<span class="pc bpc" id="L144" title="1 of 6 branches missed.">            switch (state) {</span>
+            case INITIAL: {
+<span class="fc bfc" id="L146" title="All 2 branches covered.">                switch (ch) {</span>
+                case '$': {
+<span class="fc" id="L148">                    state = GOT_DOLLAR;</span>
+<span class="fc" id="L149">                    continue;</span>
+                }
+                default: {
+<span class="fc" id="L152">                    builder.appendCodePoint(ch);</span>
+<span class="fc" id="L153">                    continue;</span>
+                }
+                }
+                // not reachable
+            }
+            case GOT_DOLLAR: {
+<span class="pc bpc" id="L159" title="1 of 3 branches missed.">                switch (ch) {</span>
+                case '$': {
+<span class="fc" id="L161">                    builder.appendCodePoint(ch);</span>
+<span class="fc" id="L162">                    state = INITIAL;</span>
+<span class="fc" id="L163">                    continue;</span>
+                }
+                case '{': {
+<span class="fc" id="L166">                    start = i + 1;</span>
+<span class="fc" id="L167">                    nameStart = start;</span>
+<span class="fc" id="L168">                    state = GOT_OPEN_BRACE;</span>
+<span class="fc" id="L169">                    continue;</span>
+                }
+                default: {
+                    // invalid; emit and resume
+<span class="nc" id="L173">                    builder.append('$').appendCodePoint(ch);</span>
+<span class="nc" id="L174">                    state = INITIAL;</span>
+<span class="nc" id="L175">                    continue;</span>
+                }
+                }
+                // not reachable
+            }
+            case GOT_OPEN_BRACE: {
+<span class="pc bpc" id="L181" title="1 of 4 branches missed.">                switch (ch) {</span>
+                case '{': {
+<span class="nc" id="L183">                    nest++;</span>
+<span class="nc" id="L184">                    continue;</span>
+                }
+                case ':':
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">                    if (nameStart == i) {</span>
+                        // not a default delimiter; same as default case
+<span class="nc" id="L189">                        continue;</span>
+                    }
+                    // else fall into the logic for 'end of key to resolve cases' &quot;,&quot; and &quot;}&quot;
+                case '}':
+                case ',': {
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">                    if (nest &gt; 0) {</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                        if (ch == '}') {</span>
+<span class="nc" id="L196">                            nest--;</span>
+                        }
+                        continue;
+                    }
+<span class="fc" id="L200">                    final String val = findValue(expr.substring(nameStart, i).trim());</span>
+<span class="fc bfc" id="L201" title="All 4 branches covered.">                    if (val != null &amp;&amp; !val.equals(expr)) {</span>
+<span class="fc" id="L202">                        builder.append(val);</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                        state = ch == '}' ? INITIAL : RESOLVED;</span>
+<span class="fc" id="L204">                        continue;</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">                    } else if (ch == ',') {</span>
+<span class="fc" id="L206">                        nameStart = i + 1;</span>
+<span class="fc" id="L207">                        continue;</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">                    } else if (ch == ':') {</span>
+<span class="fc" id="L209">                        start = i + 1;</span>
+<span class="fc" id="L210">                        state = DEFAULT;</span>
+<span class="fc" id="L211">                        continue;</span>
+                    } else {
+<span class="fc" id="L213">                        throw new IllegalStateException(&quot;Failed to resolve expression: &quot;+ expr.substring(start - 2, i + 1));</span>
+                    }
+                }
+                default: {
+<span class="fc" id="L217">                    continue;</span>
+                }
+                }
+                // not reachable
+            }
+            case RESOLVED: {
+<span class="fc bfc" id="L223" title="All 2 branches covered.">                if (ch == '{') {</span>
+<span class="fc" id="L224">                    nest ++;</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">                } else if (ch == '}') {</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">                    if (nest &gt; 0) {</span>
+<span class="fc" id="L227">                        nest--;</span>
+                    } else {
+<span class="fc" id="L229">                        state = INITIAL;</span>
+                    }
+                }
+                continue;
+            }
+            case DEFAULT: {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">                if (ch == '{') {</span>
+<span class="fc" id="L236">                    nest ++;</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">                } else if (ch == '}') {</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">                    if (nest &gt; 0) {</span>
+<span class="fc" id="L239">                        nest --;</span>
+                    } else {
+<span class="fc" id="L241">                        state = INITIAL;</span>
+<span class="fc" id="L242">                        builder.append(expr, start, i);</span>
+                    }
+                }
+                continue;
+            }
+            default:
+<span class="nc" id="L248">                throw new IllegalStateException(&quot;Unexpected char seen: &quot;+ch);</span>
+            }
+        }
+<span class="pc bpc" id="L251" title="2 of 4 branches missed.">        switch (state) {</span>
+        case GOT_DOLLAR: {
+<span class="nc" id="L253">            builder.append('$');</span>
+<span class="nc" id="L254">            break;</span>
+        }
+        case DEFAULT: {
+<span class="nc" id="L257">            builder.append(expr, start - 2, expr.length());</span>
+<span class="nc" id="L258">            break;</span>
+        }
+        case GOT_OPEN_BRACE: {
+            // We had a reference that was not resolved, throw ISE
+<span class="fc" id="L262">            throw new IllegalStateException(&quot;Incomplete expression: &quot;+builder.toString());</span>
+        }
+        }
+<span class="fc" id="L265">        return builder.toString();</span>
+    }
+
+    private @Nullable String findValue(String name) {
+<span class="fc" id="L269">        return valueSources.stream()</span>
+<span class="fc" id="L270">                .map(s -&gt; s.getValue(name))</span>
+<span class="fc" id="L271">                .filter(Objects::nonNull)</span>
+<span class="fc" id="L272">                .map(Object::toString)</span>
+<span class="fc" id="L273">                .findFirst().orElse(null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

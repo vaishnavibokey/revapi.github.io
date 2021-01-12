@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Extending Revapi :: Revapi</title>
+    <link rel="canonical" href="https://revapi.org/revapi/extending-revapi.html">
+    <meta name="generator" content="Antora 2.3.3">
+<link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/news.css">
+<link rel="stylesheet" href="../../_/css/additions.css">
+
+<link rel="alternate" type="application/rss+xml" title="Revapi RSS" href="../../_/../revapi-site/master/news/_attachments/news.atom" />
+<link rel="stylesheet" href="../../_/css/search.css">
+  </head>
+  <body class="article">
+<header class="header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="https://revapi.org">Revapi</a>
+              <div class="navbar-item">
+                <input id="search-input" type="text" placeholder="Search docs">
+              </div>
+            <button class="navbar-burger" data-target="topbar-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div id="topbar-nav" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="../../revapi-site/index.html/../news/index.html">News</a>
+                <a class="navbar-item" href="../../revapi-site/index.html/../downloads.html">Downloads</a>
+                <a class="navbar-item" href="https://diff.revapi.org">Online Check</a>
+                <a class="navbar-item" href="https://github.com/revapi/revapi"><img src="../../_/img/github.svg" alt="Github Repository"/></a>
+                <a class="navbar-item" href="https://twitter.com/revapi_org"><img src="../../_/img/twitter.svg" alt="Twitter"/></a>
+                <a class="navbar-item" href="../../_/../revapi-site/0/news/_attachments/news.atom"><img src="../../_/img/rss.svg" alt="RSS"/></a>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="revapi" data-version="0.13.1">
+  <aside class="nav">
+    <div class="panels">
+    <div class="nav-panel-menu is-active" data-panel="menu">
+        <nav class="nav-menu">
+                <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/faq.html">FAQ</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../architecture.html">Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../extending-revapi.html">Extending Revapi</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/building.html">Building</a>
+  </li>
+</ul>
+  </li>
+</ul>
+            <ul class="nav-list">
+                <li class="nav-item" data-depth="0">
+                    <hr/>
+                    <i class="nav-text">Modules</i>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-ant-task/index.html">
+                                    <span class="nav-text">Ant Task</span>
+                                </a>
+                            </li>
+                            <li class="nav-item is-active" data-depth="0">
+                                <a class="nav-link" href="../index.html">
+                                    <span class="nav-text">API</span>
+                                </a>
+                                    <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="architecture.html">Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="extending-revapi.html">Extending Revapi</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/apidocs/index.html">Javadoc</a>
+  </li>
+</ul>
+  </li>
+</ul>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-basic-features/index.html">
+                                    <span class="nav-text">Basic Features</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-standalone/index.html">
+                                    <span class="nav-text">CLI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-file-base/index.html">
+                                    <span class="nav-text">File Reporter Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-jackson/index.html">
+                                    <span class="nav-text">Jackson Analyzer Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java/index.html">
+                                    <span class="nav-text">Java Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java-spi/index.html">
+                                    <span class="nav-text">Java Analyzer SPI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-json/index.html">
+                                    <span class="nav-text">JSON Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-json/index.html">
+                                    <span class="nav-text">JSON Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-maven-plugin/index.html">
+                                    <span class="nav-text">Maven Plugin</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-text/index.html">
+                                    <span class="nav-text">Text Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-yaml/index.html">
+                                    <span class="nav-text">YAML Analyzer</span>
+                                </a>
+                            </li>
+                </li>
+            </ul>
+        </nav>
+    </div>
+<div class="nav-panel-explore" data-panel="explore" style="display: none">
+  <div class="context">
+    <span class="title">API</span>
+    <span class="version">0.13.1</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <span class="title">Ant Task</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-ant-task/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <span class="title">API</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../index.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Basic Features</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-basic-features/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">CLI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-standalone/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.0/index.html">0.10.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.8/index.html">0.9.8</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.7/index.html">0.9.7</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.6/index.html">0.9.6</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">File Reporter Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-file-base/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Jackson Analyzer Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-jackson/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.1/index.html">0.23.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.0/index.html">0.22.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer SPI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java-spi/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.0/index.html">0.22.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.1/index.html">0.21.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.0/index.html">0.21.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-json/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-json/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Maven Plugin</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-maven-plugin/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.2/index.html">0.12.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Revapi Site</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-site/index.html">master</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Text Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-text/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">YAML Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-yaml/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../revapi-site/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">API</a></li>
+    <li><a href="extending-revapi.html">Extending Revapi</a></li>
+  </ul>
+</nav>
+  Version:
+<div class="page-versions">
+    <button class="version-menu-toggle" title="Versions of the component">
+        0.13.1
+    </button>
+  <div class="version-menu">
+        <a class="version" href="../extending-revapi.html">
+
+            latest
+        </a>
+        <a class="version is-current" href="extending-revapi.html">
+
+            0.13.1
+        </a>
+        <a class="version" href="../0.13.0/extending-revapi.html">
+
+            0.13.0
+        </a>
+        <a class="version is-missing" href="../0.12.0/index.html">
+
+            0.12.0
+        </a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/revapi/revapi/edit/master/revapi/src/site/modules/ROOT/pages/extending-revapi.adoc" title="Edit the latest version of this page">Edit this page</a></div>
+</div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Extending Revapi</h1>
+<div class="sect1">
+<h2 id="_extension_points"><a class="anchor" href="#_extension_points"></a>Extension points</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="architecture.html" class="page">architecture overviews</a> sports a simple <a href="architecture.html#_architecture" class="page">diagram</a> that
+hints at several extension points available in Revapi. Each extension point is configurable and can provide a
+JSON schema for its configuration.</p>
+</div>
+<div class="sect2">
+<h3 id="_archives"><a class="anchor" href="#_archives"></a>Archives</h3>
+<div class="paragraph">
+<p>An <a href="_attachments/apidocs/org/revapi/Archive.html"><code>Archive</code></a> is a very simple abstraction over a file that
+represents the archive containing some API elements (like Java&#8217;s jar archive or a class file, an XML document,
+properties file, etc).</p>
+</div>
+<div class="paragraph">
+<p>An archive can also optionally be versioned - some extensions may take advantage of that. If you are able to provide
+a version of an archive, you should supply an implementation of the
+<a href="_attachments/apidocs/org/revapi/Archive.Versioned.html"><code>Archive.Versioned</code></a> interface instead of just a plain
+<code>Archive</code>.</p>
+</div>
+<div class="paragraph">
+<p>Revapi provides just a basic file-based <a href="_attachments/apidocs/org/revapi/simple/FileArchive.html">implementation</a>
+of this interface, but it is trivial to implement one. For example the maven extension has its own implementation of the
+<code>Archive.Versioned</code> interface which is able to return the version of the underlying Maven artifact.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is a <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/archive">simple example</a> for writing custom archive implementations.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_api_analyzer"><a class="anchor" href="#_api_analyzer"></a>API Analyzer</h3>
+<div class="paragraph">
+<p>An <a href="_attachments/apidocs/org/revapi/ApiAnalyzer.html">API analyzer</a> is the main interface for implementing API
+checks for custom "language". It provides and configures the analyzers of the archives and API difference analyzers both
+detailed in the example project.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is an <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/api-analyzer">example</a> showing a custom api analyzer implementation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_archive_analyzer"><a class="anchor" href="#_archive_analyzer"></a>Archive Analyzer</h3>
+<div class="paragraph">
+<p>An <a href="_attachments/apidocs/org/revapi/ArchiveAnalyzer.html">archive analyzer</a> is instantiated and configured by the
+API analyzer to analyze archives of a version of API. It represents the results of the analysis as an
+<a href="_attachments/apidocs/org/revapi/ElementForest.html">element forest</a> (i.e. a set of element trees). The archive
+analyzers can take advantage of the <a href="#_tree_filter">tree filters</a> to leave out parts of the elements and save some
+processing power.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is an <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/api-analyzer">example</a> showing a custom archive analyzer implementation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tree_filter"><a class="anchor" href="#_tree_filter"></a>Tree Filter</h3>
+<div class="paragraph">
+<p>An <a href="_attachments/apidocs/org/revapi/TreeFilterProvider.html">tree filter</a> can filter out elements from
+the element forest before they are passed further down the API analysis pipeline. The same set of element filters is
+applied to both the old API and new API element forests.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is an <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/tree-filter">example</a> showing a custom tree filter implementation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_element_matcher"><a class="anchor" href="#_element_matcher"></a>Element Matcher</h3>
+<div class="paragraph">
+<p>An <a href="_attachments/apidocs/org/revapi/ElementMatcher.html">element matcher</a> is a kind of "helper" extension that
+can be used by other extensions, like tree filters or difference transforms to identify the elements matching some
+user-defined criteria.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is an <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/element-matcher">example</a> showing a custom element matcher implementation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_difference_analyzer"><a class="anchor" href="#_difference_analyzer"></a>Difference Analyzer</h3>
+<div class="paragraph">
+<p>The magic happens in the <a href="_attachments/apidocs/org/revapi/DifferenceAnalyzer.html">difference analyzers</a>. Revapi
+simultaneously traverses the two element forests discovering new or removed elements and matching the comparable
+elements in them (using a <a href="_attachments/apidocs/org/revapi/CoIterator.html">co-iterator</a>). It then passes the
+matched pairs to the difference analyzer that performs the actual analysis of changes and provides the reports
+summarizing them.</p>
+</div>
+<div class="paragraph">
+<p>A report summarizes the differences found between 2 elements - one from the old API and the other from the new API
+(accounting for removals or additions by one of the pair being null).</p>
+</div>
+<div class="paragraph">
+<p>In addition to the two elements in comparison, the report also contains the list of the differences the analyzer found
+between the two.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is an <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/api-analyzer">example</a> showing a custom difference analyzer implementation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_difference_transform"><a class="anchor" href="#_difference_transform"></a>Difference Transform</h3>
+<div class="paragraph">
+<p>Once the differences are found they are supplied to the
+<a href="_attachments/apidocs/org/revapi/DifferenceTransform.html">difference transforms</a>. These extensions can, as the
+name suggests, transform the found differences into different ones or altogether remove them from the results.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is an <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/difference-transform">example</a> showing a custom difference transform implementation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_reporter"><a class="anchor" href="#_reporter"></a>Reporter</h3>
+<div class="paragraph">
+<p>Finally, after the final set of differences is settled, it is passed to the
+<a href="_attachments/apidocs/org/revapi/Reporter.html">reporters</a>. These are responsible to report the found
+differences to the caller somehow (standard output, database, xml files, whatever one imagines).</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+There is an <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/reporter">example</a> showing how to write a custom reporter
+implementation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_analysis_workflow"><a class="anchor" href="#_analysis_workflow"></a>Analysis Workflow</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The caller is first required to first supply the
+<a href="_attachments/apidocs/org/revapi/PipelineConfiguration.html">pipeline configuration</a> to tell Revapi what
+extensions it will have available for analysis and other configuration.</p>
+</div>
+<div class="paragraph">
+<p>The analysis is then executed using an <a href="_attachments/apidocs/org/revapi/AnalysisContext.html">analysis context</a>.
+This context contains the two APIs that should be compared as well as the configuration of the extensions for that
+particular analysis.</p>
+</div>
+<div class="paragraph">
+<p>The following diagram provides a detailed picture of the analysis workflow. The objects marked by the circled <code>E</code>
+represent a collection of extension instances of respective kinds which can be supplied to Revapi. Each such extension
+can be configured by the user.</p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/plantuml/svg/eNrtVsFu2zAMvecriF7Wols_oCgCFG0H7DCg6LIPUG061qpIhiQny75-lGzJkiu3yNDjjCCwZfKR5nukxCqrNNwxIVADM1D5u1XHtOUV75i08IR71nH3Uvu77OXZ7eM3uJVMHP-gNmfOioUnuLmB84fPh5ZbvFivc7-NRoSvXNjg1gz3bzo9CNwh3XxntmqD4258eNPznjcNapQVwkYzaRqld4O7jY9vAjxhp3RMVoenuc9qKCB8WY_VgstLuIYbLrldnz_yDgWXeKdkw7e9ZpYrebFaAV0Fx-tQy3NfYcMNOVr8bUcXd43G0Y18atZZqNIQ0Voqi6D5trVxyV0_DUU2fdcJjo7AIS7FczAuIFCBgBIEukdpCNJcZQiblozp54Nj7e2RVe3kAFZ5NMYl_OpNngC3Js-YMqgBpeZEbR2jsz3jgj0LjKRnKEaBbZmlPzx-0piYOwBFy7r4AUixXGVKVZ3U7PhQogZSfBa10sioqre6avkeQy_4TsiXMq8J1wVZMNRoey1LWc2CJVqJ1kKpDqiSODQN0SODX162ORjhh2b04h0BMh93BSOyjz3oEiEiTS9e20cBqj1FGb2LVoOiMEZgRGbjBsagIYfuSE4IHnMs6yK9CKFF0cGB2xZqJPgd9abcAm88ZA5kSFM7hN71R6WpxzVnRegoofmLGYXTkhs8VAfDBGx7XjMaTakgZxoYlPdjE5drNFar4yvpvCthiYf_Ev5XCX8Um56Ej2AzPPkJR4imxOu0-aXU1rT6Pq9Fq7EMOU8aq14byl4cPWd--o_d1DGuZ1UL35Psv-6DFj3y6TF5rZaGRwJc0ZZ2Rh0v0dD-7dr80CqaGjHlib4i3DMSDvp9xc8iZl7GXcmmgfzO9Tqh4mwYhcCql4W6pIU_pTKLtKa1qafjUFTQkBG1_Hi6KTqrxm_Ekz8d3FRPH_iM9oAofUFchs4ytO1JFZkFT5sndEn2iXMROu88on-RZFzo6qIYiwVILE7Z9wqDIx8eAyipakp0NSvZglCms6hLIoVa4HHSSnRdFMoE3mlFtTOe4GHVT2N5hAM7Dq1h0G3Z9uoUvrNDmGNqlXZHOIZqdJX9C7-wvHo=" alt="Diagram">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_api_traversal"><a class="anchor" href="#_api_traversal"></a>API Traversal</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>All the elements produced by a single API analyzer need to be mutually comparable. The element trees produced by the
+archive analyzers are sorted. Revapi takes the advantage of this fact when looking for the changed elements.</p>
+</div>
+<div class="paragraph">
+<p>The traversal is performed in the depth-first manner. Let&#8217;s consider the below two API trees. Their names encode the
+position in the graph so that we can then illustrate the API traversal in text. <code>o_</code> and <code>n_</code> prefixes mean that
+the element comes from the old (<code>o_</code>) or new (<code>n_</code>) API. The letter following the prefix indicates the "name" and
+is used merely for identification purposes. Finally, the number following the name indicates the "order" of
+the element amongst all the elements with the same name in both APIs.</p>
+</div>
+<div class="paragraph">
+<p>These pairs are then supplied to the difference analyzers that produce the lists of found differences between these
+pairs.</p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNpVjEEKgzAQRfdzijmAXRi7K3oRKUEzqQbCTLFCKZK7Nxl14eYNvD88CtMyvGfcgIU89p_1F337CjF6qspxEmVpv3NY_fMB-3M_TlcNYocabx1uKHasq0KjbBIUo5tYp5MzqNYclvSVGuU9AfBZY42xxjLzxmeMNZa5S3NIUlkq6Q8J6ESD" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p>The API traversal goes through both of the trees at the same time and produces pairs of elements where the first element
+comes from the old API and the second from the new API. Either of those elements can be null indicating that there is
+no adequate counterpart in the other API.</p>
+</div>
+<div class="paragraph">
+<p>So let&#8217;s start the traversal&#8230;&#8203;</p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNptjUEKgzAQRfdzijmAXRi7K_YiIkGTaQyESbEpUsS710wspdDND7z388d6Nw_3CVfgaAm7R3oFam8-BLJVfkwMcW6XySfqL1DK3eh-MUQ91Nh9-8G7KbmZiHvgf24MT-qPf6crrhj1WFc5lWSzQSbiojaijEKh6qBWqraRPG9QLmXHMsYytufu-DPGMrZngeqAVmBe2d7gzVj_" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_a1, n_a1)</code> <em>The elements <code>o_a1</code> and <code>n_a1</code> are considered equal (they have the same name and same "order"). When we
+have a match, we report them and dive into their children.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1jkEKwjAQRfc5RQ5QF6bupF6klNJ2xjQYJhIrUkrvbmZSkYJufuC_n5eAs7G7j3pRFAB1_Zhmj9XVeY9Q8DEEH2L1Gt2EzVnlcd3bfa1C2x11_d1DF29pOzeK_pLQ9jvinR0nGxGJb_1gvX9is711uOhFs6HgNJLlmp3MQjsIGoyW1mwtyBRKydOq8v-YkchIZCkTo4-MRJYyl2YrQUq2rG9x1Gw0" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_b1, n_b1)</code> <em>Here, we&#8217;re in the same situation as before. The elements compare as equal and therefore we&#8217;re diving
+a level further.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1j0EKgzAQRfc5RQ5gF43dFXsRETFOGkPDpKRKEfHuzUwsRaibH3j_z58JOBu75yAXgQGMrF_j7E11d94bKOjpgw-xeg9uNM1V5HCt7R6L0HZnWf_y0MVHys6NwEMntPpwRh_O9DvHOzuMNhqDNPXH034yzXbf6SYXSVsLUsVarvkO8qicYK8kU7VR4CiUrJdV5D-Rh1yGXJY0efgtQy5LmqHaIDCklvUD60Z_aw==" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_c1, n_c1)</code> <em>Again, the elements are matching and therefore they are both reported at the same time. There are no children to
+iterate so we&#8217;re continuing to the siblings.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1j00KgzAQhfc5RQ5gF43dFXsREVEnjaFhUlJBRLx7M5OUtotsnvC9n4xgTRies9wFetCyfS2b083dOqehos_knQ_NOttFd1eRwu1o_rHw_XCW7TcPQ3jE7NYJLDq-H4udsdiZip2p3FG_jrNmXkzQGrt8-Okmd0nnVKSKtT7SgeTRqwTjDlOVKXAUatbLIdLPkoc8hjwWNXr4GUMei5qgyhAY0srxBgAbiJ0=" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_c1, null)</code> <em>Here we see the first "odd" thing. Only <code>o_c2</code> is reported and no element from the new API. This is because we&#8217;ve found
+no matching element in the new API. <code>n_c4</code> is considered "greater".</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1UEsOgyAU3HMKDmAXRXeNvQghBnxUSQk0VNMY493Le9q0XbAZkvkxAG5I-jHylYUIlsvntHjb3pz3Fio8-uhjal-jm6y6sN0szfBPs9jpM5dfP-h0z95FsVBUYmeKGVPM9MVMX86IYqb5Vbwbxsn42arjRacrXznurBAFYb3ty1HDOUjmC4gVBwtkhZqw2dj-C6gFKgtUljFr4VMWqAw3ESkOEojElu0NAHSR0g==" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(null, n_c4)</code> <em>Here we see a similar situation only with the new API. We&#8217;ve already reported <code>o_c2</code> and there is no further element to
+report in the old API. But we need to report <code>n_c4</code> which is "greater" than all the elements in the old API. Therefore,
+we report it. We&#8217;ve depleted all siblings in both APIs so we continue in the upper level.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1UEsKwjAQ3ecUOUBdWLuTepFSStPENBgSiRUpJXc3M6NIkdm8wPtlZrSzabzPchMhaiO7x7J6016d90ZX8EzRx9S-ZreY_izI3Cm7p0UcxqPsfn49plvxrr0IrBIHxWYUm5nYzMRnajbTsLPtMt7ZebHJmIDT_WvKP03_ucPhIjcJ21WANeIp076gwRJAlrEy_USsRqs-ITZZ0O1AC1gWsKxg0cK3LGAZbJJpMiI1ktCS35gZpd0=" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_b2, n_b2)</code> <em>These two elements match and are therefore reported together. Let&#8217;s dive into children.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1UM0KgzAMvvcp-gDuMPU23IuIiDWdlpV2OMcQ6buvSTaGh1wS-P74EnDTMjxmvasQwer2uW7eNjfnvYUC1xh9XJr37FbbXRSLWzMdYRX74azbvx6G5Z61W6eCyMTeiB4jekbRM8qeUvTUYjfRIzNwaODdNK_Gv2z3_c_pqneNVxc4S5pV4j8gh8chmOsmbsAokBQqmnVS_FPkAoUFCsszc-EXFigML0zcmUEgEFPSB6t6rqU=" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(null, n_d1)</code> <em>Here we see, that the element <code>n_d1</code> from the new API is considered "less" than all other siblings in
+the old API. Therefore, it is reported first and alone.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1UM0KgzAMvvcp-gDuMOdtuBcRETVdLSvp6IQh0ndf02wMD7l8ge-PJOBsHJ-L3hUGMLp7rZs37d15b6CiMQcfYvte3Gr6q2JzN9kjrcIwnnX398MYH9m79QpFJQyTmJnEzCxmZjlTi5lG3E3MyAqIG8Ah451dVhuNwf77utNN75oeUhHWBS-JX0Qa3U1kviTxcsxCscKlYJMUv5s0LGVYyjJmDX9lWMro-MTnMAmFpJb0AfrRuKw=" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_d2, null)</code> <em>The next in line for the combined sets of siblings is <code>o_d2</code>. It has no counterpart in the new API and
+therefore it is again reported alone.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1Uc0KwjAMvvcp-gB6cNtN5ouMMbaldsWSSh3IGH13m1RRD7mk8P2RfAVn43hf9K4wgNHdY928aa_OewMHeubgQ2yfi1tNf1ZF3E32H1ZhGE-6--phjLes3XqFIhOGSfRMomcWPbPsqURPI-4memQGxA2gEpn6l_HOLquNxmD_LvV40bumqg40K551KuURR40QmG9MZe2CAkuh5tkkVT6COOQw5LA8M4efMOQwqiWVQwsIDFJKegGC7cJL" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_d3, null)</code> <em>The next in line is <code>o_d3</code>. It again doesn&#8217;t have a matching counterpart in the new API and so is again
+reported alone.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1UUsKwyAQ3XsKD9AummRX0ouEEGLGGqlosSklBO9eZ2wpocxmhPdzfII1cbzPchM-gJbdY1mdbq_WOQ0HPKbgQmxfs110fxZF3Cmzh0UYxpPsfnoY4y1r1154lgmDYj2K9UysZ-I9Fetp2N1YD88AuwFULFOzzG43Z828mKi1p5v-OeWeuv_8xPEiN4n9HnBWNOtUGkcOa0QwF5PKWwsKJIWaZpNE-T3kPIV5Csszc_4b5ikMu0ylnQICgZiS3m8j1fU=" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_d4, n_d4)</code> <em>Now we arrive at elements that are considered equal in both APIs so they&#8217;re reported together.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1UUEKgzAQvOcVeUB7qHor9iMiom4aQ0NSUqGI5O_N7rYUD3uZwMzOZJkFZ9P4XPSuQgSju9e6edPenfcGTvjM0cfUvhe3mv6qeLib7JFWcRgvuvvPw5geZXbrVRCVOEyiZxI9s-iZZU8lehpxN9EjKyBuAJWo1KLSiP_IWx_SvLPLapMxof-e6HzTu8biT4gVYZ35FKhhv0iWxjKXwCzQKNSETVZ8VtQChQUKK1i08AsLFIYlZ66NSSASU_IH9-LfJw==" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(o_b3, null)</code> <em>In the previous step we finished visiting all the "d" siblings and therefore now we&#8217;re on the "b" level.
+Here, the next in line is <code>o_b3</code> that has no matching counterpart in the new API.</em></p>
+</div>
+<div class="imageblock kroki">
+<div class="content">
+<img src="https://kroki.io/graphviz/svg/eNp1UUsKgzAQ3ecUOYBdNHFX7EVExGRSDQ1JsZYikrvXyQjFxWwm8D6Txzzw4zy8JrmJmMDJ9r2swTUPH4KDCh-bQpqb7-QX190EiVsznmGR-uEq278ehvm5a9dORJZJvWE9hvVY1mN5j2I9NZuN9fAMsAlAsYxmmZr9h0-t2dQnT_DjtJjwcd3R3eUuN4mNVDhVmTpTR8jh4RHcT5npOoRCkYIus86C-kYulmWxLMPvM9VKlC2UJVAdIBQQt-Qfa47oWw==" alt="Diagram">
+</div>
+</div>
+<div class="paragraph">
+<p><code>(null, n_b4)</code> <em>And at last we&#8217;ve arrived at the last unreported element, <code>n_b4</code>. We&#8217;ve visited all the elements in both
+APIs.</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_packaging_extensions"><a class="anchor" href="#_packaging_extensions"></a>Packaging Extensions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Extensions should be packaged as ordinary jar files. Revapi is as of yet not fully modularized (it only defines
+the automatic module names) so it is recommended to place Revapi and all extensions on the classpath, not
+the modulepath.</p>
+</div>
+<div class="paragraph">
+<p>The convention for finding Revapi extensions is to find them using the service loader. Therefore, if you want your
+extension to be found by the <code>revapi-maven-plugin</code> for example, you need to make sure you place the appropriate
+service file in <code>META-INF/services</code> or your jar (and subsequently add that jar as a dependency of
+the revapi-maven-plugin).</p>
+</div>
+<div class="paragraph">
+<p>E.g., if you define a new difference transform in your extension, called <code>com.acme.AcmeDifferenceTransform</code>,you need to
+create a file called <code>org.revapi.DifferenceTransform</code> in the <code>META-INF/services</code> directory of you jar. Each line in that
+file should contain a fully qualified class name of an implementation of the difference transform.</p>
+</div>
+<div class="paragraph">
+<p>Take a look at the <a href="https://github.com/revapi/revapi/tree/master/revapi-examples/">example extensions</a> which define these service files.</p>
+</div>
+</div>
+</div>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+    <p>Copyright 2014-2021 Lukas Krejci.</p>
+    <p>This site was built using <a href="https://antora.org">Antora 2.3.3</a>.</p>
+</footer>
+<script>
+  window.antora = window.antora || {}
+  window.antora.basePath = '../..'
+  window.antora.pagePath = '/revapi/0.13.1/extending-revapi.html'
+</script>
+<script src="../../_/js/site.js"></script>
+  <script src="../../_/js/vendor/lunr.js"></script>
+  <script src="../../_/js/vendor/search.js"></script>
+  <script async src="../../_/../search-index.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script>
+    function toggleVersionSelector(id) {
+        var sel = document.getElementById(id)
+        if (!sel) {
+            return
+        }
+
+        if (sel.style.display == 'none') {
+            sel.style.display = 'block';
+        } else {
+            sel.style.display = 'none';
+        }
+    }
+</script>  </body>
+</html>
