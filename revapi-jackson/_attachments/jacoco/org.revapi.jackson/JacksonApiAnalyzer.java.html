@@ -20,14 +20,16 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.revapi.AnalysisContext;
+import org.revapi.CorrespondenceComparatorDeducer;
 import org.revapi.base.BaseApiAnalyzer;
 
 public abstract class JacksonApiAnalyzer&lt;E extends JacksonElement&lt;E&gt;&gt; extends BaseApiAnalyzer&lt;E&gt; {
@@ -35,34 +37,62 @@ public abstract class JacksonApiAnalyzer&lt;E extends JacksonElement&lt;E&gt;&gt
     protected Pattern pathMatcher;
     protected Charset charset;
     protected final ObjectMapper objectMapper;
+    private final CorrespondenceComparatorDeducer&lt;E&gt; arrayDiff;
 
-<span class="nc" id="L39">    public JacksonApiAnalyzer(ObjectMapper objectMapper) {</span>
-<span class="nc" id="L40">        this.objectMapper = objectMapper;</span>
-<span class="nc" id="L41">    }</span>
+<span class="nc" id="L42">    public JacksonApiAnalyzer(ObjectMapper objectMapper) {</span>
+<span class="nc" id="L43">        this.objectMapper = objectMapper;</span>
+<span class="nc" id="L44">        this.charset = StandardCharsets.UTF_8;</span>
+<span class="nc" id="L45">        this.arrayDiff = CorrespondenceComparatorDeducer.editDistance(Objects::equals);</span>
+<span class="nc" id="L46">    }</span>
 
     @Nullable
     @Override
     public Reader getJSONSchema() {
-<span class="nc" id="L46">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/revapi-jackson-config-schema.json&quot;),</span>
+<span class="nc" id="L51">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/revapi-jackson-config-schema.json&quot;),</span>
                 StandardCharsets.UTF_8);
     }
 
     @Override
-    public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="nc" id="L52">        JsonNode charsetNode = analysisContext.getConfigurationNode().path(&quot;charset&quot;);</span>
-<span class="nc" id="L53">        JsonNode pattern = analysisContext.getConfigurationNode().path(&quot;pathRegex&quot;);</span>
+    public void initialize(AnalysisContext analysisContext) {
+<span class="nc" id="L57">        JsonNode charsetNode = analysisContext.getConfigurationNode().path(&quot;charset&quot;);</span>
+<span class="nc" id="L58">        JsonNode pattern = analysisContext.getConfigurationNode().path(&quot;pathRegex&quot;);</span>
 
-<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (charsetNode.isTextual()) {</span>
-<span class="nc" id="L56">            this.charset = Charset.forName(charsetNode.asText());</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (charsetNode.isTextual()) {</span>
+<span class="nc" id="L61">            this.charset = Charset.forName(charsetNode.asText());</span>
         }
 
-<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (pattern.isTextual()) {</span>
-<span class="nc" id="L60">            this.pathMatcher = Pattern.compile(pattern.asText());</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (pattern.isTextual()) {</span>
+<span class="nc" id="L65">            this.pathMatcher = Pattern.compile(pattern.asText());</span>
         }
-<span class="nc" id="L62">    }</span>
+<span class="nc" id="L67">    }</span>
+
+    @Override
+    public CorrespondenceComparatorDeducer&lt;E&gt; getCorrespondenceDeducer() {
+        // let's try to be clever with the arrays and find the optimal edits to get the two arrays to the same state
+<span class="nc" id="L72">        return (as, bs) -&gt; {</span>
+<span class="nc bnc" id="L73" title="All 4 branches missed.">            if (as.isEmpty() || bs.isEmpty()) {</span>
+<span class="nc" id="L74">                return Comparator.naturalOrder();</span>
+            }
+
+            // the elements in the supplied lists each have a common parent... so we take a look at the parent to
+            // figure out if we're looking at an array or object or value
+<span class="nc" id="L79">            E aParent = as.get(0).getParent();</span>
+<span class="nc bnc" id="L80" title="All 4 branches missed.">            if (aParent == null || !aParent.getNode().isArray()) {</span>
+<span class="nc" id="L81">                return Comparator.naturalOrder();</span>
+            }
+
+<span class="nc" id="L84">            E bParent = bs.get(0).getParent();</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">            if (bParent == null || !bParent.getNode().isArray()) {</span>
+<span class="nc" id="L86">                return Comparator.naturalOrder();</span>
+            }
+
+            // k, we have 2 arrays.. we want to compare them in a diff-like manner...
+<span class="nc" id="L90">            return arrayDiff.sortAndGetCorrespondenceComparator(as, bs);</span>
+        };
+    }
 
     @Override
     public void close() {
-<span class="nc" id="L66">    }</span>
+<span class="nc" id="L96">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

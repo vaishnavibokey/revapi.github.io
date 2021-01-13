@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaElementFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">JavaElementFactory.java</span></div><h1>JavaElementFactory.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaElementFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">JavaElementFactory.java</span></div><h1>JavaElementFactory.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -25,6 +25,7 @@ import javax.lang.model.type.TypeMirror;
 
 import org.revapi.Archive;
 import org.revapi.java.compilation.ProbingEnvironment;
+import org.revapi.java.spi.JavaElement;
 
 /**
  * @author Lukas Krejci
@@ -37,44 +38,44 @@ public final class JavaElementFactory {
 
     @SuppressWarnings(&quot;unchecked&quot;)
     public static JavaElementBase&lt;?, ?&gt; elementFor(Element modelElement, TypeMirror modelType, ProbingEnvironment env, Archive archive) {
-<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (modelElement instanceof javax.lang.model.element.TypeElement) {</span>
-<span class="nc" id="L41">            return new TypeElement(env, archive, (javax.lang.model.element.TypeElement) modelElement, (DeclaredType) modelType);</span>
-<span class="fc bfc" id="L42" title="All 2 branches covered.">        } else if (modelElement instanceof VariableElement &amp;&amp;</span>
-<span class="fc bfc" id="L43" title="All 2 branches covered.">            modelElement.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
-<span class="fc" id="L44">            return new FieldElement(env, archive, (VariableElement) modelElement, modelType);</span>
-<span class="fc bfc" id="L45" title="All 2 branches covered.">        } else if (modelElement instanceof VariableElement &amp;&amp;</span>
-<span class="pc bpc" id="L46" title="1 of 2 branches missed.">            modelElement.getEnclosingElement() instanceof ExecutableElement) {</span>
-<span class="fc" id="L47">            return new MethodParameterElement(env, archive, (VariableElement) modelElement, modelType);</span>
-<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        } else if (modelElement instanceof ExecutableElement) {</span>
-<span class="fc" id="L49">            return new MethodElement(env, archive, (ExecutableElement) modelElement, (ExecutableType) modelType);</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (modelElement instanceof javax.lang.model.element.TypeElement) {</span>
+<span class="nc" id="L42">            return new TypeElement(env, archive, (javax.lang.model.element.TypeElement) modelElement, (DeclaredType) modelType);</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        } else if (modelElement instanceof VariableElement &amp;&amp;</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">            modelElement.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
+<span class="fc" id="L45">            return new FieldElement(env, archive, (VariableElement) modelElement, modelType);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        } else if (modelElement instanceof VariableElement &amp;&amp;</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            modelElement.getEnclosingElement() instanceof ExecutableElement) {</span>
+<span class="fc" id="L48">            return new MethodParameterElement(env, archive, (VariableElement) modelElement, modelType);</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        } else if (modelElement instanceof ExecutableElement) {</span>
+<span class="fc" id="L50">            return new MethodElement(env, archive, (ExecutableElement) modelElement, (ExecutableType) modelType);</span>
         } else {
-<span class="nc" id="L51">            throw new IllegalArgumentException(&quot;Unsupported model element: &quot; + modelElement.getClass());</span>
+<span class="nc" id="L52">            throw new IllegalArgumentException(&quot;Unsupported model element: &quot; + modelElement.getClass());</span>
         }
 
         //TODO I could see use for PackageElement, because packages can have annotations on them
     }
 
-    public static int compareByType(org.revapi.Element a, org.revapi.Element b) {
-<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        int ar = a == null ? -1 : getModelTypeRank(a.getClass());</span>
-<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        int br = b == null ? -1 : getModelTypeRank(b.getClass());</span>
-<span class="fc" id="L60">        return ar - br;</span>
+    public static int compareByType(JavaElement a, JavaElement b) {
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        int ar = a == null ? -1 : getModelTypeRank(a.getClass());</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        int br = b == null ? -1 : getModelTypeRank(b.getClass());</span>
+<span class="fc" id="L61">        return ar - br;</span>
     }
 
     public static int getModelTypeRank(Class&lt;?&gt; cls) {
-<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (cls == AnnotationElement.class) {</span>
-<span class="fc" id="L65">            return 5;</span>
-<span class="fc bfc" id="L66" title="All 2 branches covered.">        } else if (cls == FieldElement.class) {</span>
-<span class="fc" id="L67">            return 2;</span>
-<span class="fc bfc" id="L68" title="All 2 branches covered.">        } else if (cls == MethodElement.class) {</span>
-<span class="fc" id="L69">            return 3;</span>
-<span class="fc bfc" id="L70" title="All 2 branches covered.">        } else if (cls == MethodParameterElement.class) {</span>
-<span class="fc" id="L71">            return 4;</span>
-<span class="fc bfc" id="L72" title="All 2 branches covered.">        } else if (cls == TypeElement.class) {</span>
-<span class="fc" id="L73">            return 1;</span>
-<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        } else if (cls == MissingClassElement.class) {</span>
-<span class="fc" id="L75">            return 0;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (cls == AnnotationElement.class) {</span>
+<span class="fc" id="L66">            return 5;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        } else if (cls == FieldElement.class) {</span>
+<span class="fc" id="L68">            return 2;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        } else if (cls == MethodElement.class) {</span>
+<span class="fc" id="L70">            return 3;</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        } else if (cls == MethodParameterElement.class) {</span>
+<span class="fc" id="L72">            return 4;</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        } else if (cls == TypeElement.class) {</span>
+<span class="fc" id="L74">            return 1;</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        } else if (cls == MissingClassElement.class) {</span>
+<span class="fc" id="L76">            return 0;</span>
         } else {
-<span class="nc" id="L77">            return -1;</span>
+<span class="nc" id="L78">            return -1;</span>
         }
     }
 }

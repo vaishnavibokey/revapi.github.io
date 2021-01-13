@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReaderInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.configuration</a> &gt; <span class="el_source">ReaderInputStream.java</span></div><h1>ReaderInputStream.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2017 Lukas Krejci
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -72,7 +72,9 @@ import java.nio.charset.CodingErrorAction;
  *
  * @see org.apache.commons.io.output.WriterOutputStream
  * @since 2.0
+ * @deprecated remove this once {@link JSONUtil#stripComments(InputStream, Charset)} is removed.
  */
+@Deprecated
 final class ReaderInputStream extends InputStream {
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
@@ -104,8 +106,8 @@ final class ReaderInputStream extends InputStream {
      * @since 2.1
      */
     public ReaderInputStream(final Reader reader, final CharsetEncoder encoder) {
-<span class="nc" id="L107">        this(reader, encoder, DEFAULT_BUFFER_SIZE);</span>
-<span class="nc" id="L108">    }</span>
+<span class="nc" id="L109">        this(reader, encoder, DEFAULT_BUFFER_SIZE);</span>
+<span class="nc" id="L110">    }</span>
 
     /**
      * Construct a new {@link ReaderInputStream}.
@@ -116,14 +118,14 @@ final class ReaderInputStream extends InputStream {
      *
      * @since 2.1
      */
-<span class="nc" id="L119">    public ReaderInputStream(final Reader reader, final CharsetEncoder encoder, final int bufferSize) {</span>
-<span class="nc" id="L120">        this.reader = reader;</span>
-<span class="nc" id="L121">        this.encoder = encoder;</span>
-<span class="nc" id="L122">        this.encoderIn = CharBuffer.allocate(bufferSize);</span>
-<span class="nc" id="L123">        this.encoderIn.flip();</span>
-<span class="nc" id="L124">        this.encoderOut = ByteBuffer.allocate(128);</span>
-<span class="nc" id="L125">        this.encoderOut.flip();</span>
-<span class="nc" id="L126">    }</span>
+<span class="nc" id="L121">    public ReaderInputStream(final Reader reader, final CharsetEncoder encoder, final int bufferSize) {</span>
+<span class="nc" id="L122">        this.reader = reader;</span>
+<span class="nc" id="L123">        this.encoder = encoder;</span>
+<span class="nc" id="L124">        this.encoderIn = CharBuffer.allocate(bufferSize);</span>
+<span class="nc" id="L125">        this.encoderIn.flip();</span>
+<span class="nc" id="L126">        this.encoderOut = ByteBuffer.allocate(128);</span>
+<span class="nc" id="L127">        this.encoderOut.flip();</span>
+<span class="nc" id="L128">    }</span>
 
     /**
      * Construct a new {@link ReaderInputStream}.
@@ -133,13 +135,13 @@ final class ReaderInputStream extends InputStream {
      * @param bufferSize the size of the input buffer in number of characters
      */
     public ReaderInputStream(final Reader reader, final Charset charset, final int bufferSize) {
-<span class="nc" id="L136">        this(reader,</span>
-<span class="nc" id="L137">            charset.newEncoder()</span>
-<span class="nc" id="L138">                .onMalformedInput(CodingErrorAction.REPLACE)</span>
-<span class="nc" id="L139">                .onUnmappableCharacter(CodingErrorAction.REPLACE),</span>
+<span class="nc" id="L138">        this(reader,</span>
+<span class="nc" id="L139">            charset.newEncoder()</span>
+<span class="nc" id="L140">                .onMalformedInput(CodingErrorAction.REPLACE)</span>
+<span class="nc" id="L141">                .onUnmappableCharacter(CodingErrorAction.REPLACE),</span>
             bufferSize
         );
-<span class="nc" id="L142">    }</span>
+<span class="nc" id="L144">    }</span>
 
     /**
      * Construct a new {@link ReaderInputStream} with a default input buffer size of
@@ -149,8 +151,8 @@ final class ReaderInputStream extends InputStream {
      * @param charset the charset encoding
      */
     public ReaderInputStream(final Reader reader, final Charset charset) {
-<span class="nc" id="L152">        this(reader, charset, DEFAULT_BUFFER_SIZE);</span>
-<span class="nc" id="L153">    }</span>
+<span class="nc" id="L154">        this(reader, charset, DEFAULT_BUFFER_SIZE);</span>
+<span class="nc" id="L155">    }</span>
 
     /**
      * Construct a new {@link ReaderInputStream}.
@@ -160,8 +162,8 @@ final class ReaderInputStream extends InputStream {
      * @param bufferSize  the size of the input buffer in number of characters
      */
     public ReaderInputStream(final Reader reader, final String charsetName, final int bufferSize) {
-<span class="nc" id="L163">        this(reader, Charset.forName(charsetName), bufferSize);</span>
-<span class="nc" id="L164">    }</span>
+<span class="nc" id="L165">        this(reader, Charset.forName(charsetName), bufferSize);</span>
+<span class="nc" id="L166">    }</span>
 
     /**
      * Construct a new {@link ReaderInputStream} with a default input buffer size of
@@ -171,8 +173,8 @@ final class ReaderInputStream extends InputStream {
      * @param charsetName the name of the charset encoding
      */
     public ReaderInputStream(final Reader reader, final String charsetName) {
-<span class="nc" id="L174">        this(reader, charsetName, DEFAULT_BUFFER_SIZE);</span>
-<span class="nc" id="L175">    }</span>
+<span class="nc" id="L176">        this(reader, charsetName, DEFAULT_BUFFER_SIZE);</span>
+<span class="nc" id="L177">    }</span>
 
     /**
      * Construct a new {@link ReaderInputStream} that uses the default character encoding
@@ -184,8 +186,8 @@ final class ReaderInputStream extends InputStream {
      */
     @Deprecated
     public ReaderInputStream(final Reader reader) {
-<span class="nc" id="L187">        this(reader, Charset.defaultCharset());</span>
-<span class="nc" id="L188">    }</span>
+<span class="nc" id="L189">        this(reader, Charset.defaultCharset());</span>
+<span class="nc" id="L190">    }</span>
 
     /**
      * Fills the internal char buffer from the reader.
@@ -193,24 +195,24 @@ final class ReaderInputStream extends InputStream {
      * @throws IOException If an I/O error occurs
      */
     private void fillBuffer() throws IOException {
-<span class="nc bnc" id="L196" title="All 6 branches missed.">        if (!endOfInput &amp;&amp; (lastCoderResult == null || lastCoderResult.isUnderflow())) {</span>
-<span class="nc" id="L197">            encoderIn.compact();</span>
-<span class="nc" id="L198">            final int position = encoderIn.position();</span>
+<span class="nc bnc" id="L198" title="All 6 branches missed.">        if (!endOfInput &amp;&amp; (lastCoderResult == null || lastCoderResult.isUnderflow())) {</span>
+<span class="nc" id="L199">            encoderIn.compact();</span>
+<span class="nc" id="L200">            final int position = encoderIn.position();</span>
             // We don't use Reader#read(CharBuffer) here because it is more efficient
             // to write directly to the underlying char array (the default implementation
             // copies data to a temporary char array).
-<span class="nc" id="L202">            final int c = reader.read(encoderIn.array(), position, encoderIn.remaining());</span>
-<span class="nc bnc" id="L203" title="All 2 branches missed.">            if (c == -1) {</span>
-<span class="nc" id="L204">                endOfInput = true;</span>
+<span class="nc" id="L204">            final int c = reader.read(encoderIn.array(), position, encoderIn.remaining());</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">            if (c == -1) {</span>
+<span class="nc" id="L206">                endOfInput = true;</span>
             } else {
-<span class="nc" id="L206">                encoderIn.position(position + c);</span>
+<span class="nc" id="L208">                encoderIn.position(position + c);</span>
             }
-<span class="nc" id="L208">            encoderIn.flip();</span>
+<span class="nc" id="L210">            encoderIn.flip();</span>
         }
-<span class="nc" id="L210">        encoderOut.compact();</span>
-<span class="nc" id="L211">        lastCoderResult = encoder.encode(encoderIn, encoderOut, endOfInput);</span>
-<span class="nc" id="L212">        encoderOut.flip();</span>
-<span class="nc" id="L213">    }</span>
+<span class="nc" id="L212">        encoderOut.compact();</span>
+<span class="nc" id="L213">        lastCoderResult = encoder.encode(encoderIn, encoderOut, endOfInput);</span>
+<span class="nc" id="L214">        encoderOut.flip();</span>
+<span class="nc" id="L215">    }</span>
 
     /**
      * Read the specified number of bytes into an array.
@@ -226,32 +228,32 @@ final class ReaderInputStream extends InputStream {
      */
     @Override
     public int read(final byte[] b, int off, int len) throws IOException {
-<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (b == null) {</span>
-<span class="nc" id="L230">            throw new NullPointerException(&quot;Byte array must not be null&quot;);</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (b == null) {</span>
+<span class="nc" id="L232">            throw new NullPointerException(&quot;Byte array must not be null&quot;);</span>
         }
-<span class="nc bnc" id="L232" title="All 6 branches missed.">        if (len &lt; 0 || off &lt; 0 || (off + len) &gt; b.length) {</span>
-<span class="nc" id="L233">            throw new IndexOutOfBoundsException(&quot;Array Size=&quot; + b.length +</span>
+<span class="nc bnc" id="L234" title="All 6 branches missed.">        if (len &lt; 0 || off &lt; 0 || (off + len) &gt; b.length) {</span>
+<span class="nc" id="L235">            throw new IndexOutOfBoundsException(&quot;Array Size=&quot; + b.length +</span>
                 &quot;, offset=&quot; + off + &quot;, length=&quot; + len);
         }
-<span class="nc" id="L236">        int read = 0;</span>
-<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (len == 0) {</span>
-<span class="nc" id="L238">            return 0; // Always return 0 if len == 0</span>
+<span class="nc" id="L238">        int read = 0;</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L240">            return 0; // Always return 0 if len == 0</span>
         }
-<span class="nc bnc" id="L240" title="All 2 branches missed.">        while (len &gt; 0) {</span>
-<span class="nc bnc" id="L241" title="All 2 branches missed.">            if (encoderOut.hasRemaining()) {</span>
-<span class="nc" id="L242">                final int c = Math.min(encoderOut.remaining(), len);</span>
-<span class="nc" id="L243">                encoderOut.get(b, off, c);</span>
-<span class="nc" id="L244">                off += c;</span>
-<span class="nc" id="L245">                len -= c;</span>
-<span class="nc" id="L246">                read += c;</span>
-<span class="nc" id="L247">            } else {</span>
-<span class="nc" id="L248">                fillBuffer();</span>
-<span class="nc bnc" id="L249" title="All 4 branches missed.">                if (endOfInput &amp;&amp; !encoderOut.hasRemaining()) {</span>
-<span class="nc" id="L250">                    break;</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">        while (len &gt; 0) {</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            if (encoderOut.hasRemaining()) {</span>
+<span class="nc" id="L244">                final int c = Math.min(encoderOut.remaining(), len);</span>
+<span class="nc" id="L245">                encoderOut.get(b, off, c);</span>
+<span class="nc" id="L246">                off += c;</span>
+<span class="nc" id="L247">                len -= c;</span>
+<span class="nc" id="L248">                read += c;</span>
+<span class="nc" id="L249">            } else {</span>
+<span class="nc" id="L250">                fillBuffer();</span>
+<span class="nc bnc" id="L251" title="All 4 branches missed.">                if (endOfInput &amp;&amp; !encoderOut.hasRemaining()) {</span>
+<span class="nc" id="L252">                    break;</span>
                 }
             }
         }
-<span class="nc bnc" id="L254" title="All 4 branches missed.">        return read == 0 &amp;&amp; endOfInput ? -1 : read;</span>
+<span class="nc bnc" id="L256" title="All 4 branches missed.">        return read == 0 &amp;&amp; endOfInput ? -1 : read;</span>
     }
 
     /**
@@ -266,7 +268,7 @@ final class ReaderInputStream extends InputStream {
      */
     @Override
     public int read(final byte[] b) throws IOException {
-<span class="nc" id="L269">        return read(b, 0, b.length);</span>
+<span class="nc" id="L271">        return read(b, 0, b.length);</span>
     }
 
     /**
@@ -280,12 +282,12 @@ final class ReaderInputStream extends InputStream {
     @Override
     public int read() throws IOException {
         for (; ; ) {
-<span class="nc bnc" id="L283" title="All 2 branches missed.">            if (encoderOut.hasRemaining()) {</span>
-<span class="nc" id="L284">                return encoderOut.get() &amp; 0xFF;</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">            if (encoderOut.hasRemaining()) {</span>
+<span class="nc" id="L286">                return encoderOut.get() &amp; 0xFF;</span>
             } else {
-<span class="nc" id="L286">                fillBuffer();</span>
-<span class="nc bnc" id="L287" title="All 4 branches missed.">                if (endOfInput &amp;&amp; !encoderOut.hasRemaining()) {</span>
-<span class="nc" id="L288">                    return -1;</span>
+<span class="nc" id="L288">                fillBuffer();</span>
+<span class="nc bnc" id="L289" title="All 4 branches missed.">                if (endOfInput &amp;&amp; !encoderOut.hasRemaining()) {</span>
+<span class="nc" id="L290">                    return -1;</span>
                 }
             }
         }
@@ -299,7 +301,7 @@ final class ReaderInputStream extends InputStream {
      */
     @Override
     public void close() throws IOException {
-<span class="nc" id="L302">        reader.close();</span>
-<span class="nc" id="L303">    }</span>
+<span class="nc" id="L304">        reader.close();</span>
+<span class="nc" id="L305">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

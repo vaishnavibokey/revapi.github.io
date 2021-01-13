@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Text Reporter</a> &gt; <a href="index.source.html" class="el_package">org.revapi.reporter.text</a> &gt; <span class="el_source">TextReporter.java</span></div><h1>TextReporter.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2020 Lukas Krejci
+ * Copyright 2014-2021 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -70,8 +70,8 @@ import org.revapi.reporter.file.AbstractFileReporter;
     @Override
     public void initialize(@Nonnull AnalysisContext analysis) {
 <span class="fc" id="L72">        super.initialize(analysis);</span>
-<span class="fc" id="L73">        String templatePath = analysis.getConfiguration().get(&quot;template&quot;).asString();</span>
-<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (&quot;undefined&quot;.equals(templatePath)) {</span>
+<span class="fc" id="L73">        String templatePath = analysis.getConfigurationNode().path(&quot;template&quot;).asText(&quot;&quot;);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (templatePath.isEmpty()) {</span>
 <span class="fc" id="L75">            templatePath = null;</span>
         }
 

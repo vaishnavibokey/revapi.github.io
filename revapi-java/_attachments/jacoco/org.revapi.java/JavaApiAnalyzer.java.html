@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaApiAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java</a> &gt; <span class="el_source">JavaApiAnalyzer.java</span></div><h1>JavaApiAnalyzer.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2019 Lukas Krejci
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaApiAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java</a> &gt; <span class="el_source">JavaApiAnalyzer.java</span></div><h1>JavaApiAnalyzer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -24,7 +24,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -34,21 +34,21 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.lang.model.util.Types;
 import javax.tools.ToolProvider;
 
-import org.jboss.dmr.ModelNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.revapi.API;
 import org.revapi.AnalysisContext;
 import org.revapi.ApiAnalyzer;
@@ -57,16 +57,17 @@ import org.revapi.ArchiveAnalyzer;
 import org.revapi.CoIterator;
 import org.revapi.CorrespondenceComparatorDeducer;
 import org.revapi.DifferenceAnalyzer;
-import org.revapi.Element;
 import org.revapi.configuration.Configurable;
+import org.revapi.configuration.JSONUtil;
 import org.revapi.java.compilation.CompilationValve;
-import org.revapi.java.compilation.InclusionFilter;
 import org.revapi.java.compilation.ProbingEnvironment;
 import org.revapi.java.model.JavaElementFactory;
 import org.revapi.java.model.MethodElement;
+import org.revapi.java.model.MethodParameterElement;
 import org.revapi.java.model.TypeElement;
 import org.revapi.java.spi.Check;
 import org.revapi.java.spi.JarExtractor;
+import org.revapi.java.spi.JavaElement;
 import org.revapi.java.spi.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,260 +76,293 @@ import org.slf4j.LoggerFactory;
  * @author Lukas Krejci
  * @since 0.1
  */
-public final class JavaApiAnalyzer implements ApiAnalyzer {
-<span class="fc" id="L79">    private static final Logger LOG = LoggerFactory.getLogger(JavaApiAnalyzer.class);</span>
+public final class JavaApiAnalyzer implements ApiAnalyzer&lt;JavaElement&gt; {
+<span class="fc" id="L80">    private static final Logger LOG = LoggerFactory.getLogger(JavaApiAnalyzer.class);</span>
 
     //see #forceClearCompilerCache for what these are
     private static final Method CLEAR_COMPILER_CACHE;
     private static final Object SHARED_ZIP_FILE_INDEX_CACHE;
 
     static {
-<span class="fc" id="L86">        String javaVersion = System.getProperty(&quot;java.version&quot;);</span>
-<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (javaVersion.startsWith(&quot;1.&quot;)) {</span>
-<span class="fc" id="L88">            Method clearCompilerCache = null;</span>
-<span class="fc" id="L89">            Object sharedInstance = null;</span>
+<span class="fc" id="L87">        String javaVersion = System.getProperty(&quot;java.version&quot;);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (javaVersion.startsWith(&quot;1.&quot;)) {</span>
+<span class="fc" id="L89">            Method clearCompilerCache = null;</span>
+<span class="fc" id="L90">            Object sharedInstance = null;</span>
             try {
-<span class="fc" id="L91">                Class&lt;?&gt; zipFileIndexCacheClass = ToolProvider.getSystemToolClassLoader()</span>
-<span class="fc" id="L92">                        .loadClass(&quot;com.sun.tools.javac.file.ZipFileIndexCache&quot;);</span>
+<span class="fc" id="L92">                Class&lt;?&gt; zipFileIndexCacheClass = ToolProvider.getSystemToolClassLoader()</span>
+<span class="fc" id="L93">                        .loadClass(&quot;com.sun.tools.javac.file.ZipFileIndexCache&quot;);</span>
 
-<span class="fc" id="L94">                clearCompilerCache = zipFileIndexCacheClass.getDeclaredMethod(&quot;clearCache&quot;);</span>
-<span class="fc" id="L95">                Method getSharedInstance = zipFileIndexCacheClass.getDeclaredMethod(&quot;getSharedInstance&quot;);</span>
-<span class="fc" id="L96">                sharedInstance = getSharedInstance.invoke(null);</span>
-<span class="nc" id="L97">            } catch (Exception e) {</span>
-<span class="nc" id="L98">                LOG.warn(&quot;Failed to initialize the force-clearing of javac file caches. We will probably leak resources.&quot;, e);</span>
-<span class="fc" id="L99">            }</span>
+<span class="fc" id="L95">                clearCompilerCache = zipFileIndexCacheClass.getDeclaredMethod(&quot;clearCache&quot;);</span>
+<span class="fc" id="L96">                Method getSharedInstance = zipFileIndexCacheClass.getDeclaredMethod(&quot;getSharedInstance&quot;);</span>
+<span class="fc" id="L97">                sharedInstance = getSharedInstance.invoke(null);</span>
+<span class="nc" id="L98">            } catch (Exception e) {</span>
+<span class="nc" id="L99">                LOG.warn(&quot;Failed to initialize the force-clearing of javac file caches. We will probably leak resources.&quot;, e);</span>
+<span class="fc" id="L100">            }</span>
 
-<span class="pc bpc" id="L101" title="2 of 4 branches missed.">            if (clearCompilerCache != null &amp;&amp; sharedInstance != null) {</span>
-<span class="fc" id="L102">                CLEAR_COMPILER_CACHE = clearCompilerCache;</span>
-<span class="fc" id="L103">                SHARED_ZIP_FILE_INDEX_CACHE = sharedInstance;</span>
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">            if (clearCompilerCache != null &amp;&amp; sharedInstance != null) {</span>
+<span class="fc" id="L103">                CLEAR_COMPILER_CACHE = clearCompilerCache;</span>
+<span class="fc" id="L104">                SHARED_ZIP_FILE_INDEX_CACHE = sharedInstance;</span>
             } else {
-<span class="nc" id="L105">                CLEAR_COMPILER_CACHE = null;</span>
-<span class="nc" id="L106">                SHARED_ZIP_FILE_INDEX_CACHE = null;</span>
+<span class="nc" id="L106">                CLEAR_COMPILER_CACHE = null;</span>
+<span class="nc" id="L107">                SHARED_ZIP_FILE_INDEX_CACHE = null;</span>
             }
-<span class="fc" id="L108">        } else {</span>
-<span class="nc" id="L109">            CLEAR_COMPILER_CACHE = null;</span>
-<span class="nc" id="L110">            SHARED_ZIP_FILE_INDEX_CACHE = null;</span>
+<span class="fc" id="L109">        } else {</span>
+<span class="nc" id="L110">            CLEAR_COMPILER_CACHE = null;</span>
+<span class="nc" id="L111">            SHARED_ZIP_FILE_INDEX_CACHE = null;</span>
         }
-<span class="fc" id="L112">    }</span>
+<span class="fc" id="L113">    }</span>
 
-<span class="fc" id="L114">    private final List&lt;ExecutorService&gt; compilationExecutors = new ArrayList&lt;&gt;(2);</span>
+<span class="fc" id="L115">    private final List&lt;ExecutorService&gt; compilationExecutors = new ArrayList&lt;&gt;(2);</span>
 
     private AnalysisContext analysisContext;
     private AnalysisConfiguration configuration;
     private final Iterable&lt;Check&gt; checks;
     private final Iterable&lt;JarExtractor&gt; jarExtractors;
-<span class="fc" id="L120">    private final List&lt;CompilationValve&gt; activeCompilations = new ArrayList&lt;&gt;(2);</span>
+<span class="fc" id="L121">    private final List&lt;CompilationValve&gt; activeCompilations = new ArrayList&lt;&gt;(2);</span>
 
     public JavaApiAnalyzer() {
-<span class="fc" id="L123">        this(serviceLoad(Check.class), serviceLoad(JarExtractor.class));</span>
-<span class="fc" id="L124">    }</span>
+<span class="fc" id="L124">        this(serviceLoad(Check.class), serviceLoad(JarExtractor.class));</span>
+<span class="fc" id="L125">    }</span>
 
     private static &lt;T&gt; Iterable&lt;T&gt; serviceLoad(Class&lt;T&gt; type) {
-<span class="fc" id="L127">        return ServiceLoader.load(type, JavaApiAnalyzer.class.getClassLoader());</span>
+<span class="fc" id="L128">        return ServiceLoader.load(type, JavaApiAnalyzer.class.getClassLoader());</span>
     }
 
     public JavaApiAnalyzer(Iterable&lt;Check&gt; checks,
-<span class="fc" id="L131">            Iterable&lt;JarExtractor&gt; archiveTransformers) {</span>
-<span class="fc" id="L132">        this.checks = checks;</span>
-<span class="fc" id="L133">        this.jarExtractors = archiveTransformers;</span>
-<span class="fc" id="L134">    }</span>
+<span class="fc" id="L132">            Iterable&lt;JarExtractor&gt; archiveTransformers) {</span>
+<span class="fc" id="L133">        this.checks = checks;</span>
+<span class="fc" id="L134">        this.jarExtractors = archiveTransformers;</span>
+<span class="fc" id="L135">    }</span>
 
     @Override
-    @Nonnull
-    public CorrespondenceComparatorDeducer getCorrespondenceDeducer() {
-<span class="fc" id="L139">        return (l1, l2) -&gt; {</span>
+    public CorrespondenceComparatorDeducer&lt;JavaElement&gt; getCorrespondenceDeducer() {
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (!configuration.isMatchOverloads()) {</span>
+<span class="nc" id="L140">            return CorrespondenceComparatorDeducer.naturalOrder();</span>
+        }
+        
+<span class="fc" id="L143">        return (l1, l2) -&gt; {</span>
             //so, we have to come up with some correspondence order... This is pretty easy for all java elements
-            //but methods.
+            //but methods because of overloads and method parameters because they are positional.
 
-<span class="fc bfc" id="L143" title="All 4 branches covered.">            if (l1.isEmpty() || l2.isEmpty()) {</span>
-<span class="fc" id="L144">                return Comparator.naturalOrder();</span>
+<span class="fc bfc" id="L147" title="All 4 branches covered.">            if (l1.isEmpty() || l2.isEmpty()) {</span>
+<span class="fc" id="L148">                return Comparator.naturalOrder();</span>
             }
 
-            //quickly peek inside to see if there even can be methods in the lists - all of the elements in either list
-            //will have a common parent and parents of both lists will have the same type or be both null.
-<span class="fc" id="L149">            Element parent = l1.get(0).getParent();</span>
-<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (!(parent instanceof TypeElement)) {</span>
-<span class="fc" id="L151">                return Comparator.naturalOrder();</span>
+            // quickly peek inside to see if there even can be methods or method params in the lists - all of
+            // the elements in either list will have a common parent and parents of both lists will have the same type
+            // or be both null.
+<span class="fc" id="L154">            JavaElement parent = l1.get(0).getParent();</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            if (parent instanceof MethodElement) {</span>
+                // the method can contain method parameters but also annotations, so we have to be careful...
+
+                // we will use this diff comparator to cleverly figure out how to transform the old params to the new
+                // params with the min number of edits.
+<span class="fc" id="L160">                Comparator&lt;? super JavaElement&gt; diff = CorrespondenceComparatorDeducer.</span>
+<span class="fc" id="L161">                        &lt;JavaElement&gt;editDistance((p1, p2) -&gt; {</span>
+<span class="fc bfc" id="L162" title="All 4 branches covered.">                            if (p1 instanceof MethodParameterElement &amp;&amp; p2 instanceof MethodParameterElement) {</span>
+<span class="fc" id="L163">                                return ((MethodParameterElement) p1).getIndex()</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                                        == ((MethodParameterElement) p2).getIndex();</span>
+                            } else {
+<span class="fc" id="L166">                                return Objects.equals(p1, p2);</span>
+                            }
+                        })
+<span class="fc" id="L169">                        .sortAndGetCorrespondenceComparator(l1, l2);</span>
+
+<span class="fc" id="L171">                return (e1, e2) -&gt; {</span>
+<span class="fc" id="L172">                    int ret = JavaElementFactory.compareByType(e1, e2);</span>
+
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">                    if (ret != 0) {</span>
+<span class="nc" id="L175">                        return ret;</span>
+                    }
+
+<span class="pc bpc" id="L178" title="1 of 4 branches missed.">                    if (e1 instanceof MethodParameterElement &amp;&amp; e2 instanceof MethodParameterElement) {</span>
+<span class="fc" id="L179">                        return diff.compare(e1, e2);</span>
+                    } else {
+<span class="fc" id="L181">                        return e1.compareTo(e2);</span>
+                    }
+                };
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            } else if (!(parent instanceof TypeElement)) {</span>
+<span class="fc" id="L185">                return Comparator.naturalOrder();</span>
             }
 
-<span class="fc" id="L154">            IdentityHashMap&lt;MethodElement, Integer&gt; c1MethodOrder = new IdentityHashMap&lt;&gt;(l1.size());</span>
-<span class="fc" id="L155">            IdentityHashMap&lt;MethodElement, Integer&gt; c2MethodOrder = new IdentityHashMap&lt;&gt;(l2.size());</span>
+<span class="fc" id="L188">            IdentityHashMap&lt;MethodElement, Integer&gt; c1MethodOrder = new IdentityHashMap&lt;&gt;(l1.size());</span>
+<span class="fc" id="L189">            IdentityHashMap&lt;MethodElement, Integer&gt; c2MethodOrder = new IdentityHashMap&lt;&gt;(l2.size());</span>
 
             //this will reorder the methods in the lists and will also fill in the method order indices in the maps
             //so that they can be used for comparisons below
-<span class="fc" id="L159">            determineOrder(l1, l2, c1MethodOrder, c2MethodOrder);</span>
+<span class="fc" id="L193">            determineOrder(l1, l2, c1MethodOrder, c2MethodOrder);</span>
 
             //and return a comparator
-<span class="fc" id="L162">            return (e1, e2) -&gt; {</span>
-<span class="fc" id="L163">                int ret = JavaElementFactory.compareByType(e1, e2);</span>
+<span class="fc" id="L196">            return (e1, e2) -&gt; {</span>
+<span class="fc" id="L197">                int ret = JavaElementFactory.compareByType(e1, e2);</span>
 
-<span class="fc bfc" id="L165" title="All 2 branches covered.">                if (ret != 0) {</span>
-<span class="fc" id="L166">                    return ret;</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">                if (ret != 0) {</span>
+<span class="fc" id="L200">                    return ret;</span>
                 }
 
                 //the only &quot;special&quot; treatment is required for methods - we determined the method order already, so
                 //let's just look that up.
-<span class="pc bpc" id="L171" title="1 of 4 branches missed.">                if (e1 instanceof MethodElement &amp;&amp; e2 instanceof MethodElement) {</span>
-<span class="fc" id="L172">                    MethodElement m1 = (MethodElement) e1;</span>
-<span class="fc" id="L173">                    MethodElement m2 = (MethodElement) e2;</span>
+<span class="pc bpc" id="L205" title="1 of 4 branches missed.">                if (e1 instanceof MethodElement &amp;&amp; e2 instanceof MethodElement) {</span>
+<span class="fc" id="L206">                    MethodElement m1 = (MethodElement) e1;</span>
+<span class="fc" id="L207">                    MethodElement m2 = (MethodElement) e2;</span>
 
-<span class="fc" id="L175">                    return c1MethodOrder.get(m1) - c2MethodOrder.get(m2);</span>
+<span class="fc" id="L209">                    return c1MethodOrder.get(m1) - c2MethodOrder.get(m2);</span>
                 } else {
-<span class="fc" id="L177">                    return e1.compareTo(e2);</span>
+<span class="fc" id="L211">                    return e1.compareTo(e2);</span>
                 }
             };
         };
     }
 
-    private static void determineOrder(List&lt;Element&gt; l1, List&lt;Element&gt; l2,
+    private static void determineOrder(List&lt;JavaElement&gt; l1, List&lt;JavaElement&gt; l2,
             IdentityHashMap&lt;MethodElement, Integer&gt; l1MethodOrder,
             IdentityHashMap&lt;MethodElement, Integer&gt; l2MethodOrder) {
 
-<span class="fc" id="L187">        TreeMap&lt;String, List&lt;MethodElement&gt;&gt; l1MethodsByName = new TreeMap&lt;&gt;();</span>
-<span class="fc" id="L188">        TreeMap&lt;String, List&lt;MethodElement&gt;&gt; l2MethodsByName = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L221">        TreeMap&lt;String, List&lt;MethodElement&gt;&gt; l1MethodsByName = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L222">        TreeMap&lt;String, List&lt;MethodElement&gt;&gt; l2MethodsByName = new TreeMap&lt;&gt;();</span>
 
-<span class="fc" id="L190">        int l1MethodsSize = addAllMethods(l1, l1MethodsByName);</span>
-<span class="fc" id="L191">        int l2MethodsSize = addAllMethods(l2, l2MethodsByName);</span>
+<span class="fc" id="L224">        int l1MethodsSize = addAllMethods(l1, l1MethodsByName);</span>
+<span class="fc" id="L225">        int l2MethodsSize = addAllMethods(l2, l2MethodsByName);</span>
 
         //rehash overloads that are present in both collections - those are then reordered using their mutual
         //resemblance
 
-<span class="fc" id="L196">        int index = 0;</span>
-<span class="fc" id="L197">        Iterator&lt;Map.Entry&lt;String, List&lt;MethodElement&gt;&gt;&gt; l1MethodsIterator = l1MethodsByName.entrySet().iterator();</span>
-<span class="fc" id="L198">        Iterator&lt;Map.Entry&lt;String, List&lt;MethodElement&gt;&gt;&gt; l2MethodsIterator = l2MethodsByName.entrySet().iterator();</span>
+<span class="fc" id="L230">        int index = 0;</span>
+<span class="fc" id="L231">        Iterator&lt;Map.Entry&lt;String, List&lt;MethodElement&gt;&gt;&gt; l1MethodsIterator = l1MethodsByName.entrySet().iterator();</span>
+<span class="fc" id="L232">        Iterator&lt;Map.Entry&lt;String, List&lt;MethodElement&gt;&gt;&gt; l2MethodsIterator = l2MethodsByName.entrySet().iterator();</span>
 
         //iterate over the maps, sorted by name and assign the comparison index to the methods.
         //we iterate over the maps sorted by method name
-<span class="fc" id="L202">        CoIterator&lt;Map.Entry&lt;String, List&lt;MethodElement&gt;&gt;&gt; coit = new CoIterator&lt;&gt;(l1MethodsIterator, l2MethodsIterator,</span>
-<span class="fc" id="L203">                Comparator.comparing(Map.Entry::getKey));</span>
+<span class="fc" id="L236">        CoIterator&lt;Map.Entry&lt;String, List&lt;MethodElement&gt;&gt;&gt; coit = new CoIterator&lt;&gt;(l1MethodsIterator, l2MethodsIterator,</span>
+<span class="fc" id="L237">                Map.Entry.comparingByKey());</span>
 
-<span class="fc" id="L205">        List&lt;Element&gt; l2MethodsInOrder = new ArrayList&lt;&gt;(l1MethodsSize);</span>
-<span class="fc" id="L206">        List&lt;Element&gt; l1MethodsInOrder = new ArrayList&lt;&gt;(l2MethodsSize);</span>
+<span class="fc" id="L239">        List&lt;JavaElement&gt; l2MethodsInOrder = new ArrayList&lt;&gt;(l1MethodsSize);</span>
+<span class="fc" id="L240">        List&lt;JavaElement&gt; l1MethodsInOrder = new ArrayList&lt;&gt;(l2MethodsSize);</span>
 
-<span class="fc bfc" id="L208" title="All 2 branches covered.">        while (coit.hasNext()) {</span>
-<span class="fc" id="L209">            coit.next();</span>
-<span class="fc" id="L210">            Map.Entry&lt;String, List&lt;MethodElement&gt;&gt; l1e = coit.getLeft();</span>
-<span class="fc" id="L211">            Map.Entry&lt;String, List&lt;MethodElement&gt;&gt; l2e = coit.getRight();</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        while (coit.hasNext()) {</span>
+<span class="fc" id="L243">            coit.next();</span>
+<span class="fc" id="L244">            Map.Entry&lt;String, List&lt;MethodElement&gt;&gt; l1e = coit.getLeft();</span>
+<span class="fc" id="L245">            Map.Entry&lt;String, List&lt;MethodElement&gt;&gt; l2e = coit.getRight();</span>
 
-<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (l1e == null) {</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            if (l1e == null) {</span>
                 //no overloads with the name present in l1
-<span class="fc bfc" id="L215" title="All 2 branches covered.">                for (MethodElement m : l2e.getValue()) {</span>
-<span class="fc" id="L216">                    l2MethodOrder.put(m, index++);</span>
-<span class="fc" id="L217">                    l2MethodsInOrder.add(m);</span>
-<span class="fc" id="L218">                }</span>
-<span class="fc bfc" id="L219" title="All 2 branches covered.">            } else if (l2e == null) {</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">                for (MethodElement m : l2e.getValue()) {</span>
+<span class="fc" id="L250">                    l2MethodOrder.put(m, index++);</span>
+<span class="fc" id="L251">                    l2MethodsInOrder.add(m);</span>
+<span class="fc" id="L252">                }</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            } else if (l2e == null) {</span>
                 //no overloads with the name present in l2
-<span class="fc bfc" id="L221" title="All 2 branches covered.">                for (MethodElement m : l1e.getValue()) {</span>
-<span class="fc" id="L222">                    l1MethodOrder.put(m, index++);</span>
-<span class="fc" id="L223">                    l1MethodsInOrder.add(m);</span>
-<span class="fc" id="L224">                }</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">                for (MethodElement m : l1e.getValue()) {</span>
+<span class="fc" id="L256">                    l1MethodOrder.put(m, index++);</span>
+<span class="fc" id="L257">                    l1MethodsInOrder.add(m);</span>
+<span class="fc" id="L258">                }</span>
             } else {
                 //overloads of the same name present in both maps
                 //the lists were already sorted by the method above
-<span class="fc" id="L228">                List&lt;MethodElement&gt; l1Overloads = l1e.getValue();</span>
-<span class="fc" id="L229">                List&lt;MethodElement&gt; l2Overloads = l2e.getValue();</span>
+<span class="fc" id="L262">                List&lt;MethodElement&gt; l1Overloads = l1e.getValue();</span>
+<span class="fc" id="L263">                List&lt;MethodElement&gt; l2Overloads = l2e.getValue();</span>
 
-<span class="fc bfc" id="L231" title="All 4 branches covered.">                if (l1Overloads.size() == 1 &amp;&amp; l2Overloads.size() == 1) {</span>
+<span class="fc bfc" id="L265" title="All 4 branches covered.">                if (l1Overloads.size() == 1 &amp;&amp; l2Overloads.size() == 1) {</span>
                     //fast path for hopefully the vast majority of cases
                     //just indicate the same order for both methods from l1 and l2
-<span class="fc" id="L234">                    MethodElement m1 = l1Overloads.get(0);</span>
-<span class="fc" id="L235">                    MethodElement m2 = l2Overloads.get(0);</span>
+<span class="fc" id="L268">                    MethodElement m1 = l1Overloads.get(0);</span>
+<span class="fc" id="L269">                    MethodElement m2 = l2Overloads.get(0);</span>
 
-<span class="fc" id="L237">                    l1MethodsInOrder.add(m1);</span>
-<span class="fc" id="L238">                    l2MethodsInOrder.add(m2);</span>
-<span class="fc" id="L239">                    l2MethodOrder.put(m2, index);</span>
-<span class="fc" id="L240">                    l1MethodOrder.put(m1, index++);</span>
-<span class="fc" id="L241">                } else {</span>
+<span class="fc" id="L271">                    l1MethodsInOrder.add(m1);</span>
+<span class="fc" id="L272">                    l2MethodsInOrder.add(m2);</span>
+<span class="fc" id="L273">                    l2MethodOrder.put(m2, index);</span>
+<span class="fc" id="L274">                    l1MethodOrder.put(m1, index++);</span>
+<span class="fc" id="L275">                } else {</span>
                     //slow path - for each overload in l1, we need to pick the appropriate one from l2 and put it in the
                     //same place
-<span class="fc" id="L244">                    List&lt;MethodElement&gt; as = l1Overloads;</span>
-<span class="fc" id="L245">                    List&lt;MethodElement&gt; bs = l2Overloads;</span>
-<span class="fc" id="L246">                    List&lt;Element&gt; aio = l1MethodsInOrder;</span>
-<span class="fc" id="L247">                    List&lt;Element&gt; bio = l2MethodsInOrder;</span>
-<span class="fc" id="L248">                    IdentityHashMap&lt;MethodElement, Integer&gt; ao = l1MethodOrder;</span>
-<span class="fc" id="L249">                    IdentityHashMap&lt;MethodElement, Integer&gt; bo = l2MethodOrder;</span>
+<span class="fc" id="L278">                    List&lt;MethodElement&gt; as = l1Overloads;</span>
+<span class="fc" id="L279">                    List&lt;MethodElement&gt; bs = l2Overloads;</span>
+<span class="fc" id="L280">                    List&lt;JavaElement&gt; aio = l1MethodsInOrder;</span>
+<span class="fc" id="L281">                    List&lt;JavaElement&gt; bio = l2MethodsInOrder;</span>
+<span class="fc" id="L282">                    IdentityHashMap&lt;MethodElement, Integer&gt; ao = l1MethodOrder;</span>
+<span class="fc" id="L283">                    IdentityHashMap&lt;MethodElement, Integer&gt; bo = l2MethodOrder;</span>
 
-<span class="pc bpc" id="L251" title="1 of 2 branches missed.">                    if (l1Overloads.size() &gt; l2Overloads.size()) {</span>
-<span class="nc" id="L252">                        as = l2Overloads;</span>
-<span class="nc" id="L253">                        bs = l1Overloads;</span>
-<span class="nc" id="L254">                        aio = l2MethodsInOrder;</span>
-<span class="nc" id="L255">                        bio = l1MethodsInOrder;</span>
-<span class="nc" id="L256">                        ao = l2MethodOrder;</span>
-<span class="nc" id="L257">                        bo = l1MethodOrder;</span>
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">                    if (l1Overloads.size() &gt; l2Overloads.size()) {</span>
+<span class="nc" id="L286">                        as = l2Overloads;</span>
+<span class="nc" id="L287">                        bs = l1Overloads;</span>
+<span class="nc" id="L288">                        aio = l2MethodsInOrder;</span>
+<span class="nc" id="L289">                        bio = l1MethodsInOrder;</span>
+<span class="nc" id="L290">                        ao = l2MethodOrder;</span>
+<span class="nc" id="L291">                        bo = l1MethodOrder;</span>
                     }
 
                     // we will sort the method pairs by the levenshtein distance of their signatures
-<span class="fc" id="L261">                    TreeMap&lt;Integer, Map&lt;MethodElement, List&lt;MethodElement&gt;&gt;&gt; methodsByDistance = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L295">                    TreeMap&lt;Integer, Map&lt;MethodElement, List&lt;MethodElement&gt;&gt;&gt; methodsByDistance = new TreeMap&lt;&gt;();</span>
 
-<span class="fc" id="L263">                    int maxOverrides = bs.size();</span>
+<span class="fc" id="L297">                    int maxOverrides = bs.size();</span>
 
-<span class="fc bfc" id="L265" title="All 2 branches covered.">                    for (MethodElement ma : as) {</span>
-<span class="fc" id="L266">                        String aRet = Util.toUniqueString(ma.getModelRepresentation().getReturnType());</span>
-<span class="fc" id="L267">                        String aErasedRet = Util.toUniqueString(ma.getTypeEnvironment().getTypeUtils()</span>
-<span class="fc" id="L268">                                .erasure(ma.getModelRepresentation().getReturnType()));</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">                    for (MethodElement ma : as) {</span>
+<span class="fc" id="L300">                        String aRet = Util.toUniqueString(ma.getModelRepresentation().getReturnType());</span>
+<span class="fc" id="L301">                        String aErasedRet = Util.toUniqueString(ma.getTypeEnvironment().getTypeUtils()</span>
+<span class="fc" id="L302">                                .erasure(ma.getModelRepresentation().getReturnType()));</span>
 
-<span class="fc" id="L270">                        List&lt;String&gt; aParams = methodParamsSignature(ma, false);</span>
-<span class="fc" id="L271">                        List&lt;String&gt; aErasedParams = methodParamsSignature(ma, true);</span>
+<span class="fc" id="L304">                        List&lt;String&gt; aParams = methodParamsSignature(ma, false);</span>
+<span class="fc" id="L305">                        List&lt;String&gt; aErasedParams = methodParamsSignature(ma, true);</span>
 
-<span class="fc bfc" id="L273" title="All 2 branches covered.">                        for (MethodElement mb : bs) {</span>
-<span class="fc" id="L274">                            int distance = levenshteinDistance(aRet, aErasedRet, aParams, aErasedParams, mb);</span>
+<span class="fc bfc" id="L307" title="All 2 branches covered.">                        for (MethodElement mb : bs) {</span>
+<span class="fc" id="L308">                            int distance = levenshteinDistance(aRet, aErasedRet, aParams, aErasedParams, mb);</span>
 
-<span class="fc" id="L276">                            methodsByDistance</span>
+<span class="fc" id="L310">                            methodsByDistance</span>
                                     // we need to preserve the order so that the output is stable
-<span class="fc" id="L278">                                    .computeIfAbsent(distance, __ -&gt; new LinkedHashMap&lt;&gt;())</span>
-<span class="fc" id="L279">                                    .computeIfAbsent(ma, __ -&gt; new ArrayList&lt;&gt;(maxOverrides))</span>
-<span class="fc" id="L280">                                    .add(mb);</span>
-<span class="fc" id="L281">                        }</span>
-<span class="fc" id="L282">                    }</span>
+<span class="fc" id="L312">                                    .computeIfAbsent(distance, __ -&gt; new LinkedHashMap&lt;&gt;())</span>
+<span class="fc" id="L313">                                    .computeIfAbsent(ma, __ -&gt; new ArrayList&lt;&gt;(maxOverrides))</span>
+<span class="fc" id="L314">                                    .add(mb);</span>
+<span class="fc" id="L315">                        }</span>
+<span class="fc" id="L316">                    }</span>
 
                     // these are really used as identity hash sets, which the JDK lacks
-<span class="fc" id="L285">                    IdentityHashMap&lt;MethodElement, Void&gt; unmatchedAs = new IdentityHashMap&lt;&gt;();</span>
-<span class="fc" id="L286">                    as.forEach(a -&gt; unmatchedAs.put(a, null));</span>
-<span class="fc" id="L287">                    IdentityHashMap&lt;MethodElement, Void&gt; unmatchedBs = new IdentityHashMap&lt;&gt;();</span>
-<span class="fc" id="L288">                    bs.forEach(b -&gt; unmatchedBs.put(b, null));</span>
+<span class="fc" id="L319">                    IdentityHashMap&lt;MethodElement, Void&gt; unmatchedAs = new IdentityHashMap&lt;&gt;();</span>
+<span class="fc" id="L320">                    as.forEach(a -&gt; unmatchedAs.put(a, null));</span>
+<span class="fc" id="L321">                    IdentityHashMap&lt;MethodElement, Void&gt; unmatchedBs = new IdentityHashMap&lt;&gt;();</span>
+<span class="fc" id="L322">                    bs.forEach(b -&gt; unmatchedBs.put(b, null));</span>
 
                     // now, going in the direction of increasing distance between methods, look up the first matching
                     // method pair that hasn't been processed yet.
-<span class="fc bfc" id="L292" title="All 2 branches covered.">                    for (Map&lt;MethodElement, List&lt;MethodElement&gt;&gt; matchingMethods : methodsByDistance.values()) {</span>
-<span class="fc bfc" id="L293" title="All 2 branches covered.">                        for (Map.Entry&lt;MethodElement, List&lt;MethodElement&gt;&gt; e : matchingMethods.entrySet()) {</span>
-<span class="fc" id="L294">                            MethodElement ma = e.getKey();</span>
-<span class="fc" id="L295">                            List&lt;MethodElement&gt; mbs = e.getValue();</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">                    for (Map&lt;MethodElement, List&lt;MethodElement&gt;&gt; matchingMethods : methodsByDistance.values()) {</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">                        for (Map.Entry&lt;MethodElement, List&lt;MethodElement&gt;&gt; e : matchingMethods.entrySet()) {</span>
+<span class="fc" id="L328">                            MethodElement ma = e.getKey();</span>
+<span class="fc" id="L329">                            List&lt;MethodElement&gt; mbs = e.getValue();</span>
 
-<span class="fc bfc" id="L297" title="All 2 branches covered.">                            if (!unmatchedAs.containsKey(ma)) {</span>
+<span class="fc bfc" id="L331" title="All 2 branches covered.">                            if (!unmatchedAs.containsKey(ma)) {</span>
                                 // we've already matched this method with something, so let's continue
-<span class="fc" id="L299">                                continue;</span>
+<span class="fc" id="L333">                                continue;</span>
                             }
 
-<span class="fc bfc" id="L302" title="All 2 branches covered.">                            for (MethodElement mb : mbs) {</span>
-<span class="fc bfc" id="L303" title="All 2 branches covered.">                                if (!unmatchedBs.containsKey(mb)) {</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">                            for (MethodElement mb : mbs) {</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">                                if (!unmatchedBs.containsKey(mb)) {</span>
                                     // this method has been matched already with some other method - this means we've
                                     // had a more precise match before.
-<span class="fc" id="L306">                                    continue;</span>
+<span class="fc" id="L340">                                    continue;</span>
                                 }
 
-<span class="fc" id="L309">                                unmatchedAs.remove(ma);</span>
-<span class="fc" id="L310">                                unmatchedBs.remove(mb);</span>
+<span class="fc" id="L343">                                unmatchedAs.remove(ma);</span>
+<span class="fc" id="L344">                                unmatchedBs.remove(mb);</span>
 
-<span class="fc" id="L312">                                ao.put(ma, index);</span>
-<span class="fc" id="L313">                                aio.add(ma);</span>
-<span class="fc" id="L314">                                bo.put(mb, index++);</span>
-<span class="fc" id="L315">                                bio.add(mb);</span>
+<span class="fc" id="L346">                                ao.put(ma, index);</span>
+<span class="fc" id="L347">                                aio.add(ma);</span>
+<span class="fc" id="L348">                                bo.put(mb, index++);</span>
+<span class="fc" id="L349">                                bio.add(mb);</span>
 
                                 // we're only matching method pairs and we've just matched one. we need to find a less
                                 // precise match for the rest of the methods in mbs
-<span class="fc" id="L319">                                break;</span>
+<span class="fc" id="L353">                                break;</span>
                             }
-<span class="fc" id="L321">                        }</span>
-<span class="fc" id="L322">                    }</span>
+<span class="fc" id="L355">                        }</span>
+<span class="fc" id="L356">                    }</span>
 
                     //add the rest
-<span class="fc bfc" id="L325" title="All 2 branches covered.">                    for (MethodElement m : unmatchedBs.keySet()) {</span>
-<span class="fc" id="L326">                        bo.put(m, index++);</span>
-<span class="fc" id="L327">                        bio.add(m);</span>
-<span class="fc" id="L328">                    }</span>
+<span class="fc bfc" id="L359" title="All 2 branches covered.">                    for (MethodElement m : unmatchedBs.keySet()) {</span>
+<span class="fc" id="L360">                        bo.put(m, index++);</span>
+<span class="fc" id="L361">                        bio.add(m);</span>
+<span class="fc" id="L362">                    }</span>
                 }
             }
-<span class="fc" id="L331">        }</span>
+<span class="fc" id="L365">        }</span>
 
         //ok, so now we have the method indices right in the comparison matrices...
         //but we also have to reorder the lists themselves to contain the methods in that order so that we
@@ -336,90 +370,90 @@ public final class JavaApiAnalyzer implements ApiAnalyzer {
         //the lists are already sorted in the natural order of the java elements which is first and foremost sorted
         //by element type (see org.revapi.java.model.JavaElementFactory). Let's exploit that and just remove all the
         //methods in the list and re-add them in the correct order.
-<span class="fc" id="L339">        reAddSortedMethods(l1, l1MethodsInOrder);</span>
-<span class="fc" id="L340">        reAddSortedMethods(l2, l2MethodsInOrder);</span>
-<span class="fc" id="L341">    }</span>
+<span class="fc" id="L373">        reAddSortedMethods(l1, l1MethodsInOrder);</span>
+<span class="fc" id="L374">        reAddSortedMethods(l2, l2MethodsInOrder);</span>
+<span class="fc" id="L375">    }</span>
 
-    private static void reAddSortedMethods(List&lt;Element&gt; elements, List&lt;Element&gt; sortedMethods) {
-<span class="fc" id="L344">        int methodRank = JavaElementFactory.getModelTypeRank(MethodElement.class);</span>
-<span class="fc" id="L345">        int index = 0;</span>
-<span class="pc bpc" id="L346" title="1 of 2 branches missed.">        for (; index &lt; elements.size(); ++index) {</span>
-<span class="fc" id="L347">            Element e = elements.get(index);</span>
-<span class="fc bfc" id="L348" title="All 2 branches covered.">            if (JavaElementFactory.getModelTypeRank(e.getClass()) &gt;= methodRank) {</span>
-<span class="fc" id="L349">                break;</span>
+    private static void reAddSortedMethods(List&lt;JavaElement&gt; elements, List&lt;JavaElement&gt; sortedMethods) {
+<span class="fc" id="L378">        int methodRank = JavaElementFactory.getModelTypeRank(MethodElement.class);</span>
+<span class="fc" id="L379">        int index = 0;</span>
+<span class="pc bpc" id="L380" title="1 of 2 branches missed.">        for (; index &lt; elements.size(); ++index) {</span>
+<span class="fc" id="L381">            JavaElement e = elements.get(index);</span>
+<span class="fc bfc" id="L382" title="All 2 branches covered.">            if (JavaElementFactory.getModelTypeRank(e.getClass()) &gt;= methodRank) {</span>
+<span class="fc" id="L383">                break;</span>
             }
         }
 
         //remove all the method elements
-<span class="fc bfc" id="L354" title="All 2 branches covered.">        while (index &lt; elements.size()) {</span>
-<span class="fc" id="L355">            Element e = elements.get(index);</span>
-<span class="fc bfc" id="L356" title="All 2 branches covered.">            if (e instanceof MethodElement) {</span>
-<span class="fc" id="L357">                elements.remove(index);</span>
+<span class="fc bfc" id="L388" title="All 2 branches covered.">        while (index &lt; elements.size()) {</span>
+<span class="fc" id="L389">            JavaElement e = elements.get(index);</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">            if (e instanceof MethodElement) {</span>
+<span class="fc" id="L391">                elements.remove(index);</span>
             } else {
                 break;
             }
-<span class="fc" id="L361">        }</span>
+<span class="fc" id="L395">        }</span>
 
         //and re-add them in the newly established order
-<span class="fc" id="L364">        elements.addAll(index, sortedMethods);</span>
-<span class="fc" id="L365">    }</span>
+<span class="fc" id="L398">        elements.addAll(index, sortedMethods);</span>
+<span class="fc" id="L399">    }</span>
 
     private static List&lt;String&gt; methodParamsSignature(MethodElement method, boolean erased) {
-<span class="fc bfc" id="L368" title="All 2 branches covered.">        if (erased) {</span>
-<span class="fc" id="L369">            Types types = method.getTypeEnvironment().getTypeUtils();</span>
-<span class="fc" id="L370">            return method.getDeclaringElement().getParameters().stream().map(p -&gt;</span>
-<span class="fc" id="L371">                    Util.toUniqueString(types.erasure(p.asType()))).collect(toList());</span>
+<span class="fc bfc" id="L402" title="All 2 branches covered.">        if (erased) {</span>
+<span class="fc" id="L403">            Types types = method.getTypeEnvironment().getTypeUtils();</span>
+<span class="fc" id="L404">            return method.getDeclaringElement().getParameters().stream().map(p -&gt;</span>
+<span class="fc" id="L405">                    Util.toUniqueString(types.erasure(p.asType()))).collect(toList());</span>
         } else {
-<span class="fc" id="L373">            return method.getModelRepresentation().getParameterTypes().stream().map(Util::toUniqueString)</span>
-<span class="fc" id="L374">                    .collect(toList());</span>
+<span class="fc" id="L407">            return method.getModelRepresentation().getParameterTypes().stream().map(Util::toUniqueString)</span>
+<span class="fc" id="L408">                    .collect(toList());</span>
         }
     }
 
     private static int levenshteinDistance(String aRet, String aErasedRet, List&lt;String&gt; aParams,
             List&lt;String&gt; aErasedParams, MethodElement mb) {
-<span class="fc" id="L380">        String bRet = Util.toUniqueString(mb.getModelRepresentation().getReturnType());</span>
-<span class="fc" id="L381">        String bErasedRet = Util.toUniqueString(mb.getTypeEnvironment().getTypeUtils()</span>
-<span class="fc" id="L382">                .erasure(mb.getModelRepresentation().getReturnType()));</span>
+<span class="fc" id="L414">        String bRet = Util.toUniqueString(mb.getModelRepresentation().getReturnType());</span>
+<span class="fc" id="L415">        String bErasedRet = Util.toUniqueString(mb.getTypeEnvironment().getTypeUtils()</span>
+<span class="fc" id="L416">                .erasure(mb.getModelRepresentation().getReturnType()));</span>
 
-<span class="fc" id="L384">        List&lt;String&gt; bParams = methodParamsSignature(mb, false);</span>
-<span class="fc" id="L385">        List&lt;String&gt; bErasedParams = methodParamsSignature(mb, true);</span>
+<span class="fc" id="L418">        List&lt;String&gt; bParams = methodParamsSignature(mb, false);</span>
+<span class="fc" id="L419">        List&lt;String&gt; bErasedParams = methodParamsSignature(mb, true);</span>
 
-<span class="fc" id="L387">        int[][] d = new int[aParams.size() + 1][bParams.size() + 1];</span>
+<span class="fc" id="L421">        int[][] d = new int[aParams.size() + 1][bParams.size() + 1];</span>
 
-<span class="fc bfc" id="L389" title="All 2 branches covered.">        for (int i = 0; i &lt; d.length; ++i) {</span>
-<span class="fc" id="L390">            d[i][0] = i;</span>
+<span class="fc bfc" id="L423" title="All 2 branches covered.">        for (int i = 0; i &lt; d.length; ++i) {</span>
+<span class="fc" id="L424">            d[i][0] = i;</span>
         }
 
-<span class="fc bfc" id="L393" title="All 2 branches covered.">        for (int i = 0; i &lt; d[0].length; ++i) {</span>
-<span class="fc" id="L394">            d[0][i] = i;</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        for (int i = 0; i &lt; d[0].length; ++i) {</span>
+<span class="fc" id="L428">            d[0][i] = i;</span>
         }
 
-<span class="fc bfc" id="L397" title="All 2 branches covered.">        for (int i = 1; i &lt; d.length; ++i) {</span>
-<span class="fc bfc" id="L398" title="All 2 branches covered.">            for (int j = 1; j &lt; d[0].length; ++j) {</span>
-<span class="fc" id="L399">                String a = aErasedParams.get(i - 1);</span>
-<span class="fc" id="L400">                String b = bErasedParams.get(j - 1);</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">        for (int i = 1; i &lt; d.length; ++i) {</span>
+<span class="fc bfc" id="L432" title="All 2 branches covered.">            for (int j = 1; j &lt; d[0].length; ++j) {</span>
+<span class="fc" id="L433">                String a = aErasedParams.get(i - 1);</span>
+<span class="fc" id="L434">                String b = bErasedParams.get(j - 1);</span>
 
-<span class="fc bfc" id="L402" title="All 2 branches covered.">                int cost = a.equals(b) ? 0 : 1;</span>
-<span class="fc bfc" id="L403" title="All 2 branches covered.">                if (cost == 0) {</span>
-<span class="fc bfc" id="L404" title="All 2 branches covered.">                    if (i == 1) {</span>
-<span class="fc" id="L405">                        a = aRet;</span>
+<span class="fc bfc" id="L436" title="All 2 branches covered.">                int cost = a.equals(b) ? 0 : 1;</span>
+<span class="fc bfc" id="L437" title="All 2 branches covered.">                if (cost == 0) {</span>
+<span class="fc bfc" id="L438" title="All 2 branches covered.">                    if (i == 1) {</span>
+<span class="fc" id="L439">                        a = aRet;</span>
                     } else {
-<span class="fc" id="L407">                        a = aParams.get(i - 2);</span>
+<span class="fc" id="L441">                        a = aParams.get(i - 2);</span>
                     }
 
-<span class="fc bfc" id="L410" title="All 2 branches covered.">                    if (j == 1) {</span>
-<span class="fc" id="L411">                        b = bRet;</span>
+<span class="fc bfc" id="L444" title="All 2 branches covered.">                    if (j == 1) {</span>
+<span class="fc" id="L445">                        b = bRet;</span>
                     } else {
-<span class="fc" id="L413">                        b = bParams.get(j - 2);</span>
+<span class="fc" id="L447">                        b = bParams.get(j - 2);</span>
                     }
 
-<span class="fc bfc" id="L416" title="All 2 branches covered.">                    cost = a.equals(b) ? 0 : 1;</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">                    cost = a.equals(b) ? 0 : 1;</span>
                 }
 
-<span class="fc" id="L419">                int min1 = d[i - 1][j] + 1;</span>
-<span class="fc" id="L420">                int min2 = d[i][j - 1] + 1;</span>
-<span class="fc" id="L421">                int min3 = d[i - 1][j - 1] + cost;</span>
-<span class="fc" id="L422">                d[i][j] = Math.min(Math.min(min1, min2), min3);</span>
+<span class="fc" id="L453">                int min1 = d[i - 1][j] + 1;</span>
+<span class="fc" id="L454">                int min2 = d[i][j - 1] + 1;</span>
+<span class="fc" id="L455">                int min3 = d[i - 1][j - 1] + cost;</span>
+<span class="fc" id="L456">                d[i][j] = Math.min(Math.min(min1, min2), min3);</span>
             }
         }
 
@@ -427,253 +461,194 @@ public final class JavaApiAnalyzer implements ApiAnalyzer {
         // the parameters. Let's just bump up the parameters distance by its maximum theoretical value (each param
         // different). This will make sure that a single parameter change is always considered worse than just a
         // return type change.
-<span class="fc" id="L430">        int paramsDistance = d[d.length - 1][d[0].length - 1];</span>
-<span class="fc bfc" id="L431" title="All 2 branches covered.">        if (paramsDistance &gt; 0) {</span>
-<span class="fc" id="L432">            paramsDistance += bParams.size() * aParams.size();</span>
+<span class="fc" id="L464">        int paramsDistance = d[d.length - 1][d[0].length - 1];</span>
+<span class="fc bfc" id="L465" title="All 2 branches covered.">        if (paramsDistance &gt; 0) {</span>
+<span class="fc" id="L466">            paramsDistance += bParams.size() * aParams.size();</span>
         }
 
         //now compute the difference of the return types
-<span class="fc bfc" id="L436" title="All 2 branches covered.">        int retCost = aErasedRet.equals(bErasedRet) ? 0 : 1;</span>
-<span class="fc bfc" id="L437" title="All 2 branches covered.">        if (retCost == 0) {</span>
-<span class="fc bfc" id="L438" title="All 2 branches covered.">            retCost = aRet.equals(bRet) ? 0 : 1;</span>
+<span class="fc bfc" id="L470" title="All 2 branches covered.">        int retCost = aErasedRet.equals(bErasedRet) ? 0 : 1;</span>
+<span class="fc bfc" id="L471" title="All 2 branches covered.">        if (retCost == 0) {</span>
+<span class="fc bfc" id="L472" title="All 2 branches covered.">            retCost = aRet.equals(bRet) ? 0 : 1;</span>
         }
 
-<span class="fc" id="L441">        return retCost + paramsDistance;</span>
+<span class="fc" id="L475">        return retCost + paramsDistance;</span>
     }
 
-    private static int addAllMethods(Collection&lt;? extends Element&gt; els, TreeMap&lt;String,
+    private static int addAllMethods(Collection&lt;? extends JavaElement&gt; els, TreeMap&lt;String,
             List&lt;MethodElement&gt;&gt; methods) {
 
-<span class="fc" id="L447">        int ret = 0;</span>
-<span class="fc bfc" id="L448" title="All 2 branches covered.">        for (Element e : els) {</span>
-<span class="fc bfc" id="L449" title="All 2 branches covered.">            if (e instanceof MethodElement) {</span>
-<span class="fc" id="L450">                add((MethodElement) e, methods);</span>
-<span class="fc" id="L451">                ret++;</span>
+<span class="fc" id="L481">        int ret = 0;</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">        for (JavaElement e : els) {</span>
+<span class="fc bfc" id="L483" title="All 2 branches covered.">            if (e instanceof MethodElement) {</span>
+<span class="fc" id="L484">                add((MethodElement) e, methods);</span>
+<span class="fc" id="L485">                ret++;</span>
             }
-<span class="fc" id="L453">        }</span>
+<span class="fc" id="L487">        }</span>
 
-<span class="fc" id="L455">        return ret;</span>
+<span class="fc" id="L489">        return ret;</span>
     }
 
     private static void add(MethodElement method, TreeMap&lt;String, List&lt;MethodElement&gt;&gt; methods) {
-<span class="fc" id="L459">        String name = method.getDeclaringElement().getSimpleName().toString();</span>
-<span class="fc" id="L460">        List&lt;MethodElement&gt; overloads = methods.computeIfAbsent(name, __ -&gt; new ArrayList&lt;&gt;());</span>
+<span class="fc" id="L493">        String name = method.getDeclaringElement().getSimpleName().toString();</span>
+<span class="fc" id="L494">        List&lt;MethodElement&gt; overloads = methods.computeIfAbsent(name, __ -&gt; new ArrayList&lt;&gt;());</span>
 
-<span class="fc" id="L462">        overloads.add(method);</span>
-<span class="fc" id="L463">    }</span>
+<span class="fc" id="L496">        overloads.add(method);</span>
+<span class="fc" id="L497">    }</span>
 
-    @Nullable
     @Override
     public String getExtensionId() {
-<span class="fc" id="L468">        return &quot;revapi.java&quot;;</span>
+<span class="fc" id="L501">        return &quot;revapi.java&quot;;</span>
     }
 
-    @Nullable
     @Override
     public Reader getJSONSchema() {
-<span class="fc" id="L474">        Map&lt;String, Reader&gt; checkSchemas = new HashMap&lt;&gt;(4);</span>
-<span class="fc bfc" id="L475" title="All 2 branches covered.">        for (Check c : checks) {</span>
-<span class="fc" id="L476">            String eid = c.getExtensionId();</span>
-<span class="fc" id="L477">            Reader schema = c.getJSONSchema();</span>
-<span class="pc bpc" id="L478" title="1 of 4 branches missed.">            if (eid != null &amp;&amp; schema != null) {</span>
-<span class="fc" id="L479">                checkSchemas.put(eid, schema);</span>
+<span class="fc" id="L506">        Map&lt;String, Reader&gt; checkSchemas = new HashMap&lt;&gt;(4);</span>
+<span class="fc bfc" id="L507" title="All 2 branches covered.">        for (Check c : checks) {</span>
+<span class="fc" id="L508">            String eid = c.getExtensionId();</span>
+<span class="fc" id="L509">            Reader schema = c.getJSONSchema();</span>
+<span class="pc bpc" id="L510" title="1 of 4 branches missed.">            if (eid != null &amp;&amp; schema != null) {</span>
+<span class="fc" id="L511">                checkSchemas.put(eid, schema);</span>
             }
-<span class="fc" id="L481">        }</span>
+<span class="fc" id="L513">        }</span>
 
-<span class="fc" id="L483">        Reader rdr = new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/config-schema.json&quot;),</span>
-<span class="fc" id="L484">                Charset.forName(&quot;UTF-8&quot;));</span>
+<span class="fc" id="L515">        Reader rdr = new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/config-schema.json&quot;),</span>
+                StandardCharsets.UTF_8);
 
-<span class="pc bpc" id="L486" title="1 of 2 branches missed.">        if (checkSchemas.isEmpty()) {</span>
-<span class="nc" id="L487">            return rdr;</span>
+<span class="pc bpc" id="L518" title="1 of 2 branches missed.">        if (checkSchemas.isEmpty()) {</span>
+<span class="nc" id="L519">            return rdr;</span>
         } else {
             try {
-<span class="fc" id="L490">                ModelNode baseSchema = ModelNode.fromJSONString(consume(rdr));</span>
+<span class="fc" id="L522">                JsonNode baseSchema = JSONUtil.parse(consume(rdr));</span>
 
-<span class="fc" id="L492">                ModelNode checksNode = baseSchema.get(&quot;properties&quot;, &quot;checks&quot;);</span>
-<span class="fc" id="L493">                checksNode.get(&quot;type&quot;).set(&quot;object&quot;);</span>
+<span class="fc" id="L524">                ObjectNode checksNode = baseSchema.with(&quot;properties&quot;).with(&quot;checks&quot;);</span>
+<span class="fc" id="L525">                checksNode.put(&quot;type&quot;, &quot;object&quot;);</span>
 
-<span class="fc bfc" id="L495" title="All 2 branches covered.">                for (Map.Entry&lt;String, Reader&gt; entry : checkSchemas.entrySet()) {</span>
-<span class="fc" id="L496">                    String checkId = entry.getKey();</span>
-<span class="fc" id="L497">                    Reader checkSchemaReader = entry.getValue();</span>
+<span class="fc bfc" id="L527" title="All 2 branches covered.">                for (Map.Entry&lt;String, Reader&gt; entry : checkSchemas.entrySet()) {</span>
+<span class="fc" id="L528">                    String checkId = entry.getKey();</span>
+<span class="fc" id="L529">                    Reader checkSchemaReader = entry.getValue();</span>
 
-<span class="fc" id="L499">                    ModelNode checkSchema = ModelNode.fromJSONString(consume(checkSchemaReader));</span>
+<span class="fc" id="L531">                    JsonNode checkSchema = JSONUtil.parse(consume(checkSchemaReader));</span>
 
-<span class="fc" id="L501">                    checksNode.get(&quot;properties&quot;).get(checkId).set(checkSchema);</span>
-<span class="fc" id="L502">                }</span>
+<span class="fc" id="L533">                    checksNode.with(&quot;properties&quot;).set(checkId, checkSchema);</span>
+<span class="fc" id="L534">                }</span>
 
-<span class="fc" id="L504">                return new StringReader(baseSchema.toJSONString(false));</span>
-<span class="nc" id="L505">            } catch (IOException e) {</span>
-<span class="nc" id="L506">                throw new IllegalStateException(&quot;Could not read the schema for the revapi extension...&quot;, e);</span>
+<span class="fc" id="L536">                return new StringReader(baseSchema.toString());</span>
+<span class="nc" id="L537">            } catch (IOException e) {</span>
+<span class="nc" id="L538">                throw new IllegalStateException(&quot;Could not read the schema for the revapi extension...&quot;, e);</span>
             }
         }
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L513">        this.analysisContext = analysisContext;</span>
-<span class="fc" id="L514">        this.configuration = AnalysisConfiguration.fromModel(analysisContext.getConfiguration());</span>
+<span class="fc" id="L545">        this.analysisContext = analysisContext;</span>
+<span class="fc" id="L546">        this.configuration = AnalysisConfiguration.fromModel(analysisContext.getConfigurationNode());</span>
 
-<span class="fc" id="L516">        configureExtensions(&quot;checks&quot;, checks);</span>
-<span class="fc" id="L517">        configureExtensions(&quot;extract&quot;, jarExtractors);</span>
-<span class="fc" id="L518">    }</span>
+<span class="fc" id="L548">        configureExtensions(&quot;checks&quot;, checks);</span>
+<span class="fc" id="L549">        configureExtensions(&quot;extract&quot;, jarExtractors);</span>
+<span class="fc" id="L550">    }</span>
 
     private void configureExtensions(String rootNode, Iterable&lt;? extends Configurable&gt; exts) {
-<span class="fc bfc" id="L521" title="All 2 branches covered.">        for (Configurable c : exts) {</span>
-<span class="pc bpc" id="L522" title="1 of 2 branches missed.">            if (c.getExtensionId() != null) {</span>
-<span class="fc" id="L523">                ModelNode checkConfig = analysisContext.getConfiguration().get(rootNode, c.getExtensionId());</span>
-<span class="fc" id="L524">                AnalysisContext checkCtx = analysisContext.copyWithConfiguration(checkConfig);</span>
-<span class="fc" id="L525">                c.initialize(checkCtx);</span>
-<span class="fc" id="L526">            } else {</span>
-<span class="nc" id="L527">                c.initialize(analysisContext.copyWithConfiguration(new ModelNode()));</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        for (Configurable c : exts) {</span>
+<span class="pc bpc" id="L554" title="1 of 2 branches missed.">            if (c.getExtensionId() != null) {</span>
+<span class="fc" id="L555">                JsonNode checkConfig = analysisContext.getConfigurationNode().path(rootNode).path(c.getExtensionId());</span>
+<span class="fc" id="L556">                AnalysisContext checkCtx = analysisContext.copyWithConfiguration(checkConfig);</span>
+<span class="fc" id="L557">                c.initialize(checkCtx);</span>
+<span class="fc" id="L558">            } else {</span>
+<span class="nc" id="L559">                c.initialize(analysisContext.copyWithConfiguration(JsonNodeFactory.instance.nullNode()));</span>
             }
-<span class="fc" id="L529">        }</span>
-<span class="fc" id="L530">    }</span>
+<span class="fc" id="L561">        }</span>
+<span class="fc" id="L562">    }</span>
 
     @Nonnull
     @Override
-    public ArchiveAnalyzer getArchiveAnalyzer(@Nonnull API api) {
-<span class="fc" id="L535">        boolean ignoreMissingAnnotations = configuration.isIgnoreMissingAnnotations();</span>
-<span class="fc" id="L536">        InclusionFilter inclusionFilter = composeInclusionFilter(configuration);</span>
-
-<span class="fc" id="L538">        return new JavaArchiveAnalyzer(api, jarExtractors, getExecutor(api), configuration.getMissingClassReporting(),</span>
-                ignoreMissingAnnotations, inclusionFilter);
+    public JavaArchiveAnalyzer getArchiveAnalyzer(@Nonnull API api) {
+<span class="fc" id="L567">        boolean ignoreMissingAnnotations = configuration.isIgnoreMissingAnnotations();</span>
+<span class="fc" id="L568">        return new JavaArchiveAnalyzer(this, api, jarExtractors, getExecutor(api), configuration.getMissingClassReporting(),</span>
+<span class="fc" id="L569">                ignoreMissingAnnotations, configuration.getPackageClassFilter());</span>
     }
 
     @Nonnull
     @Override
-    public DifferenceAnalyzer getDifferenceAnalyzer(@Nonnull ArchiveAnalyzer oldArchive,
-            @Nonnull ArchiveAnalyzer newArchive) {
-<span class="fc" id="L546">        JavaArchiveAnalyzer oldA = (JavaArchiveAnalyzer) oldArchive;</span>
-<span class="fc" id="L547">        JavaArchiveAnalyzer newA = (JavaArchiveAnalyzer) newArchive;</span>
+    public DifferenceAnalyzer&lt;JavaElement&gt; getDifferenceAnalyzer(@Nonnull ArchiveAnalyzer&lt;JavaElement&gt; oldArchive,
+            @Nonnull ArchiveAnalyzer&lt;JavaElement&gt; newArchive) {
+<span class="fc" id="L576">        JavaArchiveAnalyzer oldA = (JavaArchiveAnalyzer) oldArchive;</span>
+<span class="fc" id="L577">        JavaArchiveAnalyzer newA = (JavaArchiveAnalyzer) newArchive;</span>
 
-<span class="fc" id="L549">        ProbingEnvironment oldEnvironment = oldA.getProbingEnvironment();</span>
-<span class="fc" id="L550">        ProbingEnvironment newEnvironment = newA.getProbingEnvironment();</span>
-<span class="fc" id="L551">        CompilationValve oldValve = oldA.getCompilationValve();</span>
-<span class="fc" id="L552">        CompilationValve newValve = newA.getCompilationValve();</span>
+<span class="fc" id="L579">        ProbingEnvironment oldEnvironment = oldA.getProbingEnvironment();</span>
+<span class="fc" id="L580">        ProbingEnvironment newEnvironment = newA.getProbingEnvironment();</span>
+<span class="fc" id="L581">        CompilationValve oldValve = oldA.getCompilationValve();</span>
+<span class="fc" id="L582">        CompilationValve newValve = newA.getCompilationValve();</span>
 
-<span class="fc" id="L554">        activeCompilations.add(oldValve);</span>
-<span class="fc" id="L555">        activeCompilations.add(newValve);</span>
+<span class="fc" id="L584">        activeCompilations.add(oldValve);</span>
+<span class="fc" id="L585">        activeCompilations.add(newValve);</span>
 
-<span class="fc" id="L557">        return new JavaElementDifferenceAnalyzer(analysisContext, oldEnvironment, newEnvironment, checks,</span>
+<span class="fc" id="L587">        return new JavaElementDifferenceAnalyzer(analysisContext, oldEnvironment, newEnvironment, checks,</span>
                 configuration);
     }
 
     @Override
     public void close() {
-<span class="fc" id="L563">        compilationExecutors.forEach(ExecutorService::shutdown);</span>
+<span class="fc" id="L593">        compilationExecutors.forEach(ExecutorService::shutdown);</span>
 
-<span class="fc" id="L565">        activeCompilations.forEach(CompilationValve::removeCompiledResults);</span>
+<span class="fc" id="L595">        activeCompilations.forEach(CompilationValve::removeCompiledResults);</span>
 
-<span class="fc" id="L567">        forceClearCompilerCache();</span>
-<span class="fc" id="L568">    }</span>
-
-    private static InclusionFilter composeInclusionFilter(AnalysisConfiguration config) {
-<span class="fc" id="L571">        final Set&lt;Pattern&gt; inclClasses = config.getClassInclusionFilters();</span>
-<span class="fc" id="L572">        final Set&lt;Pattern&gt; exclClasses = config.getClassExclusionFilters();</span>
-<span class="fc" id="L573">        final Set&lt;Pattern&gt; inclPkgs = config.getPackageInclusionFilters();</span>
-<span class="fc" id="L574">        final Set&lt;Pattern&gt; exclPkgs = config.getPackageExclusionFilters();</span>
-
-<span class="fc" id="L576">        return new InclusionFilter() {</span>
-            @Override
-            public boolean accepts(String typeBinaryName, String typeCanonicalName) {
-<span class="fc bfc" id="L579" title="All 2 branches covered.">                for (Pattern p : inclClasses) {</span>
-<span class="fc bfc" id="L580" title="All 2 branches covered.">                    if (p.matcher(typeCanonicalName).matches()) {</span>
-<span class="fc" id="L581">                        return true;</span>
-                    }
-<span class="fc" id="L583">                }</span>
-
-<span class="fc" id="L585">                int lastDot = typeBinaryName.lastIndexOf('.');</span>
-<span class="fc bfc" id="L586" title="All 2 branches covered.">                String pkg = lastDot == -1 ? &quot;&quot; : typeBinaryName.substring(0, lastDot);</span>
-
-
-<span class="fc bfc" id="L589" title="All 2 branches covered.">                for (Pattern p : inclPkgs) {</span>
-<span class="fc bfc" id="L590" title="All 2 branches covered.">                    if (p.matcher(pkg).matches()) {</span>
-<span class="fc" id="L591">                        return true;</span>
-                    }
-<span class="fc" id="L593">                }</span>
-
-<span class="fc" id="L595">                return false;</span>
-            }
-
-            @Override
-            public boolean rejects(String typeBinaryName, String typeCanonicalName) {
-<span class="fc bfc" id="L600" title="All 2 branches covered.">                for (Pattern p : exclClasses) {</span>
-<span class="fc bfc" id="L601" title="All 2 branches covered.">                    if (p.matcher(typeCanonicalName).matches()) {</span>
-<span class="fc" id="L602">                        return true;</span>
-                    }
-<span class="fc" id="L604">                }</span>
-
-<span class="fc" id="L606">                int lastDot = typeBinaryName.lastIndexOf('.');</span>
-<span class="fc bfc" id="L607" title="All 2 branches covered.">                String pkg = lastDot == -1 ? &quot;&quot; : typeBinaryName.substring(0, lastDot);</span>
-
-<span class="fc bfc" id="L609" title="All 2 branches covered.">                for (Pattern p : exclPkgs) {</span>
-<span class="fc bfc" id="L610" title="All 2 branches covered.">                    if (p.matcher(pkg).matches()) {</span>
-<span class="fc" id="L611">                        return true;</span>
-                    }
-<span class="fc" id="L613">                }</span>
-
-<span class="fc" id="L615">                return false;</span>
-            }
-
-            @Override
-            public boolean defaultCase() {
-<span class="fc bfc" id="L620" title="All 4 branches covered.">                return inclClasses.isEmpty() &amp;&amp; inclPkgs.isEmpty();</span>
-            }
-        };
-    }
+<span class="fc" id="L597">        forceClearCompilerCache();</span>
+<span class="fc" id="L598">    }</span>
 
     private static String consume(Reader rdr) throws IOException {
-<span class="fc" id="L626">        Throwable suppressed = null;</span>
+<span class="fc" id="L601">        Throwable suppressed = null;</span>
         try {
-<span class="fc" id="L628">            char[] buffer = new char[512];</span>
+<span class="fc" id="L603">            char[] buffer = new char[512];</span>
             int cnt;
-<span class="fc" id="L630">            StringBuilder bld = new StringBuilder();</span>
-<span class="fc bfc" id="L631" title="All 2 branches covered.">            while ((cnt = rdr.read(buffer)) &gt;= 0) {</span>
-<span class="fc" id="L632">                bld.append(buffer, 0, cnt);</span>
+<span class="fc" id="L605">            StringBuilder bld = new StringBuilder();</span>
+<span class="fc bfc" id="L606" title="All 2 branches covered.">            while ((cnt = rdr.read(buffer)) &gt;= 0) {</span>
+<span class="fc" id="L607">                bld.append(buffer, 0, cnt);</span>
             }
 
-<span class="fc" id="L635">            return bld.toString();</span>
-<span class="nc" id="L636">        } catch (Throwable t) {</span>
-<span class="nc" id="L637">            suppressed = t;</span>
-<span class="nc" id="L638">            throw t;</span>
+<span class="fc" id="L610">            return bld.toString();</span>
+<span class="nc" id="L611">        } catch (Throwable t) {</span>
+<span class="nc" id="L612">            suppressed = t;</span>
+<span class="nc" id="L613">            throw t;</span>
         } finally {
             try {
-<span class="fc" id="L641">                rdr.close();</span>
-<span class="nc" id="L642">            } catch (IOException e) {</span>
-<span class="nc bnc" id="L643" title="All 2 branches missed.">                if (suppressed != null) {</span>
-<span class="nc" id="L644">                    e.addSuppressed(suppressed);</span>
+<span class="fc" id="L616">                rdr.close();</span>
+<span class="nc" id="L617">            } catch (IOException e) {</span>
+<span class="nc bnc" id="L618" title="All 2 branches missed.">                if (suppressed != null) {</span>
+<span class="nc" id="L619">                    e.addSuppressed(suppressed);</span>
                 }
 
                 //noinspection ThrowFromFinallyBlock
-<span class="nc" id="L648">                throw e;</span>
-<span class="fc" id="L649">            }</span>
+<span class="nc" id="L623">                throw e;</span>
+<span class="fc" id="L624">            }</span>
         }
     }
 
     //Javac's standard file manager prior to Java 9 is leaking resources across compilation tasks because it doesn't
     // clear a shared &quot;zip file index&quot; cache, when it is close()'d. We try to clear it by force.
     private static void forceClearCompilerCache() {
-<span class="pc bpc" id="L656" title="2 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
+<span class="pc bpc" id="L631" title="2 of 4 branches missed.">        if (CLEAR_COMPILER_CACHE != null &amp;&amp; SHARED_ZIP_FILE_INDEX_CACHE != null) {</span>
             try {
-<span class="fc" id="L658">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
-<span class="nc" id="L659">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
-<span class="nc" id="L660">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
+<span class="fc" id="L633">                CLEAR_COMPILER_CACHE.invoke(SHARED_ZIP_FILE_INDEX_CACHE);</span>
+<span class="nc" id="L634">            } catch (IllegalAccessException | InvocationTargetException e) {</span>
+<span class="nc" id="L635">                LOG.warn(&quot;Failed to force-clear compiler caches, even though it should have been possible.&quot; +</span>
                         &quot;This will probably leak memory&quot;, e);
-<span class="fc" id="L662">            }</span>
+<span class="fc" id="L637">            }</span>
         }
-<span class="fc" id="L664">    }</span>
+<span class="fc" id="L639">    }</span>
 
     private ExecutorService getExecutor(API api) {
-<span class="fc" id="L667">        ExecutorService ret = Executors.newSingleThreadExecutor(r -&gt; {</span>
-<span class="fc" id="L668">            String as = StreamSupport.stream(api.getArchives().spliterator(), false)</span>
-<span class="fc" id="L669">                    .map(Archive::getName).collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L670">            Thread t = new Thread(r, &quot;Java API Compilation Thread for API of &quot; + as);</span>
-<span class="fc" id="L671">            t.setDaemon(true);</span>
-<span class="fc" id="L672">            return t;</span>
+<span class="fc" id="L642">        ExecutorService ret = Executors.newSingleThreadExecutor(r -&gt; {</span>
+<span class="fc" id="L643">            String as = StreamSupport.stream(api.getArchives().spliterator(), false)</span>
+<span class="fc" id="L644">                    .map(Archive::getName).collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L645">            Thread t = new Thread(r, &quot;Java API Compilation Thread for API of &quot; + as);</span>
+<span class="fc" id="L646">            t.setDaemon(true);</span>
+<span class="fc" id="L647">            return t;</span>
         });
 
-<span class="fc" id="L675">        compilationExecutors.add(ret);</span>
-<span class="fc" id="L676">        return ret;</span>
+<span class="fc" id="L650">        compilationExecutors.add(ret);</span>
+<span class="fc" id="L651">        return ret;</span>
 
     }
 }

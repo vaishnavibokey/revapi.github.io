@@ -16,9 +16,7 @@
  */
 package org.revapi.reporter.json;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
-
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -29,10 +27,9 @@ import java.util.TreeSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import org.revapi.AnalysisContext;
 import org.revapi.CompatibilityType;
 import org.revapi.Difference;
@@ -40,52 +37,55 @@ import org.revapi.DifferenceSeverity;
 import org.revapi.Report;
 import org.revapi.reporter.file.AbstractFileReporter;
 
-<span class="fc" id="L43">public class JsonReporter extends AbstractFileReporter {</span>
+<span class="fc" id="L40">public class JsonReporter extends AbstractFileReporter {</span>
     private Set&lt;Report&gt; reports;
-    private JsonGeneratorFactory jsonFactory;
+    private boolean prettyPrint;
 
     @Override
     protected void setOutput(PrintWriter wrt) {
-<span class="fc" id="L49">        super.setOutput(wrt);</span>
-<span class="fc" id="L50">    }</span>
+<span class="fc" id="L46">        super.setOutput(wrt);</span>
+<span class="fc" id="L47">    }</span>
 
     @Override
     public String getExtensionId() {
-<span class="fc" id="L54">        return &quot;revapi.reporter.json&quot;;</span>
+<span class="fc" id="L51">        return &quot;revapi.reporter.json&quot;;</span>
     }
 
     @Nullable
     @Override
     public Reader getJSONSchema() {
-<span class="nc" id="L60">        return new InputStreamReader(getClass().getResourceAsStream(&quot;schema.json&quot;), StandardCharsets.UTF_8);</span>
+<span class="nc" id="L57">        return new InputStreamReader(getClass().getResourceAsStream(&quot;schema.json&quot;), StandardCharsets.UTF_8);</span>
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L65">        super.initialize(analysisContext);</span>
-<span class="fc" id="L66">        boolean prettyPrint = analysisContext.getConfiguration().get(&quot;indent&quot;).asBoolean(false);</span>
-
-<span class="fc bfc" id="L68" title="All 2 branches covered.">        Map&lt;String, Object&gt; config = prettyPrint</span>
-<span class="fc" id="L69">                ? singletonMap(JsonGenerator.PRETTY_PRINTING, null)</span>
-<span class="fc" id="L70">                : emptyMap();</span>
-
-<span class="fc" id="L72">        jsonFactory = JsonProvider.provider().createGeneratorFactory(config);</span>
-
-<span class="fc" id="L74">        this.reports = new TreeSet&lt;&gt;(getReportsByElementOrderComparator());</span>
-<span class="fc" id="L75">    }</span>
+<span class="fc" id="L62">        super.initialize(analysisContext);</span>
+<span class="fc" id="L63">        prettyPrint = analysisContext.getConfigurationNode().path(&quot;indent&quot;).asBoolean(false);</span>
+<span class="fc" id="L64">        this.reports = new TreeSet&lt;&gt;(getReportsByElementOrderComparator());</span>
+<span class="fc" id="L65">    }</span>
 
     @Override
     protected void flushReports() {
-<span class="fc" id="L79">        JsonGenerator gen = jsonFactory.createGenerator(output);</span>
-<span class="fc" id="L80">        gen.writeStartArray();</span>
-<span class="fc" id="L81">        reports.stream().flatMap(r -&gt; {</span>
-<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            String oldEl = r.getOldElement() == null ? null : r.getOldElement().getFullHumanReadableString();</span>
-<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            String newEl = r.getNewElement() == null ? null : r.getNewElement().getFullHumanReadableString();</span>
+        try {
+<span class="fc" id="L70">            JsonGenerator jsonGenerator = createGenerator();</span>
+<span class="fc" id="L71">            jsonGenerator.writeStartArray();</span>
+<span class="fc" id="L72">            reports.stream().flatMap(r -&gt; {</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                String oldEl = r.getOldElement() == null ? null : r.getOldElement().getFullHumanReadableString();</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                String newEl = r.getNewElement() == null ? null : r.getNewElement().getFullHumanReadableString();</span>
 
-<span class="fc" id="L85">            return r.getDifferences().stream().map(d -&gt; new DifferenceWithElements(oldEl, newEl, d));</span>
-<span class="fc" id="L86">        }).forEach(d -&gt; writeDifference(gen, d));</span>
-<span class="fc" id="L87">        gen.writeEnd();</span>
-<span class="fc" id="L88">        gen.flush();</span>
+<span class="fc" id="L76">                return r.getDifferences().stream().map(d -&gt; new DifferenceWithElements(oldEl, newEl, d));</span>
+<span class="fc" id="L77">            }).forEach(d -&gt; {</span>
+                try {
+<span class="fc" id="L79">                    writeDifference(jsonGenerator, d);</span>
+<span class="nc" id="L80">                } catch (IOException e) {</span>
+<span class="nc" id="L81">                    throw new IllegalStateException(&quot;Failed to write the output.&quot;, e);</span>
+<span class="fc" id="L82">                }</span>
+<span class="fc" id="L83">            });</span>
+<span class="fc" id="L84">            jsonGenerator.writeEndArray();</span>
+<span class="fc" id="L85">            jsonGenerator.flush();</span>
+<span class="nc" id="L86">        } catch (IOException e) {</span>
+<span class="nc" id="L87">            throw new IllegalStateException(&quot;Failed to write the output.&quot;, e);</span>
+<span class="fc" id="L88">        }</span>
 <span class="fc" id="L89">    }</span>
 
     @Override
@@ -93,7 +93,7 @@ import org.revapi.reporter.file.AbstractFileReporter;
 <span class="fc" id="L93">        reports.add(report);</span>
 <span class="fc" id="L94">    }</span>
 
-    private static void writeDifference(JsonGenerator gen, DifferenceWithElements de) {
+    private static void writeDifference(JsonGenerator gen, DifferenceWithElements de) throws IOException {
 <span class="fc" id="L97">        gen.writeStartObject();</span>
 <span class="fc" id="L98">        Difference d = de.diff;</span>
 <span class="fc" id="L99">        write(gen, &quot;code&quot;, d.code);</span>
@@ -101,43 +101,52 @@ import org.revapi.reporter.file.AbstractFileReporter;
 <span class="fc" id="L101">        write(gen, &quot;new&quot;, de.newEl);</span>
 <span class="fc" id="L102">        write(gen, &quot;name&quot;, d.name);</span>
 <span class="fc" id="L103">        write(gen, &quot;description&quot;, d.description);</span>
-<span class="fc" id="L104">        gen.writeStartArray(&quot;classification&quot;);</span>
+<span class="fc" id="L104">        gen.writeArrayFieldStart(&quot;classification&quot;);</span>
 <span class="fc bfc" id="L105" title="All 2 branches covered.">        for (Map.Entry&lt;CompatibilityType, DifferenceSeverity&gt; e : d.classification.entrySet()) {</span>
 <span class="fc" id="L106">            gen.writeStartObject();</span>
-<span class="fc" id="L107">            gen.write(&quot;compatibility&quot;, e.getKey().toString());</span>
-<span class="fc" id="L108">            gen.write(&quot;severity&quot;, e.getValue().toString());</span>
-<span class="fc" id="L109">            gen.writeEnd();</span>
+<span class="fc" id="L107">            gen.writeStringField(&quot;compatibility&quot;, e.getKey().toString());</span>
+<span class="fc" id="L108">            gen.writeStringField(&quot;severity&quot;, e.getValue().toString());</span>
+<span class="fc" id="L109">            gen.writeEndObject();</span>
 <span class="fc" id="L110">        }</span>
-<span class="fc" id="L111">        gen.writeEnd();</span>
-<span class="fc" id="L112">        gen.writeStartArray(&quot;attachments&quot;);</span>
+<span class="fc" id="L111">        gen.writeEndArray();</span>
+<span class="fc" id="L112">        gen.writeArrayFieldStart(&quot;attachments&quot;);</span>
 <span class="fc bfc" id="L113" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; e : d.attachments.entrySet()) {</span>
 <span class="fc" id="L114">            gen.writeStartObject();</span>
-<span class="fc" id="L115">            gen.write(&quot;name&quot;, e.getKey());</span>
+<span class="fc" id="L115">            gen.writeStringField(&quot;name&quot;, e.getKey());</span>
 <span class="fc" id="L116">            write(gen, &quot;value&quot;, e.getValue());</span>
-<span class="fc" id="L117">            gen.writeEnd();</span>
+<span class="fc" id="L117">            gen.writeEndObject();</span>
 <span class="fc" id="L118">        }</span>
-<span class="fc" id="L119">        gen.writeEnd();</span>
-<span class="fc" id="L120">        gen.writeEnd();</span>
+<span class="fc" id="L119">        gen.writeEndArray();</span>
+<span class="fc" id="L120">        gen.writeEndObject();</span>
 <span class="fc" id="L121">    }</span>
 
-    private static void write(JsonGenerator gen, String key, @Nullable String value) {
-<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (value == null) {</span>
-<span class="nc" id="L125">            gen.writeNull(key);</span>
-        } else {
-<span class="fc" id="L127">            gen.write(key, value);</span>
+    private JsonGenerator createGenerator() throws IOException {
+<span class="fc" id="L124">        JsonGenerator jsonGenerator = JsonFactory.builder().build().createGenerator(output);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (prettyPrint) {</span>
+<span class="fc" id="L126">            jsonGenerator.useDefaultPrettyPrinter();</span>
         }
-<span class="fc" id="L129">    }</span>
+
+<span class="fc" id="L129">        return jsonGenerator;</span>
+    }
+
+    private static void write(JsonGenerator gen, String key, @Nullable String value) throws IOException {
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L134">            gen.writeNullField(key);</span>
+        } else {
+<span class="fc" id="L136">            gen.writeStringField(key, value);</span>
+        }
+<span class="fc" id="L138">    }</span>
 
     private static class DifferenceWithElements {
         final String oldEl;
         final String newEl;
         final Difference diff;
 
-<span class="fc" id="L136">        private DifferenceWithElements(String oldEl, String newEl, Difference diff) {</span>
-<span class="fc" id="L137">            this.oldEl = oldEl;</span>
-<span class="fc" id="L138">            this.newEl = newEl;</span>
-<span class="fc" id="L139">            this.diff = diff;</span>
-<span class="fc" id="L140">        }</span>
+<span class="fc" id="L145">        private DifferenceWithElements(String oldEl, String newEl, Difference diff) {</span>
+<span class="fc" id="L146">            this.oldEl = oldEl;</span>
+<span class="fc" id="L147">            this.newEl = newEl;</span>
+<span class="fc" id="L148">            this.diff = diff;</span>
+<span class="fc" id="L149">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WarJarExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Extension</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.extract</a> &gt; <span class="el_source">WarJarExtractor.java</span></div><h1>WarJarExtractor.java</h1><pre class="source lang-java linenums">/*
- * Copyright 2014-2019 Lukas Krejci
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WarJarExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.extract</a> &gt; <span class="el_source">WarJarExtractor.java</span></div><h1>WarJarExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -43,8 +44,7 @@ import java.util.zip.ZipOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.revapi.AnalysisContext;
 import org.revapi.Archive;
 import org.revapi.java.spi.JarExtractor;
@@ -159,37 +159,37 @@ import org.slf4j.LoggerFactory;
     @Override
     public Reader getJSONSchema() {
 <span class="nc" id="L161">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/warJarExtract-config-schema.json&quot;),</span>
-<span class="nc" id="L162">                Charset.forName(&quot;UTF-8&quot;));</span>
+                StandardCharsets.UTF_8);
     }
 
     @Override
     public void initialize(@Nonnull AnalysisContext analysisContext) {
-<span class="fc" id="L167">        ModelNode scan = analysisContext.getConfiguration().get(&quot;scan&quot;);</span>
-<span class="fc" id="L168">        ModelNode disabled = analysisContext.getConfiguration().get(&quot;disabled&quot;);</span>
+<span class="fc" id="L167">        JsonNode scan = analysisContext.getConfigurationNode().path(&quot;scan&quot;);</span>
+<span class="fc" id="L168">        JsonNode disabled = analysisContext.getConfigurationNode().path(&quot;disabled&quot;);</span>
 
-<span class="pc bpc" id="L170" title="3 of 4 branches missed.">        doNothing = disabled.isDefined() &amp;&amp; disabled.asBoolean();</span>
+<span class="fc" id="L170">        doNothing = disabled.asBoolean(false);</span>
 
 <span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (doNothing) {</span>
 <span class="nc" id="L173">            return;</span>
         }
 
-<span class="pc bpc" id="L176" title="3 of 4 branches missed.">        if (scan.isDefined() &amp;&amp; scan.getType() == ModelType.LIST) {</span>
-<span class="nc" id="L177">            this.scan = new HashMap&lt;&gt;(scan.keys().size(), 1f);</span>
-<span class="nc bnc" id="L178" title="All 2 branches missed.">            for(ModelNode record : scan.asList()) {</span>
-<span class="nc" id="L179">                ModelNode archiveNode = record.get(&quot;archive&quot;);</span>
-<span class="nc" id="L180">                ModelNode prefixesNode = record.get(&quot;prefixes&quot;);</span>
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (scan.isArray()) {</span>
+<span class="nc" id="L177">            this.scan = new HashMap&lt;&gt;(scan.size(), 1f);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            for(JsonNode record : scan) {</span>
+<span class="nc" id="L179">                JsonNode archiveNode = record.path(&quot;archive&quot;);</span>
+<span class="nc" id="L180">                JsonNode prefixesNode = record.path(&quot;prefixes&quot;);</span>
 
-<span class="nc bnc" id="L182" title="All 4 branches missed.">                if (!archiveNode.isDefined() || !prefixesNode.isDefined()) {</span>
+<span class="nc bnc" id="L182" title="All 4 branches missed.">                if (archiveNode.isMissingNode() || prefixesNode.isMissingNode()) {</span>
 <span class="nc" id="L183">                    continue;</span>
                 }
 
-<span class="nc bnc" id="L186" title="All 4 branches missed.">                if (archiveNode.getType() != ModelType.STRING || prefixesNode.getType() != ModelType.LIST) {</span>
+<span class="nc bnc" id="L186" title="All 4 branches missed.">                if (!archiveNode.isTextual() || !prefixesNode.isArray()) {</span>
 <span class="nc" id="L187">                    continue;</span>
                 }
 
-<span class="nc" id="L190">                Pattern archive = Pattern.compile(archiveNode.asString());</span>
-<span class="nc" id="L191">                Set&lt;String&gt; prefixes = prefixesNode.asList().stream()</span>
-<span class="nc" id="L192">                        .map(ModelNode::asString)</span>
+<span class="nc" id="L190">                Pattern archive = Pattern.compile(archiveNode.asText());</span>
+<span class="nc" id="L191">                Set&lt;String&gt; prefixes = StreamSupport.stream(prefixesNode.spliterator(), false)</span>
+<span class="nc" id="L192">                        .map(JsonNode::asText)</span>
 <span class="nc bnc" id="L193" title="All 2 branches missed.">                        .map(v -&gt; v.endsWith(&quot;/&quot;) ? v : (v + &quot;/&quot;))</span>
 <span class="nc" id="L194">                        .collect(toSet());</span>
 

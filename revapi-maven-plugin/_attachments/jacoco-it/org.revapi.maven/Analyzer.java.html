@@ -151,7 +151,7 @@ public final class Analyzer {
 <span class="fc" id="L151">        this.pipelineModifier = pipelineModifier;</span>
 
 <span class="fc" id="L153">        this.configGatherer = new AnalysisConfigurationGatherer(analysisConfiguration, analysisConfigurationFiles,</span>
-                failOnMissingConfigurationFiles, expandProperties, new PropertyValueInterpolator(project),
+                failOnMissingConfigurationFiles, expandProperties, new PropertyValueResolver(project),
 <span class="fc" id="L155">                project.getBasedir(), log);</span>
 <span class="fc" id="L156">    }</span>
 
@@ -176,11 +176,11 @@ public final class Analyzer {
 <span class="fc" id="L176">        buildRevapi();</span>
 
 <span class="fc" id="L178">        AnalysisContext.Builder ctxBuilder = AnalysisContext.builder(revapi).withLocale(locale);</span>
-<span class="fc" id="L179">        configGatherer.gatherConfig(revapi, ctxBuilder);</span>
+<span class="nc" id="L179">        configGatherer.gatherConfig(revapi, ctxBuilder);</span>
 
-<span class="fc" id="L181">        ctxBuilder.withData(contextData);</span>
+<span class="nc" id="L181">        ctxBuilder.withData(contextData);</span>
 
-<span class="fc" id="L183">        return revapi.validateConfiguration(ctxBuilder.build());</span>
+<span class="nc" id="L183">        return revapi.validateConfiguration(ctxBuilder.build());</span>
     }
 
     /**

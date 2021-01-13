@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
@@ -41,124 +42,144 @@ public class JacksonElement&lt;E extends JacksonElement&lt;E&gt;&gt; extends Bas
     protected final int indexInParent;
     private String fullString;
     private String valueString;
+    private String fullPathString;
 
     public JacksonElement(API api, Archive archive, String filePath, TreeNode node, String key) {
-<span class="fc" id="L46">        this(api, archive, filePath, node, key, -1);</span>
-<span class="fc" id="L47">    }</span>
+<span class="fc" id="L48">        this(api, archive, filePath, node, key, -1);</span>
+<span class="fc" id="L49">    }</span>
 
     public JacksonElement(API api, Archive archive, String filePath, TreeNode node, int index) {
-<span class="fc" id="L50">        this(api, archive, filePath, node, null, index);</span>
-<span class="fc" id="L51">    }</span>
+<span class="fc" id="L52">        this(api, archive, filePath, node, null, index);</span>
+<span class="fc" id="L53">    }</span>
 
     private JacksonElement(API api, Archive archive, String filePath, TreeNode node, String key, int index) {
-<span class="fc" id="L54">        super(api, archive);</span>
-<span class="fc" id="L55">        this.filePath = filePath;</span>
-<span class="fc" id="L56">        this.node = node;</span>
-<span class="fc" id="L57">        this.keyInParent = key;</span>
-<span class="fc" id="L58">        this.indexInParent = index;</span>
-<span class="fc" id="L59">    }</span>
+<span class="fc" id="L56">        super(api, archive);</span>
+<span class="fc" id="L57">        this.filePath = filePath;</span>
+<span class="fc" id="L58">        this.node = node;</span>
+<span class="fc" id="L59">        this.keyInParent = key;</span>
+<span class="fc" id="L60">        this.indexInParent = index;</span>
+<span class="fc" id="L61">    }</span>
 
     public TreeNode getNode() {
-<span class="fc" id="L62">        return node;</span>
+<span class="fc" id="L64">        return node;</span>
     }
 
-    @Nonnull
-    @Override
-    public String getFullHumanReadableString() {
-<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (fullString == null) {</span>
-<span class="fc" id="L69">            fullString = createFullHumanReadableString();</span>
-        }
-<span class="fc" id="L71">        return fullString;</span>
+    public String getFilePath() {
+<span class="fc" id="L68">        return filePath;</span>
     }
 
-    protected String createFullHumanReadableString() {
-<span class="fc" id="L75">        List&lt;String&gt; path = new ArrayList&lt;&gt;(6);</span>
+    public String getPath() {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">        if (fullPathString == null) {</span>
+<span class="fc" id="L73">            List&lt;String&gt; path = new ArrayList&lt;&gt;(6);</span>
 
-<span class="fc" id="L77">        String part = getPathPart();</span>
-<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (!part.isEmpty()) {</span>
-<span class="fc" id="L79">            path.add(part);</span>
-        }
-<span class="fc" id="L81">        E parent = getParent();</span>
-<span class="fc bfc" id="L82" title="All 2 branches covered.">        while (parent != null) {</span>
-<span class="fc" id="L83">            part = parent.getPathPart();</span>
-<span class="fc bfc" id="L84" title="All 2 branches covered.">            if (!part.isEmpty()) {</span>
-<span class="fc" id="L85">                path.add(part);</span>
+<span class="fc" id="L75">            String part = getPathPart();</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            if (!part.isEmpty()) {</span>
+<span class="fc" id="L77">                path.add(part);</span>
             }
-<span class="fc" id="L87">            parent = parent.getParent();</span>
-        }
-
-<span class="fc" id="L90">        StringBuilder sb = new StringBuilder(filePath).append(&quot;:&quot;);</span>
-<span class="fc bfc" id="L91" title="All 2 branches covered.">        for(int i = path.size() - 1; i &gt;= 0; --i) {</span>
-<span class="fc" id="L92">            sb.append('/').append(path.get(i));</span>
-        }
-
-<span class="fc" id="L95">        return sb.toString();</span>
-    }
-
-    @Override
-    public int compareTo(E other) {
-<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (keyInParent != null) {</span>
-<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            if (other.keyInParent == null) {</span>
-<span class="nc bnc" id="L102" title="All 2 branches missed.">                return other.indexInParent &lt; 0 ? 1 : -1;</span>
-            } else {
-<span class="fc" id="L104">                return keyInParent.compareTo(other.keyInParent);</span>
+<span class="fc" id="L79">            E parent = getParent();</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            while (parent != null) {</span>
+<span class="fc" id="L81">                part = parent.getPathPart();</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                if (!part.isEmpty()) {</span>
+<span class="fc" id="L83">                    path.add(part);</span>
+                }
+<span class="fc" id="L85">                parent = parent.getParent();</span>
             }
-        } else {
-<span class="pc bpc" id="L107" title="1 of 2 branches missed.">            if (other.indexInParent &lt; 0) {</span>
-<span class="nc" id="L108">                return -1;</span>
-            } else {
-<span class="fc" id="L110">                return indexInParent - other.indexInParent;</span>
+
+<span class="fc" id="L88">            StringBuilder sb = new StringBuilder();</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            for(int i = path.size() - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L90">                sb.append('/').append(path.get(i));</span>
             }
+
+<span class="fc" id="L93">            fullPathString = sb.toString();</span>
         }
+
+<span class="fc" id="L96">        return fullPathString;</span>
     }
 
     // This should be generic over any type of jackson-supported data format
     // so theoretically we just need a single element impl for JSON, YAML, CSV and anything
     // else Jackson supports...
-    protected String getValueString() {
-<span class="pc bpc" id="L119" title="2 of 4 branches missed.">        if (valueString == null &amp;&amp; node.isValueNode()) {</span>
-<span class="fc" id="L120">            JsonParser p = node.traverse();</span>
+    public String getValueString() {
+<span class="pc bpc" id="L103" title="2 of 4 branches missed.">        if (valueString == null &amp;&amp; node.isValueNode()) {</span>
+<span class="fc" id="L104">            JsonParser p = node.traverse();</span>
             try {
-<span class="fc" id="L122">                p.nextToken();</span>
-<span class="fc" id="L123">                valueString = p.getText();</span>
-<span class="nc" id="L124">            } catch (IOException e) {</span>
-<span class="nc" id="L125">                throw new IllegalStateException(&quot;Failed to reparse an already parsed tree node. Strange.&quot;, e);</span>
-<span class="fc" id="L126">            }</span>
+<span class="fc" id="L106">                p.nextToken();</span>
+<span class="fc" id="L107">                valueString = p.getText();</span>
+<span class="nc" id="L108">            } catch (IOException e) {</span>
+<span class="nc" id="L109">                throw new IllegalStateException(&quot;Failed to reparse an already parsed tree node. Strange.&quot;, e);</span>
+<span class="fc" id="L110">            }</span>
         }
 
-<span class="fc" id="L129">        return valueString;</span>
+<span class="fc" id="L113">        return valueString;</span>
     }
 
-    protected String getPathPart() {
-<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (getParent() == null) {</span>
-<span class="fc" id="L134">            return &quot;&quot;;</span>
-<span class="fc bfc" id="L135" title="All 2 branches covered.">        } else if (keyInParent != null) {</span>
-<span class="fc" id="L136">            return keyInParent;</span>
-<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        } else if (indexInParent &gt;= 0) {</span>
-<span class="fc" id="L138">            return Integer.toString(indexInParent);</span>
+    @Override
+    public void setParent(@Nullable E parent) {
+<span class="fc" id="L118">        super.setParent(parent);</span>
+<span class="fc" id="L119">        this.fullPathString = null;</span>
+<span class="fc" id="L120">        this.fullString = null;</span>
+<span class="fc" id="L121">    }</span>
+
+    @Nonnull
+    @Override
+    public String getFullHumanReadableString() {
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (fullString == null) {</span>
+<span class="fc" id="L127">            fullString = createFullHumanReadableString();</span>
+        }
+<span class="fc" id="L129">        return fullString;</span>
+    }
+
+    protected String createFullHumanReadableString() {
+<span class="fc" id="L133">        return filePath + &quot;:&quot; + getPath();</span>
+    }
+
+    @Override
+    public int compareTo(E other) {
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (keyInParent != null) {</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">            if (other.keyInParent == null) {</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                return other.indexInParent &lt; 0 ? 1 : -1;</span>
+            } else {
+<span class="fc" id="L142">                return keyInParent.compareTo(other.keyInParent);</span>
+            }
         } else {
-<span class="nc" id="L140">            return  &quot;&quot;;</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">            if (other.indexInParent &lt; 0) {</span>
+<span class="nc" id="L146">                return -1;</span>
+            } else {
+<span class="fc" id="L148">                return indexInParent - other.indexInParent;</span>
+            }
         }
     }
 
     @Override
     public boolean equals(Object o) {
-<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (this == o) {</span>
-<span class="nc" id="L147">            return true;</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L156">            return true;</span>
         }
 
-<span class="pc bpc" id="L150" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
-<span class="nc" id="L151">            return false;</span>
+<span class="pc bpc" id="L159" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L160">            return false;</span>
         }
 
-<span class="fc" id="L154">        JacksonElement&lt;?&gt; that = (JacksonElement&lt;?&gt;) o;</span>
+<span class="fc" id="L163">        JacksonElement&lt;?&gt; that = (JacksonElement&lt;?&gt;) o;</span>
 
-<span class="fc" id="L156">        return node.equals(that.node);</span>
+<span class="fc" id="L165">        return node.equals(that.node);</span>
     }
 
     @Override
     public int hashCode() {
-<span class="fc" id="L161">        return Objects.hash(node);</span>
+<span class="fc" id="L170">        return Objects.hash(node);</span>
+    }
+
+    protected String getPathPart() {
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (getParent() == null) {</span>
+<span class="fc" id="L175">            return &quot;&quot;;</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        } else if (keyInParent != null) {</span>
+<span class="fc" id="L177">            return keyInParent;</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        } else if (indexInParent &gt;= 0) {</span>
+<span class="fc" id="L179">            return Integer.toString(indexInParent);</span>
+        } else {
+<span class="nc" id="L181">            return  &quot;&quot;;</span>
+        }
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

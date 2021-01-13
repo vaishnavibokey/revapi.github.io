@@ -274,33 +274,37 @@ import java.util.List;
 <span class="nc" id="L274">        String parameterName = getValue( parameter, &quot;name&quot; );</span>
 <span class="nc" id="L275">        String parameterDescription = getValue( parameter, &quot;description&quot; );</span>
 
-<span class="nc" id="L277">        Element fieldConfigurationElement = (Element) findSingleChild( configurationElement, parameterName );</span>
-
-<span class="nc" id="L279">        String parameterDefaultValue = &quot;&quot;;</span>
-<span class="nc bnc" id="L280" title="All 4 branches missed.">        if ( fieldConfigurationElement != null &amp;&amp; fieldConfigurationElement.hasAttribute( &quot;default-value&quot; ) )</span>
+<span class="nc" id="L277">        Element fieldConfigurationElement = null;</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        if ( configurationElement != null )</span>
         {
-<span class="nc" id="L282">            parameterDefaultValue = &quot; (Default: &quot; + fieldConfigurationElement.getAttribute( &quot;default-value&quot; ) + &quot;)&quot;;</span>
-        }
-<span class="nc" id="L284">        append( sb, parameterName + parameterDefaultValue, 2 );</span>
-<span class="nc" id="L285">        Node deprecated = findSingleChild( parameter, &quot;deprecated&quot; );</span>
-<span class="nc bnc" id="L286" title="All 4 branches missed.">        if ( ( deprecated != null ) &amp;&amp; isNotEmpty( deprecated.getTextContent() ) )</span>
-        {
-<span class="nc" id="L288">            append( sb, &quot;Deprecated. &quot; + deprecated.getTextContent(), 3 );</span>
-<span class="nc" id="L289">            append( sb, &quot;&quot;, 0 );</span>
-        }
-<span class="nc" id="L291">        append( sb, parameterDescription, 3 );</span>
-<span class="nc bnc" id="L292" title="All 2 branches missed.">        if ( &quot;true&quot;.equals( getValue( parameter, &quot;required&quot; ) ) )</span>
-        {
-<span class="nc" id="L294">            append( sb, &quot;Required: Yes&quot;, 3 );</span>
-        }
-<span class="nc bnc" id="L296" title="All 4 branches missed.">        if ( ( fieldConfigurationElement != null ) &amp;&amp; isNotEmpty( fieldConfigurationElement.getTextContent() ) )</span>
-        {
-<span class="nc" id="L298">            String property = getPropertyFromExpression( fieldConfigurationElement.getTextContent() );</span>
-<span class="nc" id="L299">            append( sb, &quot;User property: &quot; + property, 3 );</span>
+<span class="nc" id="L280">          fieldConfigurationElement =  (Element) findSingleChild( configurationElement, parameterName );</span>
         }
 
-<span class="nc" id="L302">        append( sb, &quot;&quot;, 0 );</span>
-<span class="nc" id="L303">    }</span>
+<span class="nc" id="L283">        String parameterDefaultValue = &quot;&quot;;</span>
+<span class="nc bnc" id="L284" title="All 4 branches missed.">        if ( fieldConfigurationElement != null &amp;&amp; fieldConfigurationElement.hasAttribute( &quot;default-value&quot; ) )</span>
+        {
+<span class="nc" id="L286">            parameterDefaultValue = &quot; (Default: &quot; + fieldConfigurationElement.getAttribute( &quot;default-value&quot; ) + &quot;)&quot;;</span>
+        }
+<span class="nc" id="L288">        append( sb, parameterName + parameterDefaultValue, 2 );</span>
+<span class="nc" id="L289">        Node deprecated = findSingleChild( parameter, &quot;deprecated&quot; );</span>
+<span class="nc bnc" id="L290" title="All 4 branches missed.">        if ( ( deprecated != null ) &amp;&amp; isNotEmpty( deprecated.getTextContent() ) )</span>
+        {
+<span class="nc" id="L292">            append( sb, &quot;Deprecated. &quot; + deprecated.getTextContent(), 3 );</span>
+<span class="nc" id="L293">            append( sb, &quot;&quot;, 0 );</span>
+        }
+<span class="nc" id="L295">        append( sb, parameterDescription, 3 );</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">        if ( &quot;true&quot;.equals( getValue( parameter, &quot;required&quot; ) ) )</span>
+        {
+<span class="nc" id="L298">            append( sb, &quot;Required: Yes&quot;, 3 );</span>
+        }
+<span class="nc bnc" id="L300" title="All 4 branches missed.">        if ( ( fieldConfigurationElement != null ) &amp;&amp; isNotEmpty( fieldConfigurationElement.getTextContent() ) )</span>
+        {
+<span class="nc" id="L302">            String property = getPropertyFromExpression( fieldConfigurationElement.getTextContent() );</span>
+<span class="nc" id="L303">            append( sb, &quot;User property: &quot; + property, 3 );</span>
+        }
+
+<span class="nc" id="L306">        append( sb, &quot;&quot;, 0 );</span>
+<span class="nc" id="L307">    }</span>
 
     /**
      * &lt;p&gt;Repeat a String &lt;code&gt;n&lt;/code&gt; times to form a new string.&lt;/p&gt;
@@ -308,19 +312,19 @@ import java.util.List;
      * @param str    String to repeat
      * @param repeat number of times to repeat str
      * @return String with repeated String
-     * @throws NegativeArraySizeException if &lt;code&gt;repeat &lt; 0&lt;/code&gt;
+     * @throws NegativeArraySizeException if &lt;code&gt;repeat &amp;lt; 0&lt;/code&gt;
      * @throws NullPointerException       if str is &lt;code&gt;null&lt;/code&gt;
      */
     private static String repeat( String str, int repeat )
     {
-<span class="nc" id="L316">        StringBuilder buffer = new StringBuilder( repeat * str.length() );</span>
+<span class="nc" id="L320">        StringBuilder buffer = new StringBuilder( repeat * str.length() );</span>
 
-<span class="nc bnc" id="L318" title="All 2 branches missed.">        for ( int i = 0; i &lt; repeat; i++ )</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        for ( int i = 0; i &lt; repeat; i++ )</span>
         {
-<span class="nc" id="L320">            buffer.append( str );</span>
+<span class="nc" id="L324">            buffer.append( str );</span>
         }
 
-<span class="nc" id="L323">        return buffer.toString();</span>
+<span class="nc" id="L327">        return buffer.toString();</span>
     }
 
     /**
@@ -333,11 +337,11 @@ import java.util.List;
      */
     private void append( StringBuilder sb, String description, int indent )
     {
-<span class="nc bnc" id="L336" title="All 2 branches missed.">        for ( String line : toLines( description, indent, indentSize, lineLength ) )</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">        for ( String line : toLines( description, indent, indentSize, lineLength ) )</span>
         {
-<span class="nc" id="L338">            sb.append( line ).append( '\n' );</span>
-<span class="nc" id="L339">        }</span>
-<span class="nc" id="L340">    }</span>
+<span class="nc" id="L342">            sb.append( line ).append( '\n' );</span>
+<span class="nc" id="L343">        }</span>
+<span class="nc" id="L344">    }</span>
 
     /**
      * Splits the specified text into lines of convenient display length.
@@ -347,22 +351,22 @@ import java.util.List;
      * @param indentSize The size of each indentation, must not be negative.
      * @param lineLength The length of the line, must not be negative.
      * @return The sequence of display lines, never &lt;code&gt;null&lt;/code&gt;.
-     * @throws NegativeArraySizeException if &lt;code&gt;indent &lt; 0&lt;/code&gt;
+     * @throws NegativeArraySizeException if &lt;code&gt;indent &amp;lt; 0&lt;/code&gt;
      */
     private static List&lt;String&gt; toLines( String text, int indent, int indentSize, int lineLength )
     {
-<span class="nc" id="L354">        List&lt;String&gt; lines = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L358">        List&lt;String&gt; lines = new ArrayList&lt;String&gt;();</span>
 
-<span class="nc" id="L356">        String ind = repeat( &quot;\t&quot;, indent );</span>
+<span class="nc" id="L360">        String ind = repeat( &quot;\t&quot;, indent );</span>
 
-<span class="nc" id="L358">        String[] plainLines = text.split( &quot;(\r\n)|(\r)|(\n)&quot; );</span>
+<span class="nc" id="L362">        String[] plainLines = text.split( &quot;(\r\n)|(\r)|(\n)&quot; );</span>
 
-<span class="nc bnc" id="L360" title="All 2 branches missed.">        for ( String plainLine : plainLines )</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">        for ( String plainLine : plainLines )</span>
         {
-<span class="nc" id="L362">            toLines( lines, ind + plainLine, indentSize, lineLength );</span>
+<span class="nc" id="L366">            toLines( lines, ind + plainLine, indentSize, lineLength );</span>
         }
 
-<span class="nc" id="L365">        return lines;</span>
+<span class="nc" id="L369">        return lines;</span>
     }
 
     /**
@@ -375,46 +379,46 @@ import java.util.List;
      */
     private static void toLines( List&lt;String&gt; lines, String line, int indentSize, int lineLength )
     {
-<span class="nc" id="L378">        int lineIndent = getIndentLevel( line );</span>
-<span class="nc" id="L379">        StringBuilder buf = new StringBuilder( 256 );</span>
+<span class="nc" id="L382">        int lineIndent = getIndentLevel( line );</span>
+<span class="nc" id="L383">        StringBuilder buf = new StringBuilder( 256 );</span>
 
-<span class="nc" id="L381">        String[] tokens = line.split( &quot; +&quot; );</span>
+<span class="nc" id="L385">        String[] tokens = line.split( &quot; +&quot; );</span>
 
-<span class="nc bnc" id="L383" title="All 2 branches missed.">        for ( String token : tokens )</span>
+<span class="nc bnc" id="L387" title="All 2 branches missed.">        for ( String token : tokens )</span>
         {
-<span class="nc bnc" id="L385" title="All 2 branches missed.">            if ( buf.length() &gt; 0 )</span>
+<span class="nc bnc" id="L389" title="All 2 branches missed.">            if ( buf.length() &gt; 0 )</span>
             {
-<span class="nc bnc" id="L387" title="All 2 branches missed.">                if ( buf.length() + token.length() &gt;= lineLength )</span>
+<span class="nc bnc" id="L391" title="All 2 branches missed.">                if ( buf.length() + token.length() &gt;= lineLength )</span>
                 {
-<span class="nc" id="L389">                    lines.add( buf.toString() );</span>
-<span class="nc" id="L390">                    buf.setLength( 0 );</span>
-<span class="nc" id="L391">                    buf.append( repeat( &quot; &quot;, lineIndent * indentSize ) );</span>
+<span class="nc" id="L393">                    lines.add( buf.toString() );</span>
+<span class="nc" id="L394">                    buf.setLength( 0 );</span>
+<span class="nc" id="L395">                    buf.append( repeat( &quot; &quot;, lineIndent * indentSize ) );</span>
                 }
                 else
                 {
-<span class="nc" id="L395">                    buf.append( ' ' );</span>
+<span class="nc" id="L399">                    buf.append( ' ' );</span>
                 }
             }
 
-<span class="nc bnc" id="L399" title="All 2 branches missed.">            for ( int j = 0; j &lt; token.length(); j++ )</span>
+<span class="nc bnc" id="L403" title="All 2 branches missed.">            for ( int j = 0; j &lt; token.length(); j++ )</span>
             {
-<span class="nc" id="L401">                char c = token.charAt( j );</span>
-<span class="nc bnc" id="L402" title="All 2 branches missed.">                if ( c == '\t' )</span>
+<span class="nc" id="L405">                char c = token.charAt( j );</span>
+<span class="nc bnc" id="L406" title="All 2 branches missed.">                if ( c == '\t' )</span>
                 {
-<span class="nc" id="L404">                    buf.append( repeat( &quot; &quot;, indentSize - buf.length() % indentSize ) );</span>
+<span class="nc" id="L408">                    buf.append( repeat( &quot; &quot;, indentSize - buf.length() % indentSize ) );</span>
                 }
-<span class="nc bnc" id="L406" title="All 2 branches missed.">                else if ( c == '\u00A0' )</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">                else if ( c == '\u00A0' )</span>
                 {
-<span class="nc" id="L408">                    buf.append( ' ' );</span>
+<span class="nc" id="L412">                    buf.append( ' ' );</span>
                 }
                 else
                 {
-<span class="nc" id="L412">                    buf.append( c );</span>
+<span class="nc" id="L416">                    buf.append( c );</span>
                 }
             }
         }
-<span class="nc" id="L416">        lines.add( buf.toString() );</span>
-<span class="nc" id="L417">    }</span>
+<span class="nc" id="L420">        lines.add( buf.toString() );</span>
+<span class="nc" id="L421">    }</span>
 
     /**
      * Gets the indentation level of the specified line.
@@ -424,32 +428,32 @@ import java.util.List;
      */
     private static int getIndentLevel( String line )
     {
-<span class="nc" id="L427">        int level = 0;</span>
-<span class="nc bnc" id="L428" title="All 4 branches missed.">        for ( int i = 0; i &lt; line.length() &amp;&amp; line.charAt( i ) == '\t'; i++ )</span>
+<span class="nc" id="L431">        int level = 0;</span>
+<span class="nc bnc" id="L432" title="All 4 branches missed.">        for ( int i = 0; i &lt; line.length() &amp;&amp; line.charAt( i ) == '\t'; i++ )</span>
         {
-<span class="nc" id="L430">            level++;</span>
+<span class="nc" id="L434">            level++;</span>
         }
-<span class="nc bnc" id="L432" title="All 4 branches missed.">        for ( int i = level + 1; i &lt;= level + 4 &amp;&amp; i &lt; line.length(); i++ )</span>
+<span class="nc bnc" id="L436" title="All 4 branches missed.">        for ( int i = level + 1; i &lt;= level + 4 &amp;&amp; i &lt; line.length(); i++ )</span>
         {
-<span class="nc bnc" id="L434" title="All 2 branches missed.">            if ( line.charAt( i ) == '\t' )</span>
+<span class="nc bnc" id="L438" title="All 2 branches missed.">            if ( line.charAt( i ) == '\t' )</span>
             {
-<span class="nc" id="L436">                level++;</span>
-<span class="nc" id="L437">                break;</span>
+<span class="nc" id="L440">                level++;</span>
+<span class="nc" id="L441">                break;</span>
             }
         }
-<span class="nc" id="L440">        return level;</span>
+<span class="nc" id="L444">        return level;</span>
     }
     
     private String getPropertyFromExpression( String expression )
     {
-<span class="nc bnc" id="L445" title="All 6 branches missed.">        if ( expression != null &amp;&amp; expression.startsWith( &quot;${&quot; ) &amp;&amp; expression.endsWith( &quot;}&quot; )</span>
-<span class="nc bnc" id="L446" title="All 2 branches missed.">            &amp;&amp; !expression.substring( 2 ).contains( &quot;${&quot; ) )</span>
+<span class="nc bnc" id="L449" title="All 6 branches missed.">        if ( expression != null &amp;&amp; expression.startsWith( &quot;${&quot; ) &amp;&amp; expression.endsWith( &quot;}&quot; )</span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">            &amp;&amp; !expression.substring( 2 ).contains( &quot;${&quot; ) )</span>
         {
             // expression=&quot;${xxx}&quot; -&gt; property=&quot;xxx&quot;
-<span class="nc" id="L449">            return expression.substring( 2, expression.length() - 1 );</span>
+<span class="nc" id="L453">            return expression.substring( 2, expression.length() - 1 );</span>
         }
         // no property can be extracted
-<span class="nc" id="L452">        return null;</span>
+<span class="nc" id="L456">        return null;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

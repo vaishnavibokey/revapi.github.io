@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FilterFinishResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">FilterFinishResult.java</span></div><h1>FilterFinishResult.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2020 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+/**
+ * A result of a finished filtering (see {@link TreeFilter#finish(Element)}.
+ */
+public class FilterFinishResult {
+<span class="fc" id="L23">    private static final FilterFinishResult MATCH_NOT_INHERITED = new FilterFinishResult(FilterMatch.MATCHES, false);</span>
+<span class="fc" id="L24">    private static final FilterFinishResult DOESNT_MATCH_NOT_INHERITED = new FilterFinishResult(FilterMatch.DOESNT_MATCH, false);</span>
+<span class="fc" id="L25">    private static final FilterFinishResult UNDECIDED_NOT_INHERITED = new FilterFinishResult(FilterMatch.UNDECIDED, false);</span>
+<span class="fc" id="L26">    private static final FilterFinishResult MATCH_INHERITED = new FilterFinishResult(FilterMatch.MATCHES, true);</span>
+<span class="fc" id="L27">    private static final FilterFinishResult DOESNT_MATCH_INHERITED = new FilterFinishResult(FilterMatch.DOESNT_MATCH, true);</span>
+<span class="fc" id="L28">    private static final FilterFinishResult UNDECIDED_INHERITED = new FilterFinishResult(FilterMatch.UNDECIDED, true);</span>
+
+    private final FilterMatch match;
+    private final boolean inherited;
+
+    /**
+     * @return produces a result signifying that the filter didn't match.
+     */
+    public static FilterFinishResult doesntMatch() {
+<span class="fc" id="L37">        return from(FilterMatch.DOESNT_MATCH, false);</span>
+    }
+
+    /**
+     * @return produces a result signifying that the filter matched.
+     */
+    public static FilterFinishResult matches() {
+<span class="fc" id="L44">        return from(FilterMatch.MATCHES, false);</span>
+    }
+
+    /**
+     * The return filter finish result will have the result of the match and will not be inherited, meaning that it
+     * was intended directly for the elements the filter was processed upon.
+     * @param match the result of the filter
+     * @return the filter finish result
+     */
+    public static FilterFinishResult direct(FilterMatch match) {
+<span class="nc" id="L54">        return from(match, false);</span>
+    }
+
+    /**
+     * Produces a filter finish result that indicates it was inherited from the provided result.
+     *
+     * @param parent the result to inherit from
+     * @return an inherited filter finish result
+     */
+    public static FilterFinishResult inherit(FilterFinishResult parent) {
+<span class="nc" id="L64">        return from(parent.match, true);</span>
+    }
+
+    /**
+     * A factory method for filter finish results.
+     * @param match the result of the filtering
+     * @param inherited whether the finish result is inherited or explicit
+     * @return the filter finish result
+     */
+    public static FilterFinishResult from(FilterMatch match, boolean inherited) {
+<span class="pc bpc" id="L74" title="2 of 4 branches missed.">        switch (match) {</span>
+        case DOESNT_MATCH:
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            return inherited ? DOESNT_MATCH_INHERITED : DOESNT_MATCH_NOT_INHERITED;</span>
+        case MATCHES:
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            return inherited ? MATCH_INHERITED : MATCH_NOT_INHERITED;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            return inherited ? UNDECIDED_INHERITED : UNDECIDED_NOT_INHERITED;</span>
+        default:
+<span class="nc" id="L82">            throw new IllegalArgumentException(&quot;Unhandled filter match value: &quot; + match);</span>
+        }
+    }
+
+    /**
+     * Converts the provided start result into a finish result.
+     * @param startResult the start result to convert
+     * @return the converted finish result
+     */
+    public static FilterFinishResult from(FilterStartResult startResult) {
+<span class="fc" id="L92">        return from(startResult.getMatch(), startResult.isInherited());</span>
+    }
+
+<span class="fc" id="L95">    private FilterFinishResult(FilterMatch match, boolean inherited) {</span>
+<span class="fc" id="L96">        this.match = match;</span>
+<span class="fc" id="L97">        this.inherited = inherited;</span>
+<span class="fc" id="L98">    }</span>
+
+    /**
+     * The result of the test
+     */
+    public FilterMatch getMatch() {
+<span class="fc" id="L104">        return match;</span>
+    }
+
+    /**
+     * Tells whether the result is implicitly inherited from some parent element or if it was explicitly evaluated
+     * on some element.
+     */
+    public boolean isInherited() {
+<span class="nc" id="L112">        return inherited;</span>
+    }
+
+    public FilterFinishResult and(FilterFinishResult other) {
+        boolean newInherited;
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        switch (getMatch()) {</span>
+        case MATCHES:
+<span class="nc bnc" id="L119" title="All 4 branches missed.">            switch (other.getMatch()) {</span>
+            case MATCHES:
+<span class="nc bnc" id="L121" title="All 4 branches missed.">                newInherited = isInherited() || other.isInherited();</span>
+<span class="nc" id="L122">                break;</span>
+            case DOESNT_MATCH:
+<span class="nc" id="L124">                newInherited = other.isInherited();</span>
+<span class="nc" id="L125">                break;</span>
+            case UNDECIDED:
+<span class="nc" id="L127">                newInherited = other.isInherited();</span>
+<span class="nc" id="L128">                break;</span>
+            default:
+<span class="nc" id="L130">                throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + getMatch());</span>
+            }
+            break;
+        case DOESNT_MATCH:
+<span class="nc" id="L134">            newInherited = isInherited();</span>
+<span class="nc" id="L135">            break;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            newInherited = other.getMatch() == FilterMatch.DOESNT_MATCH ? isInherited() : other.isInherited();</span>
+<span class="nc" id="L138">            break;</span>
+        default:
+<span class="nc" id="L140">            throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + getMatch());</span>
+        }
+<span class="nc" id="L142">        return from(getMatch().and(other.getMatch()), newInherited);</span>
+    }
+
+    public FilterFinishResult and(Iterable&lt;FilterFinishResult&gt; others) {
+<span class="nc" id="L146">        FilterFinishResult res = this;</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        for (FilterFinishResult other : others) {</span>
+<span class="nc" id="L148">            res = res.and(other);</span>
+<span class="nc" id="L149">        }</span>
+<span class="nc" id="L150">        return res;</span>
+    }
+
+    public FilterFinishResult or(FilterFinishResult other) {
+        boolean newInherited;
+<span class="nc bnc" id="L155" title="All 4 branches missed.">        switch (getMatch()) {</span>
+        case MATCHES:
+<span class="nc bnc" id="L157" title="All 4 branches missed.">            switch (other.getMatch()) {</span>
+            case MATCHES:
+<span class="nc bnc" id="L159" title="All 4 branches missed.">                newInherited = isInherited() || other.isInherited();</span>
+<span class="nc" id="L160">                break;</span>
+            case DOESNT_MATCH:
+<span class="nc" id="L162">                newInherited = isInherited();</span>
+<span class="nc" id="L163">                break;</span>
+            case UNDECIDED:
+<span class="nc" id="L165">                newInherited = isInherited();</span>
+<span class="nc" id="L166">                break;</span>
+            default:
+<span class="nc" id="L168">                throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + getMatch());</span>
+            }
+            break;
+        case DOESNT_MATCH:
+<span class="nc" id="L172">            newInherited = other.isInherited();</span>
+<span class="nc" id="L173">            break;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L175" title="All 2 branches missed.">            newInherited = other.getMatch() == FilterMatch.MATCHES ? other.isInherited() : isInherited();</span>
+<span class="nc" id="L176">            break;</span>
+        default:
+<span class="nc" id="L178">            throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + getMatch());</span>
+        }
+
+<span class="nc" id="L181">        return from(getMatch().or(other.getMatch()), newInherited);</span>
+    }
+
+    public FilterFinishResult or(Iterable&lt;FilterFinishResult&gt; others) {
+<span class="nc" id="L185">        FilterFinishResult res = this;</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        for (FilterFinishResult other : others) {</span>
+<span class="nc" id="L187">            res = res.or(other);</span>
+<span class="nc" id="L188">        }</span>
+<span class="nc" id="L189">        return res;</span>
+    }
+
+    public FilterFinishResult negateMatch() {
+<span class="nc" id="L193">        return from(getMatch().negate(), isInherited());</span>
+    }
+
+    public FilterFinishResult withMatch(FilterMatch match) {
+<span class="nc" id="L197">        return from(match, isInherited());</span>
+    }
+
+    public FilterFinishResult withInherited(boolean inherited) {
+<span class="nc" id="L201">        return from(getMatch(), inherited);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L207">            return true;</span>
+        }
+<span class="nc bnc" id="L209" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L210">            return false;</span>
+        }
+
+<span class="nc" id="L213">        FilterStartResult filterResult = (FilterStartResult) o;</span>
+
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        if (isInherited() != filterResult.isInherited()) {</span>
+<span class="nc" id="L216">            return false;</span>
+        }
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (getMatch() != filterResult.getMatch()) {</span>
+<span class="nc" id="L219">            return false;</span>
+        }
+
+<span class="nc" id="L222">        return true;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L227">        int result = getMatch().hashCode();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        result = 31 * result + (isInherited() ? 1 : 0);</span>
+<span class="nc" id="L229">        return result;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L234">        return &quot;FilterEndResult{&quot; +</span>
+<span class="nc" id="L235">                &quot;match=&quot; + getMatch() +</span>
+<span class="nc" id="L236">                &quot;, inherited=&quot; + isInherited() +</span>
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
