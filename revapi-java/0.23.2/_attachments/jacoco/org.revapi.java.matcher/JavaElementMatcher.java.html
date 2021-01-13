@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaElementMatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.matcher</a> &gt; <span class="el_source">JavaElementMatcher.java</span></div><h1>JavaElementMatcher.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.matcher;
+
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toSet;
+
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+
+import org.revapi.AnalysisContext;
+import org.revapi.ArchiveAnalyzer;
+import org.revapi.Element;
+import org.revapi.ElementMatcher;
+import org.revapi.FilterFinishResult;
+import org.revapi.FilterMatch;
+import org.revapi.FilterStartResult;
+import org.revapi.TreeFilter;
+import org.revapi.classif.ModelInspector;
+import org.revapi.classif.StructuralMatcher;
+import org.revapi.classif.TestResult;
+import org.revapi.classif.dsl.ClassifDSL;
+import org.revapi.classif.progress.MatchingProgress;
+import org.revapi.classif.progress.WalkInstruction;
+import org.revapi.java.JavaArchiveAnalyzer;
+import org.revapi.java.compilation.ProbingEnvironment;
+import org.revapi.java.model.JavaElementFactory;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.java.spi.JavaModelElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.UseSite;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Lukas Krejci
+ */
+<span class="fc" id="L66">public final class JavaElementMatcher implements ElementMatcher {</span>
+<span class="fc" id="L67">    private static final Logger LOG = LoggerFactory.getLogger(JavaElementMatcher.class);</span>
+
+    @Override
+    public Optional&lt;CompiledRecipe&gt; compile(String recipe) {
+        try {
+<span class="fc" id="L72">            StructuralMatcher matcher = ClassifDSL.compile(recipe);</span>
+
+<span class="fc" id="L74">            CompiledRecipe ret = new CompiledRecipe() {</span>
+                @SuppressWarnings(&quot;unchecked&quot;)
+                @Nullable
+                @Override
+                public &lt;E extends Element&lt;E&gt;&gt; TreeFilter&lt;E&gt; filterFor(ArchiveAnalyzer&lt;E&gt; archiveAnalyzer) {
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">                    if (!(archiveAnalyzer instanceof JavaArchiveAnalyzer)) {</span>
+<span class="nc" id="L80">                        return null;</span>
+                    }
+
+<span class="fc" id="L83">                    MatchingProgress&lt;JavaElement&gt; progress = matcher</span>
+<span class="fc" id="L84">                            .with(new ElementInspector((JavaArchiveAnalyzer) archiveAnalyzer));</span>
+
+<span class="fc" id="L86">                    TreeFilter&lt;JavaElement&gt; ret = new TreeFilter&lt;JavaElement&gt;() {</span>
+                        @Override
+                        public FilterStartResult start(JavaElement element) {
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                            if (!(element instanceof JavaModelElement)) {</span>
+<span class="fc" id="L90">                                return FilterStartResult.doesntMatch();</span>
+                            }
+<span class="fc" id="L92">                            return convert(progress.start(element));</span>
+                        }
+
+                        @Override
+                        public FilterFinishResult finish(JavaElement element) {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                            if (!(element instanceof JavaModelElement)) {</span>
+<span class="fc" id="L98">                                return FilterFinishResult.doesntMatch();</span>
+                            }
+<span class="fc" id="L100">                            return FilterFinishResult.direct(convert(progress.finish(element)));</span>
+                        }
+
+                        @Override
+                        public Map&lt;JavaElement, FilterFinishResult&gt; finish() {
+<span class="fc" id="L105">                            return progress.finish().entrySet().stream()</span>
+<span class="pc" id="L106">                                    .collect(Collectors.toMap(Map.Entry::getKey, e -&gt; FilterFinishResult.direct(convert(e.getValue()))));</span>
+                        }
+                    };
+
+                    // this is a safe cast because we're checking that the provided analyzer is indeed a java archive
+                    // analyzer...
+<span class="fc" id="L112">                    return (TreeFilter&lt;E&gt;) ret;</span>
+                }
+            };
+
+<span class="fc" id="L116">            return Optional.of(ret);</span>
+<span class="nc" id="L117">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L118">            return Optional.empty();</span>
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L124">    }</span>
+
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L128">        return &quot;java&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="fc" id="L134">        return null;</span>
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L139">    }</span>
+
+    private static FilterStartResult convert(WalkInstruction instruction) {
+<span class="fc" id="L142">        return FilterStartResult.direct(convert(instruction.getTestResult()), instruction.isDescend());</span>
+    }
+
+    private static FilterMatch convert(TestResult result) {
+<span class="pc bpc" id="L146" title="2 of 4 branches missed.">        switch (result) {</span>
+            case DEFERRED:
+<span class="nc" id="L148">                return FilterMatch.UNDECIDED;</span>
+            case PASSED:
+<span class="fc" id="L150">                return FilterMatch.MATCHES;</span>
+            case NOT_PASSED:
+<span class="fc" id="L152">                return FilterMatch.DOESNT_MATCH;</span>
+            default:
+<span class="nc" id="L154">                throw new IllegalArgumentException(result + &quot; not handled.&quot;);</span>
+        }
+    }
+
+    private static JavaModelElement toJava(JavaElement element) {
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (!(element instanceof JavaModelElement)) {</span>
+<span class="nc" id="L160">            throw new IllegalArgumentException(&quot;Only instances of JavaModelElement can be processed by matcher.java&quot;);</span>
+        }
+
+<span class="fc" id="L163">        return (JavaModelElement) element;</span>
+    }
+
+    private static final class ElementInspector implements ModelInspector&lt;JavaElement&gt; {
+        private Elements elements;
+        private Types types;
+        private TypeElement javaLangObject;
+        final ProbingEnvironment env;
+
+<span class="fc" id="L172">        ElementInspector(JavaArchiveAnalyzer analyzer) {</span>
+<span class="fc" id="L173">            env = analyzer.getProbingEnvironment();</span>
+<span class="fc" id="L174">        }</span>
+
+        @Override
+        public TypeElement getJavaLangObjectElement() {
+<span class="nc" id="L178">            return getJavaLangObject();</span>
+        }
+
+        @Override
+        public javax.lang.model.element.Element toElement(JavaElement element) {
+<span class="fc" id="L183">            return toJava(element).getDeclaringElement();</span>
+        }
+
+        @Override
+        public TypeMirror toMirror(JavaElement element) {
+<span class="fc" id="L188">            return toJava(element).getModelRepresentation();</span>
+        }
+
+        @Override
+        public Set&lt;JavaElement&gt; getUses(JavaElement element) {
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            if (!env.isScanningComplete()) {</span>
+<span class="nc" id="L194">                return null;</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            } else if (element instanceof JavaModelElement) {</span>
+<span class="nc" id="L196">                JavaModelElement user = (JavaModelElement) element;</span>
+<span class="nc bnc" id="L197" title="All 4 branches missed.">                while (element != null &amp;&amp; !(element instanceof JavaTypeElement)) {</span>
+<span class="nc" id="L198">                    element = element.getParent();</span>
+                }
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                if (element == null) {</span>
+<span class="nc" id="L202">                    return emptySet();</span>
+                }
+
+<span class="nc" id="L205">                JavaTypeElement type = (JavaTypeElement) element;</span>
+
+<span class="nc" id="L207">                Map&lt;UseSite.Type, Map&lt;JavaTypeElement, Set&lt;JavaModelElement&gt;&gt;&gt; usedTypes = type.getUsedTypes();</span>
+
+<span class="nc" id="L209">                return usedTypes.values().stream()</span>
+<span class="nc" id="L210">                        .flatMap(m -&gt; m.entrySet().stream())</span>
+<span class="nc" id="L211">                        .filter(e -&gt; e.getValue().contains(user))</span>
+<span class="nc" id="L212">                        .map(Map.Entry::getKey)</span>
+<span class="nc" id="L213">                        .collect(toSet());</span>
+            } else {
+<span class="nc" id="L215">                return emptySet();</span>
+            }
+        }
+
+        @Override
+        public Set&lt;JavaElement&gt; getUseSites(JavaElement element) {
+<span class="nc bnc" id="L221" title="All 2 branches missed.">            if (!env.isScanningComplete()) {</span>
+<span class="nc" id="L222">                return null;</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            } else if (element instanceof JavaTypeElement) {</span>
+<span class="nc" id="L224">                return ((JavaTypeElement) element).getUseSites().stream()</span>
+<span class="nc" id="L225">                        .map(UseSite::getSite)</span>
+<span class="nc" id="L226">                        .collect(toSet());</span>
+            } else {
+<span class="nc" id="L228">                return emptySet();</span>
+            }
+        }
+
+        @Override
+        public JavaElement fromElement(javax.lang.model.element.Element element) {
+<span class="nc bnc" id="L234" title="All 2 branches missed.">            if (!env.isScanningComplete()) {</span>
+<span class="nc" id="L235">                return JavaElementFactory.elementFor(element, element.asType(), env, null);</span>
+            } else {
+<span class="nc" id="L237">                List&lt;javax.lang.model.element.Element&gt; path = new ArrayList&lt;&gt;(3);</span>
+<span class="nc" id="L238">                javax.lang.model.element.Element current = element;</span>
+<span class="nc bnc" id="L239" title="All 4 branches missed.">                while (current != null &amp;&amp; !(current instanceof TypeElement)) {</span>
+<span class="nc" id="L240">                    path.add(current);</span>
+<span class="nc" id="L241">                    current = current.getEnclosingElement();</span>
+                }
+
+<span class="nc" id="L244">                TypeElement type = (TypeElement) current;</span>
+<span class="nc" id="L245">                JavaModelElement model = env.getTypeMap().get(type);</span>
+<span class="nc" id="L246">                ListIterator&lt;javax.lang.model.element.Element&gt; it = path.listIterator(path.size());</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">                while (it.hasPrevious()) {</span>
+<span class="nc" id="L248">                    javax.lang.model.element.Element child = it.previous();</span>
+<span class="nc" id="L249">                    boolean found = false;</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                    for (Element e : model.getChildren()) {</span>
+<span class="nc bnc" id="L251" title="All 2 branches missed.">                        if (!(e instanceof JavaModelElement)) {</span>
+                            // annotations
+<span class="nc" id="L253">                            continue;</span>
+                        }
+
+<span class="nc" id="L256">                        JavaModelElement m = (JavaModelElement) e;</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                        if (m.getDeclaringElement() == child) {</span>
+<span class="nc" id="L258">                            model = m;</span>
+<span class="nc" id="L259">                            found = true;</span>
+<span class="nc" id="L260">                            break;</span>
+                        }
+<span class="nc" id="L262">                    }</span>
+
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                    if (!found) {</span>
+<span class="nc" id="L265">                        return null;</span>
+                    }
+<span class="nc" id="L267">                }</span>
+
+<span class="nc" id="L269">                return model;</span>
+            }
+        }
+
+        @Override
+        public List&lt;? extends TypeMirror&gt; directSupertypes(TypeMirror typeMirror) {
+<span class="nc" id="L275">            return getTypes().directSupertypes(typeMirror);</span>
+        }
+
+        @Override
+        public boolean overrides(ExecutableElement overrider, ExecutableElement overriden, TypeElement type) {
+<span class="nc" id="L280">            return getElements().overrides(overrider, overriden, type);</span>
+        }
+
+        public Elements getElements() {
+<span class="nc bnc" id="L284" title="All 2 branches missed.">            if (elements == null) {</span>
+<span class="nc" id="L285">                elements = env.getElementUtils();</span>
+            }
+<span class="nc" id="L287">            return elements;</span>
+        }
+
+        public Types getTypes() {
+<span class="nc bnc" id="L291" title="All 2 branches missed.">            if (types == null) {</span>
+<span class="nc" id="L292">                types = env.getTypeUtils();</span>
+            }
+<span class="nc" id="L294">            return types;</span>
+        }
+
+        public TypeElement getJavaLangObject() {
+<span class="nc bnc" id="L298" title="All 2 branches missed.">            if (javaLangObject == null) {</span>
+<span class="nc" id="L299">                javaLangObject = getElements().getTypeElement(&quot;java.lang.Object&quot;);</span>
+            }
+<span class="nc" id="L301">            return javaLangObject;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

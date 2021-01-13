@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Differences Transformation :: Revapi</title>
+    <link rel="canonical" href="https://revapi.org/revapi-basic-features/differences.html">
+    <meta name="generator" content="Antora 2.3.3">
+<link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/news.css">
+<link rel="stylesheet" href="../../_/css/additions.css">
+
+<link rel="alternate" type="application/rss+xml" title="Revapi RSS" href="../../_/../revapi-site/master/news/_attachments/news.atom" />
+<link rel="stylesheet" href="../../_/css/search.css">
+  </head>
+  <body class="article">
+<header class="header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="https://revapi.org">Revapi</a>
+              <div class="navbar-item">
+                <input id="search-input" type="text" placeholder="Search docs">
+              </div>
+            <button class="navbar-burger" data-target="topbar-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div id="topbar-nav" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="../../revapi-site/index.html/../news/index.html">News</a>
+                <a class="navbar-item" href="../../revapi-site/index.html/../downloads.html">Downloads</a>
+                <a class="navbar-item" href="https://diff.revapi.org">Online Check</a>
+                <a class="navbar-item" href="https://github.com/revapi/revapi"><img src="../../_/img/github.svg" alt="Github Repository"/></a>
+                <a class="navbar-item" href="https://twitter.com/revapi_org"><img src="../../_/img/twitter.svg" alt="Twitter"/></a>
+                <a class="navbar-item" href="../../_/../revapi-site/0/news/_attachments/news.atom"><img src="../../_/img/rss.svg" alt="RSS"/></a>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="revapi-basic-features" data-version="0.11.2">
+  <aside class="nav">
+    <div class="panels">
+    <div class="nav-panel-menu is-active" data-panel="menu">
+        <nav class="nav-menu">
+                <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/faq.html">FAQ</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/architecture.html">Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/extending-revapi.html">Extending Revapi</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/building.html">Building</a>
+  </li>
+</ul>
+  </li>
+</ul>
+            <ul class="nav-list">
+                <li class="nav-item" data-depth="0">
+                    <hr/>
+                    <i class="nav-text">Modules</i>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-ant-task/index.html">
+                                    <span class="nav-text">Ant Task</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi/index.html">
+                                    <span class="nav-text">API</span>
+                                </a>
+                            </li>
+                            <li class="nav-item is-active" data-depth="0">
+                                <a class="nav-link" href="../index.html">
+                                    <span class="nav-text">Basic Features</span>
+                                </a>
+                                    <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="differences.html">Multi-purpose Difference Transform</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="reclassify.html">Classification Transform</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="filter.html">Element Filter</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ignore.html">Ignore Differences</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="semver-ignore.html">Version-based Ignore</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="element-matching.html">Matching Elements</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/apidocs/index.html">Javadoc</a>
+  </li>
+</ul>
+  </li>
+</ul>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-standalone/index.html">
+                                    <span class="nav-text">CLI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-file-base/index.html">
+                                    <span class="nav-text">File Reporter Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-jackson/index.html">
+                                    <span class="nav-text">Jackson Analyzer Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java/index.html">
+                                    <span class="nav-text">Java Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java-spi/index.html">
+                                    <span class="nav-text">Java Analyzer SPI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-json/index.html">
+                                    <span class="nav-text">JSON Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-json/index.html">
+                                    <span class="nav-text">JSON Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-maven-plugin/index.html">
+                                    <span class="nav-text">Maven Plugin</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-text/index.html">
+                                    <span class="nav-text">Text Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-yaml/index.html">
+                                    <span class="nav-text">YAML Analyzer</span>
+                                </a>
+                            </li>
+                </li>
+            </ul>
+        </nav>
+    </div>
+<div class="nav-panel-explore" data-panel="explore" style="display: none">
+  <div class="context">
+    <span class="title">Basic Features</span>
+    <span class="version">0.11.2</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <span class="title">Ant Task</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-ant-task/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">API</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <span class="title">Basic Features</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../index.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">CLI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-standalone/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.0/index.html">0.10.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.8/index.html">0.9.8</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.7/index.html">0.9.7</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.6/index.html">0.9.6</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">File Reporter Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-file-base/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Jackson Analyzer Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-jackson/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.2/index.html">0.23.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.1/index.html">0.23.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.0/index.html">0.22.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer SPI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java-spi/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.2/index.html">0.22.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.0/index.html">0.22.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.1/index.html">0.21.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.0/index.html">0.21.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-json/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-json/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Maven Plugin</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-maven-plugin/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.2/index.html">0.12.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Revapi Site</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-site/index.html">master</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Text Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-text/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">YAML Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-yaml/index.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../revapi-site/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Basic Features</a></li>
+    <li><a href="differences.html">Multi-purpose Difference Transform</a></li>
+  </ul>
+</nav>
+  Version:
+<div class="page-versions">
+    <button class="version-menu-toggle" title="Versions of the component">
+        0.11.2
+    </button>
+  <div class="version-menu">
+        <a class="version" href="../differences.html">
+
+            latest
+        </a>
+        <a class="version is-current" href="differences.html">
+
+            0.11.2
+        </a>
+        <a class="version" href="../0.11.1/differences.html">
+
+            0.11.1
+        </a>
+        <a class="version" href="../0.11.0/differences.html">
+
+            0.11.0
+        </a>
+        <a class="version" href="../0.10.2/differences.html">
+
+            0.10.2
+        </a>
+        <a class="version" href="../0.10.1/differences.html">
+
+            0.10.1
+        </a>
+        <a class="version" href="../0.10.0/differences.html">
+
+            0.10.0
+        </a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/revapi/revapi/edit/master/revapi-basic-features/src/site/modules/ROOT/pages/differences.adoc" title="Edit the latest version of this page">Edit this page</a></div>
+</div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">Differences Transformation</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Extension:</strong> <code>revapi.differences</code></p>
+</div>
+<div class="paragraph">
+<p>This is a swiss-army knife extension for manipulating the differences. It can be used to reclassify or ignore
+the differences, and it also can be used to provide justifications to the found differences and add custom match
+parameters (aka attachments) to them.</p>
+</div>
+<div class="paragraph">
+<p>It supersedes the <a href="ignore.adoc"><code>revapi.ignore</code></a> and <a href="reclassify.adoc"><code>revapi.reclassify</code></a> extensions and
+provides new functionality that enables sharing the configuration for build-time and report-time.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_configuration"><a class="anchor" href="#_sample_configuration"></a>Sample Configuration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">[
+    {
+        "extension": "revapi.differences",
+        "configuration": {
+            "justification": "This change is necessary to fix bug #1234",
+            "criticality": "highlight",
+            "differences": [
+                {
+                    "code": "java.method.addToInterface",
+                    "new": "method void com.acme.ToolInterface::setup()"
+                },
+                {
+                    "code": "java.method.removed",
+                    "old": {
+                        "matcher": "java",
+                        "match": "interface com.acme.ToolInterface { void ^initialize(); }"
+                    },
+                    "justification": "As part of fix for #1234, we thought renaming this method is just fine."
+                },
+            ]
+        }
+    }
+]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.differences&gt;
+    &lt;justification&gt;This change is necessary to fix bug #1234&lt;/justification&gt;
+    &lt;criticality&gt;hightlight&lt;/criticality&gt;
+    &lt;differences&gt;
+        &lt;item&gt;
+            &lt;code&gt;java.method.addToInterface&lt;/code&gt;
+            &lt;new&gt;method void com.acme.ToolInterface::setup()&lt;/new&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+            &lt;code&gt;java.method.removed&lt;/code&gt;
+            &lt;old&gt;method void com.acme.ToolInterface::initialize()&lt;/old&gt;
+            &lt;justification&gt;As part of fix for #1234, we thought renaming this method is just fine.&lt;/justification&gt;
+        &lt;/item&gt;
+    &lt;/differences&gt;
+&lt;/revapi.differences&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_properties"><a class="anchor" href="#_properties"></a>Properties</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>justification</code></dt>
+<dd>
+<p>The justification that will be added to all the matching differences, if the concrete difference match recipe doesn&#8217;t
+provide its own justification.</p>
+</dd>
+<dt class="hdlist1"><code>criticality</code></dt>
+<dd>
+<p>The criticality that will be assigned to all of the matching differences, if the concrete difference match recipe
+doesn&#8217;t provide its own criticality.</p>
+</dd>
+<dt class="hdlist1"><code>ignore</code></dt>
+<dd>
+<p>If <code>true</code>, all the matching differences will be ignored. This can be locally redefined in each difference match recipe.</p>
+</dd>
+<dt class="hdlist1"><code>classify</code></dt>
+<dd>
+<p>The classification for all the matching differences. This can be locally redefined in each difference match recipe.</p>
+</dd>
+<dt class="hdlist1"><code>attachments</code></dt>
+<dd>
+<p>The new attachments (match parameters) to add to all the matching differences. This is merged with any new attachments
+locally defined at each difference match recipe with the local definitions taking precedence.</p>
+</dd>
+<dt class="hdlist1"><code>differences</code></dt>
+<dd>
+<p>The list of difference match recipes. Each of the recipes can match and modify zero or more differences reported by the
+analysis.</p>
+<div class="paragraph">
+<p>The match recipe consists of the following properties:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>regex</code></dt>
+<dd>
+<p>If <code>true</code> (the default is <code>false</code>), the <code>code</code>, <code>old</code>, <code>new</code> and any values of the additional properties are understood
+to be java regular expressions.</p>
+</dd>
+<dt class="hdlist1"><code>code</code></dt>
+<dd>
+<p>Specifies the API problem code to ignore. This is property mandatory.</p>
+</dd>
+<dt class="hdlist1"><code>old</code></dt>
+<dd>
+<p>Specifies the old element of the problem to ignore either using (a regex of) its textual representation or as a matcher
+expression. This property is optional.</p>
+</dd>
+<dt class="hdlist1"><code>new</code></dt>
+<dd>
+<p>Specifies the new element of the problem to ignore either using (a regex of) its textual representation or as a matcher
+expression. This property is optional.</p>
+</dd>
+<dt class="hdlist1"><code>justification</code></dt>
+<dd>
+<p>This can used to describe why this change was necessary. This can be used in the reports to give additional detail for
+why a change was necessary.</p>
+</dd>
+<dt class="hdlist1"><code>criticality</code></dt>
+<dd>
+<p>This is used to assign the criticality of the difference for the overall analysis result. This must be one of the
+configured criticality names.</p>
+</dd>
+<dt class="hdlist1"><code>attachments</code></dt>
+<dd>
+<p>This can be used to add additional attachments (match parameters) to the difference that can be used by the difference
+transformations down the line. It is an ordinary key-value map with string keys and values.</p>
+</dd>
+<dt class="hdlist1">additional properties</dt>
+<dd>
+<p>The analyzers can define additional match parameters on the differences that can be used to further focus the ignore
+rule. For java, see the <a href="../../revapi-java/differences.html#_list_of_api_differences" class="page">list</a> of the detected differences.
+Such additional properties always have a string value. These are the attachments (match parameters) defined by
+the analyzer or by previously run difference transforms.</p>
+</dd>
+</dl>
+</div>
+</dd>
+</dl>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+To learn more about the element matching, read <a href="element-matching.html" class="page">Matching Elements</a>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples"><a class="anchor" href="#_examples"></a>Examples</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_use_a_single_configuration_for_build_and_reports"><a class="anchor" href="#_use_a_single_configuration_for_build_and_reports"></a>Use a single configuration for build and reports</h3>
+<div class="paragraph">
+<p>Many times (if not always) library authors want to report on what API changes have been made in the API. Ideally, such
+report should also include the reasons for making those API changes. At the same time, during the builds, one wants to
+ignore the intentional, justified changes, but fail the build on the new ones (until they are deemed necessary or
+rolled back).</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s see how we can configure Revapi maven plugin to use a single configuration during the build to fail on new API
+changes and for reporting all the intentional API changes.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s put all our intentional API changes into a separate JSON file and call it <code>api-changes.json</code>. This file contains
+multiple Revapi configurations, one for each released version:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "0.2.0": [
+    {
+      "extension": "revapi.differences",
+      "id": "intentional-api-changes", <i class="conum" data-value="1"></i><b>(1)</b>
+      "configuration": {
+        "differences": [
+          {
+            "code": "java.method.addedToInterface",
+            "new": "method com.acme.Tooling::setup()",
+            "justification": "The original `initialize()` method was never meant to be public."
+          },
+          {
+            "code": "java.method.removed",
+            "old": "method com.acme.Tooling::initialize()",
+            "justification": "This method was made public by accident."
+          }
+        ]
+      }
+    }
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The explicit extension instance ID gives us the possibility to merge it with snippets coming from other places
+like <code>pom.xml</code>.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Equipped with this file, we can configure the Maven plugin to read it for both build and reporting.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+            &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+            &lt;configuration&gt;
+                &lt;analysisConfiguration&gt;
+                    &lt;revapi.differences id="intentional-api-changes"&gt; <i class="conum" data-value="1"></i><b>(1)</b>
+                        &lt;ignore&gt;true&lt;/ignore&gt;
+                    &lt;/revapi.differences&gt;
+                &lt;/analysisConfiguration&gt;
+                &lt;configurationFiles&gt;
+                    &lt;configurationFile&gt;
+                        &lt;path&gt;${basedir}/api-changes.json&lt;/path&gt;
+                        &lt;roots&gt;
+                            &lt;root&gt;${project-version-without-snapshot}&lt;/root&gt;
+                        &lt;/roots&gt;
+                    &lt;/configurationFile&gt;
+                &lt;/configurationFiles&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;
+
+&lt;reporting&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+            &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+            &lt;configuration&gt;
+                &lt;configurationFiles&gt; <i class="conum" data-value="2"></i><b>(2)</b>
+                    &lt;configurationFile&gt;
+                        &lt;path&gt;${basedir}/api-changes.json&lt;/path&gt;
+                        &lt;roots&gt;
+                            &lt;root&gt;${project-version-without-snapshot}&lt;/root&gt;
+                        &lt;/roots&gt;
+                    &lt;/configurationFile&gt;
+                &lt;/configurationFiles&gt;
+                &lt;reportSeverity&gt;nonBreaking&lt;/reportSeverity&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/reporting&gt;</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>We&#8217;re specifying that we&#8217;re updating the configuration of the same instance as in the json file. This means that
+the pom.xml adds the <code>ignore = true</code> to the configuration of <code>revapi.differences</code>. Having <code>ignore</code> set to true
+"globally" in the whole configuration of the <code>revapi.differences</code> extension instance with the specific ID, means that
+all differences specified will be ignored during the API checks.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>For reporting, we&#8217;re referencing the same configuration file as for building, but this time we&#8217;re not adding any
+modifications to the configuration. As such we let the <code>revapi.differences</code> update the justifications on all matching
+differences but leave it in the report. Thus the resulting maven report contains the justifications specified in our
+configuration file.</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_add_custom_attachments_for_reporting_purposes"><a class="anchor" href="#_add_custom_attachments_for_reporting_purposes"></a>Add custom attachments for reporting purposes</h3>
+<div class="paragraph">
+<p>It can be useful to be able to for example link API changes to the bug tracker issues for which they were introduced.
+One way of doing it is to add custom attachments to the intentional changes and have a custom reporter (or just a text
+reporter template) to render the attachment appropriately.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s just use the configuration file from the previous example and enhance it with some additional attachments.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "0.2.0": [
+    {
+      "extension": "revapi.differences",
+      "id": "intentional-api-changes", <i class="conum" data-value="1"></i><b>(1)</b>
+      "configuration": {
+        "differences": [
+          {
+            "code": "java.method.addedToInterface",
+            "new": "method com.acme.Tooling::setup()",
+            "justification": "The original `initialize()` method was never meant to be public.",
+            "attachments": {
+                "jira-id": "ACME-42"
+            }
+          },
+          {
+            "code": "java.method.removed",
+            "old": "method com.acme.Tooling::initialize()",
+            "justification": "This method was made public by accident."
+            "attachments": {
+                "jira-id": "ACME-42"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This way the reporter has a way of identifying the API changes that went in as part of the fix of a JIRA issue
+<code>ACME-42</code> and can use that information as it sees fit.</p>
+</div>
+</div>
+</div>
+</div>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+    <p>Copyright 2014-2021 Lukas Krejci.</p>
+    <p>This site was built using <a href="https://antora.org">Antora 2.3.3</a>.</p>
+</footer>
+<script>
+  window.antora = window.antora || {}
+  window.antora.basePath = '../..'
+  window.antora.pagePath = '/revapi-basic-features/0.11.2/differences.html'
+</script>
+<script src="../../_/js/site.js"></script>
+  <script src="../../_/js/vendor/lunr.js"></script>
+  <script src="../../_/js/vendor/search.js"></script>
+  <script async src="../../_/../search-index.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script>
+    function toggleVersionSelector(id) {
+        var sel = document.getElementById(id)
+        if (!sel) {
+            return
+        }
+
+        if (sel.style.display == 'none') {
+            sel.style.display = 'block';
+        } else {
+            sel.style.display = 'none';
+        }
+    }
+</script>  </body>
+</html>

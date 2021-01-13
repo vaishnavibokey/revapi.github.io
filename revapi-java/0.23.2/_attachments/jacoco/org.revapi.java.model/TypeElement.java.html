@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypeElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">TypeElement.java</span></div><h1>TypeElement.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.model;
+
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.SimpleElementVisitor8;
+
+import org.revapi.Archive;
+import org.revapi.java.compilation.ClassPathUseSite;
+import org.revapi.java.compilation.InheritedUseSite;
+import org.revapi.java.compilation.ProbingEnvironment;
+import org.revapi.java.compilation.UseSitePath;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.java.spi.JavaModelElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.UseSite;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public class TypeElement extends JavaElementBase&lt;javax.lang.model.element.TypeElement, DeclaredType&gt; implements JavaTypeElement {
+    private final String binaryName;
+    private final String canonicalName;
+    private Set&lt;UseSite&gt; useSites;
+    private Set&lt;ClassPathUseSite&gt; rawUseSites;
+    private boolean inApi;
+    private boolean inApiThroughUse;
+    private Map&lt;UseSite.Type, Map&lt;JavaTypeElement, Set&lt;JavaModelElement&gt;&gt;&gt; usedTypes;
+    private Map&lt;UseSite.Type, Map&lt;TypeElement, Set&lt;UseSitePath&gt;&gt;&gt; rawUsedTypes;
+
+    /**
+     * This is a helper constructor used only in {@link MissingClassElement}. Inheritors using this constructor need
+     * to make sure that they also override any and all methods that require a non-null element.
+     *
+     * @param env           probing environment
+     * @param binaryName    the binary name of the class
+     * @param canonicalName the canonical name of the class
+     */
+    TypeElement(ProbingEnvironment env, Archive archive, String binaryName, String canonicalName) {
+<span class="fc" id="L72">        super(env, archive, null, null);</span>
+<span class="fc" id="L73">        this.binaryName = binaryName;</span>
+<span class="fc" id="L74">        this.canonicalName = canonicalName;</span>
+<span class="fc" id="L75">    }</span>
+
+    /**
+     * This constructor is used under &quot;normal working conditions&quot; when the probing environment already has
+     * the compilation infrastructure available (which is assumed since otherwise it would not be possible to obtain
+     * instances of the javax.lang.model.element.TypeElement interface).
+     *
+     * @param env     the probing environment
+     * @param element the model element to be represented
+     */
+    public TypeElement(ProbingEnvironment env, Archive archive, javax.lang.model.element.TypeElement element,
+            DeclaredType type) {
+<span class="fc" id="L87">        super(env, archive, element, type);</span>
+<span class="fc" id="L88">        binaryName = env.getElementUtils().getBinaryName(element).toString();</span>
+<span class="fc" id="L89">        canonicalName = element.getQualifiedName().toString();</span>
+<span class="fc" id="L90">    }</span>
+
+    @Nonnull
+    @Override
+    protected String getHumanReadableElementType() {
+<span class="pc bpc" id="L95" title="1 of 5 branches missed.">        switch (element.getKind()) {</span>
+        case ANNOTATION_TYPE:
+<span class="fc" id="L97">            return &quot;@interface&quot;;</span>
+        case CLASS:
+<span class="fc" id="L99">            return &quot;class&quot;;</span>
+        case ENUM:
+<span class="fc" id="L101">            return &quot;enum&quot;;</span>
+        case INTERFACE:
+<span class="fc" id="L103">            return &quot;interface&quot;;</span>
+        default:
+<span class="nc" id="L105">            return &quot;class&quot;;</span>
+        }
+    }
+
+    public String getBinaryName() {
+<span class="fc" id="L110">        return binaryName;</span>
+    }
+
+    public String getCanonicalName() {
+<span class="fc" id="L114">        return canonicalName;</span>
+    }
+
+    @Override
+    public boolean isInAPI() {
+<span class="fc" id="L119">        return inApi;</span>
+    }
+
+    @Override
+    public boolean isInApiThroughUse() {
+<span class="fc" id="L124">        return inApiThroughUse;</span>
+    }
+
+    @Override
+    public Set&lt;UseSite&gt; getUseSites() {
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (useSites == null) {</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (rawUseSites == null) {</span>
+<span class="fc" id="L131">                useSites = new HashSet&lt;&gt;(1);</span>
+            } else {
+<span class="fc" id="L133">                useSites = rawUseSites.stream()</span>
+<span class="fc" id="L134">                        .map(u -&gt; {</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">                            if (u instanceof InheritedUseSite) {</span>
+<span class="fc" id="L136">                                JavaModelElement model = getModel(u.site, ((InheritedUseSite) u).inheritor,</span>
+                                        u.indexInParent);
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                                return model == null ? null : new UseSite(u.useType, model);</span>
+                            } else {
+<span class="fc" id="L140">                                JavaModelElement model = getModel(u.site, null, u.indexInParent);</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                                return model == null ? null : new UseSite(u.useType, model);</span>
+                            }
+<span class="fc" id="L143">                        }).filter(Objects::nonNull)</span>
+<span class="fc" id="L144">                        .collect(toSet());</span>
+            }
+<span class="fc" id="L146">            rawUseSites = null;</span>
+        }
+
+<span class="fc" id="L149">        return useSites;</span>
+    }
+
+    /**
+     * This provides the types used by this type. The keys are the types of use, values are maps from the used type
+     * to the set of concrete users of the type (the users represent some child of this element).
+     *
+     * @return the types used by this type
+     */
+    public Map&lt;UseSite.Type, Map&lt;JavaTypeElement, Set&lt;JavaModelElement&gt;&gt;&gt; getUsedTypes() {
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        if (usedTypes == null) {</span>
+<span class="fc" id="L160">            usedTypes = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">            if (rawUsedTypes != null) {</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">                for (Map.Entry&lt;UseSite.Type, Map&lt;TypeElement, Set&lt;UseSitePath&gt;&gt;&gt; e : rawUsedTypes.entrySet()) {</span>
+<span class="fc" id="L163">                    Map&lt;JavaTypeElement, Set&lt;JavaModelElement&gt;&gt; value = e.getValue().entrySet().stream()</span>
+<span class="fc" id="L164">                            .collect(toMap(</span>
+                                    Map.Entry::getKey,
+<span class="fc" id="L166">                                    entry -&gt; entry.getValue().stream().map(path -&gt; {</span>
+<span class="fc" id="L167">                                        int index = -1;</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                                        if (path.useSite instanceof VariableElement</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                                                &amp;&amp; path.useSite.getEnclosingElement() instanceof ExecutableElement) {</span>
+                                            //find the index of the method parameter
+<span class="nc" id="L171">                                            index = ((ExecutableElement) path.useSite.getEnclosingElement())</span>
+<span class="nc" id="L172">                                                    .getParameters()</span>
+<span class="nc" id="L173">                                                    .indexOf(path.useSite);</span>
+                                        }
+
+<span class="fc" id="L176">                                        TypeElement owner = null;</span>
+
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">                                        if (path.owner != null) {</span>
+<span class="fc" id="L179">                                            owner = (TypeElement) getModel(path.owner, null, -1);</span>
+                                        }
+
+<span class="fc" id="L182">                                        return getModel(path.useSite, owner, index);</span>
+<span class="fc" id="L183">                                    }).filter(Objects::nonNull).collect(toSet())));</span>
+
+<span class="fc" id="L185">                    usedTypes.put(e.getKey(), value);</span>
+<span class="fc" id="L186">                }</span>
+            }
+        }
+<span class="fc" id="L189">        return usedTypes;</span>
+    }
+
+    public void setRawUsedTypes(Map&lt;UseSite.Type, Map&lt;TypeElement, Set&lt;UseSitePath&gt;&gt;&gt; usedTypes) {
+<span class="fc" id="L193">        this.rawUsedTypes = usedTypes;</span>
+<span class="fc" id="L194">    }</span>
+
+    public void setInApi(boolean inApi) {
+<span class="fc" id="L197">        this.inApi = inApi;</span>
+<span class="fc" id="L198">    }</span>
+
+    public void setInApiThroughUse(boolean inApiThroughUse) {
+<span class="fc" id="L201">        this.inApiThroughUse = inApiThroughUse;</span>
+<span class="fc" id="L202">    }</span>
+
+    public void setRawUseSites(Set&lt;ClassPathUseSite&gt; rawUseSites) {
+<span class="fc" id="L205">        this.rawUseSites = rawUseSites;</span>
+<span class="fc" id="L206">    }</span>
+
+    @Override
+    public int compareTo(@Nonnull JavaElement o) {
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        if (!(o.getClass().equals(TypeElement.class))) {</span>
+<span class="fc" id="L211">            return JavaElementFactory.compareByType(this, o);</span>
+        }
+
+<span class="fc" id="L214">        return binaryName.compareTo(((TypeElement) o).binaryName);</span>
+    }
+
+    @Override
+    protected String createFullHumanReadableString() {
+<span class="fc" id="L219">        TypeMirror rep = getModelRepresentation();</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">        return getHumanReadableElementType() + &quot; &quot; + (rep == null ? canonicalName : Util.toHumanReadableString(rep));</span>
+    }
+
+    @Override
+    protected String createComparableSignature() {
+        //this isn't used, because compareTo is implemented differently
+<span class="nc" id="L226">        return null;</span>
+    }
+
+    @Override
+    public TypeElement clone() {
+<span class="nc" id="L231">        return (TypeElement) super.clone();</span>
+    }
+
+    private JavaModelElement getModel(Element element, TypeElement owner, int indexInParent) {
+<span class="fc" id="L235">        return element.accept(new SimpleElementVisitor8&lt;JavaModelElement, Void&gt;() {</span>
+            @Override
+            public JavaModelElement visitVariable(VariableElement e, Void ignored) {
+<span class="fc bfc" id="L238" title="All 2 branches covered.">                if (e.getEnclosingElement() instanceof javax.lang.model.element.TypeElement) {</span>
+                    //this is a field
+<span class="fc" id="L240">                    TypeElement type = findModelType(e.getEnclosingElement());</span>
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">                    if (type == null) {</span>
+<span class="nc" id="L242">                        return null;</span>
+                    }
+
+<span class="fc" id="L245">                    List&lt;FieldElement&gt; fs = type.stream(FieldElement.class, false)</span>
+<span class="fc" id="L246">                            .filter(f -&gt; f.getDeclaringElement().equals(e))</span>
+<span class="fc" id="L247">                            .collect(toList());</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">                    return fs.isEmpty() ? null : fs.get(0);</span>
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">                } else if (e.getEnclosingElement() instanceof javax.lang.model.element.ExecutableElement) {</span>
+                    //this is a method parameter
+<span class="fc" id="L251">                    Element methodEl = e.getEnclosingElement();</span>
+<span class="fc" id="L252">                    TypeElement type = findModelType(methodEl.getEnclosingElement());</span>
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">                    if (type == null) {</span>
+<span class="nc" id="L254">                        return null;</span>
+                    }
+
+<span class="fc" id="L257">                    List&lt;MethodElement&gt; ms = type.stream(MethodElement.class, false)</span>
+<span class="fc" id="L258">                            .filter(m -&gt; m.getDeclaringElement().equals(methodEl))</span>
+<span class="fc" id="L259">                            .collect(toList());</span>
+
+<span class="pc bpc" id="L261" title="1 of 2 branches missed.">                    if (ms.isEmpty()) {</span>
+<span class="nc" id="L262">                        return null;</span>
+                    }
+
+<span class="fc" id="L265">                    MethodElement method = ms.get(0);</span>
+
+                    //now look for the parameter
+<span class="fc" id="L268">                    List&lt;MethodParameterElement&gt; params =</span>
+<span class="fc" id="L269">                            method.stream(MethodParameterElement.class, false).collect(toList());</span>
+
+<span class="pc bpc" id="L271" title="1 of 2 branches missed.">                    return params.size() &gt; indexInParent ? params.get(indexInParent) : null;</span>
+                } else {
+<span class="nc" id="L273">                    return null;</span>
+                }
+            }
+
+            @Override
+            public JavaModelElement visitType(javax.lang.model.element.TypeElement e, Void ignored) {
+<span class="fc" id="L279">                return findModelType(e);</span>
+            }
+
+            @Override
+            public JavaModelElement visitExecutable(ExecutableElement e, Void ignored) {
+<span class="fc" id="L284">                TypeElement type = findModelType(e.getEnclosingElement());</span>
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">                if (type == null) {</span>
+<span class="nc" id="L286">                    return null;</span>
+                }
+
+<span class="fc" id="L289">                List&lt;MethodElement&gt; ms = type.stream(MethodElement.class, false)</span>
+<span class="fc" id="L290">                        .filter(m -&gt; m.getDeclaringElement().equals(e))</span>
+<span class="fc" id="L291">                        .collect(toList());</span>
+
+<span class="fc bfc" id="L293" title="All 2 branches covered.">                return ms.isEmpty() ? null : ms.get(0);</span>
+            }
+
+            private TypeElement findModelType(Element enclosingElement) {
+<span class="fc bfc" id="L297" title="All 2 branches covered.">                if (owner == null) {</span>
+<span class="fc" id="L298">                    return environment.getTypeMap().get(enclosingElement);</span>
+                } else {
+<span class="fc" id="L300">                    return owner;</span>
+                }
+            }
+        }, null);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

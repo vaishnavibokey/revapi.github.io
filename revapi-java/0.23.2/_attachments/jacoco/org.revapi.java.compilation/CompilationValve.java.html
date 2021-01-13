@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompilationValve.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.compilation</a> &gt; <span class="el_source">CompilationValve.java</span></div><h1>CompilationValve.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2017 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.compilation;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import javax.tools.JavaFileManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+public final class CompilationValve {
+<span class="fc" id="L39">    private static final Logger LOG = LoggerFactory.getLogger(CompilationValve.class);</span>
+
+    private final Future&lt;Boolean&gt; compilationResult;
+    private final File dirToCleanup;
+    private final ProbingEnvironment environment;
+    private final JavaFileManager fileManager;
+
+    /* package private */ CompilationValve(Future&lt;Boolean&gt; results, File dirToCleanup, ProbingEnvironment env,
+<span class="fc" id="L47">            JavaFileManager fileManager) {</span>
+
+<span class="fc" id="L49">        this.compilationResult = results;</span>
+<span class="fc" id="L50">        this.dirToCleanup = dirToCleanup;</span>
+<span class="fc" id="L51">        this.environment = env;</span>
+<span class="fc" id="L52">        this.fileManager = fileManager;</span>
+<span class="fc" id="L53">    }</span>
+
+    ProbingEnvironment getEnvironment() {
+<span class="fc" id="L56">        return environment;</span>
+    }
+
+    Future&lt;Boolean&gt; getCompilationResult() {
+<span class="fc" id="L60">        return compilationResult;</span>
+    }
+
+    public void removeCompiledResults() {
+
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (LOG.isTraceEnabled()) {</span>
+<span class="nc" id="L66">            LOG.trace(&quot;Releasing compilation environment for &quot; + environment.getApi());</span>
+        }
+<span class="fc" id="L68">        environment.getCompilationTeardownLatch().countDown();</span>
+
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (!compilationResult.isDone()) {</span>
+            try {
+<span class="fc" id="L72">                compilationResult.get();</span>
+<span class="nc" id="L73">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L74">                Thread.currentThread().interrupt();</span>
+                //but clean up below anyway before returning
+<span class="nc" id="L76">            } catch (ExecutionException e) {</span>
+<span class="nc" id="L77">                throw new IllegalStateException(&quot;Exception thrown while waiting for compilation to end for clean up&quot;,</span>
+                    e);
+<span class="pc" id="L79">            }</span>
+        }
+
+        try {
+<span class="fc" id="L83">            fileManager.close();</span>
+<span class="nc" id="L84">        } catch (IOException e) {</span>
+<span class="nc" id="L85">            throw new IllegalStateException(&quot;Failed to close the file manager used by the compiler.&quot;, e);</span>
+<span class="fc" id="L86">        }</span>
+
+        try {
+<span class="fc" id="L89">            Files.walkFileTree(dirToCleanup.toPath(), new FileVisitor&lt;Path&gt;() {</span>
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+<span class="fc" id="L92">                    return FileVisitResult.CONTINUE;</span>
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+<span class="fc" id="L97">                    Files.delete(file);</span>
+<span class="fc" id="L98">                    return FileVisitResult.CONTINUE;</span>
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                    if (dirToCleanup.toPath().equals(file)) {</span>
+<span class="nc" id="L104">                        return FileVisitResult.CONTINUE;</span>
+                    }
+<span class="nc" id="L106">                    throw new IOException(&quot;Failed to delete file '&quot; + file + &quot;'.&quot;, exc);</span>
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+<span class="fc" id="L111">                    Files.delete(dir);</span>
+<span class="fc" id="L112">                    return FileVisitResult.CONTINUE;</span>
+                }
+            });
+<span class="nc" id="L115">        } catch (IOException e) {</span>
+<span class="nc" id="L116">            throw new IllegalStateException(&quot;Failed to remove compiled results&quot;, e);</span>
+<span class="fc" id="L117">        }</span>
+<span class="fc" id="L118">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

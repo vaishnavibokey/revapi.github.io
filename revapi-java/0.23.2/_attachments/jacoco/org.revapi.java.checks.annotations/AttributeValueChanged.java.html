@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AttributeValueChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.annotations</a> &gt; <span class="el_source">AttributeValueChanged.java</span></div><h1>AttributeValueChanged.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2017 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.annotations;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.ExecutableElement;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaAnnotationElement;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="fc" id="L38">public final class AttributeValueChanged extends CheckBase {</span>
+    @Override
+    protected List&lt;Difference&gt; doVisitAnnotation(JavaAnnotationElement oldElement,
+        JavaAnnotationElement newElement) {
+
+<span class="pc bpc" id="L43" title="1 of 6 branches missed.">        if (oldElement == null || newElement == null || !isAccessible(newElement.getParent())) {</span>
+<span class="fc" id="L44">            return null;</span>
+        }
+
+<span class="fc" id="L47">        AnnotationMirror oldAnnotation = oldElement.getAnnotation();</span>
+<span class="fc" id="L48">        AnnotationMirror newAnnotation = newElement.getAnnotation();</span>
+
+<span class="fc" id="L50">        List&lt;Difference&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L52">        Map&lt;String, Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt;&gt; oldAttrs = Util</span>
+<span class="fc" id="L53">            .keyAnnotationAttributesByName(oldAnnotation.getElementValues());</span>
+<span class="fc" id="L54">        Map&lt;String, Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt;&gt; newAttrs = Util</span>
+<span class="fc" id="L55">            .keyAnnotationAttributesByName(newAnnotation.getElementValues());</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        for (Map.Entry&lt;String, Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt;&gt; oldE : oldAttrs</span>
+<span class="fc" id="L58">            .entrySet()) {</span>
+
+<span class="fc" id="L60">            String name = oldE.getKey();</span>
+<span class="fc" id="L61">            Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt; oldValue = oldE.getValue();</span>
+<span class="fc" id="L62">            Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt; newValue = newAttrs.get(name);</span>
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (newValue == null) {</span>
+<span class="fc" id="L65">                result.add(</span>
+<span class="fc" id="L66">                    createDifference(Code.ANNOTATION_ATTRIBUTE_REMOVED, Code.attachmentsFor(oldElement.getParent(),</span>
+<span class="fc" id="L67">                            newElement.getParent(),</span>
+<span class="fc" id="L68">                            &quot;annotationType&quot;, Util.toHumanReadableString(newElement.getAnnotation().getAnnotationType()),</span>
+<span class="fc" id="L69">                            &quot;annotation&quot;, Util.toHumanReadableString(newElement.getAnnotation()),</span>
+                            &quot;attribute&quot;, name,
+<span class="fc" id="L71">                            &quot;value&quot;, Util.toHumanReadableString(oldValue.getValue())))</span>
+                );
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            } else if (!Util.isEqual(oldValue.getValue(), newValue.getValue())) {</span>
+<span class="fc" id="L74">                result.add(createDifference(Code.ANNOTATION_ATTRIBUTE_VALUE_CHANGED,</span>
+<span class="fc" id="L75">                        Code.attachmentsFor(oldElement.getParent(), newElement.getParent(),</span>
+<span class="fc" id="L76">                                &quot;annotationType&quot;, Util.toHumanReadableString(newElement.getAnnotation().getAnnotationType()),</span>
+<span class="fc" id="L77">                                &quot;annotation&quot;, Util.toHumanReadableString(newElement.getAnnotation()),</span>
+                                &quot;attribute&quot;, name,
+<span class="fc" id="L79">                                &quot;oldValue&quot;, Util.toHumanReadableString(oldValue.getValue()),</span>
+<span class="fc" id="L80">                                &quot;newValue&quot;, Util.toHumanReadableString(newValue.getValue()))</span>
+                ));
+            }
+
+<span class="fc" id="L84">            newAttrs.remove(name);</span>
+<span class="fc" id="L85">        }</span>
+
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (Map.Entry&lt;String, Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt;&gt; newE : newAttrs</span>
+<span class="fc" id="L88">            .entrySet()) {</span>
+<span class="fc" id="L89">            String name = newE.getKey();</span>
+<span class="fc" id="L90">            Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt; newValue = newE.getValue();</span>
+<span class="fc" id="L91">            Map.Entry&lt;? extends ExecutableElement, ? extends AnnotationValue&gt; oldValue = oldAttrs.get(name);</span>
+
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (oldValue == null) {</span>
+<span class="fc" id="L94">                result.add(</span>
+<span class="fc" id="L95">                    createDifference(Code.ANNOTATION_ATTRIBUTE_ADDED, Code.attachmentsFor(oldElement.getParent(),</span>
+<span class="fc" id="L96">                            newElement.getParent(),</span>
+<span class="fc" id="L97">                            &quot;annotationType&quot;, Util.toHumanReadableString(newElement.getAnnotation().getAnnotationType()),</span>
+<span class="fc" id="L98">                            &quot;annotation&quot;, Util.toHumanReadableString(newElement.getAnnotation()),</span>
+                            &quot;attribute&quot;, name,
+<span class="fc" id="L100">                            &quot;value&quot;, Util.toHumanReadableString(newValue.getValue())))</span>
+                );
+            }
+<span class="fc" id="L103">        }</span>
+
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        return result.isEmpty() ? null : result;</span>
+    }
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L110">        return EnumSet.of(Type.ANNOTATION);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

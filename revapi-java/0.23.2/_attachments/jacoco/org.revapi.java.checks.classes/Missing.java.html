@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Missing.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.classes</a> &gt; <span class="el_source">Missing.java</span></div><h1>Missing.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2017 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.classes;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaTypeElement;
+
+/**
+ * @author Lukas Krejci
+ * @since 0.1
+ */
+<span class="fc" id="L34">public final class Missing extends CheckBase {</span>
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L38">        return EnumSet.of(Type.CLASS);</span>
+    }
+
+    @Override
+    public boolean isDescendingOnNonExisting() {
+<span class="fc" id="L43">        return true;</span>
+    }
+
+    @Override
+    protected void doVisitClass(@Nullable JavaTypeElement oldType, @Nullable JavaTypeElement newType) {
+<span class="fc bfc" id="L48" title="All 4 branches covered.">        boolean oldMissing = oldType != null &amp;&amp; isMissing(oldType.getDeclaringElement());</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        boolean oldInApi = oldType != null &amp;&amp; oldType.isInAPI();</span>
+<span class="fc bfc" id="L50" title="All 4 branches covered.">        boolean newMissing = newType != null &amp;&amp; isMissing(newType.getDeclaringElement());</span>
+<span class="fc bfc" id="L51" title="All 4 branches covered.">        boolean newInApi = newType != null &amp;&amp; newType.isInAPI();</span>
+
+<span class="pc bpc" id="L53" title="1 of 8 branches missed.">        if ((oldMissing || newMissing) &amp;&amp; (oldInApi || newInApi)) {</span>
+<span class="fc" id="L54">            pushActive(oldType, newType);</span>
+        }
+<span class="fc" id="L56">    }</span>
+
+    @Nullable
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L61">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (types == null) {</span>
+<span class="fc" id="L63">            return null;</span>
+        }
+
+<span class="fc" id="L66">        List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (types.oldElement != null) {</span>
+<span class="fc" id="L69">            ret.add(createDifferenceWithExplicitParams(Code.MISSING_IN_OLD_API,</span>
+<span class="fc" id="L70">                    Code.attachmentsFor(types.oldElement, types.newElement),</span>
+<span class="fc" id="L71">                    types.oldElement.getDeclaringElement().getQualifiedName().toString()));</span>
+        }
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (types.newElement != null) {</span>
+<span class="fc" id="L75">            ret.add(createDifferenceWithExplicitParams(Code.MISSING_IN_NEW_API,</span>
+<span class="fc" id="L76">                    Code.attachmentsFor(types.oldElement, types.newElement),</span>
+<span class="fc" id="L77">                    types.newElement.getDeclaringElement().getQualifiedName().toString()));</span>
+        }
+
+<span class="fc" id="L80">        return ret;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
