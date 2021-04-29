@@ -1,0 +1,748 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SerializationChecker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.common</a> &gt; <span class="el_source">SerializationChecker.java</span></div><h1>SerializationChecker.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.common;
+
+import static java.util.Collections.singletonList;
+
+import static org.revapi.java.spi.Code.attachmentsFor;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.NoType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.SimpleTypeVisitor7;
+import javax.lang.model.util.Types;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.AnalysisContext;
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaFieldElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.TypeEnvironment;
+import org.revapi.java.spi.Util;
+
+<span class="fc" id="L71">public class SerializationChecker extends CheckBase {</span>
+    private static final String SERIAL_VERSION_UID_FIELD_NAME = &quot;serialVersionUID&quot;;
+
+    private PrimitiveType oldLongType;
+    private PrimitiveType newLongType;
+    private boolean strict;
+
+<span class="fc" id="L78">    private static final TypeVisitor&lt;Boolean, Void&gt; IS_SERIALIZABLE = new SimpleTypeVisitor7&lt;Boolean, Void&gt;(false) {</span>
+        @Override
+        public Boolean visitDeclared(DeclaredType t, Void aVoid) {
+<span class="fc" id="L81">            return &quot;java.io.Serializable&quot;.contentEquals(((TypeElement) t.asElement()).getQualifiedName());</span>
+        }
+    };
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L87">        return EnumSet.of(Type.CLASS, Type.FIELD);</span>
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L92">        super.initialize(analysisContext);</span>
+<span class="fc" id="L93">        JsonNode changeDetectionType = analysisContext.getConfigurationNode().path(&quot;changeDetection&quot;);</span>
+<span class="fc" id="L94">        strict = &quot;jvm&quot;.equals(changeDetectionType.asText(null));</span>
+<span class="fc" id="L95">    }</span>
+
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L99">        return &quot;serialVersionUID&quot;;</span>
+    }
+
+    @Override
+    public Reader getJSONSchema() {
+<span class="fc" id="L104">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/serialVersionUID-config-schema.json&quot;),</span>
+<span class="fc" id="L105">                Charset.forName(&quot;UTF-8&quot;));</span>
+    }
+
+    @Override
+    protected void doVisitClass(@Nullable JavaTypeElement oldType, @Nullable JavaTypeElement newType) {
+<span class="pc bpc" id="L110" title="1 of 8 branches missed.">        boolean serializable = oldType != null &amp;&amp; newType != null &amp;&amp; isSerializable(oldType) &amp;&amp; isSerializable(newType)</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">                &amp;&amp; isBothAccessible(oldType, newType);</span>
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (serializable) {</span>
+<span class="fc" id="L114">            pushActive(oldType, newType, new Object[3]);</span>
+        }
+<span class="fc" id="L116">    }</span>
+
+    @Override
+    protected void doVisitField(@Nullable JavaFieldElement oldField, @Nullable JavaFieldElement newField) {
+        // check that the last activation of this check was indeed for the class in which the fields are located
+        // (important for non-serializable inner class of a serializable class for example).
+<span class="fc" id="L122">        ActiveElements&lt;?&gt; lastActive = peekLastActive();</span>
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (lastActive == null) {</span>
+<span class="fc" id="L125">            return;</span>
+        }
+
+<span class="fc bfc" id="L128" title="All 4 branches covered.">        if (oldField != null &amp;&amp; oldField.getParent() != lastActive.oldElement) {</span>
+<span class="fc" id="L129">            return;</span>
+        }
+
+<span class="pc bpc" id="L132" title="1 of 4 branches missed.">        if (newField != null &amp;&amp; newField.getParent() != lastActive.newElement) {</span>
+<span class="nc" id="L133">            return;</span>
+        }
+
+<span class="fc" id="L136">        ensurePrimitiveTypesLoaded();</span>
+
+        // If the constant value of the serialVersionUid field is null, it means that it is actually computed.
+        // This is an extreme measure taken by certain classes (like javax.xml.namespace.QName) to ensure
+        // back-compat in some situations where they need to mimic an old erratic serialization behavior.
+        // Let's just ignore these cases because we actually don't know the value the field would assume, because
+        // we're not loading the classes and don't know the target environment the classes will be used in which
+        // might influence the actual value of the field.
+<span class="fc" id="L144">        boolean computedSerialVersionUid = false;</span>
+
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (isSerialVersionUid(oldField, getOldTypeEnvironment(), oldLongType)) {</span>
+<span class="fc" id="L147">            lastActive.context[0] = oldField.getDeclaringElement().getConstantValue();</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">            computedSerialVersionUid = lastActive.context[0] == null;</span>
+        }
+
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (isSerialVersionUid(newField, getNewTypeEnvironment(), newLongType)) {</span>
+<span class="fc" id="L152">            lastActive.context[1] = newField.getDeclaringElement().getConstantValue();</span>
+            // we're going to report on the field in this case, so let's push the field as the active element to
+            // be able to retrieve it in #doEnd()
+
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">            if (lastActive.context[1] != null) {</span>
+<span class="fc" id="L157">                pushActive(oldField, newField, lastActive.context);</span>
+            } else {
+<span class="nc" id="L159">                computedSerialVersionUid = true;</span>
+            }
+        }
+
+<span class="fc" id="L163">        lastActive.context[2] = computedSerialVersionUid;</span>
+<span class="fc" id="L164">    }</span>
+
+    @Nullable
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L169">        ActiveElements&lt;?&gt; els = popIfActive();</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (els == null) {</span>
+<span class="fc" id="L171">            return null;</span>
+        }
+
+<span class="fc" id="L174">        List&lt;Difference&gt; diffs = null;</span>
+
+<span class="fc" id="L176">        Long oldSerialVersionUid = (Long) els.context[0];</span>
+<span class="fc" id="L177">        Long newSerialVersionUid = (Long) els.context[1];</span>
+<span class="fc" id="L178">        Boolean computedSerialVersionUid = (Boolean) els.context[2];</span>
+
+<span class="pc bpc" id="L180" title="1 of 4 branches missed.">        if (computedSerialVersionUid != null &amp;&amp; computedSerialVersionUid) {</span>
+            // old or new serialVersionUid or both of them were declared without a constant value, meaning that their
+            // value is computed in a static initializer of the class. This basically means that we cannot do any
+            // analysis because we don't run the static initializers and more importantly we cannot assume
+            // the environment in which they would be run (e.g. if the value depends on some system property, we
+            // cannot anticipate its value).
+<span class="nc" id="L186">            return null;</span>
+        }
+
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        if (els.newElement instanceof JavaFieldElement) {</span>
+            // we're reporting on the new serialVersionUID field. The old version may or may not be there.
+            // Note that in the case where the old version of the serialization was without the serialVersionUID field
+            // we don't use the configuration option to choose between serialization &quot;sensitiveness&quot; as we do in the
+            // SerialVersionUidChecker because the old version must have used the default JVM-generated serialVersionUID
+            // because it didn't contain an explicit one.
+<span class="fc bfc" id="L195" title="All 2 branches covered.">            if (oldSerialVersionUid == null) {</span>
+<span class="fc" id="L196">                TypeElement oldType = ((JavaTypeElement) els.previous.oldElement).getDeclaringElement();</span>
+<span class="fc" id="L197">                long oldUid = computeSerialVersionUID(oldType, getOldTypeEnvironment());</span>
+<span class="fc" id="L198">                long newUid = newSerialVersionUid;</span>
+
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">                if (oldUid != newUid) {</span>
+<span class="fc" id="L201">                    diffs = singletonList(createDifference(Code.FIELD_SERIAL_VERSION_UID_CHANGED,</span>
+<span class="fc" id="L202">                            attachmentsFor(els.oldElement, els.newElement, &quot;oldSerialVersionUID&quot;, Long.toString(oldUid),</span>
+<span class="fc" id="L203">                                    &quot;newSerialVersionUID&quot;, Long.toString(newUid))));</span>
+                }
+<span class="fc" id="L205">            } else {</span>
+                // k, both old and new classes have the serialVersionUID fields. We can apply the configured comparison
+                // style here..
+                // also, we're actually need to check for 2 things here.
+
+                @SuppressWarnings(&quot;ConstantConditions&quot;)
+<span class="fc" id="L211">                TypeElement oldType = ((JavaTypeElement) els.oldElement.getParent()).getDeclaringElement();</span>
+                @SuppressWarnings(&quot;ConstantConditions&quot;)
+<span class="fc" id="L213">                TypeElement newType = ((JavaTypeElement) els.newElement.getParent()).getDeclaringElement();</span>
+
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">                long computedOldSUID = strict ? computeSerialVersionUID(oldType, getOldTypeEnvironment())</span>
+<span class="fc" id="L216">                        : computeStructuralId(oldType, getOldTypeEnvironment());</span>
+
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">                long computedNewSUID = strict ? computeSerialVersionUID(newType, getNewTypeEnvironment())</span>
+<span class="fc" id="L219">                        : computeStructuralId(newType, getNewTypeEnvironment());</span>
+
+<span class="fc" id="L221">                long actualOldSUID = oldSerialVersionUid;</span>
+<span class="fc" id="L222">                long actualNewSUID = newSerialVersionUid;</span>
+
+<span class="fc" id="L224">                boolean reportUnchanged = false;</span>
+<span class="fc" id="L225">                boolean reportChanged = false;</span>
+
+<span class="pc bpc" id="L227" title="1 of 4 branches missed.">                if (actualOldSUID == actualNewSUID &amp;&amp; computedOldSUID != computedNewSUID) {</span>
+<span class="fc" id="L228">                    reportUnchanged = true;</span>
+                }
+
+<span class="fc bfc" id="L231" title="All 2 branches covered.">                if (actualOldSUID != actualNewSUID) {</span>
+<span class="fc" id="L232">                    reportChanged = true;</span>
+                }
+
+<span class="pc bpc" id="L235" title="1 of 4 branches missed.">                if (!reportChanged &amp;&amp; !reportUnchanged) {</span>
+<span class="nc" id="L236">                    return Collections.emptyList();</span>
+                }
+
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                if (reportUnchanged) {</span>
+<span class="fc" id="L240">                    diffs = singletonList(createDifference(Code.FIELD_SERIAL_VERSION_UID_UNCHANGED, Code.attachmentsFor(</span>
+<span class="fc" id="L241">                            els.oldElement, els.newElement, &quot;serialVersionUID&quot;, Long.toString(actualOldSUID))));</span>
+                } else {
+<span class="fc" id="L243">                    diffs = singletonList(createDifference(Code.FIELD_SERIAL_VERSION_UID_CHANGED,</span>
+<span class="fc" id="L244">                            Code.attachmentsFor(els.oldElement, els.newElement, &quot;oldSerialVersionUID&quot;,</span>
+<span class="fc" id="L245">                                    Long.toString(actualOldSUID), &quot;newSerialVersionUID&quot;,</span>
+<span class="fc" id="L246">                                    Long.toString(actualNewSUID))));</span>
+                }
+
+<span class="fc" id="L249">            }</span>
+<span class="pc bpc" id="L250" title="3 of 6 branches missed.">        } else if (newSerialVersionUid == null</span>
+                &amp;&amp; (els.newElement instanceof JavaTypeElement || els.oldElement instanceof JavaTypeElement)) {
+            // if newSerialVersionUid weren't null, we'd end up in the other branch of the if
+
+            // we're reporting on the classes that may have had serialVersionUID in the old version or not
+<span class="fc" id="L255">            TypeElement oldType = ((JavaTypeElement) els.oldElement).getDeclaringElement();</span>
+            @SuppressWarnings(&quot;ConstantConditions&quot;)
+<span class="fc" id="L257">            TypeElement newType = ((JavaTypeElement) els.newElement).getDeclaringElement();</span>
+
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            long oldUid = oldSerialVersionUid == null ? computeSerialVersionUID(oldType, getOldTypeEnvironment())</span>
+<span class="fc" id="L260">                    : oldSerialVersionUid;</span>
+
+<span class="fc" id="L262">            long newUid = computeSerialVersionUID(newType, getNewTypeEnvironment());</span>
+
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">            if (oldUid != newUid) {</span>
+<span class="fc" id="L265">                diffs = singletonList(createDifference(Code.CLASS_DEFAULT_SERIALIZATION_CHANGED,</span>
+<span class="fc" id="L266">                        attachmentsFor(els.oldElement, els.newElement, &quot;oldSerialVersionUID&quot;, Long.toString(oldUid),</span>
+<span class="fc" id="L267">                                &quot;newSerialVersionUID&quot;, Long.toString(newUid))));</span>
+            }
+        }
+
+<span class="fc" id="L271">        return diffs;</span>
+    }
+
+    private boolean isSerializable(JavaTypeElement type) {
+<span class="fc" id="L275">        TypeElement t = type.getDeclaringElement();</span>
+
+<span class="fc bfc" id="L277" title="All 4 branches covered.">        return t.getKind().isClass() &amp;&amp; t.getInterfaces().stream().anyMatch(IS_SERIALIZABLE::visit);</span>
+    }
+
+    private boolean isSerialVersionUid(JavaFieldElement field, TypeEnvironment env, PrimitiveType longType) {
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        if (field == null</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">                || !field.getDeclaringElement().getSimpleName().contentEquals(SERIAL_VERSION_UID_FIELD_NAME)) {</span>
+<span class="fc" id="L283">            return false;</span>
+        }
+
+<span class="fc" id="L286">        Set&lt;Modifier&gt; mods = field.getDeclaringElement().getModifiers();</span>
+
+<span class="pc bpc" id="L288" title="2 of 4 branches missed.">        if (!mods.contains(Modifier.STATIC) || !mods.contains(Modifier.FINAL)) {</span>
+<span class="nc" id="L289">            return false;</span>
+        }
+
+<span class="fc" id="L292">        return env.getTypeUtils().isSameType(field.getModelRepresentation(), longType);</span>
+    }
+
+    private void ensurePrimitiveTypesLoaded() {
+<span class="fc bfc" id="L296" title="All 2 branches covered.">        if (oldLongType != null) {</span>
+<span class="fc" id="L297">            return;</span>
+        }
+<span class="fc" id="L299">        oldLongType = getOldTypeEnvironment().getTypeUtils().getPrimitiveType(TypeKind.LONG);</span>
+<span class="fc" id="L300">        newLongType = getNewTypeEnvironment().getTypeUtils().getPrimitiveType(TypeKind.LONG);</span>
+<span class="fc" id="L301">    }</span>
+
+    public static long computeStructuralId(TypeElement type, TypeEnvironment environment) {
+<span class="fc" id="L304">        Predicate&lt;Element&gt; serializableFields = e -&gt; {</span>
+<span class="fc" id="L305">            Set&lt;Modifier&gt; mods = e.getModifiers();</span>
+<span class="fc bfc" id="L306" title="All 4 branches covered.">            return !mods.contains(Modifier.TRANSIENT) &amp;&amp; !mods.contains(Modifier.STATIC);</span>
+        };
+
+<span class="fc" id="L309">        Comparator&lt;Element&gt; bySimpleName = Comparator.comparing(e -&gt; e.getSimpleName().toString());</span>
+
+<span class="fc" id="L311">        List&lt;TypeMirror&gt; fields = ElementFilter.fieldsIn(type.getEnclosedElements()).stream().filter(serializableFields)</span>
+<span class="fc" id="L312">                .sorted(bySimpleName).map(Element::asType).collect(Collectors.toList());</span>
+
+<span class="fc" id="L314">        Types types = environment.getTypeUtils();</span>
+
+<span class="fc bfc" id="L316" title="All 2 branches covered.">        for (TypeMirror st : Util.getAllSuperClasses(types, type.asType())) {</span>
+<span class="fc" id="L317">            Element ste = types.asElement(st);</span>
+<span class="fc" id="L318">            ElementFilter.fieldsIn(ste.getEnclosedElements()).stream().filter(serializableFields).sorted(bySimpleName)</span>
+<span class="pc" id="L319">                    .map(e -&gt; types.asMemberOf((DeclaredType) st, e)).forEach(fields::add);</span>
+<span class="fc" id="L320">        }</span>
+
+<span class="fc" id="L322">        String data = fields.stream().map(Util::toUniqueString).collect(Collectors.joining());</span>
+
+        try {
+<span class="fc" id="L325">            byte[] bytes = data.getBytes(&quot;UTF-8&quot;);</span>
+
+<span class="fc" id="L327">            MessageDigest md = MessageDigest.getInstance(&quot;SHA&quot;);</span>
+<span class="fc" id="L328">            byte[] hashBytes = md.digest(bytes);</span>
+<span class="fc" id="L329">            long hash = 0;</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">            for (int i = Math.min(hashBytes.length, 8) - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L331">                hash = (hash &lt;&lt; 8) | (hashBytes[i] &amp; 0xFF);</span>
+            }
+<span class="fc" id="L333">            return hash;</span>
+<span class="nc" id="L334">        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L335">            throw new IllegalStateException(</span>
+<span class="nc" id="L336">                    &quot;Could not compute structural ID of a type &quot; + type.getQualifiedName().toString(), e);</span>
+        }
+    }
+
+    /**
+     * Adapted from {@code java.io.ObjectStreamClass#computeDefaultSUID(java.lang.Class)} method.
+     */
+    public static long computeSerialVersionUID(TypeElement type, TypeEnvironment environment) {
+
+<span class="fc" id="L345">        TypeElement javaIoSerializable = environment.getElementUtils().getTypeElement(&quot;java.io.Serializable&quot;);</span>
+
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">        if (!environment.getTypeUtils().isAssignable(type.asType(), javaIoSerializable.asType())) {</span>
+<span class="nc" id="L348">            return 0L;</span>
+        }
+        // if (!Serializable.class.isAssignableFrom(cl) || Proxy.isProxyClass(cl))
+        // {
+        // return 0L;
+        // }
+
+        try {
+<span class="fc" id="L356">            ByteArrayOutputStream bout = new ByteArrayOutputStream();</span>
+<span class="fc" id="L357">            DataOutputStream dout = new DataOutputStream(bout);</span>
+
+<span class="fc" id="L359">            dout.writeUTF(type.getQualifiedName().toString());</span>
+
+<span class="fc" id="L361">            int classMods = asReflectiveModifiers(type, Modifier.PUBLIC, Modifier.FINAL, Modifier.ABSTRACT);</span>
+<span class="pc bpc" id="L362" title="1 of 2 branches missed.">            if (type.getKind() == ElementKind.INTERFACE) {</span>
+<span class="nc" id="L363">                classMods |= java.lang.reflect.Modifier.INTERFACE;</span>
+            }
+            // int classMods = cl.getModifiers() &amp;
+            // (java.lang.reflect.Modifier.PUBLIC | java.lang.reflect.Modifier.FINAL |
+            // java.lang.reflect.Modifier.INTERFACE | java.lang.reflect.Modifier.ABSTRACT);
+
+            /*
+             * compensate for javac bug in which ABSTRACT bit was set for an interface only if the interface declared
+             * methods
+             */
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">            if (type.getKind() == ElementKind.INTERFACE) {</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">                if (ElementFilter.methodsIn(type.getEnclosedElements()).size() &gt; 0) {</span>
+<span class="nc" id="L375">                    classMods |= java.lang.reflect.Modifier.ABSTRACT;</span>
+                } else {
+<span class="nc" id="L377">                    classMods &amp;= ~java.lang.reflect.Modifier.ABSTRACT;</span>
+                }
+            }
+            // Method[] methods = cl.getDeclaredMethods();
+            // if ((classMods &amp; Modifier.INTERFACE) != 0) {
+            // classMods = (methods.length &gt; 0) ?
+            // (classMods | Modifier.ABSTRACT) :
+            // (classMods &amp; ~Modifier.ABSTRACT);
+            // }
+
+<span class="fc" id="L387">            dout.writeInt(classMods);</span>
+
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">            if (!(type.asType() instanceof javax.lang.model.type.ArrayType)) {</span>
+                // if (!cl.isArray()) {
+                /*
+                 * compensate for change in 1.2FCS in which Class.getInterfaces() was modified to return Cloneable and
+                 * Serializable for array classes.
+                 */
+<span class="fc" id="L395">                List&lt;? extends TypeMirror&gt; interfaces = type.getInterfaces();</span>
+<span class="fc" id="L396">                String[] ifaceNames = new String[interfaces.size()];</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">                for (int i = 0; i &lt; interfaces.size(); i++) {</span>
+<span class="fc" id="L398">                    ifaceNames[i] = ((TypeElement) ((DeclaredType) interfaces.get(i)).asElement()).getQualifiedName()</span>
+<span class="fc" id="L399">                            .toString();</span>
+                }
+                // Class[] interfaces = cl.getInterfaces();
+                // String[] ifaceNames = new String[interfaces.length];
+                // for (int i = 0; i &lt; interfaces.length; i++) {
+                // ifaceNames[i] = interfaces[i].getName();
+                // }
+<span class="fc" id="L406">                Arrays.sort(ifaceNames);</span>
+<span class="fc bfc" id="L407" title="All 2 branches covered.">                for (int i = 0; i &lt; ifaceNames.length; i++) {</span>
+<span class="fc" id="L408">                    dout.writeUTF(ifaceNames[i]);</span>
+                }
+            }
+
+<span class="fc" id="L412">            List&lt;? extends VariableElement&gt; fields = ElementFilter.fieldsIn(type.getEnclosedElements());</span>
+<span class="fc" id="L413">            MemberSignature[] fieldSigs = new MemberSignature[fields.size()];</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">            for (int i = 0; i &lt; fields.size(); i++) {</span>
+<span class="fc" id="L415">                fieldSigs[i] = new MemberSignature(fields.get(i));</span>
+            }
+            // Field[] fields = cl.getDeclaredFields();
+            // MemberSignature[] fieldSigs = new MemberSignature[fields.length];
+            // for (int i = 0; i &lt; fields.length; i++) {
+            // fieldSigs[i] = new MemberSignature(fields[i]);
+            // }
+
+<span class="fc" id="L423">            Arrays.sort(fieldSigs, new Comparator&lt;MemberSignature&gt;() {</span>
+                public int compare(MemberSignature o1, MemberSignature o2) {
+<span class="fc" id="L425">                    String name1 = o1.name;</span>
+<span class="fc" id="L426">                    String name2 = o2.name;</span>
+<span class="fc" id="L427">                    return name1.compareTo(name2);</span>
+                }
+            });
+<span class="fc bfc" id="L430" title="All 2 branches covered.">            for (int i = 0; i &lt; fieldSigs.length; i++) {</span>
+<span class="fc" id="L431">                MemberSignature sig = fieldSigs[i];</span>
+<span class="fc" id="L432">                int mods = asReflectiveModifiers(sig.member, Modifier.PUBLIC, Modifier.PRIVATE, Modifier.PROTECTED,</span>
+                        Modifier.STATIC, Modifier.FINAL, Modifier.VOLATILE, Modifier.TRANSIENT);
+                // int mods = sig.member.getModifiers() &amp;
+                // (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED |
+                // Modifier.STATIC | Modifier.FINAL | Modifier.VOLATILE |
+                // Modifier.TRANSIENT);
+
+<span class="fc bfc" id="L439" title="All 4 branches covered.">                if (((mods &amp; java.lang.reflect.Modifier.PRIVATE) == 0)</span>
+                        || ((mods &amp; (java.lang.reflect.Modifier.STATIC | java.lang.reflect.Modifier.TRANSIENT)) == 0)) {
+<span class="fc" id="L441">                    dout.writeUTF(sig.name);</span>
+<span class="fc" id="L442">                    dout.writeInt(mods);</span>
+<span class="fc" id="L443">                    dout.writeUTF(sig.signature);</span>
+                }
+            }
+
+<span class="fc" id="L447">            boolean hasStaticInitializer = false;</span>
+<span class="fc bfc" id="L448" title="All 2 branches covered.">            for (Element e : type.getEnclosedElements()) {</span>
+<span class="pc bpc" id="L449" title="1 of 2 branches missed.">                if (e.getKind() == ElementKind.STATIC_INIT) {</span>
+<span class="nc" id="L450">                    hasStaticInitializer = true;</span>
+<span class="nc" id="L451">                    break;</span>
+                }
+<span class="fc" id="L453">            }</span>
+<span class="pc bpc" id="L454" title="1 of 2 branches missed.">            if (hasStaticInitializer) {</span>
+<span class="nc" id="L455">                dout.writeUTF(&quot;&lt;clinit&gt;&quot;);</span>
+<span class="nc" id="L456">                dout.writeInt(java.lang.reflect.Modifier.STATIC);</span>
+<span class="nc" id="L457">                dout.writeUTF(&quot;()V&quot;);</span>
+            }
+            // if (hasStaticInitializer(cl)) {
+            // dout.writeUTF(&quot;&lt;clinit&gt;&quot;);
+            // dout.writeInt(Modifier.STATIC);
+            // dout.writeUTF(&quot;()V&quot;);
+            // }
+
+<span class="fc" id="L465">            List&lt;ExecutableElement&gt; ctors = ElementFilter.constructorsIn(type.getEnclosedElements());</span>
+<span class="fc" id="L466">            MemberSignature[] consSigs = new MemberSignature[ctors.size()];</span>
+<span class="fc" id="L467">            int i = 0;</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">            for (ExecutableElement ctor : ctors) {</span>
+<span class="fc" id="L469">                consSigs[i++] = new MemberSignature(ctor);</span>
+<span class="fc" id="L470">            }</span>
+            // Constructor[] cons = cl.getDeclaredConstructors();
+            // MemberSignature[] consSigs = new MemberSignature[cons.length];
+            // for (int i = 0; i &lt; cons.length; i++) {
+            // consSigs[i] = new MemberSignature(cons[i]);
+            // }
+
+<span class="fc" id="L477">            Arrays.sort(consSigs, new Comparator&lt;MemberSignature&gt;() {</span>
+                public int compare(MemberSignature o1, MemberSignature o2) {
+<span class="fc" id="L479">                    String sig1 = o1.signature;</span>
+<span class="fc" id="L480">                    String sig2 = o2.signature;</span>
+<span class="fc" id="L481">                    return sig1.compareTo(sig2);</span>
+                }
+            });
+            // Arrays.sort(consSigs, new Comparator() {
+            // public int compare(Object o1, Object o2) {
+            // String sig1 = ((MemberSignature) o1).signature;
+            // String sig2 = ((MemberSignature) o2).signature;
+            // return sig1.compareTo(sig2);
+            // }
+            // });
+
+<span class="fc bfc" id="L492" title="All 2 branches covered.">            for (MemberSignature sig : consSigs) {</span>
+<span class="fc" id="L493">                int mods = asReflectiveModifiers(sig.member, Modifier.PUBLIC, Modifier.PRIVATE, Modifier.PROTECTED,</span>
+                        Modifier.STATIC, Modifier.FINAL, Modifier.SYNCHRONIZED, Modifier.NATIVE, Modifier.ABSTRACT,
+                        Modifier.STRICTFP);
+<span class="fc bfc" id="L496" title="All 2 branches covered.">                if ((mods &amp; java.lang.reflect.Modifier.PRIVATE) == 0) {</span>
+<span class="fc" id="L497">                    dout.writeUTF(&quot;&lt;init&gt;&quot;);</span>
+<span class="fc" id="L498">                    dout.writeInt(mods);</span>
+<span class="fc" id="L499">                    dout.writeUTF(sig.signature.replace('/', '.'));</span>
+                }
+            }
+            // for (int i = 0; i &lt; consSigs.length; i++) {
+            // MemberSignature sig = consSigs[i];
+            // int mods = sig.member.getModifiers() &amp;
+            // (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED |
+            // Modifier.STATIC | Modifier.FINAL |
+            // Modifier.SYNCHRONIZED | Modifier.NATIVE |
+            // Modifier.ABSTRACT | Modifier.STRICT);
+            // if ((mods &amp; Modifier.PRIVATE) == 0) {
+            // dout.writeUTF(&quot;&lt;init&gt;&quot;);
+            // dout.writeInt(mods);
+            // dout.writeUTF(sig.signature.replace('/', '.'));
+            // }
+            // }
+
+<span class="fc" id="L516">            List&lt;ExecutableElement&gt; methods = ElementFilter.methodsIn(type.getEnclosedElements());</span>
+<span class="fc" id="L517">            MemberSignature[] methSigs = new MemberSignature[methods.size()];</span>
+<span class="fc" id="L518">            i = 0;</span>
+<span class="fc bfc" id="L519" title="All 2 branches covered.">            for (ExecutableElement m : methods) {</span>
+<span class="fc" id="L520">                methSigs[i++] = new MemberSignature(m);</span>
+<span class="fc" id="L521">            }</span>
+            // MemberSignature[] methSigs = new MemberSignature[methods.length];
+            // for (int i = 0; i &lt; methods.length; i++) {
+            // methSigs[i] = new MemberSignature(methods[i]);
+            // }
+
+<span class="fc" id="L527">            Arrays.sort(methSigs, new Comparator&lt;MemberSignature&gt;() {</span>
+                public int compare(MemberSignature ms1, MemberSignature ms2) {
+<span class="fc" id="L529">                    int comp = ms1.name.compareTo(ms2.name);</span>
+<span class="pc bpc" id="L530" title="1 of 2 branches missed.">                    if (comp == 0) {</span>
+<span class="nc" id="L531">                        comp = ms1.signature.compareTo(ms2.signature);</span>
+                    }
+<span class="fc" id="L533">                    return comp;</span>
+                }
+            });
+            // Arrays.sort(methSigs, new Comparator() {
+            // public int compare(Object o1, Object o2) {
+            // MemberSignature ms1 = (MemberSignature) o1;
+            // MemberSignature ms2 = (MemberSignature) o2;
+            // int comp = ms1.name.compareTo(ms2.name);
+            // if (comp == 0) {
+            // comp = ms1.signature.compareTo(ms2.signature);
+            // }
+            // return comp;
+            // }
+            // });
+
+<span class="fc bfc" id="L548" title="All 2 branches covered.">            for (MemberSignature sig : methSigs) {</span>
+<span class="fc" id="L549">                int mods = asReflectiveModifiers(sig.member, Modifier.PUBLIC, Modifier.PRIVATE, Modifier.PROTECTED,</span>
+                        Modifier.STATIC, Modifier.FINAL, Modifier.SYNCHRONIZED, Modifier.NATIVE, Modifier.ABSTRACT,
+                        Modifier.STRICTFP);
+<span class="fc bfc" id="L552" title="All 2 branches covered.">                if ((mods &amp; java.lang.reflect.Modifier.PRIVATE) == 0) {</span>
+<span class="fc" id="L553">                    dout.writeUTF(sig.name);</span>
+<span class="fc" id="L554">                    dout.writeInt(mods);</span>
+<span class="fc" id="L555">                    dout.writeUTF(sig.signature.replace('/', '.'));</span>
+                }
+            }
+            // for (int i = 0; i &lt; methSigs.length; i++) {
+            // MemberSignature sig = methSigs[i];
+            // int mods = sig.member.getModifiers() &amp;
+            // (Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED |
+            // Modifier.STATIC | Modifier.FINAL |
+            // Modifier.SYNCHRONIZED | Modifier.NATIVE |
+            // Modifier.ABSTRACT | Modifier.STRICT);
+            // if ((mods &amp; Modifier.PRIVATE) == 0) {
+            // dout.writeUTF(sig.name);
+            // dout.writeInt(mods);
+            // dout.writeUTF(sig.signature.replace('/', '.'));
+            // }
+            // }
+            //
+<span class="fc" id="L572">            dout.flush();</span>
+
+<span class="fc" id="L574">            MessageDigest md = MessageDigest.getInstance(&quot;SHA&quot;);</span>
+<span class="fc" id="L575">            byte[] hashBytes = md.digest(bout.toByteArray());</span>
+<span class="fc" id="L576">            long hash = 0;</span>
+<span class="fc bfc" id="L577" title="All 2 branches covered.">            for (i = Math.min(hashBytes.length, 8) - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L578">                hash = (hash &lt;&lt; 8) | (hashBytes[i] &amp; 0xFF);</span>
+            }
+<span class="fc" id="L580">            return hash;</span>
+<span class="nc" id="L581">        } catch (IOException | NoSuchAlgorithmException ex) {</span>
+<span class="nc" id="L582">            throw new IllegalStateException(</span>
+<span class="nc" id="L583">                    &quot;Could not compute default serialization UID for class: &quot; + type.getQualifiedName().toString(), ex);</span>
+        }
+    }
+
+    /**
+     * Adapted from {@link java.io.ObjectStreamClass.MemberSignature}
+     *
+     * &lt;p&gt;
+     * Class for computing and caching field/constructor/method signatures during serialVersionUID calculation.
+     */
+    private static final class MemberSignature {
+
+        final Element member;
+        final String name;
+        final String signature;
+
+<span class="fc" id="L599">        MemberSignature(VariableElement field) {</span>
+<span class="fc" id="L600">            member = field;</span>
+<span class="fc" id="L601">            name = field.getSimpleName().toString();</span>
+<span class="fc" id="L602">            signature = getSignature(field.asType());</span>
+<span class="fc" id="L603">        }</span>
+
+<span class="fc" id="L605">        MemberSignature(ExecutableElement meth) {</span>
+<span class="fc" id="L606">            member = meth;</span>
+<span class="fc" id="L607">            name = meth.getSimpleName().toString();</span>
+<span class="fc" id="L608">            signature = getSignature(meth.asType());</span>
+<span class="fc" id="L609">        }</span>
+    }
+
+    private static int asReflectiveModifiers(Element el, Modifier... applicableModifiers) {
+<span class="fc" id="L613">        int mods = 0;</span>
+<span class="fc bfc" id="L614" title="All 2 branches covered.">        for (Modifier m : applicableModifiers) {</span>
+<span class="fc bfc" id="L615" title="All 2 branches covered.">            if (el.getModifiers().contains(m)) {</span>
+<span class="pc bpc" id="L616" title="7 of 12 branches missed.">                switch (m) {</span>
+                case ABSTRACT:
+<span class="nc" id="L618">                    mods |= java.lang.reflect.Modifier.ABSTRACT;</span>
+<span class="nc" id="L619">                    break;</span>
+                case FINAL:
+<span class="nc" id="L621">                    mods |= java.lang.reflect.Modifier.FINAL;</span>
+<span class="nc" id="L622">                    break;</span>
+                case NATIVE:
+<span class="nc" id="L624">                    mods |= java.lang.reflect.Modifier.NATIVE;</span>
+<span class="nc" id="L625">                    break;</span>
+                case PRIVATE:
+<span class="fc" id="L627">                    mods |= java.lang.reflect.Modifier.PRIVATE;</span>
+<span class="fc" id="L628">                    break;</span>
+                case PROTECTED:
+<span class="fc" id="L630">                    mods |= java.lang.reflect.Modifier.PROTECTED;</span>
+<span class="fc" id="L631">                    break;</span>
+                case PUBLIC:
+<span class="fc" id="L633">                    mods |= java.lang.reflect.Modifier.PUBLIC;</span>
+<span class="fc" id="L634">                    break;</span>
+                case STATIC:
+<span class="fc" id="L636">                    mods |= java.lang.reflect.Modifier.STATIC;</span>
+<span class="fc" id="L637">                    break;</span>
+                case STRICTFP:
+<span class="nc" id="L639">                    mods |= java.lang.reflect.Modifier.STRICT;</span>
+<span class="nc" id="L640">                    break;</span>
+                case SYNCHRONIZED:
+<span class="nc" id="L642">                    mods |= java.lang.reflect.Modifier.SYNCHRONIZED;</span>
+<span class="nc" id="L643">                    break;</span>
+                case TRANSIENT:
+<span class="fc" id="L645">                    mods |= java.lang.reflect.Modifier.TRANSIENT;</span>
+<span class="fc" id="L646">                    break;</span>
+                case VOLATILE:
+<span class="nc" id="L648">                    mods |= java.lang.reflect.Modifier.VOLATILE;</span>
+<span class="nc" id="L649">                    break;</span>
+                default:
+                    break;
+                }
+            }
+        }
+
+<span class="fc" id="L656">        return mods;</span>
+    }
+
+    /**
+     * Adapted from {@link java.io.ObjectStreamClass}
+     *
+     * &lt;p&gt;
+     * Returns JVM type signature for given class.
+     */
+    private static String getSignature(TypeMirror type) {
+<span class="fc" id="L666">        StringBuilder sbuf = new StringBuilder();</span>
+<span class="fc" id="L667">        type.accept(new SimpleTypeVisitor7&lt;Void, StringBuilder&gt;() {</span>
+            @Override
+            protected Void defaultAction(TypeMirror e, StringBuilder stringBuilder) {
+<span class="nc" id="L670">                return null;</span>
+            }
+
+            @Override
+            public Void visitPrimitive(PrimitiveType t, StringBuilder stringBuilder) {
+<span class="pc bpc" id="L675" title="6 of 9 branches missed.">                switch (t.getKind()) {</span>
+                case BOOLEAN:
+<span class="nc" id="L677">                    stringBuilder.append(&quot;Z&quot;);</span>
+<span class="nc" id="L678">                    break;</span>
+                case BYTE:
+<span class="nc" id="L680">                    stringBuilder.append(&quot;B&quot;);</span>
+<span class="nc" id="L681">                    break;</span>
+                case CHAR:
+<span class="nc" id="L683">                    stringBuilder.append(&quot;C&quot;);</span>
+<span class="nc" id="L684">                    break;</span>
+                case DOUBLE:
+<span class="fc" id="L686">                    stringBuilder.append(&quot;D&quot;);</span>
+<span class="fc" id="L687">                    break;</span>
+                case FLOAT:
+<span class="fc" id="L689">                    stringBuilder.append(&quot;F&quot;);</span>
+<span class="fc" id="L690">                    break;</span>
+                case INT:
+<span class="fc" id="L692">                    stringBuilder.append(&quot;I&quot;);</span>
+<span class="fc" id="L693">                    break;</span>
+                case LONG:
+<span class="nc" id="L695">                    stringBuilder.append(&quot;J&quot;);</span>
+<span class="nc" id="L696">                    break;</span>
+                case SHORT:
+<span class="nc" id="L698">                    stringBuilder.append(&quot;S&quot;);</span>
+<span class="nc" id="L699">                    break;</span>
+                default:
+                    break;
+                }
+
+<span class="fc" id="L704">                return null;</span>
+            }
+
+            @Override
+            public Void visitArray(ArrayType t, StringBuilder stringBuilder) {
+<span class="nc" id="L709">                stringBuilder.append(&quot;[&quot;);</span>
+<span class="nc" id="L710">                t.getComponentType().accept(this, stringBuilder);</span>
+<span class="nc" id="L711">                return null;</span>
+            }
+
+            @Override
+            public Void visitDeclared(DeclaredType t, StringBuilder stringBuilder) {
+<span class="fc" id="L716">                stringBuilder.append(&quot;L&quot;);</span>
+<span class="fc" id="L717">                stringBuilder.append(((TypeElement) t.asElement()).getQualifiedName().toString().replace('.', '/'));</span>
+<span class="fc" id="L718">                stringBuilder.append(&quot;;&quot;);</span>
+
+<span class="fc" id="L720">                return null;</span>
+            }
+
+            @Override
+            public Void visitExecutable(ExecutableType t, StringBuilder stringBuilder) {
+<span class="fc" id="L725">                stringBuilder.append(&quot;(&quot;);</span>
+<span class="fc bfc" id="L726" title="All 2 branches covered.">                for (TypeMirror p : t.getParameterTypes()) {</span>
+<span class="fc" id="L727">                    p.accept(this, stringBuilder);</span>
+<span class="fc" id="L728">                }</span>
+<span class="fc" id="L729">                stringBuilder.append(&quot;)&quot;);</span>
+<span class="fc" id="L730">                t.getReturnType().accept(this, stringBuilder);</span>
+
+<span class="fc" id="L732">                return null;</span>
+            }
+
+            @Override
+            public Void visitNoType(NoType t, StringBuilder stringBuilder) {
+<span class="pc bpc" id="L737" title="1 of 2 branches missed.">                if (t.getKind() == TypeKind.VOID) {</span>
+<span class="fc" id="L738">                    stringBuilder.append(&quot;V&quot;);</span>
+                }
+
+<span class="fc" id="L741">                return null;</span>
+            }
+        }, sbuf);
+
+<span class="fc" id="L745">        return sbuf.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

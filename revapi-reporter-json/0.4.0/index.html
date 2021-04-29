@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>JSON Reporter :: Revapi</title>
+    <link rel="canonical" href="https://revapi.org/revapi-reporter-json/0.4.0/index.html">
+    <meta name="generator" content="Antora 2.3.3">
+<link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/news.css">
+<link rel="stylesheet" href="../../_/css/additions.css">
+
+<link rel="alternate" type="application/rss+xml" title="Revapi RSS" href="../../_/../revapi-site/main/news/_attachments/news.atom" />
+<link rel="stylesheet" href="../../_/css/search.css">
+  </head>
+  <body class="article">
+<header class="header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="https://revapi.org">Revapi</a>
+              <div class="navbar-item">
+                <input id="search-input" type="text" placeholder="Search docs">
+              </div>
+            <button class="navbar-burger" data-target="topbar-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div id="topbar-nav" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="../../revapi-site/main/index.html/../news/index.html">News</a>
+                <a class="navbar-item" href="../../revapi-site/main/index.html/../downloads.html">Downloads</a>
+                <a class="navbar-item" href="https://diff.revapi.org">Online Check</a>
+                <a class="navbar-item" href="https://github.com/revapi/revapi"><img src="../../_/img/github.svg" alt="Github Repository"/></a>
+                <a class="navbar-item" href="https://twitter.com/revapi_org"><img src="../../_/img/twitter.svg" alt="Twitter"/></a>
+                <a class="navbar-item" href="../../_/../revapi-site/0/news/_attachments/news.atom"><img src="../../_/img/rss.svg" alt="RSS"/></a>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="revapi-reporter-json" data-version="0.4.0">
+  <aside class="nav">
+    <div class="panels">
+    <div class="nav-panel-menu is-active" data-panel="menu">
+        <nav class="nav-menu">
+                <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/faq.html">FAQ</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.0/architecture.html">Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.0/configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.0/extending-revapi.html">Extending Revapi</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/building.html">Building</a>
+  </li>
+</ul>
+  </li>
+</ul>
+            <ul class="nav-list">
+                <li class="nav-item" data-depth="0">
+                    <hr/>
+                    <i class="nav-text">Modules</i>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-ant-task/0.12.0/index.html">
+                                    <span class="nav-text">Ant Task</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi/0.14.0/index.html">
+                                    <span class="nav-text">API</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-basic-features/0.12.0/index.html">
+                                    <span class="nav-text">Basic Features</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-standalone/0.11.0/index.html">
+                                    <span class="nav-text">CLI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-file-base/0.4.0/index.html">
+                                    <span class="nav-text">File Reporter Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-jackson/0.3.0/index.html">
+                                    <span class="nav-text">Jackson Analyzer Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java/0.24.0/index.html">
+                                    <span class="nav-text">Java Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java-spi/0.23.0/index.html">
+                                    <span class="nav-text">Java Analyzer SPI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-json/0.3.0/index.html">
+                                    <span class="nav-text">JSON Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item is-active is-current-page" data-depth="0">
+                                <a class="nav-link" href="index.html">
+                                    <span class="nav-text">JSON Reporter</span>
+                                </a>
+                                    <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/apidocs/index.html">Javadoc</a>
+  </li>
+</ul>
+  </li>
+</ul>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-maven-plugin/0.14.0/index.html">
+                                    <span class="nav-text">Maven Plugin</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-text/0.14.0/index.html">
+                                    <span class="nav-text">Text Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-yaml/0.3.0/index.html">
+                                    <span class="nav-text">YAML Analyzer</span>
+                                </a>
+                            </li>
+                </li>
+            </ul>
+        </nav>
+    </div>
+<div class="nav-panel-explore" data-panel="explore" style="display: none">
+  <div class="context">
+    <span class="title">JSON Reporter</span>
+    <span class="version">0.4.0</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <span class="title">Ant Task</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-ant-task/0.12.0/index.html">0.12.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">API</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Basic Features</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-basic-features/0.12.0/index.html">0.12.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">CLI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-standalone/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.0/index.html">0.10.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.8/index.html">0.9.8</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.7/index.html">0.9.7</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.6/index.html">0.9.6</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">File Reporter Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-file-base/0.4.0/index.html">0.4.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Jackson Analyzer Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-jackson/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java/0.24.0/index.html">0.24.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.2/index.html">0.23.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.1/index.html">0.23.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.0/index.html">0.22.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer SPI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java-spi/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.2/index.html">0.22.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.0/index.html">0.22.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.1/index.html">0.21.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.0/index.html">0.21.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-json/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <span class="title">JSON Reporter</span>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">0.4.0</a>
+        </li>
+        <li class="version">
+          <a href="../0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Maven Plugin</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-maven-plugin/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.6/index.html">0.13.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.5/index.html">0.13.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.4/index.html">0.13.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.3/index.html">0.13.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.2/index.html">0.12.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Revapi Site</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-site/main/index.html">main</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Text Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-text/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">YAML Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-yaml/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../revapi-site/main/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">JSON Reporter</a></li>
+  </ul>
+</nav>
+  Version:
+<div class="page-versions">
+    <button class="version-menu-toggle" title="Versions of the component">
+      0.4.0
+    </button>
+  <div class="version-menu">
+        <a class="version is-current" href="index.html">
+
+          0.4.0
+        </a>
+        <a class="version" href="../0.3.2/index.html">
+
+          0.3.2
+        </a>
+        <a class="version" href="../0.3.1/index.html">
+
+          0.3.1
+        </a>
+        <a class="version" href="../0.3.0/index.html">
+
+          0.3.0
+        </a>
+        <a class="version" href="../0.2.1/index.html">
+
+          0.2.1
+        </a>
+        <a class="version" href="../0.2.0/index.html">
+
+          0.2.0
+        </a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/revapi/revapi/edit/main/revapi-reporter-json/src/site/modules/ROOT/pages/index.adoc" title="Edit the latest version of this page">Edit this page</a></div>
+</div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">JSON Reporter</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Extension</strong>: <code>revapi.reporter.json</code></p>
+</div>
+<div class="paragraph">
+<p>This extension outputs the differences as JSON to some file or standard output.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_usage"><a class="anchor" href="#_usage"></a>Usage</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Revapi needs to be configured to use this extension, it is not present by default. In case of maven plugin, you need to
+add the extension as a dependency of the maven plugin like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;build&gt;
+  ...
+  &lt;plugin&gt;
+    &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+    &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;...&lt;/version&gt;
+    &lt;dependencies&gt;
+      &lt;dependency&gt;
+        &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+        &lt;artifactId&gt;revapi-reporter-json&lt;/artifactId&gt;
+        &lt;version&gt;...&lt;/version&gt;
+      &lt;/dependency&gt;
+      ...
+    &lt;/dependencies&gt;
+    &lt;configuration&gt;
+      &lt;analysisConfiguration&gt;
+        &lt;revapi.reporter.json&gt;
+          ... configure the extension here ...
+        &lt;/revapi.reporter.json&gt;
+      &lt;/analysisConfiguration&gt;
+    &lt;/configuration&gt;
+  &lt;/plugin&gt;
+  ...
+&lt;/build&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_configuration"><a class="anchor" href="#_sample_configuration"></a>Sample Configuration</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javascript hljs" data-lang="javascript">[
+  {
+    "extension": "revapi.reporter.json",
+    "configuration": {
+      "minSeverity": "POTENTIALLY_BREAKING",
+      "minCriticality": "documented",
+      "output" : "out",
+      "indent": false,
+      "append": false,
+      "keepEmptyFile": true
+    }
+  }
+]</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;analysisConfiguration&gt;
+  &lt;revapi.reporter.json&gt;
+    &lt;minSeverity&gt;POTENTIALLY_BREAKING&lt;/minSeverity&gt;
+    &lt;minCriticality&gt;documented&lt;/minCriticality&gt;
+    &lt;output&gt;out&lt;/output&gt;
+    &lt;indent&gt;false&lt;/indent&gt;
+    &lt;append&gt;false&lt;/append&gt;
+    &lt;keepEmptyFile&gt;true&lt;/keepEmptyFile&gt;
+  &lt;/revapi.reporter.json&gt;
+&lt;/analysisConfiguration&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_properties"><a class="anchor" href="#_properties"></a>Properties</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>minSeverity</code></dt>
+<dd>
+<p>The minimum severity of problems that will be included in the output. Possible values are <code>EQUIVALENT</code>, <code>NON_BREAKING</code>,
+<code>POTENTIALLY_BREAKING</code> and <code>BREAKING</code>. At least one of <code>minSeverity</code> and <code>minCriticality</code> should be specified.</p>
+</dd>
+<dt class="hdlist1"><code>minCriticality</code></dt>
+<dd>
+<p>The minimum criticality of problems that will be included in the output. The possible values are the ones defined
+in the pipeline configuration of the analysis. By default, these are <code>allowed</code>, <code>documented</code>, <code>highlight</code> and <code>error</code>.</p>
+</dd>
+<dt class="hdlist1"><code>output</code></dt>
+<dd>
+<p>The path to the output file. Two special values are recognized: <code>out</code> (which is the default value of this property) and
+<code>err</code> which represent standard output or standard error output respectively.</p>
+</dd>
+<dt class="hdlist1"><code>append</code></dt>
+<dd>
+<p>Whether to append to the chosen output or whether to overwrite it (doesn&#8217;t make sense for standard (error) output).
+The default value is <code>false</code> meaning the output file will be overwritten if it already exists.</p>
+</dd>
+<dt class="hdlist1"><code>keepEmptyFile</code></dt>
+<dd>
+<p>Defaults to <code>true</code>. If <code>true</code> the output file is kept even if no reports were written to it and thus it is empty. Has
+no effect if <code>append</code> is set to <code>true</code>.</p>
+</dd>
+<dt class="hdlist1"><code>indent</code></dt>
+<dd>
+<p>Whether to indent the JSON or leave it in the minimal form. <code>false</code> by default to produce minimal
+output.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_output_format"><a class="anchor" href="#_output_format"></a>Output Format</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The JSON report generated by this extension conforms to the following schema.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "The Revapi check code identifying the found problem."
+      },
+      "old": {
+        "type": "string",
+        "description": "The textual representation of the element in the old API"
+      },
+      "new": {
+        "type": "string",
+        "description": "The textual representation of the element in the new API"
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the problem in a human readable form"
+      },
+      "description": {
+        "type": "string",
+        "description": "The description of the found problem in a human readable form"
+      },
+      "classification": {
+        "type": "array",
+        "description": "The classification of the problem",
+        "items": {
+          "type": "object",
+          "properties": {
+            "compatibility": {
+              "type": "string",
+              "description": "The type of the compatibility this problem breaks",
+              "enum": ["BINARY", "SOURCE", "SEMANTIC", "OTHER"]
+            },
+            "severity": {
+              "type": "string",
+              "description": "The severity of the problem for given compatibility type",
+              "enum": ["EQUIVALENT", "NON_BREAKING", "POTENTIALLY_BREAKING", "BREAKING"]
+            }
+          }
+        }
+      },
+      "attachments": {
+        "type": "array",
+        "description": "The attachments of the difference that the analyzer added to further identify and describe the problem",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the attachment"
+            },
+            "value": {
+              "type": "string",
+              "description": "The value of the attachment"
+            }
+          }
+        }
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An example report might therefore look something like this.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">[
+  {
+    "code": "java.method.addedToInterface",
+    "old": null,
+    "new": "method void com.acme.diy.Toolbox::addHammer()",
+    "name": "method added to interface",
+    "description": "Method was added to an interface.",
+    "classification": [
+      {
+        "compatibility": "BINARY",
+        "severity": "NON_BREAKING"
+      },
+      {
+        "compatibility": "SOURCE",
+        "severity": "BREAKING"
+      },
+      {
+        "compatibility": "SEMANTIC",
+        "severity": "POTENTIALLY_BREAKING"
+      }
+    ],
+    "attachments": [
+      {
+        "name": "package",
+        "value": "com.acme.diy"
+      },
+      {
+        "name": "classQualifiedName",
+        "value": "com.acme.diy.Toolbox"
+      },
+      {
+        "name": "classSimpleName",
+        "value": "Toolbox"
+      },
+      {
+        "name": "methodName",
+        "value": "addHammer"
+      },
+      {
+        "name": "newArchive",
+        "value": "com.acme:toolbox:jar:1.1-SNAPSHOT"
+      },
+      {
+        "name": "elementKind",
+        "value": "method"
+      },
+    ]
+  }
+]</code></pre>
+</div>
+</div>
+</div>
+</div>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+    <p>Copyright 2014-2021 Lukas Krejci.</p>
+    <p>This site was built using <a href="https://antora.org">Antora 2.3.3</a>.</p>
+</footer>
+<script>
+  window.antora = window.antora || {}
+  window.antora.basePath = '../..'
+  window.antora.pagePath = '/revapi-reporter-json/0.4.0/index.html'
+</script>
+<script src="../../_/js/site.js"></script>
+  <script src="../../_/js/vendor/lunr.js"></script>
+  <script src="../../_/js/vendor/search.js"></script>
+  <script async src="../../_/../search-index.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script>
+    function toggleVersionSelector(id) {
+        var sel = document.getElementById(id)
+        if (!sel) {
+            return
+        }
+
+        if (sel.style.display == 'none') {
+            sel.style.display = 'block';
+        } else {
+            sel.style.display = 'none';
+        }
+    }
+</script>  </body>
+</html>

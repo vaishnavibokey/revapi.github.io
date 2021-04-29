@@ -1,0 +1,806 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VersionsTransform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">VersionsTransform.java</span></div><h1>VersionsTransform.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.basic;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.AnalysisContext;
+import org.revapi.Archive;
+import org.revapi.CompatibilityType;
+import org.revapi.Criticality;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Element;
+import org.revapi.Reference;
+import org.revapi.TransformationResult;
+import org.revapi.base.BaseDifferenceTransform;
+
+<span class="fc" id="L60">public class VersionsTransform&lt;E extends Element&lt;E&gt;&gt; extends BaseDifferenceTransform&lt;E&gt; {</span>
+<span class="fc" id="L61">    private static final Pattern[] ALL_CODES = new Pattern[] { Pattern.compile(&quot;.*&quot;) };</span>
+<span class="fc" id="L62">    private static final Pattern[] NO_CODES = new Pattern[0];</span>
+
+    private boolean enabled;
+    private List&lt;String&gt; passThroughDifferences;
+    private VersionIncreaseConfig allowedInMajor;
+    private VersionIncreaseConfig allowedInMinor;
+    private VersionIncreaseConfig allowedInPatch;
+    private VersionIncreaseConfig allowedInSuffix;
+    private DifferenceModification allowedModify;
+    private DifferenceModification disallowedModify;
+    private Map&lt;String, VersionRecord&gt; archiveHints;
+
+    private static DifferenceSeverity getMaxSeverity(Difference diff) {
+<span class="fc" id="L75">        return diff.classification.values().stream().max(Comparator.comparingInt(Enum::ordinal))</span>
+<span class="fc" id="L76">                .orElse(DifferenceSeverity.EQUIVALENT);</span>
+    }
+
+    @Override
+    public Pattern[] getDifferenceCodePatterns() {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        return enabled ? ALL_CODES : NO_CODES;</span>
+    }
+
+    @Override
+    public TransformationResult tryTransform(@Nullable E oldElement, @Nullable E newElement, Difference difference) {
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (!enabled) {</span>
+<span class="nc" id="L87">            return TransformationResult.keep();</span>
+        }
+
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (passThroughDifferences.contains(difference.code)) {</span>
+<span class="nc" id="L91">            return TransformationResult.keep();</span>
+        }
+
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        Archive.Versioned oldArchive = (Archive.Versioned) (oldElement == null ? null : oldElement.getArchive());</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        Archive.Versioned newArchive = (Archive.Versioned) (newElement == null ? null : newElement.getArchive());</span>
+
+<span class="fc" id="L97">        DifferenceSeverity maxSeverity = getMaxSeverity(difference);</span>
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        Archive.Versioned decidingArchive = newArchive == null ? oldArchive : newArchive;</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (decidingArchive == null) {</span>
+<span class="nc" id="L101">            throw new IllegalStateException(&quot;At least one of the archives must not be null when comparing elements &quot;</span>
+                    + oldElement + &quot; and &quot; + newElement);
+        }
+
+        boolean allowed;
+<span class="fc" id="L106">        VersionRecord versionRecord = archiveHints.get(decidingArchive.getBaseName());</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (versionRecord == null) {</span>
+            // the difference was found in archives that are not part of the primary API (i.e. the element is in some
+            // supplementary archive). We need to find all elements in the primary API and decide about the change
+            // from the point of view of the archive of the with the smallest version change.
+
+<span class="fc" id="L112">            Set&lt;Archive.Versioned&gt; primaryReferencingArchives = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">            if (newElement == null) {</span>
+<span class="nc" id="L114">                getAllReferencingAPIElements(oldElement, primaryReferencingArchives, new HashSet&lt;&gt;());</span>
+            } else {
+<span class="fc" id="L116">                getAllReferencingAPIElements(newElement, primaryReferencingArchives, new HashSet&lt;&gt;());</span>
+            }
+
+<span class="fc" id="L119">            versionRecord = primaryReferencingArchives.stream().map(a -&gt; archiveHints.get(a.getBaseName())).reduce(null,</span>
+                    (a, b) -&gt; {
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">                        if (a == null) {</span>
+<span class="fc" id="L122">                            return b;</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                        } else if (b == null) {</span>
+<span class="nc" id="L124">                            return a;</span>
+                        } else {
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                            return a.versionChange.compareTo(b.versionChange) &gt; 0 ? b : a;</span>
+                        }
+                    });
+
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (versionRecord == null) {</span>
+                // this should really never happen, because we assume that any change in the supplementary archives
+                // is only visible if there is a referencing element in the primary api. But let's just not throw any
+                // exceptions and only communicate our findings to the user somehow.
+<span class="fc" id="L134">                return TransformationResult.replaceWith(markUnhandled(difference));</span>
+            }
+        }
+
+<span class="pc bpc" id="L138" title="5 of 7 branches missed.">        switch (versionRecord.versionChange) {</span>
+        case NEW:
+            // either this is a truly new element in a new primary API archive or an element that has moved from
+            // a supplementary archive into a new primary API archive.
+            // In either case, we can allow this change purely from a versioning perspective.
+<span class="nc" id="L143">            allowed = true;</span>
+<span class="nc" id="L144">            break;</span>
+        case REMOVED:
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (newElement == null) {</span>
+                // the original archive is no longer in the API, and the element was really removed, so this is allowed.
+<span class="nc" id="L148">                allowed = true;</span>
+            } else {
+                // the archive disappeared but the element was moved to another archive. The only way this can happen
+                // is that the element moved from a primary archives into a supplementary archive but is still exposed
+                // in the API (it could not have been moved into a primary API archive, because we would have detected
+                // that - the new archives take precedence when determining the change).
+                //
+                // But that would only be possible if the newElement didn't have an archive assigned - because otherwise
+                // we would have found some archive for the new element. This case is not supported and we have to bail
+                // somehow.
+<span class="nc" id="L158">                return TransformationResult.replaceWith(markUnhandled(difference));</span>
+            }
+            break;
+        case SUFFIX:
+<span class="fc" id="L162">            allowed = allowedInSuffix.allows(versionRecord, difference, maxSeverity);</span>
+<span class="fc" id="L163">            break;</span>
+        case PATCH:
+<span class="fc" id="L165">            allowed = allowedInPatch.allows(versionRecord, difference, maxSeverity);</span>
+<span class="fc" id="L166">            break;</span>
+        case MINOR:
+<span class="nc" id="L168">            allowed = allowedInMinor.allows(versionRecord, difference, maxSeverity);</span>
+<span class="nc" id="L169">            break;</span>
+        case MAJOR:
+<span class="nc" id="L171">            allowed = allowedInMajor.allows(versionRecord, difference, maxSeverity);</span>
+<span class="nc" id="L172">            break;</span>
+        default:
+<span class="nc" id="L174">            throw new IllegalStateException(&quot;Unhandled version change kind: &quot; + versionRecord.versionChange);</span>
+        }
+
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (allowed) {</span>
+<span class="fc" id="L178">            return allowedModify.modify(difference);</span>
+        } else {
+<span class="fc" id="L180">            return disallowedModify.modify(difference);</span>
+        }
+    }
+
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L186">        return &quot;revapi.versions&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="nc" id="L192">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/versions-schema.json&quot;),</span>
+                StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L198">        JsonNode config = analysisContext.getConfigurationNode();</span>
+
+<span class="fc" id="L200">        enabled = config.path(&quot;enabled&quot;).asBoolean(false);</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        if (!enabled) {</span>
+<span class="nc" id="L202">            return;</span>
+        }
+
+<span class="fc" id="L205">        Map&lt;String, Archive.Versioned&gt; oldArchives = StreamSupport</span>
+<span class="fc" id="L206">                .stream(analysisContext.getOldApi().getArchives().spliterator(), false).map(a -&gt; (Archive.Versioned) a)</span>
+<span class="fc" id="L207">                .collect(Collectors.toMap(Archive.Versioned::getBaseName, identity()));</span>
+<span class="fc" id="L208">        Map&lt;String, Archive.Versioned&gt; newArchives = StreamSupport</span>
+<span class="fc" id="L209">                .stream(analysisContext.getNewApi().getArchives().spliterator(), false).map(a -&gt; (Archive.Versioned) a)</span>
+<span class="fc" id="L210">                .collect(Collectors.toMap(Archive.Versioned::getBaseName, identity()));</span>
+
+<span class="pc bpc" id="L212" title="2 of 4 branches missed.">        if (oldArchives.isEmpty() || newArchives.isEmpty()) {</span>
+<span class="nc" id="L213">            enabled = false;</span>
+<span class="nc" id="L214">            return;</span>
+        }
+
+<span class="fc" id="L217">        passThroughDifferences = StreamSupport.stream(config.path(&quot;passThroughDifferences&quot;).spliterator(), false)</span>
+<span class="fc" id="L218">                .map(JsonNode::asText).collect(toList());</span>
+
+<span class="fc" id="L220">        allowedInMajor = VersionIncreaseConfig.parse(analysisContext,</span>
+<span class="fc" id="L221">                config.path(&quot;versionIncreaseAllows&quot;).path(&quot;major&quot;));</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">        if (allowedInMajor == null) {</span>
+<span class="fc" id="L223">            allowedInMajor = VersionIncreaseConfig.DEFAULT_MAJOR;</span>
+        }
+
+<span class="fc" id="L226">        allowedInMinor = VersionIncreaseConfig.parse(analysisContext,</span>
+<span class="fc" id="L227">                config.path(&quot;versionIncreaseAllows&quot;).path(&quot;minor&quot;));</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        if (allowedInMinor == null) {</span>
+<span class="fc" id="L229">            allowedInMinor = VersionIncreaseConfig.DEFAULT_MINOR;</span>
+        }
+
+<span class="fc" id="L232">        allowedInPatch = VersionIncreaseConfig.parse(analysisContext,</span>
+<span class="fc" id="L233">                config.path(&quot;versionIncreaseAllows&quot;).path(&quot;patch&quot;));</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        if (allowedInPatch == null) {</span>
+<span class="fc" id="L235">            allowedInPatch = VersionIncreaseConfig.DEFAULT_PATCH;</span>
+        }
+
+<span class="fc" id="L238">        allowedInSuffix = VersionIncreaseConfig.parse(analysisContext,</span>
+<span class="fc" id="L239">                config.path(&quot;versionIncreaseAllows&quot;).path(&quot;suffix&quot;));</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">        if (allowedInSuffix == null) {</span>
+<span class="fc" id="L241">            allowedInSuffix = VersionIncreaseConfig.DEFAULT_SUFFIX;</span>
+        }
+
+<span class="fc" id="L244">        allowedModify = DifferenceModification.parseModify(analysisContext, config.path(&quot;onAllowed&quot;));</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (allowedModify == null) {</span>
+<span class="fc" id="L246">            allowedModify = new DifferenceModification(emptyMap(), null, null, null,</span>
+<span class="fc" id="L247">                    singletonMap(&quot;breaksVersioningRules&quot;, &quot;false&quot;));</span>
+        }
+<span class="fc" id="L249">        disallowedModify = DifferenceModification.parseModify(analysisContext, config.path(&quot;onDisallowed&quot;));</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">        if (disallowedModify == null) {</span>
+<span class="fc" id="L251">            Criticality breakingCriticality = analysisContext.getDefaultCriticality(DifferenceSeverity.BREAKING);</span>
+<span class="fc" id="L252">            disallowedModify = new DifferenceModification(emptyMap(), breakingCriticality, null, null,</span>
+<span class="fc" id="L253">                    singletonMap(&quot;breaksVersioningRules&quot;, &quot;true&quot;));</span>
+        }
+
+<span class="fc" id="L256">        boolean semantic0 = config.path(&quot;semantic0&quot;).asBoolean(true);</span>
+
+        // now compute the change hints on the archives
+<span class="fc" id="L259">        archiveHints = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        for (Map.Entry&lt;String, Archive.Versioned&gt; e : oldArchives.entrySet()) {</span>
+<span class="fc" id="L261">            Archive.Versioned oldArchive = e.getValue();</span>
+<span class="fc" id="L262">            Archive.Versioned newArchive = newArchives.remove(e.getKey());</span>
+
+<span class="fc" id="L264">            Version oldVersion = Version.parse(oldArchive.getVersion());</span>
+
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">            if (newArchive == null) {</span>
+                // the old archive is no longer part of the API and the classes from it are most probably part
+                // of some other archive, possibly in the new API.
+                // if we find some difference on some element from such archives, we can encounter:
+                // 1) The old was removed (i.e. there is no counterpart anywhere in the new API)
+                // 2) The old exists in other archive with some changes
+                //
+                // In the first case, we should not allow any severity on the old archive. In the second case,
+                // we should decide on the semver result based on the version change of the new archive.
+                //
+                // Therefore, here we just assume the first case. The second case is automatically handled by
+                // the fact that we prioritize the new element when looking for the archive in tryTransform().
+<span class="nc" id="L278">                archiveHints.put(oldArchive.getBaseName(),</span>
+                        new VersionRecord(oldArchive, null, oldVersion, null, VersionChange.REMOVED));
+<span class="nc" id="L280">                continue;</span>
+            }
+
+<span class="fc" id="L283">            Version newVersion = Version.parse(newArchive.getVersion());</span>
+
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">            boolean majorIncrease = oldVersion.major &lt; newVersion.major;</span>
+<span class="pc bpc" id="L286" title="2 of 4 branches missed.">            boolean minorIncrease = oldVersion.major == newVersion.major &amp;&amp; oldVersion.minor &lt; newVersion.minor;</span>
+<span class="pc bpc" id="L287" title="2 of 6 branches missed.">            boolean patchIncrease = oldVersion.major == newVersion.major &amp;&amp; oldVersion.minor == newVersion.minor</span>
+                    &amp;&amp; oldVersion.patch &lt; newVersion.patch;
+<span class="pc bpc" id="L289" title="2 of 6 branches missed.">            boolean suffixChange = oldVersion.major == newVersion.major &amp;&amp; oldVersion.minor == newVersion.minor</span>
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">                    &amp;&amp; oldVersion.patch == newVersion.patch &amp;&amp; !Objects.equals(oldVersion.suffix, newVersion.suffix);</span>
+
+            VersionChange versionChange;
+<span class="pc bpc" id="L293" title="4 of 6 branches missed.">            if (semantic0 &amp;&amp; oldVersion.major == 0 &amp;&amp; !majorIncrease) {</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">                if (minorIncrease) {</span>
+<span class="nc" id="L295">                    versionChange = VersionChange.MAJOR;</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">                } else if (patchIncrease) {</span>
+<span class="nc" id="L297">                    versionChange = VersionChange.MAJOR;</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                } else if (suffixChange) {</span>
+<span class="nc" id="L299">                    versionChange = VersionChange.MAJOR;</span>
+                } else {
+<span class="nc" id="L301">                    versionChange = VersionChange.NEW;</span>
+                }
+            } else {
+<span class="pc bpc" id="L304" title="1 of 2 branches missed.">                if (majorIncrease) {</span>
+<span class="nc" id="L305">                    versionChange = VersionChange.MAJOR;</span>
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">                } else if (minorIncrease) {</span>
+<span class="nc" id="L307">                    versionChange = VersionChange.MINOR;</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">                } else if (patchIncrease) {</span>
+<span class="fc" id="L309">                    versionChange = VersionChange.PATCH;</span>
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">                } else if (suffixChange) {</span>
+<span class="fc" id="L311">                    versionChange = VersionChange.SUFFIX;</span>
+                } else {
+<span class="nc" id="L313">                    versionChange = VersionChange.NEW;</span>
+                }
+            }
+
+<span class="fc" id="L317">            archiveHints.put(newArchive.getBaseName(),</span>
+                    new VersionRecord(oldArchive, newArchive, oldVersion, newVersion, versionChange));
+<span class="fc" id="L319">        }</span>
+
+        // process the archives in the new API that are not present in the old API
+<span class="pc bpc" id="L322" title="1 of 2 branches missed.">        for (Map.Entry&lt;String, Archive.Versioned&gt; e : newArchives.entrySet()) {</span>
+<span class="nc" id="L323">            Version newVersion = Version.parse(e.getValue().getVersion());</span>
+
+            // There are again 2 cases of the element that we can encounter:
+            // 1) The element is brand new (no counter part in any of the archives of the old API)
+            // 2) The element has moved from another archive with changes
+<span class="nc" id="L328">            archiveHints.put(e.getKey(), new VersionRecord(null, e.getValue(), null, newVersion, VersionChange.NEW));</span>
+<span class="nc" id="L329">        }</span>
+
+<span class="fc" id="L331">    }</span>
+
+    private static Difference markUnhandled(Difference orig) {
+<span class="fc" id="L334">        return Difference.copy(orig).addAttachment(&quot;breaksVersioningRules&quot;, &quot;unknown&quot;).build();</span>
+    }
+
+    private void getAllReferencingAPIElements(@Nullable E element, Set&lt;Archive.Versioned&gt; results, Set&lt;E&gt; processed) {
+<span class="pc bpc" id="L338" title="2 of 4 branches missed.">        if (element == null || processed.contains(element)) {</span>
+<span class="nc" id="L339">            return;</span>
+        }
+
+<span class="fc" id="L342">        processed.add(element);</span>
+
+<span class="fc bfc" id="L344" title="All 2 branches covered.">        if (element.getApi().getArchiveRole(element.getArchive()) == Archive.Role.PRIMARY) {</span>
+<span class="fc" id="L345">            results.add((Archive.Versioned) element.getArchive());</span>
+        }
+
+<span class="fc bfc" id="L348" title="All 2 branches covered.">        for (Reference&lt;E&gt; reference : element.getReferencingElements()) {</span>
+<span class="fc" id="L349">            E el = reference.getElement();</span>
+<span class="fc" id="L350">            getAllReferencingAPIElements(el, results, processed);</span>
+<span class="fc" id="L351">        }</span>
+<span class="fc" id="L352">    }</span>
+
+    private static class VersionIncreaseConfig {
+<span class="fc" id="L355">        static final VersionIncreaseConfig DEFAULT_MAJOR = new VersionIncreaseConfig(singletonList(new IncreaseAllows(</span>
+<span class="fc" id="L356">                false, SeverityCheck.BREAKING, null, null, null, emptyMap(), emptyMap(), emptyList(), null, null)));</span>
+<span class="fc" id="L357">        static final VersionIncreaseConfig DEFAULT_MINOR = new VersionIncreaseConfig(</span>
+<span class="fc" id="L358">                singletonList(new IncreaseAllows(false, SeverityCheck.NON_BREAKING, null, null, null, emptyMap(),</span>
+<span class="fc" id="L359">                        emptyMap(), emptyList(), null, null)));;</span>
+<span class="fc" id="L360">        static final VersionIncreaseConfig DEFAULT_PATCH = new VersionIncreaseConfig(singletonList(new IncreaseAllows(</span>
+<span class="fc" id="L361">                false, SeverityCheck.EQUIVALENT, null, null, null, emptyMap(), emptyMap(), emptyList(), null, null)));;</span>
+<span class="fc" id="L362">        static final VersionIncreaseConfig DEFAULT_SUFFIX = new VersionIncreaseConfig(singletonList(new IncreaseAllows(</span>
+<span class="fc" id="L363">                false, SeverityCheck.EQUIVALENT, null, null, null, emptyMap(), emptyMap(), emptyList(), null, null)));;</span>
+
+        final List&lt;IncreaseAllows&gt; allows;
+
+        static @Nullable VersionIncreaseConfig parse(AnalysisContext ctx, JsonNode node) {
+<span class="fc bfc" id="L368" title="All 2 branches covered.">            if (node.isMissingNode()) {</span>
+<span class="fc" id="L369">                return null;</span>
+            }
+
+<span class="fc" id="L372">            List&lt;IncreaseAllows&gt; parsedAllows = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">            if (node.isObject()) {</span>
+<span class="fc" id="L374">                parsedAllows.add(parseAllows(ctx, node));</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            } else if (node.isArray()) {</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">                for (JsonNode allows : node) {</span>
+<span class="nc" id="L377">                    IncreaseAllows a = parseAllows(ctx, allows);</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">                    if (a != null) {</span>
+<span class="nc" id="L379">                        parsedAllows.add(a);</span>
+                    }
+<span class="nc" id="L381">                }</span>
+            } else {
+<span class="nc" id="L383">                throw new IllegalArgumentException(</span>
+                        &quot;Expecting an object or array when specifying the allowed changes in a version increase.&quot;);
+            }
+
+<span class="fc" id="L387">            return new VersionIncreaseConfig(parsedAllows);</span>
+        }
+
+        private static @Nullable IncreaseAllows parseAllows(AnalysisContext ctx, JsonNode node) {
+<span class="pc bpc" id="L391" title="1 of 2 branches missed.">            if (!node.isObject()) {</span>
+<span class="nc" id="L392">                return null;</span>
+            }
+
+<span class="fc" id="L395">            boolean regex = node.path(&quot;regex&quot;).asBoolean(false);</span>
+            @Nullable
+<span class="fc" id="L397">            String severity = node.path(&quot;severity&quot;).asText(null);</span>
+            @Nullable
+<span class="fc" id="L399">            String criticality = node.path(&quot;criticality&quot;).asText(null);</span>
+            @Nullable
+<span class="fc" id="L401">            String code = node.path(&quot;code&quot;).asText(null);</span>
+            @Nullable
+<span class="fc" id="L403">            String justification = node.path(&quot;justification&quot;).asText(null);</span>
+<span class="fc" id="L404">            Map&lt;String, String&gt; attachments = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L405">            Iterator&lt;Map.Entry&lt;String, JsonNode&gt;&gt; it = node.path(&quot;attachments&quot;).fields();</span>
+<span class="fc bfc" id="L406" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L407">                Map.Entry&lt;String, JsonNode&gt; entry = it.next();</span>
+<span class="fc" id="L408">                attachments.put(entry.getKey(), entry.getValue().asText());</span>
+<span class="fc" id="L409">            }</span>
+
+<span class="fc" id="L411">            Map&lt;CompatibilityType, DifferenceSeverity&gt; classification = new EnumMap&lt;&gt;(CompatibilityType.class);</span>
+<span class="fc" id="L412">            it = node.path(&quot;classification&quot;).fields();</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L414">                Map.Entry&lt;String, JsonNode&gt; entry = it.next();</span>
+<span class="fc" id="L415">                classification.put(CompatibilityType.valueOf(entry.getKey()),</span>
+<span class="fc" id="L416">                        DifferenceSeverity.valueOf(entry.getValue().asText()));</span>
+<span class="fc" id="L417">            }</span>
+
+            @Nullable
+<span class="fc" id="L420">            String oldSuffix = node.path(&quot;old&quot;).asText(null);</span>
+            @Nullable
+<span class="fc" id="L422">            String newSuffix = node.path(&quot;new&quot;).asText(null);</span>
+
+<span class="fc" id="L424">            List&lt;String&gt; inArchives = StreamSupport.stream(node.path(&quot;inArchives&quot;).spliterator(), false)</span>
+<span class="fc" id="L425">                    .map(JsonNode::asText).collect(toList());</span>
+
+<span class="fc bfc" id="L427" title="All 2 branches covered.">            return new IncreaseAllows(regex, severity == null ? null : SeverityCheck.valueOf(severity),</span>
+<span class="fc bfc" id="L428" title="All 2 branches covered.">                    criticality == null ? null : ctx.getCriticalityByName(criticality), code, justification,</span>
+                    attachments, classification, inArchives, oldSuffix, newSuffix);
+        }
+
+<span class="fc" id="L432">        VersionIncreaseConfig(List&lt;IncreaseAllows&gt; allows) {</span>
+<span class="fc" id="L433">            this.allows = allows;</span>
+<span class="fc" id="L434">        }</span>
+
+        boolean allows(VersionRecord versionRecord, Difference difference, DifferenceSeverity maxSeverity) {
+<span class="pc bpc" id="L437" title="1 of 4 branches missed.">            return allows.stream().reduce(false, (a, b) -&gt; a || b.allows(versionRecord, difference, maxSeverity),</span>
+                    Boolean::logicalOr);
+        }
+    }
+
+    private static class IncreaseAllows {
+        final @Nullable SeverityCheck severity;
+        final @Nullable Criticality criticality;
+        final @Nullable Pattern code;
+        final @Nullable Pattern justification;
+        final Map&lt;String, Pattern&gt; attachments;
+        final Map&lt;CompatibilityType, DifferenceSeverity&gt; classification;
+        final List&lt;Pattern&gt; inArchives;
+        final @Nullable Pattern oldSuffix;
+        final @Nullable Pattern newSuffix;
+
+        private IncreaseAllows(boolean regex, @Nullable SeverityCheck severity, @Nullable Criticality criticality,
+                @Nullable String code, @Nullable String justification, Map&lt;String, String&gt; attachments,
+                Map&lt;CompatibilityType, DifferenceSeverity&gt; classification, List&lt;String&gt; inArchives,
+<span class="fc" id="L456">                @Nullable String oldSuffix, @Nullable String newSuffix) {</span>
+<span class="fc" id="L457">            this.severity = severity;</span>
+<span class="fc" id="L458">            this.criticality = criticality;</span>
+<span class="fc bfc" id="L459" title="All 4 branches covered.">            this.code = code == null ? null : Pattern.compile(regex ? code : Pattern.quote(code));</span>
+<span class="fc bfc" id="L460" title="All 2 branches covered.">            this.justification = justification == null ? null</span>
+<span class="fc bfc" id="L461" title="All 2 branches covered.">                    : Pattern.compile(regex ? justification : Pattern.quote(justification));</span>
+<span class="fc" id="L462">            this.attachments = attachments.entrySet().stream().collect(</span>
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">                    toMap(Map.Entry::getKey, e -&gt; Pattern.compile(regex ? e.getValue() : Pattern.quote(e.getValue()))));</span>
+<span class="fc" id="L464">            this.classification = classification;</span>
+<span class="pc bnc" id="L465" title="All 2 branches missed.">            this.inArchives = inArchives.stream().map(a -&gt; Pattern.compile(regex ? a : Pattern.quote(a)))</span>
+<span class="fc" id="L466">                    .collect(toList());</span>
+<span class="pc bpc" id="L467" title="1 of 4 branches missed.">            this.oldSuffix = oldSuffix == null ? null : Pattern.compile(regex ? oldSuffix : Pattern.quote(oldSuffix));</span>
+<span class="pc bpc" id="L468" title="1 of 4 branches missed.">            this.newSuffix = newSuffix == null ? null : Pattern.compile(regex ? newSuffix : Pattern.quote(newSuffix));</span>
+<span class="fc" id="L469">        }</span>
+
+        boolean allows(VersionRecord versionRecord, Difference difference, DifferenceSeverity maxSeverity) {
+
+<span class="pc bpc" id="L473" title="3 of 4 branches missed.">            if (versionRecord.oldArchive == null &amp;&amp; versionRecord.newArchive == null) {</span>
+<span class="nc" id="L474">                throw new IllegalStateException(&quot;At least one of the archives must be non-null.&quot;);</span>
+            }
+
+            // first we need to match the additional criteria on the archive
+<span class="pc bpc" id="L478" title="1 of 2 branches missed.">            if (!inArchives.isEmpty()) {</span>
+<span class="nc bnc" id="L479" title="All 4 branches missed.">                if (inArchives.stream().noneMatch(p -&gt; p.matcher(versionRecord.newArchive == null</span>
+<span class="nc" id="L480">                        ? versionRecord.oldArchive.getBaseName() : versionRecord.newArchive.getBaseName()).matches())) {</span>
+<span class="nc" id="L481">                    return false;</span>
+                }
+            }
+
+<span class="fc bfc" id="L485" title="All 2 branches covered.">            if (this.oldSuffix != null) {</span>
+<span class="pc bpc" id="L486" title="1 of 2 branches missed.">                if (versionRecord.oldVersion == null) {</span>
+<span class="nc" id="L487">                    return false;</span>
+                } else {
+<span class="fc" id="L489">                    String suffix = versionRecord.oldVersion.suffix;</span>
+<span class="pc bpc" id="L490" title="2 of 4 branches missed.">                    if (!oldSuffix.matcher(suffix == null ? &quot;&quot; : suffix).matches()) {</span>
+<span class="nc" id="L491">                        return false;</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L496" title="All 2 branches covered.">            if (this.newSuffix != null) {</span>
+<span class="pc bpc" id="L497" title="1 of 2 branches missed.">                if (versionRecord.newVersion == null) {</span>
+<span class="nc" id="L498">                    return false;</span>
+                } else {
+<span class="fc" id="L500">                    String suffix = versionRecord.newVersion.suffix;</span>
+<span class="pc bpc" id="L501" title="2 of 4 branches missed.">                    if (!newSuffix.matcher(suffix == null ? &quot;&quot; : suffix).matches()) {</span>
+<span class="nc" id="L502">                        return false;</span>
+                    }
+                }
+            }
+
+            // now we can check the difference
+
+<span class="fc bfc" id="L509" title="All 4 branches covered.">            if (this.severity != null &amp;&amp; !this.severity.allows(maxSeverity)) {</span>
+<span class="fc" id="L510">                return false;</span>
+            }
+
+<span class="pc bpc" id="L513" title="1 of 4 branches missed.">            if (this.criticality != null &amp;&amp; difference.criticality != null</span>
+<span class="fc bfc" id="L514" title="All 2 branches covered.">                    &amp;&amp; this.criticality.getLevel() &lt; difference.criticality.getLevel()) {</span>
+<span class="fc" id="L515">                return false;</span>
+            }
+
+<span class="fc bfc" id="L518" title="All 4 branches covered.">            if (this.code != null &amp;&amp; !this.code.matcher(difference.code).matches()) {</span>
+<span class="fc" id="L519">                return false;</span>
+            }
+
+<span class="fc bfc" id="L522" title="All 2 branches covered.">            if (this.justification != null &amp;&amp; !this.justification</span>
+<span class="pc bpc" id="L523" title="1 of 4 branches missed.">                    .matcher(difference.justification == null ? &quot;&quot; : difference.justification).matches()) {</span>
+<span class="fc" id="L524">                return false;</span>
+            }
+
+<span class="pc bpc" id="L527" title="1 of 2 branches missed.">            if (this.attachments != null) {</span>
+<span class="fc bfc" id="L528" title="All 2 branches covered.">                for (Map.Entry&lt;String, Pattern&gt; e : attachments.entrySet()) {</span>
+<span class="fc" id="L529">                    String key = e.getKey();</span>
+<span class="fc" id="L530">                    Pattern pattern = e.getValue();</span>
+
+<span class="fc" id="L532">                    String value = difference.attachments.get(key);</span>
+
+<span class="fc bfc" id="L534" title="All 4 branches covered.">                    if (!pattern.matcher(value == null ? &quot;&quot; : value).matches()) {</span>
+<span class="fc" id="L535">                        return false;</span>
+                    }
+<span class="fc" id="L537">                }</span>
+            }
+
+<span class="pc bpc" id="L540" title="1 of 2 branches missed.">            if (this.classification != null) {</span>
+<span class="fc bfc" id="L541" title="All 2 branches covered.">                for (Map.Entry&lt;CompatibilityType, DifferenceSeverity&gt; e : classification.entrySet()) {</span>
+<span class="fc" id="L542">                    DifferenceSeverity expected = e.getValue();</span>
+<span class="fc" id="L543">                    DifferenceSeverity actual = difference.classification.get(e.getKey());</span>
+<span class="pc bpc" id="L544" title="1 of 4 branches missed.">                    if (actual != null &amp;&amp; expected.compareTo(actual) &lt; 0) {</span>
+<span class="fc" id="L545">                        return false;</span>
+                    }
+<span class="fc" id="L547">                }</span>
+            }
+
+<span class="fc" id="L550">            return true;</span>
+        }
+    }
+
+    private static class DifferenceModification {
+        final Map&lt;CompatibilityType, DifferenceSeverity&gt; classification;
+        final @Nullable Criticality criticality;
+        final @Nullable TextModification justification;
+        final @Nullable TextModification description;
+        final Map&lt;String, String&gt; attachments;
+        final boolean remove;
+
+        private static @Nullable DifferenceModification parseModify(AnalysisContext ctx, JsonNode node) {
+<span class="fc bfc" id="L563" title="All 2 branches covered.">            if (node.isMissingNode()) {</span>
+<span class="fc" id="L564">                return null;</span>
+            }
+
+<span class="fc bfc" id="L567" title="All 2 branches covered.">            if (node.path(&quot;remove&quot;).asBoolean(false)) {</span>
+<span class="fc" id="L568">                return new DifferenceModification();</span>
+            }
+
+<span class="fc" id="L571">            JsonNode classificationNode = node.path(&quot;classification&quot;);</span>
+<span class="fc" id="L572">            Map&lt;CompatibilityType, DifferenceSeverity&gt; classification = new EnumMap&lt;&gt;(CompatibilityType.class);</span>
+<span class="pc bpc" id="L573" title="1 of 2 branches missed.">            if (classificationNode.has(&quot;SOURCE&quot;)) {</span>
+<span class="nc" id="L574">                classification.put(CompatibilityType.SOURCE,</span>
+<span class="nc" id="L575">                        DifferenceSeverity.valueOf(classificationNode.get(&quot;SOURCE&quot;).asText()));</span>
+            }
+<span class="pc bpc" id="L577" title="1 of 2 branches missed.">            if (classificationNode.has(&quot;BINARY&quot;)) {</span>
+<span class="nc" id="L578">                classification.put(CompatibilityType.BINARY,</span>
+<span class="nc" id="L579">                        DifferenceSeverity.valueOf(classificationNode.get(&quot;BINARY&quot;).asText()));</span>
+            }
+<span class="pc bpc" id="L581" title="1 of 2 branches missed.">            if (classificationNode.has(&quot;SEMANTIC&quot;)) {</span>
+<span class="nc" id="L582">                classification.put(CompatibilityType.SEMANTIC,</span>
+<span class="nc" id="L583">                        DifferenceSeverity.valueOf(classificationNode.get(&quot;SEMANTIC&quot;).asText()));</span>
+            }
+<span class="fc bfc" id="L585" title="All 2 branches covered.">            if (classificationNode.has(&quot;OTHER&quot;)) {</span>
+<span class="fc" id="L586">                classification.put(CompatibilityType.OTHER,</span>
+<span class="fc" id="L587">                        DifferenceSeverity.valueOf(classificationNode.get(&quot;OTHER&quot;).asText()));</span>
+            }
+
+            Criticality criticality;
+<span class="fc bfc" id="L591" title="All 2 branches covered.">            if (!node.path(&quot;criticality&quot;).isMissingNode()) {</span>
+<span class="fc" id="L592">                criticality = ctx.getCriticalityByName(node.path(&quot;criticality&quot;).asText());</span>
+            } else {
+<span class="fc" id="L594">                criticality = null;</span>
+            }
+
+<span class="fc" id="L597">            TextModification justification = parseTextModification(node.path(&quot;justification&quot;));</span>
+<span class="fc" id="L598">            TextModification description = parseTextModification(node.path(&quot;description&quot;));</span>
+
+<span class="fc" id="L600">            JsonNode attachmentsNode = node.path(&quot;attachments&quot;);</span>
+<span class="fc" id="L601">            Map&lt;String, String&gt; attachments = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L602" title="All 2 branches covered.">            if (!attachmentsNode.isMissingNode()) {</span>
+<span class="fc" id="L603">                Iterator&lt;Map.Entry&lt;String, JsonNode&gt;&gt; it = attachmentsNode.fields();</span>
+<span class="fc bfc" id="L604" title="All 2 branches covered.">                while (it.hasNext()) {</span>
+<span class="fc" id="L605">                    Map.Entry&lt;String, JsonNode&gt; entry = it.next();</span>
+<span class="fc" id="L606">                    attachments.put(entry.getKey(), entry.getValue().asText());</span>
+<span class="fc" id="L607">                }</span>
+            }
+
+<span class="fc" id="L610">            return new DifferenceModification(classification, criticality, justification, description, attachments);</span>
+        }
+
+        @Nullable
+        private static TextModification parseTextModification(JsonNode modificationNode) {
+<span class="fc bfc" id="L615" title="All 2 branches covered.">            if (modificationNode.isTextual()) {</span>
+<span class="fc" id="L616">                return new TextModification(modificationNode.asText(), null, null);</span>
+<span class="fc bfc" id="L617" title="All 2 branches covered.">            } else if (modificationNode.isObject()) {</span>
+<span class="fc" id="L618">                String prepend = modificationNode.path(&quot;prepend&quot;).asText();</span>
+<span class="fc" id="L619">                String append = modificationNode.path(&quot;append&quot;).asText();</span>
+<span class="fc" id="L620">                return new TextModification(null, prepend, append);</span>
+            } else {
+<span class="fc" id="L622">                return null;</span>
+            }
+        }
+
+<span class="fc" id="L626">        private DifferenceModification() {</span>
+<span class="fc" id="L627">            this.remove = true;</span>
+<span class="fc" id="L628">            this.classification = emptyMap();</span>
+<span class="fc" id="L629">            this.criticality = null;</span>
+<span class="fc" id="L630">            this.justification = null;</span>
+<span class="fc" id="L631">            this.description = null;</span>
+<span class="fc" id="L632">            this.attachments = null;</span>
+<span class="fc" id="L633">        }</span>
+
+        private DifferenceModification(Map&lt;CompatibilityType, DifferenceSeverity&gt; classification,
+                @Nullable Criticality criticality, @Nullable TextModification justification,
+<span class="fc" id="L637">                @Nullable TextModification description, Map&lt;String, String&gt; attachments) {</span>
+<span class="fc" id="L638">            this.classification = classification;</span>
+<span class="fc" id="L639">            this.criticality = criticality;</span>
+<span class="fc" id="L640">            this.justification = justification;</span>
+<span class="fc" id="L641">            this.description = description;</span>
+<span class="fc" id="L642">            this.attachments = attachments;</span>
+<span class="fc" id="L643">            this.remove = false;</span>
+<span class="fc" id="L644">        }</span>
+
+        TransformationResult modify(Difference difference) {
+<span class="fc bfc" id="L647" title="All 2 branches covered.">            if (remove) {</span>
+<span class="fc" id="L648">                return TransformationResult.discard();</span>
+            }
+
+<span class="fc" id="L651">            Difference.Builder bld = Difference.copy(difference);</span>
+<span class="fc" id="L652">            boolean changed = false;</span>
+
+<span class="fc bfc" id="L654" title="All 2 branches covered.">            if (!classification.isEmpty()) {</span>
+<span class="fc" id="L655">                changed = true;</span>
+<span class="fc" id="L656">                bld.addClassifications(classification);</span>
+            }
+
+<span class="fc bfc" id="L659" title="All 2 branches covered.">            if (criticality != null) {</span>
+<span class="fc" id="L660">                changed = true;</span>
+<span class="fc" id="L661">                bld.withCriticality(criticality);</span>
+            }
+
+<span class="fc bfc" id="L664" title="All 2 branches covered.">            if (justification != null) {</span>
+<span class="fc" id="L665">                changed = true;</span>
+<span class="fc" id="L666">                bld.withJustification(justification.apply(difference.justification));</span>
+            }
+
+<span class="fc bfc" id="L669" title="All 2 branches covered.">            if (description != null) {</span>
+<span class="fc" id="L670">                changed = true;</span>
+<span class="fc" id="L671">                bld.withDescription(description.apply(difference.description));</span>
+            }
+
+<span class="fc bfc" id="L674" title="All 2 branches covered.">            if (!attachments.isEmpty()) {</span>
+<span class="fc" id="L675">                changed = true;</span>
+<span class="fc" id="L676">                bld.addAttachments(attachments);</span>
+            }
+
+<span class="pc bpc" id="L679" title="1 of 2 branches missed.">            if (changed) {</span>
+<span class="fc" id="L680">                Difference newDiff = bld.build();</span>
+<span class="fc bfc" id="L681" title="All 2 branches covered.">                if (newDiff.equals(difference)) {</span>
+<span class="fc" id="L682">                    return TransformationResult.keep();</span>
+                } else {
+<span class="fc" id="L684">                    return TransformationResult.replaceWith(bld.build());</span>
+                }
+            } else {
+<span class="nc" id="L687">                return TransformationResult.keep();</span>
+            }
+        }
+    }
+
+<span class="fc" id="L692">    private enum SeverityCheck {</span>
+<span class="fc" id="L693">        NONE, EQUIVALENT, NON_BREAKING, POTENTIALLY_BREAKING, BREAKING;</span>
+
+        boolean allows(DifferenceSeverity severity) {
+<span class="fc bfc" id="L696" title="All 2 branches covered.">            return this.ordinal() &gt;= severity.ordinal() + 1;</span>
+        }
+    }
+
+    private static class TextModification {
+        final @Nullable String value;
+        final @Nullable String prepend;
+        final @Nullable String append;
+
+<span class="fc" id="L705">        private TextModification(@Nullable String value, @Nullable String prepend, @Nullable String append) {</span>
+<span class="fc" id="L706">            this.value = value;</span>
+<span class="fc" id="L707">            this.prepend = prepend;</span>
+<span class="fc" id="L708">            this.append = append;</span>
+<span class="fc" id="L709">        }</span>
+
+        @Nullable
+        String apply(@Nullable String value) {
+<span class="fc bfc" id="L713" title="All 2 branches covered.">            if (this.value != null) {</span>
+<span class="fc" id="L714">                value = this.value;</span>
+            }
+
+<span class="fc bfc" id="L717" title="All 2 branches covered.">            if (this.prepend != null) {</span>
+<span class="pc bpc" id="L718" title="1 of 2 branches missed.">                if (value == null) {</span>
+<span class="nc" id="L719">                    value = this.prepend;</span>
+<span class="fc bfc" id="L720" title="All 2 branches covered.">                } else if (!value.startsWith(this.prepend)) {</span>
+<span class="fc" id="L721">                    value = this.prepend + value;</span>
+                }
+            }
+
+<span class="fc bfc" id="L725" title="All 2 branches covered.">            if (this.append != null) {</span>
+<span class="pc bpc" id="L726" title="1 of 2 branches missed.">                if (value == null) {</span>
+<span class="nc" id="L727">                    value = this.append;</span>
+<span class="fc bfc" id="L728" title="All 2 branches covered.">                } else if (!value.endsWith(this.append)) {</span>
+<span class="fc" id="L729">                    value = value + this.append;</span>
+                }
+            }
+
+<span class="fc" id="L733">            return value;</span>
+        }
+    }
+
+    private static final class Version {
+<span class="fc" id="L738">        private static final Pattern SEMVER_PATTERN = Pattern</span>
+<span class="fc" id="L739">                .compile(&quot;(\\d+)(\\.(\\d+)(?:\\.)?(\\d*))?([.\\-+])?([0-9A-Za-z-.+]*)?&quot;);</span>
+
+        final int major;
+        final int minor;
+        final int patch;
+        final String sep;
+        final String suffix;
+
+        static Version parse(String version) {
+<span class="fc" id="L748">            Matcher m = SEMVER_PATTERN.matcher(version);</span>
+<span class="pc bpc" id="L749" title="1 of 2 branches missed.">            if (!m.matches()) {</span>
+<span class="nc" id="L750">                throw new IllegalArgumentException(</span>
+                        &quot;Could not parse the version string '&quot; + version + &quot;'. It does not follow the semver schema.&quot;);
+            }
+
+<span class="fc" id="L754">            int major = Integer.parseInt(m.group(1));</span>
+<span class="fc" id="L755">            String minorMatch = m.group(3);</span>
+<span class="pc bpc" id="L756" title="2 of 4 branches missed.">            int minor = minorMatch == null || minorMatch.isEmpty() ? 0 : Integer.parseInt(minorMatch);</span>
+<span class="fc" id="L757">            int patch = 0;</span>
+<span class="fc" id="L758">            String patchMatch = m.group(4);</span>
+<span class="pc bpc" id="L759" title="2 of 4 branches missed.">            if (patchMatch != null &amp;&amp; !patchMatch.isEmpty()) {</span>
+<span class="fc" id="L760">                patch = Integer.parseInt(patchMatch);</span>
+            }
+<span class="fc" id="L762">            String sep = m.group(5);</span>
+<span class="fc" id="L763">            String suffix = m.group(6);</span>
+
+<span class="pc bpc" id="L765" title="1 of 4 branches missed.">            if (sep != null &amp;&amp; sep.isEmpty()) {</span>
+<span class="nc" id="L766">                sep = null;</span>
+            }
+
+<span class="pc bpc" id="L769" title="1 of 4 branches missed.">            if (suffix != null &amp;&amp; suffix.isEmpty()) {</span>
+<span class="fc" id="L770">                suffix = null;</span>
+            }
+
+<span class="fc" id="L773">            return new Version(major, minor, patch, sep, suffix);</span>
+        }
+
+<span class="fc" id="L776">        Version(int major, int minor, int patch, String sep, String suffix) {</span>
+<span class="fc" id="L777">            this.major = major;</span>
+<span class="fc" id="L778">            this.minor = minor;</span>
+<span class="fc" id="L779">            this.patch = patch;</span>
+<span class="fc" id="L780">            this.sep = sep;</span>
+<span class="fc" id="L781">            this.suffix = suffix;</span>
+<span class="fc" id="L782">        }</span>
+    }
+
+    private static final class VersionRecord {
+        final @Nullable Archive.Versioned oldArchive;
+        final @Nullable Archive.Versioned newArchive;
+        final @Nullable Version oldVersion;
+        final @Nullable Version newVersion;
+        final VersionChange versionChange;
+
+        VersionRecord(@Nullable Archive.Versioned oldArchive, @Nullable Archive.Versioned newArchive,
+<span class="fc" id="L793">                @Nullable Version oldVersion, @Nullable Version newVersion, VersionChange versionChange) {</span>
+<span class="fc" id="L794">            this.oldArchive = oldArchive;</span>
+<span class="fc" id="L795">            this.newArchive = newArchive;</span>
+<span class="fc" id="L796">            this.oldVersion = oldVersion;</span>
+<span class="fc" id="L797">            this.newVersion = newVersion;</span>
+<span class="fc" id="L798">            this.versionChange = versionChange;</span>
+<span class="fc" id="L799">        }</span>
+    }
+
+<span class="fc" id="L802">    private enum VersionChange {</span>
+<span class="fc" id="L803">        REMOVED, NEW, SUFFIX, PATCH, MINOR, MAJOR;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

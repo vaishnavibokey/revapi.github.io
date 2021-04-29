@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"org.revapi"},{"l":"org.revapi.base"},{"l":"org.revapi.configuration"},{"l":"org.revapi.query"},{"l":"org.revapi.simple"}]

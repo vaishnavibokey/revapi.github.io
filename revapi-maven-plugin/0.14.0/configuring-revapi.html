@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>How to Configure Revapi :: Revapi</title>
+    <link rel="canonical" href="https://revapi.org/revapi-maven-plugin/0.14.0/configuring-revapi.html">
+    <meta name="generator" content="Antora 2.3.3">
+<link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/news.css">
+<link rel="stylesheet" href="../../_/css/additions.css">
+
+<link rel="alternate" type="application/rss+xml" title="Revapi RSS" href="../../_/../revapi-site/main/news/_attachments/news.atom" />
+<link rel="stylesheet" href="../../_/css/search.css">
+  </head>
+  <body class="article">
+<header class="header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="https://revapi.org">Revapi</a>
+              <div class="navbar-item">
+                <input id="search-input" type="text" placeholder="Search docs">
+              </div>
+            <button class="navbar-burger" data-target="topbar-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div id="topbar-nav" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="../../revapi-site/main/index.html/../news/index.html">News</a>
+                <a class="navbar-item" href="../../revapi-site/main/index.html/../downloads.html">Downloads</a>
+                <a class="navbar-item" href="https://diff.revapi.org">Online Check</a>
+                <a class="navbar-item" href="https://github.com/revapi/revapi"><img src="../../_/img/github.svg" alt="Github Repository"/></a>
+                <a class="navbar-item" href="https://twitter.com/revapi_org"><img src="../../_/img/twitter.svg" alt="Twitter"/></a>
+                <a class="navbar-item" href="../../_/../revapi-site/0/news/_attachments/news.atom"><img src="../../_/img/rss.svg" alt="RSS"/></a>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="revapi-maven-plugin" data-version="0.14.0">
+  <aside class="nav">
+    <div class="panels">
+    <div class="nav-panel-menu is-active" data-panel="menu">
+        <nav class="nav-menu">
+                <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/faq.html">FAQ</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.0/architecture.html">Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.0/configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.0/extending-revapi.html">Extending Revapi</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/building.html">Building</a>
+  </li>
+</ul>
+  </li>
+</ul>
+            <ul class="nav-list">
+                <li class="nav-item" data-depth="0">
+                    <hr/>
+                    <i class="nav-text">Modules</i>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-ant-task/0.12.0/index.html">
+                                    <span class="nav-text">Ant Task</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi/0.14.0/index.html">
+                                    <span class="nav-text">API</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-basic-features/0.12.0/index.html">
+                                    <span class="nav-text">Basic Features</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-standalone/0.11.0/index.html">
+                                    <span class="nav-text">CLI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-file-base/0.4.0/index.html">
+                                    <span class="nav-text">File Reporter Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-jackson/0.3.0/index.html">
+                                    <span class="nav-text">Jackson Analyzer Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java/0.24.0/index.html">
+                                    <span class="nav-text">Java Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java-spi/0.23.0/index.html">
+                                    <span class="nav-text">Java Analyzer SPI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-json/0.3.0/index.html">
+                                    <span class="nav-text">JSON Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-json/0.4.0/index.html">
+                                    <span class="nav-text">JSON Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item is-active" data-depth="0">
+                                <a class="nav-link" href="index.html">
+                                    <span class="nav-text">Maven Plugin</span>
+                                </a>
+                                    <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="specifying-versions.html">Specifying Versions</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="configuring-revapi.html">Configuration Approaches</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="reporting.html">Generating Reports</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/index.html">Maven Site</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/apidocs/index.html">Javadoc</a>
+  </li>
+</ul>
+  </li>
+</ul>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-text/0.14.0/index.html">
+                                    <span class="nav-text">Text Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-yaml/0.3.0/index.html">
+                                    <span class="nav-text">YAML Analyzer</span>
+                                </a>
+                            </li>
+                </li>
+            </ul>
+        </nav>
+    </div>
+<div class="nav-panel-explore" data-panel="explore" style="display: none">
+  <div class="context">
+    <span class="title">Maven Plugin</span>
+    <span class="version">0.14.0</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <span class="title">Ant Task</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-ant-task/0.12.0/index.html">0.12.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">API</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Basic Features</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-basic-features/0.12.0/index.html">0.12.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-basic-features/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">CLI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-standalone/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.0/index.html">0.10.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.8/index.html">0.9.8</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.7/index.html">0.9.7</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.6/index.html">0.9.6</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">File Reporter Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-file-base/0.4.0/index.html">0.4.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Jackson Analyzer Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-jackson/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java/0.24.0/index.html">0.24.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.2/index.html">0.23.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.1/index.html">0.23.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.0/index.html">0.22.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer SPI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java-spi/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.2/index.html">0.22.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.0/index.html">0.22.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.1/index.html">0.21.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.0/index.html">0.21.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-json/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-json/0.4.0/index.html">0.4.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <span class="title">Maven Plugin</span>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.6/index.html">0.13.6</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.5/index.html">0.13.5</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.4/index.html">0.13.4</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.3/index.html">0.13.3</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.2/index.html">0.12.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Revapi Site</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-site/main/index.html">main</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Text Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-text/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">YAML Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-yaml/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../revapi-site/main/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Maven Plugin</a></li>
+    <li><a href="configuring-revapi.html">Configuration Approaches</a></li>
+  </ul>
+</nav>
+  Version:
+<div class="page-versions">
+    <button class="version-menu-toggle" title="Versions of the component">
+      0.14.0
+    </button>
+  <div class="version-menu">
+        <a class="version is-current" href="configuring-revapi.html">
+
+          0.14.0
+        </a>
+        <a class="version" href="../0.13.6/configuring-revapi.html">
+
+          0.13.6
+        </a>
+        <a class="version" href="../0.13.5/configuring-revapi.html">
+
+          0.13.5
+        </a>
+        <a class="version" href="../0.13.4/configuring-revapi.html">
+
+          0.13.4
+        </a>
+        <a class="version" href="../0.13.3/configuring-revapi.html">
+
+          0.13.3
+        </a>
+        <a class="version" href="../0.13.2/configuring-revapi.html">
+
+          0.13.2
+        </a>
+        <a class="version" href="../0.13.1/configuring-revapi.html">
+
+          0.13.1
+        </a>
+        <a class="version" href="../0.13.0/configuring-revapi.html">
+
+          0.13.0
+        </a>
+        <a class="version" href="../0.12.2/configuring-revapi.html">
+
+          0.12.2
+        </a>
+        <a class="version" href="../0.12.1/configuring-revapi.html">
+
+          0.12.1
+        </a>
+        <a class="version" href="../0.12.0/configuring-revapi.html">
+
+          0.12.0
+        </a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/revapi/revapi/edit/main/revapi-maven-plugin/src/site/modules/ROOT/pages/configuring-revapi.adoc" title="Edit the latest version of this page">Edit this page</a></div>
+</div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">How to Configure Revapi</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The maven plugin itself is configured using the properties of the <a href="_attachments/plugin-info.html">goals</a>. The configuration of
+the API analysis is a matter of configuring different Revapi extensions that are to be run. This is done using the
+<code>analysisConfiguration</code> element in the Maven plugin&#8217;s configuration. This element contains the configuration of
+the individual extensions in either XML or JSON.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_failing_level"><a class="anchor" href="#_failing_level"></a>Failing level</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, <code>mvn revapi:check</code> fails if at least one potentially breaking change is found. To fail only for breaking changes, one has to set up <code>failSeverity</code> as follows.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;failSeverity&gt;breaking&lt;/failSeverity&gt;
+    ...</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_specifying_the_analysis_configuration_using_xml"><a class="anchor" href="#_specifying_the_analysis_configuration_using_xml"></a>Specifying The Analysis Configuration Using XML</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_ignoring_classes"><a class="anchor" href="#_ignoring_classes"></a>Ignoring classes</h3>
+<div class="paragraph">
+<p>As an example, let&#8217;s configure the java extension to ignore the classes it finds missing from the API
+rather than reporting them and also only include the archives with <code>com.acme</code> groupId in the analysis::</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.14.0&lt;/version&gt;
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.java&gt;
+        &lt;missing-classes&gt;
+          &lt;behavior&gt;ignore&lt;/behavior&gt;
+        &lt;/missing-classes&gt;
+      &lt;/revapi.java&gt;
+      &lt;revapi.filter&gt;
+        &lt;archives&gt;
+          &lt;include&gt;
+            &lt;item&gt;com\.acme:.*&lt;/item&gt;
+          &lt;/include&gt;
+        &lt;/archives&gt;
+      &lt;/revapi.filter&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each extension has a unique "extension id" which is used as the root tag for its configuration under the
+<code>analysisConfiguration</code> tag. Under the extension configuration&#8217;s root tag an XML representation of the configuration
+as specified by the extension documentation (and JSON schema - yes, the XML is validated against a JSON schema ;) ).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_multiple_configurations_per_extension"><a class="anchor" href="#_multiple_configurations_per_extension"></a>Multiple Configurations Per Extension</h3>
+<div class="paragraph">
+<p>There can be multiple configurations for a single extension. Optionally, each extension configuration "instance" can
+be assigned an ID such that it can be effectively merged (see below).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.14.0&lt;/version&gt;
+  ...
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.reporter.text id="stdout"&gt;
+        &lt;output&gt;out&lt;/output&gt;
+      &lt;/revapi.reporter.text&gt;
+      &lt;revapi.reporter.text id="custom-report"&gt;
+        &lt;output&gt;${project.build.directory}/revapi-custom-report.xml&lt;/output&gt;
+        &lt;template&gt;${custom-report.template.location}&lt;/template&gt;
+      &lt;/revapi.reporter.text&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This configuration will cause the Revapi&#8217;s text reporter (if is included as a dependency of the plugin) to output the
+results of the analysis both to standard output and a custom file using a custom template.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_analysis_configuration_and_maven_inheritance"><a class="anchor" href="#_analysis_configuration_and_maven_inheritance"></a>Analysis Configuration And Maven Inheritance</h3>
+<div class="paragraph">
+<p>Having the Revapi analysis configuration specified in XML enables Maven to apply its configuration inheritance logic
+to Revapi analysis configuration, too.</p>
+</div>
+<div class="paragraph">
+<p>Here is a couple of tips on how to make the Maven configuration inheritance work nice with Revapi analysis
+configuration.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<a href="http://maven.apache.org/plugins/maven-help-plugin/effective-pom-mojo.html"><code>mvn help:effective-pom</code></a>,
+<a href="https://maven.apache.org/pom.html#Plugins"><code>combine.self</code> and <code>combine.children</code></a> are your friends when inheriting
+more complex analysis configurations.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_one_configuration_per_extension"><a class="anchor" href="#_one_configuration_per_extension"></a>One Configuration Per Extension</h3>
+<div class="paragraph">
+<p>Parent POM:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.ignore&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.removed&lt;/code&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.added&lt;/code&gt;
+        &lt;/item&gt;
+      &lt;/revapi.ignore&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;
+  ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Child POM:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.ignore&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.nowFinal&lt;/code&gt;
+        &lt;/item&gt;
+      &lt;/revapi.ignore&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;
+  ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Effective Child POM:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.ignore&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.nowFinal&lt;/code&gt;
+        &lt;/item&gt;
+      &lt;/revapi.ignore&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;
+  ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice that <code>revapi.ignore</code> doesn&#8217;t contain the <code>item</code>s defined in the parent POM. That is the default Maven behavior.
+To be able to inherit the configuration of the <code>revapi.ignore</code> extension from the parent POM, you have to specify
+how to merge the `item`s in the child POM like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.ignore combine.children="append"&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.nowFinal&lt;/code&gt;
+        &lt;/item&gt;
+      &lt;/revapi.ignore&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;
+  ...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After that, the effective child POM will indeed contain configuration combined from both parent and child:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.ignore&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.nowFinal&lt;/code&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.removed&lt;/code&gt;
+        &lt;/item&gt;
+        &lt;item&gt;
+          &lt;code&gt;java.class.added&lt;/code&gt;
+        &lt;/item&gt;
+      &lt;/revapi.ignore&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;
+  ...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_multiple_configurations_per_extension_2"><a class="anchor" href="#_multiple_configurations_per_extension_2"></a>Multiple Configurations Per Extension</h3>
+<div class="paragraph">
+<p>As mentioned in the previous chapters, revapi supports multiple configurations per extension. This gets a little bit
+complicated in conjunction with inheritance. Let&#8217;s see an example.</p>
+</div>
+<div class="paragraph">
+<p>Parent POM</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.14.0&lt;/version&gt;
+  ...
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.reporter.text id="stdout"&gt;
+        &lt;output&gt;out&lt;/output&gt;
+      &lt;/revapi.reporter.text&gt;
+      &lt;revapi.reporter.text id="custom-report"&gt;
+        &lt;output&gt;${project.build.directory}/revapi-custom-report.xml&lt;/output&gt;
+        &lt;template&gt;${custom-report.template.location}&lt;/template&gt;
+      &lt;/revapi.reporter.text&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Child POM</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.14.0&lt;/version&gt;
+  ...
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.reporter.text id="stdout"&gt;
+        &lt;output&gt;err&lt;/output&gt;
+      &lt;/revapi.reporter.text&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I.e. the child POM wants to reconfigure the "stdout" configuration of revapi text reporter to report to standard error
+output instead of the standard output.</p>
+</div>
+<div class="paragraph">
+<p>If we inspect the effective child POM, we&#8217;ll see this though:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.14.0&lt;/version&gt;
+  ...
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.reporter.text id="stdout"&gt;
+        &lt;output&gt;err&lt;/output&gt;
+      &lt;/revapi.reporter.text&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I.e. the configuration for the custom output is lost in the child POM (again, this is standard Maven behavior. These are
+just examples to save you from ripping your hair out unnecessarily ;) ). To also inherit the other reporter
+configuration, you have to mention it like this in the child POM</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.14.0&lt;/version&gt;
+  ...
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;
+      &lt;revapi.reporter.text id="stdout"&gt;
+        &lt;output&gt;err&lt;/output&gt;
+      &lt;/revapi.reporter.text&gt;
+      &lt;revapi.reporter.text id="custom-report"/&gt;
+    &lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now the effective child POM contains the custom report configuration as well as the modified stdout configuration.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_specifying_the_analysis_configuration_using_json"><a class="anchor" href="#_specifying_the_analysis_configuration_using_json"></a>Specifying The Analysis Configuration Using JSON</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Revapi has been around for a little bit and over the time it has evolved. Originally (up until Revapi API 0.8.0),
+each extension was instantiated exactly once and therefore also configured exactly once. Since Revapi API 0.8.0,
+supported by Revapi Maven plugin 0.9.0, there can be multiple configurations for each extension (and the extension
+can be therefore instantiated multiple times). This brings the ability to e.g. have 2 differently configured text
+reporter instances, each generating a different kind of output. Unfortunately, this complicates the configuration,
+because it is no longer possible to have a single "configuration tree" where extensions would read their configurations
+from their declared locations.</p>
+</div>
+<div class="paragraph">
+<p>Therefore, since Revapi API 0.8.0 there is a new kind of JSON format for configuration (which in turn also enables
+maven plugin to support XML configuration btw). To ease the migration to the new versions, the old configuration format
+is still supported (but mixing the two formats can lead to unresolvable situations, see the
+<a href="#_multi_file_configuration">Multi-file Configuration</a> section for more details).</p>
+</div>
+<div class="sect2">
+<h3 id="_the_json_configuration_format"><a class="anchor" href="#_the_json_configuration_format"></a>The JSON Configuration Format</h3>
+<div class="paragraph">
+<p>As explained above, each extension can be configured multiple times. To support this in JSON, the JSON configuration
+looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javascript hljs" data-lang="javascript">[
+  {
+    "extension": "revapi.reporter.text",
+    "id": "optional-id",
+    "configuration": {
+      ... the actual configuration of the extension according to its schema ...
+    }
+  },
+  {
+    "extension": "revapi.reporter.text",
+    "configuration": {
+      ...
+    }
+  },
+  {
+    "extension": "revapi.ignore",
+    "configuration": {
+      ...
+    }
+  },
+  ...
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The configuration object is a list. The members of the list are individual configurations for the extensions.
+The extension being configured is specified by the <code>extension</code> key and the configuration (conforming to the schema
+specified by the extension) is present under the <code>configuration</code> key.</p>
+</div>
+<div class="paragraph">
+<p>The optional <code>id</code> key is useful if there are multiple configuration sources (see
+<a href="#_multi_file_configuration">multi file configuration</a> for example) as it affects how the configurations from the
+different sources are merged together.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_legacy_json_configuration_format"><a class="anchor" href="#_the_legacy_json_configuration_format"></a>The Legacy JSON Configuration Format</h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+This describes the obsolete JSON configuration format that cannot handle multiple configurations per extension.
+If you still use it, rest assured that it is still supported (with the exception of certain scenarios during merging
+of multiple configuration sources) but you are encouraged to start using the new configuration format.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The JSON data contains the configuration of all the extensions. Each of the extensions declares a "root" in the JSON
+data from which it reads its configuration (for example, ignoring specific problems found during the analysis can be
+done using the <code>IgnoreDifferenceTransform</code> extension from the <a href="../../revapi-basic-features/0.12.0/index.html" class="page">basic
+features</a> under the root <code>revapi.ignore</code>).</p>
+</div>
+<div class="paragraph">
+<p>So, without further ado, let&#8217;s configure the java extension to report the classes it finds missing from the API
+rather than failing the analysis upon encountering them and also only include the archives with <code>com.acme</code> groupId in
+the analysis:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+  &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+  &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+  &lt;version&gt;0.14.0&lt;/version&gt;
+  &lt;configuration&gt;
+    &lt;analysisConfiguration&gt;&lt;![CDATA[
+      {
+        "revapi": {
+          "java": {
+            "missing-classes": {
+              "behavior": "report"
+            }
+          },
+          "filter": {
+            "archives": {
+              "include": ["com\\.acme:.*"]
+            }
+          }
+        }
+      }
+    ]]&gt;&lt;/analysisConfiguration&gt;
+  &lt;/configuration&gt;
+  &lt;executions&gt;
+    &lt;execution&gt;
+      &lt;goals&gt;&lt;goal&gt;check&lt;/goal&gt;&lt;/goals&gt;
+    &lt;/execution&gt;
+  &lt;/executions&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The configuration options of the various extensions can be found in their respective docs:
+<a href="../../revapi-basic-features/0.12.0/index.html" class="page">basic features documentation</a>, <a href="../../revapi-java/0.24.0/index.html" class="page">java
+extension documentation</a>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_evolving_the_library_using_semver_rules"><a class="anchor" href="#_evolving_the_library_using_semver_rules"></a>Evolving The Library Using Semver Rules</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default Revapi will report all API changes of configured severity (by default "potentiallyBreaking") and the maven
+plugin will break the build if such differences are found since the last released version.</p>
+</div>
+<div class="paragraph">
+<p>One then has to somehow "persuade" the plugin to let the build pass again. One way of doing it is to use the
+<a href="../../revapi-basic-features/0.12.0/ignore.html" class="page">ignore extension</a> and list all the changes and provide them
+with a "justification" for why such change happened.</p>
+</div>
+<div class="paragraph">
+<p>This is very rigorous but also laborious approach that isn&#8217;t always worth the effort - especially in the early stages
+of development. Also one can argue that any change made to the codebase is intentional and therefore specifically
+listing it somewhere in a file that would justify such change to a tool is superfluous. On the other such strict
+policy might be required for some critical libraries that require high level of stability and any change should be
+vetted and approved.</p>
+</div>
+<div class="paragraph">
+<p>There is also another way though. One can use the combination of the
+<a href="../../revapi-basic-features/0.12.0/semver-ignore.html" class="page">semver-ignore extension</a> and the
+<a href="#Updating Version In <code>pom.xml</code>">update-versions goal</a> to (semi-)automatically increase the version of the library
+even during the development such that its version corresponds to the API changes it contains since the last released
+version. No other action like listing the and justifying the changes is necessary in this case.</p>
+</div>
+<div class="paragraph">
+<p>For that you need to configure Revapi maven plugin to use and enable the
+<a href="../../revapi-basic-features/0.12.0/semver-ignore.html" class="page">semver-ignore extension</a>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;build&gt;
+    &lt;plugin&gt;
+        &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+        &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+        &lt;configuration&gt;
+            &lt;analysisConfiguration&gt;&lt;![CDATA[
+                {
+                  "revapi": {
+                    "semver": {
+                      "ignore": {
+                        "enabled": true
+                      }
+                    }
+                  }
+                }
+            ]]&gt;&lt;/analysisConfiguration&gt;
+        &lt;/configuration&gt;
+    &lt;/plugin&gt;
+&lt;/build&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then, when you try to build your project, revapi might find a change that is incompatible with the current version
+increase (like an API breaking change when you only increased a micro version since the last release) and fail your
+build. At that moment, it is enough to invoke:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code>mvn revapi:update-versions</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and the version will be updated to reflect the API changes made. When you build the project again, the build should
+pass.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can even embed the <code>update-versions</code> goal in your regular build and have the versions increase automagically
+(at the cost of having to run the build twice when an incompatible change is made).
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_multi_file_configuration"><a class="anchor" href="#_multi_file_configuration"></a>Multi-file Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sometimes it can be handy to split the configuration of Revapi analysis in separate files - this can be done for various
+reasons - you might want to keep the config of different extensions separate or you want to compose the config from
+various contributing locations, etc.</p>
+</div>
+<div class="paragraph">
+<p>For Revapi, this can be achieved by using the <code>analysisConfigurationFiles</code> configuration element instead of (or in
+addition to) the <code>analysisConfiguration</code> element which provides the in-POM way of configuring Revapi.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+    &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;0.14.0&lt;/version&gt;
+    ...
+    &lt;configuration&gt;
+        &lt;analysisConfigurationFiles&gt;
+            &lt;file&gt;${project.basedir}/config/filter.json&lt;/file&gt;
+            &lt;file&gt;${project.basedir}/config/ignore.xml&lt;/file&gt;
+        &lt;/analysisConfigurationFiles&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;goals&gt;&lt;goal&gt;check&lt;/goal&gt;&lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each of the configuration files (e.g. <code>filter.json</code> and <code>ignore.xml</code> in the above example) is a JSON or XML document
+with the configuration. The maven plugin then merges the files together (in an unspecified order) and uses the
+result as the final configuration for the analysis.</p>
+</div>
+<div class="sect2">
+<h3 id="_using_configuration_defined_in_other_modules"><a class="anchor" href="#_using_configuration_defined_in_other_modules"></a>Using Configuration Defined In Other Modules</h3>
+<div class="paragraph">
+<p>It is possible to define a JAR artifact that contains "common" configuration of the Revapi analysis shared by many
+modules. To reference it, simply add the artifact as a dependency of the revapi maven plugin and reference
+the configuration file inside that artifact like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+    &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;0.14.0&lt;/version&gt;
+    &lt;dependencies&gt;
+      ...
+      &lt;dependency&gt;
+        &lt;groupId&gt;my.group.id&lt;/groupId&gt;
+        &lt;artifactId&gt;artifact-with-common-config&lt;/artifact&gt;
+        &lt;version&gt;...&lt;/version&gt;
+      &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+    &lt;configuration&gt;
+        &lt;analysisConfigurationFiles&gt;
+          &lt;configurationFile&gt;
+            &lt;resource&gt;path/to/the/config/file/in/the/shared/artifact&lt;/resource&gt;
+          &lt;/configurationFile&gt;
+          ...
+        &lt;/analysisConfigurationFiles&gt;
+        ...
+    &lt;/configuration&gt;
+    ...
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_merging_configuration_from_multiple_files"><a class="anchor" href="#_merging_configuration_from_multiple_files"></a>Merging Configuration From Multiple Files</h3>
+<div class="paragraph">
+<p>When the analysis configuration is split amongst several files, it needs to be merged together before it is applied to
+the Revapi extensions. This process is slightly complex with the ability for a single extension to be configured
+multiple times but in the end is somewhat similar to the way Maven merges the executions of a plugin - as long as the
+executions are defined once in the effective POM, they don&#8217;t need to be assigned IDs. If there are multiple executions
+and you override them in child POMs, they need to have the IDs assigned so that it is clear what executions in child POM
+need to be merged with what executions in the parent POM.</p>
+</div>
+<div class="paragraph">
+<p>In Revapi, too, an extension configuration can optionally have an ID. In JSON this is expressed like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javascript hljs" data-lang="javascript">...
+    {
+      "extension": "my.extension",
+      "id": "id",
+      "configuration": ...
+    }
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and in XML like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">...
+    &lt;my.extension id="myid"&gt;
+      ...
+    &lt;/my.extension&gt;
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When merging configurations without an explicit ID, everything works as long as there is at most a single configuration
+for each extension in each configuration file to be merged. As soon as there is more than one configuration for some
+extension in one of the configuration files, you need to assign IDs to the configurations of that extension so that it
+is clear what configs should be merged with what.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_custom_root_element_of_configuration"><a class="anchor" href="#_custom_root_element_of_configuration"></a>Custom Root Element of Configuration</h3>
+<div class="paragraph">
+<p>It might sometimes be useful to be able to only use a part of a JSON document as configuration for Revapi. This might be
+because the same file might be used for holding other data, too, or because the file(s) contain(s) multiple
+Revapi configurations. Note that the custom root is only applicable to configuration files, not the in-POM
+configuration.</p>
+</div>
+<div class="paragraph">
+<p>The below example illustrates the usage of the custom configuration root.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+    &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;0.14.0&lt;/version&gt;
+    ...
+    &lt;configuration&gt;
+        &lt;analysisConfigurationFiles&gt;
+            &lt;file&gt;${project.basedir}/config/filter.json&lt;/file&gt;
+            &lt;file&gt;${project.basedir}/config/ignore.json&lt;/file&gt;
+            &lt;file&gt;
+              &lt;path&gt;${project.basedir}/config/json-data-for-many-things.json&lt;/path&gt;
+              &lt;roots&gt;
+                &lt;root&gt;configuration/revapi&lt;/root&gt;
+              &lt;/roots&gt;
+            &lt;/file&gt;
+            &lt;file&gt;
+              &lt;path&gt;${project.basedir}/config/xml-data-for-many-things.xml&lt;/path&gt;
+              &lt;roots&gt;
+                &lt;root&gt;configuration/revapi&lt;/root&gt;
+              &lt;/roots&gt;
+            &lt;/file&gt;
+        &lt;/analysisConfigurationFiles&gt;
+    &lt;/configuration&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;goals&gt;&lt;goal&gt;check&lt;/goal&gt;&lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The above would read the configuration from the <code>filter.json</code> and <code>ignore.json</code> files. In addition it would also read
+the configuration from the <code>json-data-for-many-things.json</code> and <code>xml-data-for-many-things.xml</code> files but would only
+consider the data from the "configuration/revapi" subpath in those file. E.g. if the files looked like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javascript hljs" data-lang="javascript">{
+  "itest-setup": {...},
+  "configuration": {
+    "our-custom-tool": {
+    },
+    "revapi": {
+      ... HERE WE ARE ...
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;configuration&gt;
+  &lt;ci&gt;...&lt;/ci&gt;
+  &lt;revapi&gt;
+     ... HERE WE ARE ...
+  &lt;/revapi&gt;
+&lt;/configuration&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Revapi configurations would only be read from the "&#8230;&#8203; HERE WE ARE &#8230;&#8203;" part of the documents.</p>
+</div>
+<div class="paragraph">
+<p>Revapi itself uses this approach to track the changes made to its API across the versions using a single file. Each
+Revapi module can have a "api-changes.json" file in its base directory. The contents of this file follow this pattern:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-javascript hljs" data-lang="javascript">{
+  "version1": {
+    "revapi": {
+      "ignore": [
+        ...
+      ]
+    }
+  },
+  "version2": {
+    "revapi": {
+      "ignore": [
+        ...
+      ]
+    }
+  },
+  ...
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I.e. in that file, the root elements are the released versions of revapi and under them there are configurations for
+revapi for the particular version to pass the build. Usually, this is just a list of ignored API changes - i.e. the
+API changes made in that release that are to be purposefully ignored by the tool so that the build passes. To make
+this work, revapi build contains this profile:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;profile&gt;
+    &lt;id&gt;api-check&lt;/id&gt;
+    &lt;activation&gt;
+        &lt;activeByDefault&gt;true&lt;/activeByDefault&gt;
+    &lt;/activation&gt;
+
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+                &lt;artifactId&gt;build-helper-maven-plugin&lt;/artifactId&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;id&gt;parse-version&lt;/id&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;parse-version&lt;/goal&gt;
+                        &lt;/goals&gt;
+                        &lt;phase&gt;validate&lt;/phase&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+                &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+                &lt;version&gt;${self-api-check.maven-version}&lt;/version&gt;
+                &lt;dependencies&gt;
+                    &lt;dependency&gt;
+                        &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+                        &lt;artifactId&gt;revapi-java&lt;/artifactId&gt;
+                        &lt;version&gt;${self-api-check.java-extension-version}&lt;/version&gt;
+                    &lt;/dependency&gt;
+                &lt;/dependencies&gt;
+                &lt;configuration&gt;
+                    &lt;failOnMissingConfigurationFiles&gt;false&lt;/failOnMissingConfigurationFiles&gt;
+                    &lt;analysisConfigurationFiles&gt;
+                        &lt;configurationFile&gt;
+                            &lt;path&gt;api-changes.json&lt;/path&gt;
+                            &lt;roots&gt;
+                                &lt;root&gt;${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}&lt;/root&gt;
+                            &lt;/roots&gt;
+                        &lt;/configurationFile&gt;
+                    &lt;/analysisConfigurationFiles&gt;
+                &lt;/configuration&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;id&gt;api-check&lt;/id&gt;
+                        &lt;goals&gt;&lt;goal&gt;check&lt;/goal&gt;&lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/profile&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+    <p>Copyright 2014-2021 Lukas Krejci.</p>
+    <p>This site was built using <a href="https://antora.org">Antora 2.3.3</a>.</p>
+</footer>
+<script>
+  window.antora = window.antora || {}
+  window.antora.basePath = '../..'
+  window.antora.pagePath = '/revapi-maven-plugin/0.14.0/configuring-revapi.html'
+</script>
+<script src="../../_/js/site.js"></script>
+  <script src="../../_/js/vendor/lunr.js"></script>
+  <script src="../../_/js/vendor/search.js"></script>
+  <script async src="../../_/../search-index.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script>
+    function toggleVersionSelector(id) {
+        var sel = document.getElementById(id)
+        if (!sel) {
+            return
+        }
+
+        if (sel.style.display == 'none') {
+            sel.style.display = 'block';
+        } else {
+            sel.style.display = 'none';
+        }
+    }
+</script>  </body>
+</html>

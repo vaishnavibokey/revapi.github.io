@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Ternary.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">Ternary.java</span></div><h1>Ternary.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import java.util.function.Supplier;
+
+/**
+ * Ternary logic using the Kleene algebra. The {@link #UNDECIDED} value means just that - it doesn't mean &quot;both true and
+ * false&quot;.
+ */
+<span class="fc" id="L25">public enum Ternary {</span>
+<span class="fc" id="L26">    TRUE, FALSE, UNDECIDED;</span>
+
+    public static Ternary fromBoolean(boolean value) {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        return value ? TRUE : FALSE;</span>
+    }
+
+    /**
+     * @param undecidedValue
+     *            the boolean value to convert the {@link #UNDECIDED} value to.
+     * 
+     * @return the value as a boolean
+     */
+    public boolean toBoolean(boolean undecidedValue) {
+<span class="pc bpc" id="L39" title="1 of 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="fc" id="L41">            return true;</span>
+        case FALSE:
+<span class="fc" id="L43">            return false;</span>
+        case UNDECIDED:
+<span class="fc" id="L45">            return undecidedValue;</span>
+        default:
+<span class="nc" id="L47">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+
+    public Ternary negate() {
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="fc" id="L54">            return FALSE;</span>
+        case FALSE:
+<span class="fc" id="L56">            return TRUE;</span>
+        case UNDECIDED:
+<span class="nc" id="L58">            return UNDECIDED;</span>
+        default:
+<span class="nc" id="L60">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+
+    public Ternary and(Ternary other) {
+<span class="pc bpc" id="L65" title="2 of 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="fc" id="L67">            return other;</span>
+        case FALSE:
+<span class="fc" id="L69">            return this;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            return other == FALSE ? other : this;</span>
+        default:
+<span class="nc" id="L73">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+
+    /**
+     * Short-circuiting version of {@link #and(Ternary)}. Will only evaluate the argument if necessary.
+     */
+    public Ternary and(Supplier&lt;Ternary&gt; other) {
+<span class="nc bnc" id="L81" title="All 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="nc" id="L83">            return other.get();</span>
+        case FALSE:
+<span class="nc" id="L85">            return this;</span>
+        case UNDECIDED:
+<span class="nc" id="L87">            Ternary otherVal = other.get();</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            return otherVal == FALSE ? otherVal : this;</span>
+        default:
+<span class="nc" id="L90">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+
+    public Ternary or(Ternary other) {
+<span class="pc bpc" id="L95" title="3 of 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="fc" id="L97">            return this;</span>
+        case FALSE:
+<span class="nc" id="L99">            return other;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            return other == TRUE ? other : this;</span>
+        default:
+<span class="nc" id="L103">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+
+    /**
+     * Short-circuiting version of {@link #or(Ternary)}. Will only evaluate the argument if necessary.
+     */
+    public Ternary or(Supplier&lt;Ternary&gt; other) {
+<span class="nc bnc" id="L111" title="All 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="nc" id="L113">            return this;</span>
+        case FALSE:
+<span class="nc" id="L115">            return other.get();</span>
+        case UNDECIDED:
+<span class="nc" id="L117">            Ternary otherVal = other.get();</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            return otherVal == TRUE ? otherVal : this;</span>
+        default:
+<span class="nc" id="L120">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+
+    public Ternary implies(Ternary other) {
+<span class="nc bnc" id="L125" title="All 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="nc" id="L127">            return other;</span>
+        case FALSE:
+<span class="nc" id="L129">            return TRUE;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            return other == TRUE ? other : this;</span>
+        default:
+<span class="nc" id="L133">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+
+    public Ternary implies(Supplier&lt;Ternary&gt; other) {
+<span class="nc bnc" id="L138" title="All 4 branches missed.">        switch (this) {</span>
+        case TRUE:
+<span class="nc" id="L140">            return other.get();</span>
+        case FALSE:
+<span class="nc" id="L142">            return TRUE;</span>
+        case UNDECIDED:
+<span class="nc" id="L144">            Ternary otherVal = other.get();</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            return otherVal == TRUE ? otherVal : this;</span>
+        default:
+<span class="nc" id="L147">            throw new IllegalStateException(&quot;Unhandled ternary value.&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

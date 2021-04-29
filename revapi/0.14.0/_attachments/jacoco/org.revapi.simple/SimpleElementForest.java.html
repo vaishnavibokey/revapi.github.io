@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SimpleElementForest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.simple</a> &gt; <span class="el_source">SimpleElementForest.java</span></div><h1>SimpleElementForest.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.simple;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.API;
+import org.revapi.Element;
+import org.revapi.ElementForest;
+import org.revapi.FilterFinishResult;
+import org.revapi.FilterStartResult;
+import org.revapi.TreeFilter;
+import org.revapi.query.Filter;
+
+/**
+ * A simple element forest of {@link org.revapi.simple.SimpleElement}s.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ * 
+ * @deprecated use {@link org.revapi.base.BaseElementForest} instead
+ */
+@Deprecated
+public class SimpleElementForest implements ElementForest {
+    private SortedSet&lt;? extends SimpleElement&gt; roots;
+    private final API api;
+
+<span class="nc" id="L51">    protected SimpleElementForest(@Nonnull API api) {</span>
+<span class="nc" id="L52">        this.api = api;</span>
+<span class="nc" id="L53">    }</span>
+
+    @Override
+    @Nonnull
+    public API getApi() {
+<span class="nc" id="L58">        return api;</span>
+    }
+
+    @Override
+    @Nonnull
+    public SortedSet&lt;? extends SimpleElement&gt; getRoots() {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (roots == null) {</span>
+<span class="nc" id="L65">            roots = newRootsInstance();</span>
+        }
+<span class="nc" id="L67">        return roots;</span>
+    }
+
+    @Override
+    public Stream stream(Class resultType, boolean recurse, TreeFilter filter, @Nullable Element root) {
+<span class="nc" id="L72">        return search(resultType, recurse, filter, root).stream();</span>
+    }
+
+    public &lt;T extends Element&gt; void search(@Nonnull List&lt;T&gt; results, @Nonnull Class&lt;T&gt; resultType,
+            @Nonnull SortedSet&lt;? extends Element&gt; currentLevel, boolean recurse, @Nullable Filter&lt;? super T&gt; filter) {
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        for (Element e : currentLevel) {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (resultType.isAssignableFrom(e.getClass())) {</span>
+                @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L81">                T te = (T) e;</span>
+
+<span class="nc bnc" id="L83" title="All 4 branches missed.">                if (filter == null || filter.applies(te)) {</span>
+<span class="nc" id="L84">                    results.add(te);</span>
+                }
+            }
+
+<span class="nc bnc" id="L88" title="All 6 branches missed.">            if (recurse &amp;&amp; (filter == null || filter.shouldDescendInto(e))) {</span>
+<span class="nc" id="L89">                search(results, resultType, e.getChildren(), true, filter);</span>
+            }
+<span class="nc" id="L91">        }</span>
+<span class="nc" id="L92">    }</span>
+
+    public &lt;T extends Element&gt; List&lt;T&gt; search(Class&lt;T&gt; resultType, boolean recurse, TreeFilter filter, Element root) {
+<span class="nc" id="L95">        List&lt;T&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        search(results, resultType, root == null ? getRoots() : root.getChildren(), recurse, filter);</span>
+<span class="nc" id="L97">        return results;</span>
+    }
+
+    public &lt;T extends Element&gt; void search(List&lt;T&gt; results, Class&lt;T&gt; resultType,
+            SortedSet&lt;? extends Element&gt; currentLevel, boolean recurse, TreeFilter filter) {
+<span class="nc" id="L102">        search(results, resultType, currentLevel, recurse, filter, true);</span>
+<span class="nc" id="L103">    }</span>
+
+    @SuppressWarnings({ &quot;SuspiciousMethodCalls&quot; })
+    private &lt;T extends Element&gt; void search(List&lt;T&gt; results, Class&lt;T&gt; resultType,
+            SortedSet&lt;? extends Element&gt; currentLevel, boolean recurse, TreeFilter filter, boolean topLevel) {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        for (Element e : currentLevel) {</span>
+            FilterStartResult res;
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            if (filter == null) {</span>
+<span class="nc" id="L111">                res = FilterStartResult.matchAndDescend();</span>
+            } else {
+<span class="nc" id="L113">                res = filter.start(e);</span>
+            }
+
+<span class="nc" id="L116">            boolean added = res.getMatch().toBoolean(true);</span>
+
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (added) {</span>
+<span class="nc" id="L119">                results.add(resultType.cast(e));</span>
+            }
+
+<span class="nc bnc" id="L122" title="All 4 branches missed.">            if (recurse &amp;&amp; res.getDescend().toBoolean(true)) {</span>
+<span class="nc" id="L123">                search(results, resultType, e.getChildren(), true, filter, false);</span>
+            }
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            if (filter != null) {</span>
+<span class="nc" id="L127">                FilterFinishResult finalMatch = filter.finish(e);</span>
+<span class="nc bnc" id="L128" title="All 4 branches missed.">                if (!added &amp;&amp; finalMatch.getMatch().toBoolean(true)) {</span>
+<span class="nc" id="L129">                    results.add(resultType.cast(e));</span>
+                }
+            }
+<span class="nc" id="L132">        }</span>
+
+<span class="nc bnc" id="L134" title="All 4 branches missed.">        if (topLevel &amp;&amp; filter != null) {</span>
+<span class="nc" id="L135">            Map&lt;Element, FilterFinishResult&gt; matches = filter.finish();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            for (Map.Entry&lt;Element, FilterFinishResult&gt; e : matches.entrySet()) {</span>
+<span class="nc bnc" id="L137" title="All 4 branches missed.">                if (e.getValue().getMatch().toBoolean(true) &amp;&amp; !results.contains(e.getKey())) {</span>
+<span class="nc" id="L138">                    results.add(resultType.cast(e.getKey()));</span>
+                }
+<span class="nc" id="L140">            }</span>
+        }
+<span class="nc" id="L142">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L146">        StringBuilder bld = new StringBuilder(getClass().getSimpleName());</span>
+
+<span class="nc" id="L148">        addToString(bld, 1, getRoots());</span>
+
+<span class="nc" id="L150">        return bld.toString();</span>
+    }
+
+    protected SortedSet&lt;? extends SimpleElement&gt; newRootsInstance() {
+<span class="nc" id="L154">        return new TreeSet&lt;&gt;();</span>
+    }
+
+    private void addToString(StringBuilder bld, int indent, SortedSet&lt;? extends Element&gt; elements) {
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        for (Element e : elements) {</span>
+<span class="nc" id="L159">            bld.append(&quot;\n&quot;);</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            for (int i = 0; i &lt; indent; ++i) {</span>
+<span class="nc" id="L161">                bld.append(&quot;    &quot;);</span>
+            }
+<span class="nc" id="L163">            bld.append(e.toString());</span>
+<span class="nc" id="L164">            addToString(bld, indent + 1, e.getChildren());</span>
+<span class="nc" id="L165">        }</span>
+<span class="nc" id="L166">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>
