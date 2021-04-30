@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseElementForest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.base</a> &gt; <span class="el_source">BaseElementForest.java</span></div><h1>BaseElementForest.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.base;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Stream;
+
+import org.revapi.API;
+import org.revapi.Element;
+import org.revapi.ElementForest;
+import org.revapi.FilterFinishResult;
+import org.revapi.FilterStartResult;
+import org.revapi.TreeFilter;
+
+/**
+ * A convenience base class for element forest implementations.
+ *
+ * @param &lt;E&gt;
+ *            the base type of all the elements produced by some API analyzer
+ */
+public class BaseElementForest&lt;E extends Element&lt;E&gt;&gt; implements ElementForest&lt;E&gt; {
+    private final API api;
+    private SortedSet&lt;E&gt; roots;
+
+<span class="fc" id="L43">    public BaseElementForest(API api) {</span>
+<span class="fc" id="L44">        this.api = api;</span>
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    public API getApi() {
+<span class="nc" id="L49">        return api;</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; getRoots() {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (roots == null) {</span>
+<span class="fc" id="L55">            roots = newRootsInstance();</span>
+        }
+
+<span class="fc" id="L58">        return roots;</span>
+    }
+
+    public &lt;T extends Element&lt;E&gt;&gt; Stream&lt;T&gt; stream(Class&lt;T&gt; resultType, boolean recurse, TreeFilter&lt;E&gt; filter,
+            Element&lt;E&gt; root) {
+<span class="nc" id="L63">        List&lt;T&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        search(results, resultType, root == null ? getRoots() : root.getChildren(), recurse, filter);</span>
+<span class="nc" id="L65">        return results.stream();</span>
+    }
+
+    protected &lt;T extends Element&lt;E&gt;&gt; void search(List&lt;T&gt; results, Class&lt;T&gt; resultType, SortedSet&lt;E&gt; siblings,
+            boolean recurse, TreeFilter&lt;E&gt; filter) {
+<span class="nc" id="L70">        search(results, resultType, siblings, recurse, filter, true);</span>
+<span class="nc" id="L71">    }</span>
+
+    @SuppressWarnings({ &quot;SuspiciousMethodCalls&quot; })
+    private &lt;T extends Element&lt;E&gt;&gt; void search(List&lt;T&gt; results, Class&lt;T&gt; resultType, SortedSet&lt;E&gt; siblings,
+            boolean recurse, TreeFilter&lt;E&gt; filter, boolean topLevel) {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        for (E e : siblings) {</span>
+            FilterStartResult res;
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (filter == null) {</span>
+<span class="nc" id="L79">                res = FilterStartResult.matchAndDescend();</span>
+            } else {
+<span class="nc" id="L81">                res = filter.start(e);</span>
+            }
+
+<span class="nc" id="L84">            boolean added = res.getMatch().toBoolean(true);</span>
+
+<span class="nc bnc" id="L86" title="All 4 branches missed.">            if (added &amp;&amp; resultType.isAssignableFrom(e.getClass())) {</span>
+<span class="nc" id="L87">                results.add(resultType.cast(e));</span>
+            }
+
+<span class="nc bnc" id="L90" title="All 4 branches missed.">            if (recurse &amp;&amp; res.getDescend().toBoolean(true)) {</span>
+<span class="nc" id="L91">                search(results, resultType, e.getChildren(), true, filter, false);</span>
+            }
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            if (filter != null) {</span>
+<span class="nc" id="L95">                FilterFinishResult finalMatch = filter.finish(e);</span>
+<span class="nc bnc" id="L96" title="All 6 branches missed.">                if (!added &amp;&amp; finalMatch.getMatch().toBoolean(true) &amp;&amp; resultType.isAssignableFrom(e.getClass())) {</span>
+<span class="nc" id="L97">                    results.add(resultType.cast(e));</span>
+                }
+            }
+<span class="nc" id="L100">        }</span>
+
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        if (topLevel &amp;&amp; filter != null) {</span>
+<span class="nc" id="L103">            Map&lt;E, FilterFinishResult&gt; matches = filter.finish();</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            for (Map.Entry&lt;E, FilterFinishResult&gt; e : matches.entrySet()) {</span>
+<span class="nc bnc" id="L105" title="All 4 branches missed.">                if (e.getValue().getMatch().toBoolean(true) &amp;&amp; !results.contains(e.getKey())) {</span>
+<span class="nc" id="L106">                    results.add(resultType.cast(e.getKey()));</span>
+                }
+<span class="nc" id="L108">            }</span>
+        }
+<span class="nc" id="L110">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L114">        StringBuilder bld = new StringBuilder(getClass().getSimpleName());</span>
+
+<span class="nc" id="L116">        addToString(bld, 1, getRoots());</span>
+
+<span class="nc" id="L118">        return bld.toString();</span>
+    }
+
+    protected SortedSet&lt;E&gt; newRootsInstance() {
+<span class="fc" id="L122">        return new TreeSet&lt;&gt;();</span>
+    }
+
+    private void addToString(StringBuilder bld, int indent, SortedSet&lt;? extends Element&lt;?&gt;&gt; elements) {
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        for (Element&lt;?&gt; e : elements) {</span>
+<span class="nc" id="L127">            bld.append(&quot;\n&quot;);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            for (int i = 0; i &lt; indent; ++i) {</span>
+<span class="nc" id="L129">                bld.append(&quot;    &quot;);</span>
+            }
+<span class="nc" id="L131">            bld.append(e.toString());</span>
+<span class="nc" id="L132">            addToString(bld, indent + 1, e.getChildren());</span>
+<span class="nc" id="L133">        }</span>
+<span class="nc" id="L134">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

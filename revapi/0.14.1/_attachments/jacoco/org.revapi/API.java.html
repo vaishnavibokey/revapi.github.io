@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>API.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">API.java</span></div><h1>API.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+/**
+ * Represents a set of archives that define an API.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public final class API {
+
+<span class="fc" id="L35">    public static final class Builder {</span>
+<span class="fc" id="L36">        private final Set&lt;Archive&gt; archives = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L37">        private final Set&lt;Archive&gt; supplementaryArchives = new LinkedHashSet&lt;&gt;();</span>
+
+        public Builder of(Archive... archives) {
+<span class="fc" id="L40">            return of(Arrays.asList(archives));</span>
+        }
+
+        public Builder of(Iterable&lt;? extends Archive&gt; archives) {
+<span class="fc" id="L44">            this.archives.clear();</span>
+<span class="fc" id="L45">            return addArchives(archives);</span>
+        }
+
+        public Builder addArchive(Archive archive) {
+<span class="nc" id="L49">            archives.add(archive);</span>
+<span class="nc" id="L50">            return this;</span>
+        }
+
+        public Builder addArchives(Archive... archives) {
+<span class="nc" id="L54">            return addArchives(Arrays.asList(archives));</span>
+        }
+
+        public Builder addArchives(Iterable&lt;? extends Archive&gt; archives) {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            for (Archive a : archives) {</span>
+<span class="fc" id="L59">                this.archives.add(a);</span>
+<span class="fc" id="L60">            }</span>
+<span class="fc" id="L61">            return this;</span>
+        }
+
+        public Builder supportedBy(Archive... archives) {
+<span class="nc" id="L65">            return supportedBy(Arrays.asList(archives));</span>
+        }
+
+        public Builder supportedBy(Iterable&lt;? extends Archive&gt; archives) {
+<span class="nc" id="L69">            this.supplementaryArchives.clear();</span>
+<span class="nc" id="L70">            return addSupportArchives(archives);</span>
+        }
+
+        public Builder addSupportArchive(Archive archive) {
+<span class="nc" id="L74">            supplementaryArchives.add(archive);</span>
+<span class="nc" id="L75">            return this;</span>
+        }
+
+        public Builder addSupportArchives(Archive... archives) {
+<span class="nc" id="L79">            return addSupportArchives(Arrays.asList(archives));</span>
+        }
+
+        public Builder addSupportArchives(Iterable&lt;? extends Archive&gt; archives) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            for (Archive a : archives) {</span>
+<span class="nc" id="L84">                this.supplementaryArchives.add(a);</span>
+<span class="nc" id="L85">            }</span>
+<span class="nc" id="L86">            return this;</span>
+        }
+
+        public API build() {
+<span class="fc" id="L90">            return new API(archives, supplementaryArchives);</span>
+        }
+    }
+
+    private final Iterable&lt;? extends Archive&gt; archives;
+    private final Iterable&lt;? extends Archive&gt; supplementaryArchives;
+
+    /**
+     * @param archives
+     *            the archives
+     * @param supplementaryArchives
+     *            the supplementary archives
+     *
+     * @see #getArchives()
+     * @see #getSupplementaryArchives()
+     */
+<span class="fc" id="L106">    public API(Iterable&lt;? extends Archive&gt; archives, @Nullable Iterable&lt;? extends Archive&gt; supplementaryArchives) {</span>
+<span class="fc" id="L107">        this.archives = archives;</span>
+<span class="fc" id="L108">        this.supplementaryArchives = supplementaryArchives;</span>
+<span class="fc" id="L109">    }</span>
+
+    public static Builder builder() {
+<span class="fc" id="L112">        return new Builder();</span>
+    }
+
+    public static Builder of(Archive... archives) {
+<span class="fc" id="L116">        return builder().of(archives);</span>
+    }
+
+    public static Builder of(Iterable&lt;? extends Archive&gt; archives) {
+<span class="nc" id="L120">        return builder().of(archives);</span>
+    }
+
+    /**
+     * @return The set of archives to check the API of.
+     */
+    public Iterable&lt;? extends Archive&gt; getArchives() {
+<span class="fc" id="L127">        return archives;</span>
+    }
+
+    /**
+     * The set of archives that somehow supplement the main ones (for example they contain definitions used in the main
+     * archives). In Java, supplementary archives would be the JARs that need to be on the compilation classpath. Can be
+     * null if no such archives are needed.
+     *
+     * @return the set of supplementary archives
+     */
+    @Nullable
+    public Iterable&lt;? extends Archive&gt; getSupplementaryArchives() {
+<span class="nc" id="L139">        return supplementaryArchives;</span>
+    }
+
+    /**
+     * Returns the role of the archive in the API.
+     * 
+     * @param archive
+     *            the archive to check
+     * 
+     * @return the role of the archive in the API
+     */
+    public Archive.Role getArchiveRole(Archive archive) {
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        for (Archive a : archives) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            if (a.equals(archive)) {</span>
+<span class="nc" id="L153">                return Archive.Role.PRIMARY;</span>
+            }
+<span class="nc" id="L155">        }</span>
+
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (supplementaryArchives != null) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">            for (Archive a : supplementaryArchives) {</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                if (a.equals(archive)) {</span>
+<span class="nc" id="L160">                    return Archive.Role.SUPPLEMENTARY;</span>
+                }
+<span class="nc" id="L162">            }</span>
+        }
+
+<span class="fc" id="L165">        return Archive.Role.UNKNOWN;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L170">        StringBuilder bld = new StringBuilder(&quot;API[archives=&quot;);</span>
+<span class="nc" id="L171">        addArchivesToString(bld, archives);</span>
+<span class="nc" id="L172">        bld.append(&quot;, supplementary=&quot;);</span>
+<span class="nc" id="L173">        addArchivesToString(bld, supplementaryArchives);</span>
+<span class="nc" id="L174">        bld.append(&quot;]&quot;);</span>
+<span class="nc" id="L175">        return bld.toString();</span>
+    }
+
+    private static void addArchivesToString(StringBuilder bld, Iterable&lt;? extends Archive&gt; archives) {
+<span class="nc" id="L179">        bld.append(&quot;[&quot;);</span>
+
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (archives != null) {</span>
+<span class="nc" id="L182">            Iterator&lt;? extends Archive&gt; it = archives.iterator();</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (it.hasNext()) {</span>
+<span class="nc" id="L184">                bld.append(it.next().getName());</span>
+            }
+
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            while (it.hasNext()) {</span>
+<span class="nc" id="L188">                bld.append(&quot;, &quot;).append(it.next().getName());</span>
+            }
+        }
+
+<span class="nc" id="L192">        bld.append(&quot;]&quot;);</span>
+<span class="nc" id="L193">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

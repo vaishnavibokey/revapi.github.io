@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseEagerLoadingArchiveAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.base</a> &gt; <span class="el_source">BaseEagerLoadingArchiveAnalyzer.java</span></div><h1>BaseEagerLoadingArchiveAnalyzer.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.base;
+
+import static java.util.Collections.emptySet;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import org.revapi.API;
+import org.revapi.ApiAnalyzer;
+import org.revapi.Archive;
+import org.revapi.TreeFilter;
+
+/**
+ * A base class for archive analyzers that need to load all the elements in an archive eagerly.
+ *
+ * @param &lt;E&gt;
+ *            the parent type of all elements produced by the API analyzer
+ */
+public abstract class BaseEagerLoadingArchiveAnalyzer&lt;F extends BaseElementForest&lt;E&gt;, E extends BaseElement&lt;E&gt;&gt;
+        extends BaseArchiveAnalyzer&lt;F, E&gt; {
+
+    private final boolean processSupplementaryArchives;
+
+    public BaseEagerLoadingArchiveAnalyzer(ApiAnalyzer&lt;E&gt; apiAnalyzer, API api, boolean processSupplementaryArchives) {
+<span class="fc" id="L44">        super(apiAnalyzer, api);</span>
+<span class="fc" id="L45">        this.processSupplementaryArchives = processSupplementaryArchives;</span>
+<span class="fc" id="L46">    }</span>
+
+    /**
+     * {@inheritDoc}
+     *
+     * This implementation eagerly analyzes all the archives and remembers the results so that the final tree can be
+     * computed.
+     *
+     * @return a context object with the results of the analysis
+     */
+    @Override
+    protected FullForestContext preAnalyze() {
+<span class="fc" id="L58">        FullForestContext ctx = new FullForestContext();</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        for (Archive archive : getApi().getArchives()) {</span>
+<span class="fc" id="L61">            Set&lt;E&gt; archiveRoots = createElements(archive);</span>
+<span class="fc" id="L62">            ctx.remember(archiveRoots);</span>
+<span class="fc" id="L63">        }</span>
+
+<span class="pc bpc" id="L65" title="3 of 4 branches missed.">        if (processSupplementaryArchives &amp;&amp; getApi().getSupplementaryArchives() != null) {</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            for (Archive archive : getApi().getSupplementaryArchives()) {</span>
+<span class="nc" id="L67">                Set&lt;E&gt; archiveRoots = createElements(archive);</span>
+<span class="nc" id="L68">                ctx.remember(archiveRoots);</span>
+<span class="nc" id="L69">            }</span>
+        }
+
+<span class="fc" id="L72">        return ctx;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;
+     * This method assumes the context is a {@link FullForestContext} and uses it to return the recorded roots.
+     * 
+     * @param context
+     *            the full forest context
+     * 
+     * @return the recorded roots
+     */
+    @Override
+    protected Stream&lt;E&gt; discoverRoots(Object context) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L89">        FullForestContext ctx = (FullForestContext) context;</span>
+<span class="fc" id="L90">        return ctx.roots.stream();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * &lt;p&gt;
+     * This method assumes the context is a {@link FullForestContext} and uses it to return the recorded children of the
+     * provided element.
+     * 
+     * @param context
+     *            the full forest context
+     * 
+     * @return the recorded children of the element
+     */
+    @Override
+    protected Stream&lt;E&gt; discoverElements(Object context, E parent) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L108">        FullForestContext ctx = (FullForestContext) context;</span>
+<span class="fc" id="L109">        return ctx.originalChildren.getOrDefault(parent, emptySet()).stream();</span>
+    }
+
+    /**
+     * Scans the archive and returns the elements within. Each of the returned elements is supposed to have a fully
+     * realized hierarchy of children.
+     *
+     * @param archive
+     *            the archive to analyze
+     * 
+     * @return a set of root elements found in the archive (with children initialized, too)
+     */
+    protected abstract Set&lt;E&gt; createElements(Archive archive);
+
+    /**
+     * This context object is used to &quot;remember&quot; all the elements that were created during parsing of an archive.
+     * Because these elements can be further filtered during the {@link #analyze(TreeFilter)} call, we don't construct
+     * an element forest from these results straight away but rather store the preliminary results in this context
+     * object and only pass it to filtering in the {@link #discoverRoots(Object)} and
+     * {@link #discoverElements(Object, BaseElement)} methods.
+     */
+<span class="fc" id="L130">    protected class FullForestContext {</span>
+<span class="fc" id="L131">        public Map&lt;E, Set&lt;E&gt;&gt; originalChildren = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L132">        public Set&lt;E&gt; roots = new HashSet&lt;&gt;();</span>
+
+        /**
+         * This method remembers the children of all the elements in the provided set (recursively) and clears out the
+         * children of each of the elements. This is so that we don't end up with elements that don't match the filter
+         * in the final results.
+         * 
+         * @param elements
+         *            the elements to remember
+         */
+        public void remember(Set&lt;E&gt; elements) {
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            for (E e : elements) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">                if (originalChildren.containsKey(e)) {</span>
+<span class="fc" id="L145">                    continue;</span>
+                }
+
+<span class="fc" id="L148">                Set&lt;E&gt; children = e.getChildren();</span>
+
+<span class="fc" id="L150">                originalChildren.computeIfAbsent(e, __ -&gt; new HashSet&lt;&gt;()).addAll(children);</span>
+
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                if (e.getParent() == null) {</span>
+<span class="fc" id="L153">                    roots.add(e);</span>
+                } else {
+<span class="fc" id="L155">                    remember(e.getParent().getChildren());</span>
+                }
+
+<span class="fc" id="L158">                remember(children);</span>
+<span class="fc" id="L159">                children.clear();</span>
+<span class="fc" id="L160">            }</span>
+<span class="fc" id="L161">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>
