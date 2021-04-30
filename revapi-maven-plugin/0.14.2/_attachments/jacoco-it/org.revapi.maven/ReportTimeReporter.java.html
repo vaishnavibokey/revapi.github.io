@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReportTimeReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">ReportTimeReporter.java</span></div><h1>ReportTimeReporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.AnalysisContext;
+import org.revapi.CompatibilityType;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Element;
+import org.revapi.Report;
+import org.revapi.Reporter;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+<span class="fc" id="L41">public final class ReportTimeReporter implements Reporter {</span>
+    static final String MIN_SEVERITY_KEY = &quot;org.revapi.maven.report.minSeverity&quot;;
+
+    private DifferenceSeverity minSeverity;
+
+<span class="fc" id="L46">    EnumMap&lt;DifferenceSeverity, EnumMap&lt;CompatibilityType, List&lt;DifferenceReport&gt;&gt;&gt; reportsBySeverity = new EnumMap&lt;&gt;(</span>
+            DifferenceSeverity.class);
+
+    @Override
+    public void report(@Nonnull Report report) {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (Difference d : report.getDifferences()) {</span>
+<span class="fc" id="L52">            addDifference(report.getOldElement(), report.getNewElement(), d);</span>
+<span class="fc" id="L53">        }</span>
+<span class="fc" id="L54">    }</span>
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L58">    }</span>
+
+    @Nullable
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L63">        return &quot;revapi.maven.internal.reportTimeReporter&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="fc" id="L69">        return null;</span>
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L74">        reportsBySeverity.clear();</span>
+<span class="fc" id="L75">        minSeverity = (DifferenceSeverity) analysisContext.getData(MIN_SEVERITY_KEY);</span>
+<span class="fc" id="L76">    }</span>
+
+    private void addDifference(Element oldElement, Element newElement, Difference difference) {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (Map.Entry&lt;CompatibilityType, DifferenceSeverity&gt; cls : difference.classification.entrySet()) {</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            if (cls.getValue().compareTo(minSeverity) &lt; 0) {</span>
+<span class="fc" id="L81">                continue;</span>
+            }
+
+<span class="fc" id="L84">            EnumMap&lt;CompatibilityType, List&lt;DifferenceReport&gt;&gt; sevReports = reportsBySeverity.get(cls.getValue());</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (sevReports == null) {</span>
+<span class="fc" id="L86">                sevReports = new EnumMap&lt;&gt;(CompatibilityType.class);</span>
+<span class="fc" id="L87">                reportsBySeverity.put(cls.getValue(), sevReports);</span>
+            }
+
+<span class="fc" id="L90">            List&lt;DifferenceReport&gt; reps = sevReports.get(cls.getKey());</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (reps == null) {</span>
+<span class="fc" id="L92">                reps = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L93">                sevReports.put(cls.getKey(), reps);</span>
+            }
+
+<span class="fc" id="L96">            reps.add(new DifferenceReport(oldElement, newElement, difference));</span>
+<span class="fc" id="L97">        }</span>
+<span class="fc" id="L98">    }</span>
+
+    public static class DifferenceReport {
+        final Element oldElement;
+        final Element newElement;
+        final Difference difference;
+
+<span class="fc" id="L105">        private DifferenceReport(Element oldElement, Element newElement, Difference difference) {</span>
+<span class="fc" id="L106">            this.oldElement = oldElement;</span>
+<span class="fc" id="L107">            this.newElement = newElement;</span>
+<span class="fc" id="L108">            this.difference = difference;</span>
+<span class="fc" id="L109">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>
