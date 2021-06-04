@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractFileReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">File Reporter Base</a> &gt; <a href="index.source.html" class="el_package">org.revapi.reporter.file</a> &gt; <span class="el_source">AbstractFileReporter.java</span></div><h1>AbstractFileReporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.reporter.file;
+
+import static org.revapi.ReportComparator.Strategy.HIERARCHICAL;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
+
+import org.revapi.AnalysisContext;
+import org.revapi.Criticality;
+import org.revapi.DifferenceSeverity;
+import org.revapi.Report;
+import org.revapi.ReportComparator;
+import org.revapi.Reporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This class can be used as a base class for reporters that want to write the reports into the files. It provides some
+ * basic features like difference filtering based on severity, the ability to specify the file to write to (including
+ * &quot;out&quot; and &quot;err&quot; as special file names for standard output and standard error) and whether to overwrite or append to
+ * an existing file.
+ */
+<span class="fc" id="L49">public abstract class AbstractFileReporter implements Reporter {</span>
+<span class="fc" id="L50">    private static final Logger LOG = LoggerFactory.getLogger(AbstractFileReporter.class);</span>
+
+    protected DifferenceSeverity minLevel;
+    protected Criticality minCriticality;
+    protected PrintWriter output;
+    protected File file;
+
+    protected boolean shouldClose;
+    protected boolean keepEmptyFile;
+
+    protected AnalysisContext analysis;
+<span class="fc" id="L61">    private boolean reportsInOutput = false;</span>
+
+    /**
+     * For testing.
+     *
+     * @param wrt
+     *            the output writer
+     */
+    protected void setOutput(PrintWriter wrt) {
+<span class="nc" id="L70">        this.output = wrt;</span>
+<span class="nc" id="L71">        this.shouldClose = true;</span>
+<span class="nc" id="L72">    }</span>
+
+    /**
+     * Subclasses should write the reports to the {@link #output} in this method. This method MUST NOT close the output
+     * though.
+     */
+    protected abstract void flushReports() throws IOException;
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysis) {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (this.analysis != null) {</span>
+            try {
+<span class="nc" id="L84">                flushReports();</span>
+<span class="nc" id="L85">            } catch (IOException e) {</span>
+<span class="nc" id="L86">                throw new IllegalStateException(&quot;Failed to output previous analysis report.&quot;);</span>
+<span class="nc" id="L87">            }</span>
+        }
+
+<span class="fc" id="L90">        this.analysis = analysis;</span>
+
+<span class="fc" id="L92">        String minLevel = analysis.getConfigurationNode().path(&quot;minSeverity&quot;).asText(null);</span>
+<span class="fc" id="L93">        String minCrit = analysis.getConfigurationNode().path(&quot;minCriticality&quot;).asText(null);</span>
+<span class="fc" id="L94">        String output = analysis.getConfigurationNode().path(&quot;output&quot;).asText(null);</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        output = output == null ? &quot;out&quot; : output;</span>
+
+<span class="fc" id="L97">        boolean append = analysis.getConfigurationNode().path(&quot;append&quot;).asBoolean(false);</span>
+<span class="pc bpc" id="L98" title="1 of 4 branches missed.">        keepEmptyFile = append || analysis.getConfigurationNode().path(&quot;keepEmptyFile&quot;).asBoolean(true);</span>
+
+<span class="pc bpc" id="L100" title="2 of 4 branches missed.">        if (minLevel == null &amp;&amp; minCrit == null) {</span>
+<span class="fc" id="L101">            LOG.warn(&quot;At least one of `minSeverity` and `minCriticality` should to be defined. Defaulting to&quot;</span>
+                    + &quot; the obsolete behavior of reporting all potentially breaking elements.&quot;);
+<span class="fc" id="L103">            this.minLevel = DifferenceSeverity.POTENTIALLY_BREAKING;</span>
+        }
+
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (minLevel != null) {</span>
+<span class="nc" id="L107">            this.minLevel = DifferenceSeverity.valueOf(minLevel);</span>
+        }
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (minCrit != null) {</span>
+<span class="nc" id="L111">            this.minCriticality = analysis.getCriticalityByName(minCrit);</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (minCriticality == null) {</span>
+<span class="nc" id="L113">                throw new IllegalArgumentException(&quot;Unknown criticality '&quot; + minCrit + &quot;'.&quot;);</span>
+            }
+        }
+
+        OutputStream out;
+
+<span class="fc bfc" id="L119" title="All 3 branches covered.">        switch (output) {</span>
+        case &quot;out&quot;:
+<span class="fc" id="L121">            out = System.out;</span>
+<span class="fc" id="L122">            break;</span>
+        case &quot;err&quot;:
+<span class="fc" id="L124">            out = System.err;</span>
+<span class="fc" id="L125">            break;</span>
+        default:
+<span class="fc" id="L127">            file = new File(output);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (file.exists()) {</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">                if (!file.isFile()) {</span>
+<span class="nc" id="L130">                    LOG.warn(&quot;The configured file, '&quot; + file.getAbsolutePath() + &quot;' is not a file.&quot;</span>
+                            + &quot; Defaulting the output to standard output.&quot;);
+<span class="nc" id="L132">                    out = System.out;</span>
+<span class="nc" id="L133">                    break;</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                } else if (!file.canWrite()) {</span>
+<span class="nc" id="L135">                    LOG.warn(&quot;The configured file, '&quot; + file.getAbsolutePath() + &quot;' is not a writable.&quot;</span>
+                            + &quot; Defaulting the output to standard output.&quot;);
+<span class="nc" id="L137">                    out = System.out;</span>
+<span class="nc" id="L138">                    break;</span>
+                }
+            } else {
+<span class="fc" id="L141">                File parent = file.getParentFile();</span>
+<span class="fc bfc" id="L142" title="All 4 branches covered.">                if (parent != null &amp;&amp; !parent.exists()) {</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                    if (!parent.mkdirs()) {</span>
+<span class="nc" id="L144">                        LOG.warn(&quot;Failed to create directory structure to write to the configured output file '&quot;</span>
+<span class="nc" id="L145">                                + file.getAbsolutePath() + &quot;'. Defaulting the output to standard output.&quot;);</span>
+<span class="nc" id="L146">                        out = System.out;</span>
+<span class="nc" id="L147">                        break;</span>
+                    }
+                }
+            }
+
+            try {
+<span class="fc" id="L153">                out = new FileOutputStream(output, append);</span>
+<span class="nc" id="L154">            } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L155">                LOG.warn(&quot;Failed to create the configured output file '&quot; + file.getAbsolutePath() + &quot;'.&quot;</span>
+                        + &quot; Defaulting the output to standard output.&quot;, e);
+<span class="nc" id="L157">                out = System.out;</span>
+<span class="fc" id="L158">            }</span>
+        }
+
+<span class="fc bfc" id="L161" title="All 4 branches covered.">        shouldClose = out != System.out &amp;&amp; out != System.err;</span>
+
+<span class="fc" id="L163">        this.output = createOutputWriter(out, analysis);</span>
+<span class="fc" id="L164">    }</span>
+
+    /**
+     * Creates a print writer to be used as an output from the supplied output stream.
+     *
+     * This method is called during the default {@link #initialize(AnalysisContext)} and the default implementation
+     * creates a print writer writing in UTF-8.
+     *
+     * @param stream
+     *            the stream to convert to a print writer
+     * @param ctx
+     *            the analysis context which is being used in {@link #initialize(AnalysisContext)}
+     * 
+     * @return a print writer to be used as output
+     */
+    protected PrintWriter createOutputWriter(OutputStream stream, AnalysisContext ctx) {
+<span class="fc" id="L180">        return new PrintWriter(new OutputStreamWriter(stream, StandardCharsets.UTF_8));</span>
+    }
+
+    /**
+     * This is the default implementation of the report method that does the initial filtering based on the configured
+     * minimum severity and then delegates to {@link #doReport(Report)} if the reporting should really be performed.
+     * 
+     * @param report
+     *            the report with the differences
+     */
+    @Override
+    public void report(@Nonnull Report report) {
+<span class="fc" id="L192">        LOG.trace(&quot;Received report {}&quot;, report);</span>
+
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        if (report.getDifferences().isEmpty()) {</span>
+<span class="fc" id="L195">            return;</span>
+        }
+
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (isReportable(report)) {</span>
+<span class="nc" id="L199">            reportsInOutput = true;</span>
+<span class="nc" id="L200">            doReport(report);</span>
+        }
+<span class="nc" id="L202">    }</span>
+
+    protected boolean isReportable(Report report) {
+<span class="nc" id="L205">        boolean ret = true;</span>
+
+        // it is guaranteed in initialize() that one of these is not null
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (minLevel != null) {</span>
+<span class="nc" id="L209">            ret = isReportableBySeverity(report);</span>
+        }
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (minCriticality != null) {</span>
+<span class="nc bnc" id="L213" title="All 4 branches missed.">            ret = ret &amp;&amp; isReportableByCriticality(report);</span>
+        }
+
+<span class="nc" id="L216">        return ret;</span>
+    }
+
+    private boolean isReportableBySeverity(Report report) {
+<span class="nc" id="L220">        return report.getDifferences().stream().flatMap(d -&gt; d.classification.values().stream())</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                .anyMatch(s -&gt; s.compareTo(minLevel) &gt;= 0);</span>
+    }
+
+    private boolean isReportableByCriticality(Report report) {
+<span class="nc" id="L225">        return report.getDifferences().stream().map(d -&gt; d.criticality).filter(Objects::nonNull)</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                .anyMatch(c -&gt; c.getLevel() &gt;= minCriticality.getLevel());</span>
+    }
+
+    /**
+     * The report contains differences of at least the configured severity. This method is called from
+     * {@link #report(Report)} by default.
+     */
+    protected abstract void doReport(Report report);
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L237">        flushReports();</span>
+
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if (shouldClose) {</span>
+<span class="fc" id="L240">            output.close();</span>
+        }
+
+<span class="pc bpc" id="L243" title="2 of 6 branches missed.">        if (!keepEmptyFile &amp;&amp; !reportsInOutput &amp;&amp; file != null) {</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">            if (!file.delete()) {</span>
+<span class="nc" id="L245">                LOG.warn(&quot;Failed to delete an empty output file: &quot; + file.getAbsolutePath());</span>
+            }
+        }
+<span class="fc" id="L248">    }</span>
+
+    /**
+     * @see ReportComparator
+     * 
+     * @return a comparator that can be used to sort the reports in the order of the compared elements.
+     */
+    protected Comparator&lt;Report&gt; getReportsByElementOrderComparator() {
+<span class="nc" id="L256">        return new ReportComparator.Builder().withComparisonStrategy(HIERARCHICAL).build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

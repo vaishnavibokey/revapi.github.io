@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">XmlUtil.java</span></div><h1>XmlUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.9.0
+ */
+final class XmlUtil {
+
+    private XmlUtil() {
+
+    }
+
+    static int estimateIndentationSize(BufferedReader xml) throws IOException {
+<span class="fc" id="L40">        boolean inComment = false;</span>
+
+<span class="fc" id="L42">        Map&lt;Integer, Integer&gt; indentHist = new HashMap&lt;&gt;(2);</span>
+
+        String line;
+<span class="fc" id="L45">        int prevIndent = 0;</span>
+<span class="fc" id="L46">        int prevNonWhiteSpaceIdx = 0;</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        while ((line = xml.readLine()) != null) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            if (inComment) {</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                if (line.contains(&quot;--&gt;&quot;)) {</span>
+<span class="fc" id="L50">                    inComment = false;</span>
+                }
+            } else {
+<span class="fc" id="L53">                int startCommentIdx = line.indexOf(&quot;&lt;!--&quot;);</span>
+<span class="fc" id="L54">                int endCommentIdx = line.indexOf(&quot;--&gt;&quot;);</span>
+<span class="fc bfc" id="L55" title="All 4 branches covered.">                inComment = startCommentIdx &gt;= 0 &amp;&amp; endCommentIdx == -1;</span>
+<span class="fc" id="L56">                int nonWhitespaceIdx = -1;</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                int maxCheckIdx = startCommentIdx &gt;= 0 ? startCommentIdx : line.length();</span>
+
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                for (int i = 0; i &lt; maxCheckIdx; ++i) {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                    if (!Character.isWhitespace(line.charAt(i))) {</span>
+<span class="fc" id="L61">                        nonWhitespaceIdx = i;</span>
+<span class="fc" id="L62">                        break;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                if (nonWhitespaceIdx == -1) {</span>
+                    // empty line...
+<span class="fc" id="L68">                    continue;</span>
+                }
+
+<span class="fc" id="L71">                int indent = Math.abs(nonWhitespaceIdx - prevNonWhiteSpaceIdx);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                if (indent &gt; 0) {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                    indentHist.compute(indent, (x, count) -&gt; count == null ? 1 : count + 1);</span>
+<span class="fc" id="L74">                    prevIndent = indent;</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                } else if (prevIndent != 0) {</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">                    indentHist.compute(prevIndent, (x, count) -&gt; count == null ? 1 : count + 1);</span>
+                }
+<span class="fc" id="L78">                prevNonWhiteSpaceIdx = nonWhitespaceIdx;</span>
+<span class="fc" id="L79">            }</span>
+        }
+
+        // indentation size of 2 by default, otherwise what's in the file
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        return indentHist.isEmpty() ? 2 : indentHist.entrySet().stream()</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">                .reduce(new SimpleEntry&lt;&gt;(0, 1), (a, b) -&gt; a.getValue() &gt; b.getValue() ? a : b).getKey();</span>
+    }
+
+    static void toIndentedString(PlexusConfiguration xml, int indentationSize, int currentDepth, Writer wrt)
+            throws IOException {
+
+<span class="fc" id="L90">        indent(indentationSize, currentDepth, wrt);</span>
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        boolean hasChildren = xml.getChildCount() &gt; 0;</span>
+<span class="pc bpc" id="L93" title="1 of 4 branches missed.">        boolean hasContent = xml.getValue() != null &amp;&amp; !xml.getValue().isEmpty();</span>
+<span class="fc" id="L94">        wrt.write('&lt;');</span>
+<span class="fc" id="L95">        wrt.write(xml.getName());</span>
+<span class="fc bfc" id="L96" title="All 4 branches covered.">        if (!hasChildren &amp;&amp; !hasContent) {</span>
+<span class="fc" id="L97">            wrt.write(&quot;/&gt;&quot;);</span>
+        } else {
+<span class="fc" id="L99">            wrt.write('&gt;');</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            if (hasChildren) {</span>
+<span class="fc" id="L101">                wrt.write('\n');</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                for (PlexusConfiguration c : xml.getChildren()) {</span>
+<span class="fc" id="L103">                    toIndentedString(c, indentationSize, currentDepth + 1, wrt);</span>
+<span class="fc" id="L104">                    wrt.append('\n');</span>
+                }
+
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                if (!hasContent) {</span>
+<span class="fc" id="L108">                    indent(indentationSize, currentDepth, wrt);</span>
+                }
+            }
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (hasContent) {</span>
+<span class="fc" id="L113">                escaped(wrt, xml.getValue());</span>
+            }
+
+<span class="fc" id="L116">            wrt.write(&quot;&lt;/&quot;);</span>
+<span class="fc" id="L117">            wrt.write(xml.getName());</span>
+<span class="fc" id="L118">            wrt.write('&gt;');</span>
+        }
+<span class="fc" id="L120">    }</span>
+
+    private static void indent(int indentationSize, int currentDepth, Writer wrt) throws IOException {
+<span class="fc" id="L123">        int numSpaces = currentDepth * indentationSize;</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        for (int i = 0; i &lt; numSpaces; ++i) {</span>
+<span class="fc" id="L125">            wrt.write(' ');</span>
+        }
+<span class="fc" id="L127">    }</span>
+
+    private static void escaped(Writer wrt, String value) throws IOException {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for (int i = 0; i &lt; value.length(); ++i) {</span>
+<span class="fc" id="L131">            char c = value.charAt(i);</span>
+<span class="pc bpc" id="L132" title="3 of 4 branches missed.">            switch (c) {</span>
+            case '&amp;':
+<span class="nc" id="L134">                wrt.write(&quot;&amp;amp;&quot;);</span>
+<span class="nc" id="L135">                break;</span>
+            case '&lt;':
+<span class="nc" id="L137">                wrt.write(&quot;&amp;lt;&quot;);</span>
+<span class="nc" id="L138">                break;</span>
+            case '&gt;':
+<span class="nc" id="L140">                wrt.write(&quot;&amp;gt;&quot;);</span>
+<span class="nc" id="L141">                break;</span>
+            default:
+<span class="fc" id="L143">                wrt.write(c);</span>
+            }
+        }
+<span class="fc" id="L146">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

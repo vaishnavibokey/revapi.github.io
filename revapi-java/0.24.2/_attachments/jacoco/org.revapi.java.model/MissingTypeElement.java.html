@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MissingTypeElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.model</a> &gt; <span class="el_source">MissingTypeElement.java</span></div><h1>MissingTypeElement.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.model;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ElementVisitor;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.NoType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVisitor;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public final class MissingTypeElement implements javax.lang.model.element.TypeElement {
+<span class="fc" id="L45">    public static final NoType NO_TYPE = new NoType() {</span>
+        @Override
+        public List&lt;? extends AnnotationMirror&gt; getAnnotationMirrors() {
+<span class="nc" id="L48">            return null;</span>
+        }
+
+        @Override
+        public &lt;A extends Annotation&gt; A getAnnotation(Class&lt;A&gt; annotationType) {
+<span class="nc" id="L53">            return null;</span>
+        }
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public &lt;A extends Annotation&gt; A[] getAnnotationsByType(Class&lt;A&gt; annotationType) {
+<span class="nc" id="L59">            return (A[]) Array.newInstance(annotationType, 0);</span>
+        }
+
+        @Override
+        public TypeKind getKind() {
+<span class="nc" id="L64">            return TypeKind.NONE;</span>
+        }
+
+        @Override
+        public &lt;R, P&gt; R accept(TypeVisitor&lt;R, P&gt; v, P p) {
+<span class="nc" id="L69">            return v.visitNoType(this, p);</span>
+        }
+    };
+
+<span class="fc" id="L73">    private javax.lang.model.type.ErrorType errorType = new ErrorType();</span>
+
+    private final String qualifiedName;
+
+    public static boolean isMissing(Element e) {
+<span class="fc" id="L78">        return e instanceof MissingTypeElement;</span>
+    }
+
+    public static boolean isMissing(TypeMirror type) {
+<span class="pc bpc" id="L82" title="2 of 4 branches missed.">        return type == NO_TYPE || type instanceof ErrorType;</span>
+    }
+
+    @Override
+    public List&lt;? extends Element&gt; getEnclosedElements() {
+<span class="nc" id="L87">        return Collections.emptyList();</span>
+    }
+
+<span class="fc" id="L90">    public MissingTypeElement(String qualifiedName) {</span>
+<span class="fc" id="L91">        this.qualifiedName = qualifiedName;</span>
+<span class="fc" id="L92">    }</span>
+
+    @Override
+    public &lt;R, P&gt; R accept(ElementVisitor&lt;R, P&gt; v, P p) {
+<span class="nc" id="L96">        return v.visitType(this, p);</span>
+    }
+
+    @Override
+    public NestingKind getNestingKind() {
+<span class="nc" id="L101">        return NestingKind.TOP_LEVEL;</span>
+    }
+
+    @Override
+    public Name getQualifiedName() {
+<span class="fc" id="L106">        return new NameImpl(qualifiedName);</span>
+    }
+
+    @Override
+    public TypeMirror asType() {
+<span class="fc" id="L111">        return errorType;</span>
+    }
+
+    @Override
+    public ElementKind getKind() {
+<span class="fc" id="L116">        return ElementKind.CLASS;</span>
+    }
+
+    @Override
+    public List&lt;? extends AnnotationMirror&gt; getAnnotationMirrors() {
+<span class="nc" id="L121">        return Collections.emptyList();</span>
+    }
+
+    @Override
+    public &lt;A extends Annotation&gt; A getAnnotation(Class&lt;A&gt; annotationType) {
+<span class="nc" id="L126">        return null;</span>
+    }
+
+    @Override
+    public Set&lt;Modifier&gt; getModifiers() {
+<span class="fc" id="L131">        return Collections.emptySet();</span>
+    }
+
+    @Override
+    public Name getSimpleName() {
+<span class="fc" id="L136">        int dotIdx = qualifiedName.lastIndexOf('.');</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        return dotIdx == -1 ? new NameImpl(qualifiedName) : new NameImpl(qualifiedName.substring(dotIdx + 1));</span>
+    }
+
+    @Override
+    public TypeMirror getSuperclass() {
+<span class="nc" id="L142">        return NO_TYPE;</span>
+    }
+
+    @Override
+    public List&lt;? extends TypeMirror&gt; getInterfaces() {
+<span class="fc" id="L147">        return Collections.emptyList();</span>
+    }
+
+    @Override
+    public List&lt;? extends TypeParameterElement&gt; getTypeParameters() {
+<span class="nc" id="L152">        return Collections.emptyList();</span>
+    }
+
+    @Override
+    public Element getEnclosingElement() {
+        // this does not follow the spec, but let's hope that won't be a problem...
+<span class="fc" id="L158">        return null;</span>
+    }
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;A extends Annotation&gt; A[] getAnnotationsByType(Class&lt;A&gt; annotationType) {
+<span class="nc" id="L164">        return (A[]) Array.newInstance(annotationType, 0);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L170">            return true;</span>
+        }
+
+<span class="nc bnc" id="L173" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L174">            return false;</span>
+        }
+
+<span class="nc" id="L177">        MissingTypeElement that = (MissingTypeElement) o;</span>
+<span class="nc" id="L178">        return qualifiedName.equals(that.qualifiedName);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L183">        return Objects.hash(qualifiedName);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L188">        return qualifiedName;</span>
+    }
+
+    private static class NameImpl implements Name {
+        private final String name;
+
+<span class="fc" id="L194">        private NameImpl(String name) {</span>
+<span class="fc" id="L195">            this.name = name;</span>
+<span class="fc" id="L196">        }</span>
+
+        @Override
+        public boolean contentEquals(CharSequence cs) {
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if (cs.length() != name.length()) {</span>
+<span class="nc" id="L201">                return false;</span>
+            }
+
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            for (int i = 0; i &lt; cs.length(); ++i) {</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">                if (cs.charAt(i) != name.charAt(i)) {</span>
+<span class="nc" id="L206">                    return false;</span>
+                }
+            }
+
+<span class="nc" id="L210">            return true;</span>
+        }
+
+        @Override
+        public int length() {
+<span class="fc" id="L215">            return name.length();</span>
+        }
+
+        @Override
+        public char charAt(int index) {
+<span class="fc" id="L220">            return name.charAt(index);</span>
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+<span class="nc" id="L225">            return name.subSequence(start, end);</span>
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L231">                return true;</span>
+            }
+<span class="nc bnc" id="L233" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L234">                return false;</span>
+            }
+
+<span class="nc" id="L237">            NameImpl other = (NameImpl) o;</span>
+
+<span class="nc" id="L239">            return name.equals(other.name);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L244">            return name.hashCode();</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="fc" id="L249">            return name;</span>
+        }
+    }
+
+<span class="fc" id="L253">    public final class ErrorType implements javax.lang.model.type.ErrorType {</span>
+        @Override
+        public Element asElement() {
+<span class="fc" id="L256">            return MissingTypeElement.this;</span>
+        }
+
+        @Override
+        public TypeMirror getEnclosingType() {
+<span class="nc" id="L261">            return NO_TYPE;</span>
+        }
+
+        @Override
+        public List&lt;? extends TypeMirror&gt; getTypeArguments() {
+<span class="nc" id="L266">            return Collections.emptyList();</span>
+        }
+
+        @Override
+        public TypeKind getKind() {
+<span class="fc" id="L271">            return TypeKind.ERROR;</span>
+        }
+
+        @Override
+        public &lt;R, P&gt; R accept(TypeVisitor&lt;R, P&gt; v, P p) {
+<span class="fc" id="L276">            return v.visitError(this, p);</span>
+        }
+
+        @Override
+        public &lt;A extends Annotation&gt; A getAnnotation(Class&lt;A&gt; annotationType) {
+<span class="nc" id="L281">            return null;</span>
+        }
+
+        @Override
+        public List&lt;? extends AnnotationMirror&gt; getAnnotationMirrors() {
+<span class="nc" id="L286">            return Collections.emptyList();</span>
+        }
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public &lt;A extends Annotation&gt; A[] getAnnotationsByType(Class&lt;A&gt; annotationType) {
+<span class="nc" id="L292">            return (A[]) Array.newInstance(annotationType, 0);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

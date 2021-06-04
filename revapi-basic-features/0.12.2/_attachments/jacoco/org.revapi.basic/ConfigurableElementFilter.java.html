@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigurableElementFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">ConfigurableElementFilter.java</span></div><h1>ConfigurableElementFilter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.basic;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.AnalysisContext;
+import org.revapi.Archive;
+import org.revapi.ArchiveAnalyzer;
+import org.revapi.Element;
+import org.revapi.ElementMatcher;
+import org.revapi.FilterFinishResult;
+import org.revapi.FilterStartResult;
+import org.revapi.TreeFilter;
+import org.revapi.TreeFilterProvider;
+import org.revapi.base.OverridableIncludeExcludeTreeFilter;
+
+/**
+ * An element filter that can filter out elements based on matching their full human readable representations. Archive
+ * filter can filter out elements that belong to specified archives.
+ *
+ * &lt;p&gt;
+ * If no include or exclude filters are defined, everything is included. If at least 1 include filter is defined, only
+ * elements matching it are included. Out of the included elements, some may be further excluded by the exclude filters.
+ *
+ * &lt;p&gt;
+ * See {@code META-INF/filter-schema.json} for the schema of the configuration.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+<span class="fc" id="L63">public class ConfigurableElementFilter implements TreeFilterProvider {</span>
+<span class="fc" id="L64">    private final List&lt;ElementMatcher.CompiledRecipe&gt; elementIncludeRecipes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L65">    private final List&lt;ElementMatcher.CompiledRecipe&gt; elementExcludeRecipes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L66">    private final List&lt;Pattern&gt; archiveIncludes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L67">    private final List&lt;Pattern&gt; archiveExcludes = new ArrayList&lt;&gt;();</span>
+
+    private boolean doNothing;
+
+    @Nullable
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L74">        return &quot;revapi.filter&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="fc" id="L80">        return new InputStreamReader(getClass().getResourceAsStream(&quot;/META-INF/filter-schema.json&quot;),</span>
+                StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L86">        JsonNode root = analysisContext.getConfigurationNode();</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (root.isNull()) {</span>
+<span class="nc" id="L88">            doNothing = true;</span>
+<span class="nc" id="L89">            return;</span>
+        }
+
+<span class="fc" id="L92">        JsonNode elements = root.path(&quot;elements&quot;);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (!elements.isMissingNode()) {</span>
+<span class="fc" id="L94">            readComplexFilter(elements, analysisContext.getMatchers(), elementIncludeRecipes, elementExcludeRecipes);</span>
+        }
+
+<span class="fc" id="L97">        JsonNode archives = root.path(&quot;archives&quot;);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (!archives.isMissingNode()) {</span>
+<span class="fc" id="L99">            readSimpleFilter(archives, archiveIncludes, archiveExcludes);</span>
+        }
+
+<span class="fc bfc" id="L102" title="All 6 branches covered.">        doNothing = elementIncludeRecipes.isEmpty() &amp;&amp; archiveIncludes.isEmpty() &amp;&amp; elementExcludeRecipes.isEmpty()</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                &amp;&amp; archiveExcludes.isEmpty();</span>
+<span class="fc" id="L104">    }</span>
+
+    @Override
+    public &lt;E extends Element&lt;E&gt;&gt; Optional&lt;TreeFilter&lt;E&gt;&gt; filterFor(ArchiveAnalyzer&lt;E&gt; archiveAnalyzer) {
+        @Nullable
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        TreeFilter&lt;E&gt; excludes = elementExcludeRecipes.isEmpty() ? null : TreeFilter.union(elementExcludeRecipes</span>
+<span class="fc" id="L110">                .stream().map(r -&gt; r.filterFor(archiveAnalyzer)).filter(Objects::nonNull).collect(Collectors.toList()));</span>
+        @Nullable
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        TreeFilter&lt;E&gt; includes = elementIncludeRecipes.isEmpty() ? null : TreeFilter.union(elementIncludeRecipes</span>
+<span class="fc" id="L113">                .stream().map(r -&gt; r.filterFor(archiveAnalyzer)).filter(Objects::nonNull).collect(Collectors.toList()));</span>
+
+<span class="fc" id="L115">        return Optional.of(new OverridableIncludeExcludeTreeFilter&lt;E&gt;(includes, excludes) {</span>
+<span class="fc" id="L116">            final Set&lt;Archive&gt; excludedArchives = Collections.newSetFromMap(new IdentityHashMap&lt;&gt;());</span>
+
+            @Override
+            public FilterStartResult start(E element) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">                if (doNothing) {</span>
+<span class="nc" id="L121">                    return FilterStartResult.defaultResult();</span>
+                }
+
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                String archive = element.getArchive() == null ? &quot;&quot; : element.getArchive().getName();</span>
+
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                if (!isIncluded(archive, archiveIncludes, archiveExcludes)) {</span>
+<span class="fc" id="L127">                    excludedArchives.add(element.getArchive());</span>
+<span class="fc" id="L128">                    return FilterStartResult.doesntMatch();</span>
+                }
+
+<span class="fc" id="L131">                return super.start(element);</span>
+            }
+
+            @Override
+            public FilterFinishResult finish(E element) {
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                if (doNothing) {</span>
+<span class="nc" id="L137">                    return FilterFinishResult.matches();</span>
+                }
+
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                if (excludedArchives.contains(element.getArchive())) {</span>
+<span class="fc" id="L141">                    return FilterFinishResult.doesntMatch();</span>
+                }
+
+<span class="fc" id="L144">                return super.finish(element);</span>
+            }
+
+            @Override
+            public Map&lt;E, FilterFinishResult&gt; finish() {
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                if (doNothing) {</span>
+<span class="nc" id="L150">                    return Collections.emptyMap();</span>
+                }
+
+<span class="fc" id="L153">                excludedArchives.clear();</span>
+
+<span class="fc" id="L155">                return super.finish();</span>
+            }
+        });
+    }
+
+    @Override
+    public void close() {
+<span class="nc" id="L162">    }</span>
+
+    private static void readSimpleFilter(JsonNode root, List&lt;Pattern&gt; include, List&lt;Pattern&gt; exclude) {
+<span class="fc" id="L165">        JsonNode includeNode = root.path(&quot;include&quot;);</span>
+
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (includeNode.isArray()) {</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            for (JsonNode inc : includeNode) {</span>
+<span class="fc" id="L169">                include.add(Pattern.compile(inc.asText()));</span>
+<span class="fc" id="L170">            }</span>
+        }
+
+<span class="fc" id="L173">        JsonNode excludeNode = root.path(&quot;exclude&quot;);</span>
+
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (excludeNode.isArray()) {</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">            for (JsonNode exc : excludeNode) {</span>
+<span class="fc" id="L177">                exclude.add(Pattern.compile(exc.asText()));</span>
+<span class="fc" id="L178">            }</span>
+        }
+<span class="fc" id="L180">    }</span>
+
+    private static void readComplexFilter(JsonNode root, Map&lt;String, ElementMatcher&gt; availableMatchers,
+            List&lt;ElementMatcher.CompiledRecipe&gt; include, List&lt;ElementMatcher.CompiledRecipe&gt; exclude) {
+<span class="fc" id="L184">        JsonNode includeNode = root.path(&quot;include&quot;);</span>
+
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if (includeNode.isArray()) {</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">            for (JsonNode inc : includeNode) {</span>
+<span class="fc" id="L188">                ElementMatcher.CompiledRecipe filter = parse(inc, availableMatchers);</span>
+<span class="fc" id="L189">                include.add(filter);</span>
+<span class="fc" id="L190">            }</span>
+        }
+
+<span class="fc" id="L193">        JsonNode excludeNode = root.path(&quot;exclude&quot;);</span>
+
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        if (excludeNode.isArray()) {</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">            for (JsonNode exc : excludeNode) {</span>
+<span class="fc" id="L197">                ElementMatcher.CompiledRecipe filter = parse(exc, availableMatchers);</span>
+<span class="fc" id="L198">                exclude.add(filter);</span>
+<span class="fc" id="L199">            }</span>
+        }
+<span class="fc" id="L201">    }</span>
+
+    @Nullable
+    private static ElementMatcher.CompiledRecipe parse(JsonNode filterDefinition,
+            Map&lt;String, ElementMatcher&gt; availableMatchers) {
+        String recipe;
+        ElementMatcher matcher;
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (filterDefinition.isTextual()) {</span>
+<span class="fc" id="L209">            recipe = filterDefinition.asText();</span>
+<span class="fc" id="L210">            matcher = new RegexElementMatcher();</span>
+        } else {
+<span class="fc" id="L212">            recipe = filterDefinition.path(&quot;match&quot;).asText();</span>
+<span class="fc" id="L213">            matcher = availableMatchers.get(filterDefinition.path(&quot;matcher&quot;).asText(null));</span>
+        }
+
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        if (matcher == null) {</span>
+<span class="nc" id="L217">            throw new IllegalStateException(</span>
+<span class="nc" id="L218">                    &quot;Element matcher with id '&quot; + filterDefinition.path(&quot;matcher&quot;).asText(null) + &quot;' was not found.&quot;);</span>
+        }
+
+<span class="fc" id="L221">        return matcher.compile(recipe)</span>
+<span class="pc" id="L222">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Failed to compile the match recipe.&quot;));</span>
+    }
+
+    private static boolean isIncluded(String representation, List&lt;Pattern&gt; includePatterns,
+            List&lt;Pattern&gt; excludePatterns) {
+<span class="fc" id="L227">        boolean include = true;</span>
+
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        if (!includePatterns.isEmpty()) {</span>
+<span class="fc" id="L230">            include = false;</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            for (Pattern p : includePatterns) {</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">                if (p.matcher(representation).matches()) {</span>
+<span class="fc" id="L233">                    include = true;</span>
+<span class="fc" id="L234">                    break;</span>
+                }
+<span class="fc" id="L236">            }</span>
+        }
+
+<span class="fc bfc" id="L239" title="All 2 branches covered.">        if (include) {</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">            for (Pattern p : excludePatterns) {</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                if (p.matcher(representation).matches()) {</span>
+<span class="fc" id="L242">                    include = false;</span>
+<span class="fc" id="L243">                    break;</span>
+                }
+<span class="fc" id="L245">            }</span>
+        }
+
+<span class="fc" id="L248">        return include;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>
