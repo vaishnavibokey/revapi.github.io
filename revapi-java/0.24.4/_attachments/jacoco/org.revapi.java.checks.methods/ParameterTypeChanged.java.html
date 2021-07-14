@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParameterTypeChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.methods</a> &gt; <span class="el_source">ParameterTypeChanged.java</span></div><h1>ParameterTypeChanged.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.methods;
+
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+
+import javax.annotation.Nullable;
+import javax.lang.model.type.TypeMirror;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaMethodElement;
+import org.revapi.java.spi.JavaMethodParameterElement;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+<span class="fc" id="L38">public final class ParameterTypeChanged extends CheckBase {</span>
+
+    private boolean skip;
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L44">        return EnumSet.of(Type.METHOD, Type.METHOD_PARAMETER);</span>
+    }
+
+    @Override
+    protected void doVisitMethod(@Nullable JavaMethodElement oldMethod, @Nullable JavaMethodElement newMethod) {
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        skip = oldMethod == null || newMethod == null || oldMethod.getModelRepresentation().getParameterTypes()</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">                .size() != newMethod.getModelRepresentation().getParameterTypes().size();</span>
+<span class="fc" id="L51">    }</span>
+
+    @Override
+    protected void doVisitMethodParameter(@Nullable JavaMethodParameterElement oldParameter,
+            @Nullable JavaMethodParameterElement newParameter) {
+
+<span class="pc bpc" id="L57" title="2 of 6 branches missed.">        if (skip || oldParameter == null || newParameter == null) {</span>
+            // will be handled by nof parameters changed...
+<span class="fc" id="L59">            return;</span>
+        }
+
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (!isBothAccessible(oldParameter.getParent(), newParameter.getParent())) {</span>
+<span class="fc" id="L63">            return;</span>
+        }
+
+<span class="fc" id="L66">        TypeMirror oldType = oldParameter.getModelRepresentation();</span>
+<span class="fc" id="L67">        String oldParam = Util.toUniqueString(oldType);</span>
+<span class="fc" id="L68">        String oldErasedParam = Util.toUniqueString(</span>
+<span class="fc" id="L69">                getOldTypeEnvironment().getTypeUtils().erasure(oldParameter.getDeclaringElement().asType()));</span>
+
+<span class="fc" id="L71">        TypeMirror newType = newParameter.getModelRepresentation();</span>
+<span class="fc" id="L72">        String newParam = Util.toUniqueString(newType);</span>
+<span class="fc" id="L73">        String newErasedParam = Util.toUniqueString(</span>
+<span class="fc" id="L74">                getNewTypeEnvironment().getTypeUtils().erasure(newParameter.getDeclaringElement().asType()));</span>
+
+<span class="fc bfc" id="L76" title="All 4 branches covered.">        if (!oldParam.equals(newParam) || !oldErasedParam.equals(newErasedParam)) {</span>
+<span class="fc" id="L77">            pushActive(oldParameter, newParameter, oldParam, oldErasedParam, newParam, newErasedParam);</span>
+        }
+<span class="fc" id="L79">    }</span>
+
+    @Nullable
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+
+<span class="fc" id="L85">        ActiveElements&lt;JavaMethodParameterElement&gt; params = popIfActive();</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (params == null) {</span>
+<span class="fc" id="L87">            return null;</span>
+        }
+
+<span class="fc" id="L90">        String oldParam = (String) params.context[0];</span>
+<span class="fc" id="L91">        String oldErasedParam = (String) params.context[1];</span>
+<span class="fc" id="L92">        String newParam = (String) params.context[2];</span>
+<span class="fc" id="L93">        String newErasedParam = (String) params.context[3];</span>
+
+<span class="fc" id="L95">        String oldType = Util.toHumanReadableString(params.oldElement.getModelRepresentation());</span>
+<span class="fc" id="L96">        String newType = Util.toHumanReadableString(params.newElement.getModelRepresentation());</span>
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (!oldErasedParam.equals(newErasedParam)) {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (oldParam.equals(newParam)) {</span>
+<span class="fc" id="L100">                oldType = Util.toHumanReadableString(getOldTypeEnvironment().getTypeUtils()</span>
+<span class="fc" id="L101">                        .erasure(params.oldElement.getDeclaringElement().asType()));</span>
+<span class="fc" id="L102">                newType = Util.toHumanReadableString(getNewTypeEnvironment().getTypeUtils()</span>
+<span class="fc" id="L103">                        .erasure(params.newElement.getDeclaringElement().asType()));</span>
+<span class="fc" id="L104">                return Collections.singletonList(createDifference(Code.METHOD_PARAMETER_TYPE_ERASURE_CHANGED, Code</span>
+<span class="fc" id="L105">                        .attachmentsFor(params.oldElement, params.newElement, &quot;oldType&quot;, oldType, &quot;newType&quot;, newType)));</span>
+            } else {
+<span class="fc" id="L107">                return Collections.singletonList(createDifference(Code.METHOD_PARAMETER_TYPE_CHANGED, Code</span>
+<span class="fc" id="L108">                        .attachmentsFor(params.oldElement, params.newElement, &quot;oldType&quot;, oldType, &quot;newType&quot;, newType)));</span>
+            }
+        } else {
+<span class="fc" id="L111">            return Collections.singletonList(createDifference(Code.METHOD_PARAMETER_TYPE_PARAMETER_CHANGED,</span>
+<span class="fc" id="L112">                    Code.attachmentsFor(params.oldElement, params.newElement, &quot;oldType&quot;, oldType, &quot;newType&quot;, newType)));</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

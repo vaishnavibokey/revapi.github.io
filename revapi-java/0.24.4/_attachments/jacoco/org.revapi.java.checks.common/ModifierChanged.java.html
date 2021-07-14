@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModifierChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.common</a> &gt; <span class="el_source">ModifierChanged.java</span></div><h1>ModifierChanged.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.common;
+
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.lang.model.element.Modifier;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaModelElement;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public abstract class ModifierChanged extends CheckBase {
+    private final boolean added;
+    private final Code code;
+    private final Modifier modifier;
+
+<span class="fc" id="L42">    protected ModifierChanged(boolean added, Code code, Modifier modifier) {</span>
+<span class="fc" id="L43">        this.added = added;</span>
+<span class="fc" id="L44">        this.code = code;</span>
+<span class="fc" id="L45">        this.modifier = modifier;</span>
+<span class="fc" id="L46">    }</span>
+
+    protected final void doVisit(JavaModelElement oldElement, JavaModelElement newElement) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (!isBothAccessible(oldElement, newElement)) {</span>
+<span class="fc" id="L50">            return;</span>
+        }
+
+<span class="fc" id="L53">        boolean oldHas = oldElement.getDeclaringElement().getModifiers().contains(modifier);</span>
+<span class="fc" id="L54">        boolean newHas = newElement.getDeclaringElement().getModifiers().contains(modifier);</span>
+
+<span class="fc bfc" id="L56" title="All 12 branches covered.">        if ((added &amp;&amp; !oldHas &amp;&amp; newHas) || (!added &amp;&amp; oldHas &amp;&amp; !newHas)) {</span>
+<span class="fc" id="L57">            pushActive(oldElement, newElement);</span>
+        }
+<span class="fc" id="L59">    }</span>
+
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L63">        ActiveElements&lt;JavaModelElement&gt; elements = popIfActive();</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (elements == null) {</span>
+<span class="fc" id="L65">            return null;</span>
+        }
+
+<span class="fc" id="L68">        return Collections.singletonList(createDifference(code,</span>
+<span class="fc" id="L69">                Code.attachmentsFor(elements.oldElement, elements.newElement, &quot;oldModifiers&quot;,</span>
+<span class="fc" id="L70">                        stringify(elements.oldElement.getDeclaringElement().getModifiers()), &quot;newModifiers&quot;,</span>
+<span class="fc" id="L71">                        stringify(elements.newElement.getDeclaringElement().getModifiers()))));</span>
+    }
+
+    // ordered according to http://cr.openjdk.java.net/~alundblad/styleguide/index-v6.html
+    public static String stringify(Set&lt;Modifier&gt; modifiers) {
+<span class="fc" id="L76">        return modifiers.stream().sorted(Comparator.comparingInt(ModifierChanged::score))</span>
+<span class="fc" id="L77">                .map(m -&gt; m.name().toLowerCase()).collect(Collectors.joining(&quot; &quot;));</span>
+    }
+
+    private static int score(Modifier mod) {
+        // public
+        // private
+        // protected
+        // abstract
+        // static
+        // final
+        // transient
+        // volatile
+        // default
+        // synchronized
+        // native
+        // strictfp
+
+<span class="pc bpc" id="L94" title="8 of 13 branches missed.">        switch (mod) {</span>
+        case PUBLIC:
+<span class="fc" id="L96">            return 0;</span>
+        case PRIVATE:
+<span class="nc" id="L98">            return 1;</span>
+        case PROTECTED:
+<span class="nc" id="L100">            return 2;</span>
+        case ABSTRACT:
+<span class="fc" id="L102">            return 3;</span>
+        case STATIC:
+<span class="fc" id="L104">            return 4;</span>
+        case FINAL:
+<span class="fc" id="L106">            return 5;</span>
+        case TRANSIENT:
+<span class="nc" id="L108">            return 6;</span>
+        case VOLATILE:
+<span class="nc" id="L110">            return 7;</span>
+        case DEFAULT:
+<span class="fc" id="L112">            return 8;</span>
+        case SYNCHRONIZED:
+<span class="nc" id="L114">            return 9;</span>
+        case NATIVE:
+<span class="nc" id="L116">            return 10;</span>
+        case STRICTFP:
+<span class="nc" id="L118">            return 11;</span>
+        default:
+<span class="nc" id="L120">            return 12;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

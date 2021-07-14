@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MissingTypeAwareDelegatingTypes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.compilation</a> &gt; <span class="el_source">MissingTypeAwareDelegatingTypes.java</span></div><h1>MissingTypeAwareDelegatingTypes.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.compilation;
+
+import static org.revapi.java.model.MissingTypeElement.isMissing;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.NoType;
+import javax.lang.model.type.NullType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.Types;
+
+import org.revapi.java.model.MissingTypeElement;
+import org.revapi.java.spi.IgnoreCompletionFailures;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+final class MissingTypeAwareDelegatingTypes implements Types {
+
+    private final Types types;
+
+<span class="fc" id="L51">    public MissingTypeAwareDelegatingTypes(Types types) {</span>
+<span class="fc" id="L52">        this.types = types;</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public Element asElement(final TypeMirror t) {
+<span class="fc" id="L57">        return IgnoreCompletionFailures.in(checkMissing(types::asElement, null), t);</span>
+    }
+
+    @Override
+    public boolean isSameType(final TypeMirror t1, final TypeMirror t2) {
+<span class="fc" id="L62">        return IgnoreCompletionFailures.in(checkMissing(types::isSameType, false), t1, t2);</span>
+    }
+
+    @Override
+    public boolean isSubtype(final TypeMirror t1, final TypeMirror t2) {
+<span class="nc" id="L67">        return IgnoreCompletionFailures.in(checkMissing(types::isSubtype, false), t1, t2);</span>
+    }
+
+    @Override
+    public boolean isAssignable(final TypeMirror t1, final TypeMirror t2) {
+<span class="fc" id="L72">        return IgnoreCompletionFailures.in(checkMissing(types::isAssignable, false), t1, t2);</span>
+    }
+
+    @Override
+    public boolean contains(final TypeMirror t1, final TypeMirror t2) {
+<span class="nc" id="L77">        return IgnoreCompletionFailures.in(checkMissing(types::contains, false), t1, t2);</span>
+    }
+
+    @Override
+    public boolean isSubsignature(final ExecutableType m1, final ExecutableType m2) {
+<span class="nc" id="L82">        return IgnoreCompletionFailures.in(checkMissing(types::isSubsignature, false), m1, m2);</span>
+    }
+
+    @Override
+    public List&lt;? extends TypeMirror&gt; directSupertypes(TypeMirror t) {
+
+<span class="fc" id="L88">        return IgnoreCompletionFailures.in(checkMissing(types::directSupertypes, Collections.emptyList()), t);</span>
+    }
+
+    @Override
+    public TypeMirror erasure(TypeMirror t) {
+<span class="fc" id="L93">        return IgnoreCompletionFailures.in(checkMissing(types::erasure, t), t);</span>
+    }
+
+    @Override
+    public TypeElement boxedClass(PrimitiveType p) {
+<span class="nc" id="L98">        return IgnoreCompletionFailures.in(types::boxedClass, p);</span>
+    }
+
+    @Override
+    public PrimitiveType unboxedType(TypeMirror t) {
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (isMissing(t)) {</span>
+<span class="nc" id="L104">            throw new IllegalArgumentException(&quot;Type &quot; + t + &quot; does not have an unboxing conversion.&quot;);</span>
+        }
+<span class="nc" id="L106">        return IgnoreCompletionFailures.in(types::unboxedType, t);</span>
+    }
+
+    @Override
+    public TypeMirror capture(TypeMirror t) {
+<span class="nc" id="L111">        return IgnoreCompletionFailures.in(checkMissing(types::capture, t), t);</span>
+    }
+
+    @Override
+    public PrimitiveType getPrimitiveType(TypeKind kind) {
+<span class="fc" id="L116">        return types.getPrimitiveType(kind);</span>
+    }
+
+    @Override
+    public NullType getNullType() {
+<span class="nc" id="L121">        return types.getNullType();</span>
+    }
+
+    @Override
+    public NoType getNoType(TypeKind kind) {
+<span class="nc" id="L126">        return types.getNoType(kind);</span>
+    }
+
+    @Override
+    public ArrayType getArrayType(TypeMirror componentType) {
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (isMissing(componentType)) {</span>
+<span class="nc" id="L132">            throw new IllegalArgumentException(&quot;Type &quot; + componentType + &quot; is not a valid component of an array.&quot;);</span>
+        }
+<span class="nc" id="L134">        return IgnoreCompletionFailures.in(types::getArrayType, componentType);</span>
+    }
+
+    @Override
+    public WildcardType getWildcardType(TypeMirror extendsBound, TypeMirror superBound) {
+<span class="nc bnc" id="L139" title="All 4 branches missed.">        if (isMissing(extendsBound) || isMissing(superBound)) {</span>
+<span class="nc" id="L140">            throw new IllegalArgumentException(&quot;Invalid bounds.&quot;);</span>
+        }
+<span class="nc" id="L142">        return IgnoreCompletionFailures.in(types::getWildcardType, extendsBound, superBound);</span>
+    }
+
+    @Override
+    public DeclaredType getDeclaredType(TypeElement typeElem, TypeMirror... typeArgs) {
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (typeElem instanceof MissingTypeElement) {</span>
+<span class="nc" id="L148">            throw new IllegalArgumentException(&quot;Invalid type element.&quot;);</span>
+        }
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        for (TypeMirror t : typeArgs) {</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">            if (isMissing(t)) {</span>
+<span class="nc" id="L152">                throw new IllegalArgumentException(&quot;Invalid type arguments.&quot;);</span>
+            }
+        }
+<span class="nc" id="L155">        return IgnoreCompletionFailures.in(types::getDeclaredType, typeElem, typeArgs);</span>
+    }
+
+    @Override
+    public DeclaredType getDeclaredType(DeclaredType containing, TypeElement typeElem, TypeMirror... typeArgs) {
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        if (isMissing(containing)) {</span>
+<span class="nc" id="L161">            throw new IllegalArgumentException(&quot;Invalid containing type.&quot;);</span>
+        }
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        if (typeElem instanceof MissingTypeElement) {</span>
+<span class="nc" id="L164">            throw new IllegalArgumentException(&quot;Invalid type element.&quot;);</span>
+        }
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        for (TypeMirror t : typeArgs) {</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (isMissing(t)) {</span>
+<span class="nc" id="L168">                throw new IllegalArgumentException(&quot;Invalid type arguments.&quot;);</span>
+            }
+        }
+<span class="nc" id="L171">        return IgnoreCompletionFailures.in(types::getDeclaredType, containing, typeElem, typeArgs);</span>
+    }
+
+    @Override
+    public TypeMirror asMemberOf(DeclaredType containing, Element element) {
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (isMissing(containing)) {</span>
+<span class="nc" id="L177">            throw new IllegalArgumentException(&quot;Invalid containing type.&quot;);</span>
+        }
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (element instanceof MissingTypeElement) {</span>
+<span class="nc" id="L180">            throw new IllegalArgumentException(&quot;Invalid element.&quot;);</span>
+        }
+<span class="fc" id="L182">        return IgnoreCompletionFailures.in(types::asMemberOf, containing, element);</span>
+    }
+
+    private static &lt;R, T extends TypeMirror&gt; IgnoreCompletionFailures.Fn1&lt;R, T&gt; checkMissing(Function&lt;T, R&gt; fn,
+            R returnValueOnMissing) {
+<span class="fc" id="L187">        return (t) -&gt; {</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">            if (isMissing(t)) {</span>
+<span class="nc" id="L189">                return returnValueOnMissing;</span>
+            } else {
+<span class="fc" id="L191">                return fn.apply(t);</span>
+            }
+        };
+    }
+
+    private static &lt;R, T1 extends TypeMirror, T2 extends TypeMirror&gt; IgnoreCompletionFailures.Fn2&lt;R, T1, T2&gt; checkMissing(
+            BiFunction&lt;T1, T2, R&gt; fn, R returnValueOnMissing) {
+<span class="fc" id="L198">        return (t1, t2) -&gt; {</span>
+<span class="pc bpc" id="L199" title="2 of 4 branches missed.">            if (isMissing(t1) || isMissing(t2)) {</span>
+<span class="nc" id="L200">                return returnValueOnMissing;</span>
+            } else {
+<span class="fc" id="L202">                return fn.apply(t1, t2);</span>
+            }
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SuperTypeParametersChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.generics</a> &gt; <span class="el_source">SuperTypeParametersChanged.java</span></div><h1>SuperTypeParametersChanged.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.generics;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+import javax.lang.model.type.TypeMirror;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaTypeElement;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">public class SuperTypeParametersChanged extends CheckBase {</span>
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L43">        return EnumSet.of(Type.CLASS);</span>
+    }
+
+    @Override
+    protected void doVisitClass(@Nullable JavaTypeElement oldType, @Nullable JavaTypeElement newType) {
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (!isBothAccessible(oldType, newType)) {</span>
+<span class="fc" id="L49">            return;</span>
+        }
+
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">        assert oldType != null;</span>
+<span class="pc bpc" id="L53" title="2 of 4 branches missed.">        assert newType != null;</span>
+
+<span class="fc" id="L55">        List&lt;? extends TypeMirror&gt; oldSuperTypes = getOldTypeEnvironment().getTypeUtils()</span>
+<span class="fc" id="L56">                .directSupertypes(oldType.getModelRepresentation());</span>
+
+<span class="fc" id="L58">        List&lt;? extends TypeMirror&gt; newSuperTypes = getNewTypeEnvironment().getTypeUtils()</span>
+<span class="fc" id="L59">                .directSupertypes(newType.getModelRepresentation());</span>
+
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (oldSuperTypes.size() != newSuperTypes.size()) {</span>
+            // super types changed, handled elsewhere
+<span class="fc" id="L63">            return;</span>
+        }
+
+<span class="fc" id="L66">        Map&lt;String, TypeMirror&gt; erasedOld = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L67">        Map&lt;String, TypeMirror&gt; erasedNew = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        for (TypeMirror t : oldSuperTypes) {</span>
+<span class="fc" id="L70">            erasedOld.put(Util.toUniqueString(getOldTypeEnvironment().getTypeUtils().erasure(t)), t);</span>
+<span class="fc" id="L71">        }</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        for (TypeMirror t : newSuperTypes) {</span>
+<span class="fc" id="L74">            erasedNew.put(Util.toUniqueString(getNewTypeEnvironment().getTypeUtils().erasure(t)), t);</span>
+<span class="fc" id="L75">        }</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (!erasedOld.keySet().equals(erasedNew.keySet())) {</span>
+            // super types changed, handled elsewhere
+<span class="fc" id="L79">            return;</span>
+        }
+
+<span class="fc" id="L82">        Map&lt;TypeMirror, TypeMirror&gt; changed = new LinkedHashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        for (Map.Entry&lt;String, TypeMirror&gt; e : erasedOld.entrySet()) {</span>
+<span class="fc" id="L85">            TypeMirror oldT = e.getValue();</span>
+<span class="fc" id="L86">            TypeMirror newT = erasedNew.get(e.getKey());</span>
+<span class="fc" id="L87">            String oldS = Util.toUniqueString(oldT);</span>
+<span class="fc" id="L88">            String newS = Util.toUniqueString(newT);</span>
+
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (!oldS.equals(newS)) {</span>
+<span class="fc" id="L91">                changed.put(oldT, newT);</span>
+            }
+<span class="fc" id="L93">        }</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (!changed.isEmpty()) {</span>
+<span class="fc" id="L96">            pushActive(oldType, newType, changed);</span>
+        }
+<span class="fc" id="L98">    }</span>
+
+    @Nullable
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L103">        ActiveElements&lt;JavaTypeElement&gt; types = popIfActive();</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (types == null) {</span>
+<span class="fc" id="L105">            return null;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L109">        Map&lt;TypeMirror, TypeMirror&gt; changed = (Map&lt;TypeMirror, TypeMirror&gt;) types.context[0];</span>
+
+<span class="fc" id="L111">        List&lt;Difference&gt; ret = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        for (Map.Entry&lt;TypeMirror, TypeMirror&gt; e : changed.entrySet()) {</span>
+<span class="fc" id="L113">            String oldS = Util.toHumanReadableString(e.getKey());</span>
+<span class="fc" id="L114">            String newS = Util.toHumanReadableString(e.getValue());</span>
+<span class="fc" id="L115">            ret.add(createDifference(Code.CLASS_SUPER_TYPE_TYPE_PARAMETERS_CHANGED, Code</span>
+<span class="fc" id="L116">                    .attachmentsFor(types.oldElement, types.newElement, &quot;oldSuperType&quot;, oldS, &quot;newSuperType&quot;, newS)));</span>
+<span class="fc" id="L117">        }</span>
+
+<span class="fc" id="L119">        return ret;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DownplayHarmlessAnnotationChanges.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.transforms.annotations</a> &gt; <span class="el_source">DownplayHarmlessAnnotationChanges.java</span></div><h1>DownplayHarmlessAnnotationChanges.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.transforms.annotations;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.AnalysisContext;
+import org.revapi.CompatibilityType;
+import org.revapi.Difference;
+import org.revapi.DifferenceSeverity;
+import org.revapi.DifferenceTransform;
+import org.revapi.TransformationResult;
+import org.revapi.java.spi.JavaModelElement;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.12.0
+ */
+<span class="fc" id="L46">public final class DownplayHarmlessAnnotationChanges implements DifferenceTransform&lt;JavaModelElement&gt; {</span>
+<span class="fc" id="L47">    private boolean skip = false;</span>
+
+<span class="fc" id="L49">    private static final Set&lt;String&gt; HARMLESS_ANNOTATIONS = new HashSet&lt;&gt;(</span>
+<span class="fc" id="L50">            Arrays.asList(&quot;java.lang.FunctionalInterface&quot;, &quot;java.lang.annotation.Documented&quot;,</span>
+                    &quot;jdk.internal.HotSpotIntrinsicCandidate&quot;, &quot;jdk.internal.vm.annotation.IntrinsicCandidate&quot;));
+
+    @Nonnull
+    @Override
+    public Pattern[] getDifferenceCodePatterns() {
+<span class="fc" id="L56">        return new Pattern[] { exact(&quot;java.annotation.added&quot;), exact(&quot;java.annotation.removed&quot;),</span>
+<span class="fc" id="L57">                exact(&quot;java.annotation.attributeValueChanged&quot;), exact(&quot;java.annotation.attributeAdded&quot;),</span>
+<span class="fc" id="L58">                exact(&quot;java.annotation.attributeRemoved&quot;) };</span>
+    }
+
+    @Override
+    public TransformationResult tryTransform(@Nullable JavaModelElement oldElement,
+            @Nullable JavaModelElement newElement, Difference difference) {
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if (skip) {</span>
+<span class="nc" id="L65">            return TransformationResult.keep();</span>
+        }
+
+<span class="fc" id="L68">        String annotationType = difference.attachments.get(&quot;annotationType&quot;);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (annotationType == null) {</span>
+<span class="nc" id="L70">            return TransformationResult.keep();</span>
+        }
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (HARMLESS_ANNOTATIONS.contains(annotationType)) {</span>
+<span class="fc" id="L74">            return TransformationResult.replaceWith(Difference.copy(difference).clearClassifications()</span>
+<span class="fc" id="L75">                    .addClassifications(reclassify(difference.classification)).build());</span>
+        } else {
+<span class="fc" id="L77">            return TransformationResult.keep();</span>
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L83">    }</span>
+
+    @Nullable
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L88">        return &quot;revapi.java.downplayHarmlessAnnotationChanges&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="fc" id="L94">        return new StringReader(&quot;{\&quot;type\&quot;: \&quot;boolean\&quot;}&quot;);</span>
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L99">        JsonNode conf = analysisContext.getConfigurationNode().path(&quot;downplayHarmlessAnnotationChanges&quot;);</span>
+
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        skip = !conf.asBoolean(true);</span>
+<span class="fc" id="L102">    }</span>
+
+    private static Pattern exact(String string) {
+<span class="fc" id="L105">        return Pattern.compile(&quot;^&quot; + Pattern.quote(string) + &quot;$&quot;);</span>
+    }
+
+    private static Map&lt;CompatibilityType, DifferenceSeverity&gt; reclassify(
+            Map&lt;CompatibilityType, DifferenceSeverity&gt; orig) {
+<span class="fc" id="L110">        return orig.keySet().stream()</span>
+<span class="fc" id="L111">                .collect(Collectors.toMap(Function.identity(), v -&gt; DifferenceSeverity.EQUIVALENT));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

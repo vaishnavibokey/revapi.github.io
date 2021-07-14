@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnalysisConfiguration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java</a> &gt; <span class="el_source">AnalysisConfiguration.java</span></div><h1>AnalysisConfiguration.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.TreeFilter;
+import org.revapi.java.filters.ClassFilter;
+import org.revapi.java.filters.PackageFilter;
+import org.revapi.java.spi.JavaElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public final class AnalysisConfiguration {
+
+<span class="fc" id="L43">    private static final Logger LOG = LoggerFactory.getLogger(AnalysisConfiguration.class);</span>
+
+    private final MissingClassReporting missingClassReporting;
+    private final Set&lt;String&gt; useReportingCodes;
+    private final boolean ignoreMissingAnnotations;
+    private final boolean matchOverloads;
+    private final TreeFilter&lt;JavaElement&gt; filter;
+
+    AnalysisConfiguration(MissingClassReporting missingClassReporting, Set&lt;String&gt; useReportingCodes,
+<span class="fc" id="L52">            boolean ignoreMissingAnnotations, boolean matchOverloads, @Nullable TreeFilter&lt;JavaElement&gt; filter) {</span>
+<span class="fc" id="L53">        this.missingClassReporting = missingClassReporting;</span>
+<span class="fc" id="L54">        this.useReportingCodes = useReportingCodes;</span>
+<span class="fc" id="L55">        this.ignoreMissingAnnotations = ignoreMissingAnnotations;</span>
+<span class="fc" id="L56">        this.matchOverloads = matchOverloads;</span>
+<span class="fc" id="L57">        this.filter = filter;</span>
+<span class="fc" id="L58">    }</span>
+
+    public static AnalysisConfiguration fromModel(JsonNode node) {
+<span class="fc" id="L61">        MissingClassReporting reporting = readMissingClassReporting(node);</span>
+<span class="fc" id="L62">        Set&lt;String&gt; useReportingCodes = readUseReportingCodes(node);</span>
+<span class="fc" id="L63">        boolean ignoreMissingAnnotations = readIgnoreMissingAnnotations(node);</span>
+<span class="fc" id="L64">        boolean matchOverloads = readMatchOverloads(node);</span>
+
+<span class="fc" id="L66">        JsonNode classesRegex = node.path(&quot;filter&quot;).path(&quot;classes&quot;).path(&quot;regex&quot;);</span>
+<span class="fc" id="L67">        JsonNode packagesRegex = node.path(&quot;filter&quot;).path(&quot;packages&quot;).path(&quot;regex&quot;);</span>
+
+<span class="fc" id="L69">        Set&lt;Pattern&gt; classInclusionFilters = readFilter(node.path(&quot;filter&quot;).path(&quot;classes&quot;).path(&quot;include&quot;),</span>
+                classesRegex);
+<span class="fc" id="L71">        Set&lt;Pattern&gt; classExclusionFilters = readFilter(node.path(&quot;filter&quot;).path(&quot;classes&quot;).path(&quot;exclude&quot;),</span>
+                classesRegex);
+<span class="fc" id="L73">        Set&lt;Pattern&gt; packageInclusionFilters = readFilter(node.path(&quot;filter&quot;).path(&quot;packages&quot;).path(&quot;include&quot;),</span>
+                packagesRegex);
+<span class="fc" id="L75">        Set&lt;Pattern&gt; packageExclusionFilters = readFilter(node.path(&quot;filter&quot;).path(&quot;packages&quot;).path(&quot;exclude&quot;),</span>
+                packagesRegex);
+
+<span class="fc" id="L78">        TreeFilter&lt;JavaElement&gt; includeFilter = null;</span>
+
+<span class="fc bfc" id="L80" title="All 6 branches covered.">        if (!(classInclusionFilters.isEmpty() &amp;&amp; classExclusionFilters.isEmpty() &amp;&amp; packageInclusionFilters.isEmpty()</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                &amp;&amp; packageExclusionFilters.isEmpty())) {</span>
+<span class="fc" id="L82">            LOG.warn(&quot;Filtering using the revapi.java.filter.(classes|packages) has been deprecated in favor of&quot;</span>
+                    + &quot; revapi.filter in combination with the java matcher.&quot;);
+
+<span class="fc bfc" id="L85" title="All 4 branches covered.">            if (!classInclusionFilters.isEmpty() || !classExclusionFilters.isEmpty()) {</span>
+<span class="fc" id="L86">                includeFilter = new ClassFilter(classInclusionFilters.toArray(new Pattern[0]),</span>
+<span class="fc" id="L87">                        classExclusionFilters.toArray(new Pattern[0]));</span>
+            }
+
+<span class="fc bfc" id="L90" title="All 4 branches covered.">            if (!packageInclusionFilters.isEmpty() || !packageExclusionFilters.isEmpty()) {</span>
+<span class="fc" id="L91">                PackageFilter pkgFilter = new PackageFilter(packageInclusionFilters.toArray(new Pattern[0]),</span>
+<span class="fc" id="L92">                        packageExclusionFilters.toArray(new Pattern[0]));</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">                if (includeFilter == null) {</span>
+<span class="fc" id="L94">                    includeFilter = pkgFilter;</span>
+                } else {
+<span class="nc" id="L96">                    includeFilter = TreeFilter.intersection(includeFilter, pkgFilter);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L101">        return new AnalysisConfiguration(reporting, useReportingCodes, ignoreMissingAnnotations, matchOverloads,</span>
+                includeFilter);
+    }
+
+    public MissingClassReporting getMissingClassReporting() {
+<span class="fc" id="L106">        return missingClassReporting;</span>
+    }
+
+    public boolean reportUseForAllDifferences() {
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        return useReportingCodes == null;</span>
+    }
+
+    public Set&lt;String&gt; getUseReportingCodes() {
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        return useReportingCodes == null ? Collections.emptySet() : useReportingCodes;</span>
+    }
+
+    public boolean isIgnoreMissingAnnotations() {
+<span class="fc" id="L118">        return ignoreMissingAnnotations;</span>
+    }
+
+    public boolean isMatchOverloads() {
+<span class="fc" id="L122">        return matchOverloads;</span>
+    }
+
+    /**
+     * @deprecated only supports the obsolete package and class name filtering before we can remove it.
+     */
+    @Deprecated
+    @Nullable
+    public TreeFilter&lt;JavaElement&gt; getPackageClassFilter() {
+<span class="fc" id="L131">        return filter;</span>
+    }
+
+    private static MissingClassReporting readMissingClassReporting(JsonNode analysisConfig) {
+<span class="fc" id="L135">        JsonNode config = analysisConfig.path(&quot;missing-classes&quot;).path(&quot;behavior&quot;);</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (config.isTextual()) {</span>
+<span class="pc bpc" id="L137" title="2 of 4 branches missed.">            switch (config.asText()) {</span>
+            case &quot;report&quot;:
+<span class="fc" id="L139">                return MissingClassReporting.REPORT;</span>
+            case &quot;ignore&quot;:
+<span class="fc" id="L141">                return MissingClassReporting.IGNORE;</span>
+            case &quot;error&quot;:
+<span class="nc" id="L143">                return MissingClassReporting.ERROR;</span>
+            default:
+<span class="nc" id="L145">                throw new IllegalArgumentException(&quot;Unsupported value of revapi.java.missing-classes.behavior: '&quot;</span>
+<span class="nc" id="L146">                        + config.asText() + &quot;'. Only 'report', 'ignore' and 'error' are recognized.&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L150">        return MissingClassReporting.REPORT;</span>
+    }
+
+    private static boolean readIgnoreMissingAnnotations(JsonNode analysisConfig) {
+<span class="fc" id="L154">        JsonNode config = analysisConfig.path(&quot;missing-classes&quot;).path(&quot;ignoreMissingAnnotations&quot;);</span>
+<span class="fc" id="L155">        return config.asBoolean(false);</span>
+    }
+
+    private static boolean readMatchOverloads(JsonNode analysisConfig) {
+<span class="fc" id="L159">        return analysisConfig.path(&quot;matchOverloads&quot;).asBoolean(true);</span>
+    }
+
+    private static @Nullable Set&lt;String&gt; readUseReportingCodes(JsonNode analysisConfig) {
+<span class="fc" id="L163">        Set&lt;String&gt; ret = new HashSet&lt;&gt;(5);</span>
+<span class="fc" id="L164">        JsonNode config = analysisConfig.path(&quot;reportUsesFor&quot;);</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (config.isArray()) {</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            for (JsonNode code : config) {</span>
+<span class="fc" id="L167">                ret.add(code.asText());</span>
+<span class="fc" id="L168">            }</span>
+<span class="pc bpc" id="L169" title="3 of 4 branches missed.">        } else if (config.isTextual() &amp;&amp; &quot;all-differences&quot;.equals(config.asText())) {</span>
+<span class="nc" id="L170">            ret = null;</span>
+        } else {
+<span class="fc" id="L172">            ret.add(&quot;java.missing.oldClass&quot;);</span>
+<span class="fc" id="L173">            ret.add(&quot;java.missing.newClass&quot;);</span>
+<span class="fc" id="L174">            ret.add(&quot;java.class.nonPublicPartOfAPI&quot;);</span>
+<span class="fc" id="L175">            ret.add(&quot;java.class.externalClassExposedInAPI&quot;);</span>
+<span class="fc" id="L176">            ret.add(&quot;java.class.externalClassNoLongerExposedInAPI&quot;);</span>
+        }
+
+<span class="fc" id="L179">        return ret;</span>
+    }
+
+    private static Set&lt;Pattern&gt; readFilter(JsonNode filterNode, JsonNode regexNode) {
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        if (!filterNode.isArray()) {</span>
+<span class="fc" id="L184">            return Collections.emptySet();</span>
+        }
+
+<span class="fc" id="L187">        boolean isRegex = regexNode.asBoolean(false);</span>
+
+<span class="fc" id="L189">        return StreamSupport.stream(filterNode.spliterator(), false).map(filter -&gt; {</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            if (isRegex) {</span>
+<span class="fc" id="L191">                return Pattern.compile(filter.asText());</span>
+            } else {
+<span class="fc" id="L193">                return Pattern.compile(Pattern.quote(filter.asText()));</span>
+            }
+<span class="fc" id="L195">        }).collect(Collectors.toSet());</span>
+    }
+
+<span class="fc" id="L198">    public enum MissingClassReporting {</span>
+<span class="fc" id="L199">        IGNORE, ERROR, REPORT</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>
