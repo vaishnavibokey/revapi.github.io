@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DFSFilteringIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.query</a> &gt; <span class="el_source">DFSFilteringIterator.java</span></div><h1>DFSFilteringIterator.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.query;
+
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.Element;
+
+/**
+ * Recursively walks an element forest in a depth-first manner leaving out elements not matching the optionally provided
+ * filter.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ * 
+ * @deprecated This always had very limited utility and {@link Element#stream(Class, boolean)} seems to be a more usable
+ *             alternative.
+ */
+@Deprecated
+public class DFSFilteringIterator&lt;E extends Element&gt; implements Iterator&lt;E&gt; {
+    private final Class&lt;? extends E&gt; resultClass;
+<span class="nc" id="L43">    private final Deque&lt;Iterator&lt;? extends Element&gt;&gt; dfsStack = new LinkedList&lt;&gt;();</span>
+    private final Filter&lt;? super E&gt; filter;
+    private E current;
+    private Iterator&lt;?&gt; removePointer;
+
+    /**
+     * Constructor.
+     *
+     * @param rootIterator
+     *            the iterator over the root elements of the forest
+     * @param resultClass
+     *            the class of the elements to look for in the forest. All the returned elements will be assignable to
+     *            this class.
+     * @param filter
+     *            optional filter that further filters out unwanted elements.
+     */
+    public DFSFilteringIterator(@Nonnull Iterator&lt;? extends Element&gt; rootIterator,
+<span class="nc" id="L60">            @Nonnull Class&lt;? extends E&gt; resultClass, @Nullable Filter&lt;? super E&gt; filter) {</span>
+<span class="nc" id="L61">        dfsStack.push(rootIterator);</span>
+<span class="nc" id="L62">        this.resultClass = resultClass;</span>
+<span class="nc" id="L63">        this.filter = filter;</span>
+<span class="nc" id="L64">    }</span>
+
+    @Override
+    public boolean hasNext() {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (current != null) {</span>
+<span class="nc" id="L69">            return true;</span>
+        } else {
+<span class="nc" id="L71">            removePointer = null;</span>
+            while (true) {
+<span class="nc bnc" id="L73" title="All 4 branches missed.">                while (!dfsStack.isEmpty() &amp;&amp; !dfsStack.peek().hasNext()) {</span>
+<span class="nc" id="L74">                    dfsStack.pop();</span>
+                }
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                if (dfsStack.isEmpty()) {</span>
+<span class="nc" id="L78">                    return false;</span>
+                }
+
+<span class="nc" id="L81">                Iterator&lt;? extends Element&gt; currentIterator = dfsStack.peek();</span>
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                while (currentIterator.hasNext()) {</span>
+<span class="nc" id="L84">                    Element next = currentIterator.next();</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">                    while (next == null &amp;&amp; currentIterator.hasNext()) {</span>
+<span class="nc" id="L86">                        next = currentIterator.next();</span>
+                    }
+
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                    if (next == null) {</span>
+<span class="nc" id="L90">                        break;</span>
+                    }
+
+<span class="nc" id="L93">                    boolean found = false;</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                    if (resultClass.isAssignableFrom(next.getClass())) {</span>
+<span class="nc" id="L95">                        E cur = resultClass.cast(next);</span>
+
+<span class="nc bnc" id="L97" title="All 4 branches missed.">                        if (filter == null || filter.applies(cur)) {</span>
+<span class="nc" id="L98">                            current = cur;</span>
+<span class="nc" id="L99">                            removePointer = currentIterator;</span>
+<span class="nc" id="L100">                            found = true;</span>
+                        }
+                    }
+
+                    // we're doing DFS, so once we report this element, we want to start reporting its children
+                    // even if we don't report the current element, we might report one of its children so we base
+                    // our decision on whether to descend or not regardless of whether we're reporting the current
+                    // element or not
+<span class="nc bnc" id="L108" title="All 4 branches missed.">                    boolean descend = filter == null || filter.shouldDescendInto(next);</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                    if (descend) {</span>
+<span class="nc" id="L110">                        Iterator&lt;? extends Element&gt; childIterator = next.getChildren().iterator();</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                        if (childIterator.hasNext()) {</span>
+<span class="nc" id="L112">                            dfsStack.push(childIterator);</span>
+                        }
+                    }
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                    if (found) {</span>
+<span class="nc" id="L117">                        return true;</span>
+                    }
+
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                    if (descend) {</span>
+<span class="nc" id="L121">                        break;</span>
+                    }
+<span class="nc" id="L123">                }</span>
+<span class="nc" id="L124">            }</span>
+        }
+    }
+
+    @Override
+    public E next() {
+<span class="nc bnc" id="L130" title="All 4 branches missed.">        if (current == null &amp;&amp; !hasNext()) {</span>
+<span class="nc" id="L131">            throw new NoSuchElementException();</span>
+        }
+
+<span class="nc" id="L134">        E ret = current;</span>
+<span class="nc" id="L135">        current = null;</span>
+
+<span class="nc" id="L137">        return ret;</span>
+    }
+
+    @Override
+    public void remove() {
+        // the contract is such that remove() can be only called after next()
+        // hasNext() sets the current and removePointer fields
+        // next() calls hasNext() and clears current, but leaves the removePointer
+<span class="nc bnc" id="L145" title="All 4 branches missed.">        if (current != null || removePointer == null) {</span>
+<span class="nc" id="L146">            throw new IllegalStateException();</span>
+        }
+
+<span class="nc" id="L149">        removePointer.remove();</span>
+<span class="nc" id="L150">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

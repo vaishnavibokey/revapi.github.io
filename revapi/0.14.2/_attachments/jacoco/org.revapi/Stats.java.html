@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Stats.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">Stats.java</span></div><h1>Stats.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+/**
+ * Quick and dirty execution time statistics collection class. Note that the statistics collected during the
+ * {@code close()} methods of the extensions are not taken into account.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.4.1
+ */
+public final class Stats {
+<span class="fc" id="L33">    private static final Map&lt;String, Collector&gt; COLLECTORS = new TreeMap&lt;&gt;();</span>
+
+    private Stats() {
+
+    }
+
+    public static Collector of(String stat) {
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (!Revapi.TIMING_LOG.isDebugEnabled()) {</span>
+<span class="fc" id="L41">            return DummyCollector.INSTANCE;</span>
+        }
+
+<span class="nc" id="L44">        Collector ret = COLLECTORS.get(stat);</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (ret == null) {</span>
+<span class="nc" id="L46">            ret = new Collector();</span>
+<span class="nc" id="L47">            COLLECTORS.put(stat, ret);</span>
+        }
+
+<span class="nc" id="L50">        return ret;</span>
+    }
+
+    public static String asString() {
+<span class="fc" id="L54">        Map&lt;String, Collector&gt; map = COLLECTORS.entrySet().stream()</span>
+<span class="pc" id="L55">                .sorted((e1, e2) -&gt; (int) (e2.getValue().totalTime - e1.getValue().totalTime))</span>
+<span class="pc" id="L56">                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (m1, m2) -&gt; m1, LinkedHashMap::new));</span>
+
+<span class="fc" id="L58">        StringBuilder bld = new StringBuilder(&quot;Stats:&quot;);</span>
+
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (map.isEmpty()) {</span>
+<span class="fc" id="L61">            return bld.append(&quot; &lt;none&gt;&quot;).toString();</span>
+        }
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        for (Map.Entry&lt;String, Collector&gt; e : map.entrySet()) {</span>
+<span class="nc" id="L65">            bld.append('\n').append(e.getKey()).append(&quot;: &quot;).append(e.getValue());</span>
+<span class="nc" id="L66">        }</span>
+
+<span class="nc" id="L68">        return bld.toString();</span>
+    }
+
+    public static class Collector {
+        volatile long occurrences;
+        volatile long totalTime;
+
+        volatile long currentStartTime;
+
+        volatile long worstTime;
+
+        volatile Object offender;
+
+        private Collector() {
+
+        }
+
+        public long start() {
+<span class="nc" id="L86">            return currentStartTime = System.currentTimeMillis();</span>
+        }
+
+        public void end(Object cause) {
+<span class="nc" id="L90">            end(0, cause);</span>
+<span class="nc" id="L91">        }</span>
+
+        public void end(Object cause1, Object cause2) {
+<span class="nc" id="L94">            end(0, new Tuple2(cause1, cause2));</span>
+<span class="nc" id="L95">        }</span>
+
+        public void end(long additionalDuration, Object cause) {
+<span class="nc" id="L98">            long duration = System.currentTimeMillis() - currentStartTime + additionalDuration;</span>
+<span class="nc" id="L99">            totalTime += duration;</span>
+<span class="nc" id="L100">            occurrences++;</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (duration &gt; worstTime) {</span>
+<span class="nc" id="L102">                worstTime = duration;</span>
+<span class="nc" id="L103">                offender = cause;</span>
+            }
+<span class="nc" id="L105">        }</span>
+
+        public void end(long additionalDuration, Object cause1, Object cause2) {
+<span class="nc" id="L108">            end(additionalDuration, new Tuple2(cause1, cause2));</span>
+<span class="nc" id="L109">        }</span>
+
+        public long reset() {
+<span class="nc" id="L112">            return System.currentTimeMillis() - currentStartTime;</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L117">            return &quot;{occurrences = &quot; + occurrences + &quot;, total = &quot; + totalTime + &quot;ms, average = &quot;</span>
+<span class="nc" id="L118">                    + String.format(&quot;%.2fms&quot;, ((double) totalTime) / occurrences) + &quot;, worstTime = &quot; + worstTime</span>
+                    + &quot;ms caused by &quot; + offender + &quot;}&quot;;
+        }
+    }
+
+<span class="fc" id="L123">    private static final class DummyCollector extends Collector {</span>
+<span class="fc" id="L124">        static final DummyCollector INSTANCE = new DummyCollector();</span>
+
+        @Override
+        public void end(long additionalDuration, Object cause) {
+<span class="fc" id="L128">        }</span>
+
+        @Override
+        public void end(long additionalDuration, Object cause1, Object cause2) {
+<span class="nc" id="L132">        }</span>
+
+        @Override
+        public void end(Object cause) {
+<span class="fc" id="L136">        }</span>
+
+        @Override
+        public void end(Object cause1, Object cause2) {
+<span class="fc" id="L140">        }</span>
+
+        @Override
+        public long reset() {
+<span class="fc" id="L144">            return 0;</span>
+        }
+
+        @Override
+        public long start() {
+<span class="fc" id="L149">            return 0;</span>
+        }
+    }
+
+    private static final class Tuple2 {
+        private final Object a;
+        private final Object b;
+
+<span class="nc" id="L157">        private Tuple2(Object a, Object b) {</span>
+<span class="nc" id="L158">            this.a = a;</span>
+<span class="nc" id="L159">            this.b = b;</span>
+<span class="nc" id="L160">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L164">            return &quot;[&quot; + a + &quot;, &quot; + b + &quot;]&quot;;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
