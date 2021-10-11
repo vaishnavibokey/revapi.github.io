@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Element.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">Element.java</span></div><h1>Element.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.stream.Stream;
+
+import javax.annotation.Nullable;
+
+import org.revapi.query.Filter;
+
+/**
+ * An element in a forest representation of given &quot;language&quot; under API inspection. In case of programming languages this
+ * will usually be a (trimmed down) abstract syntax tree, in case of XSD this can be an actual DOM tree.
+ *
+ * &lt;p&gt;
+ * An element is comparable with all other element types for given language, giving a total ordering across all and any
+ * element types given language defines.
+ *
+ * &lt;p&gt;
+ * The {@link #compareTo(Object)} method is used by Revapi to match up the pairs of elements from the old and new API.
+ * Revapi sorts the elements from old and new API (using their natural order, i.e. using the {@code compareTo} method)
+ * and then iterates through both sets at the same time, comparing the elements.
+ *
+ * &lt;table&gt;
+ * &lt;caption&gt;API traversal outline&lt;/caption&gt;
+ * &lt;tr&gt;
+ * &lt;th&gt;Comparison&lt;/th&gt;
+ * &lt;th&gt;Meaning&lt;/th&gt;
+ * &lt;th&gt;Result&lt;/th&gt;
+ * &lt;th&gt;Iteration Progress&lt;/th&gt;
+ * &lt;/tr&gt;
+ * &lt;tr&gt;
+ * &lt;td&gt;old &amp;lt; new&lt;/td&gt;
+ * &lt;td&gt;New is considered removed from the API&lt;/td&gt;
+ * &lt;td&gt;(old, null)&lt;/td&gt;
+ * &lt;td&gt;Old moves forward, new stays&lt;/td&gt;
+ * &lt;/tr&gt;
+ * &lt;tr&gt;
+ * &lt;td&gt;old &amp;gt; new&lt;/td&gt;
+ * &lt;td&gt;Old is considered removed from the API&lt;/td&gt;
+ * &lt;td&gt;(null, new)&lt;/td&gt;
+ * &lt;td&gt;New moves forward, old stays&lt;/td&gt;
+ * &lt;/tr&gt;
+ * &lt;tr&gt;
+ * &lt;td&gt;old == new&lt;/td&gt;
+ * &lt;td&gt;New is considered equal to old&lt;/td&gt;
+ * &lt;td&gt;(old, new)&lt;/td&gt;
+ * &lt;td&gt;Old moves forward, new moves forward&lt;/td&gt;
+ * &lt;/tr&gt;
+ * &lt;/table&gt;
+ *
+ * The result from the above comparison is handed over to the difference analyzer which is assumed to do a more detailed
+ * analysis on the elements and return a (possibly empty) set of differences.
+ *
+ * @param &lt;E&gt;
+ *            the common base class of all elements of some api analyzer
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ * 
+ * @see CoIterator
+ */
+public interface Element&lt;E extends Element&lt;E&gt;&gt; extends Comparable&lt;E&gt; {
+
+    /**
+     * Casts this element to the provided type.
+     * 
+     * @param type
+     *            the type to cast this instance to
+     * 
+     * @return this cast as the provided type
+     * 
+     * @throws ClassCastException
+     *             if this instance cannot be cast to the provided type
+     */
+    default &lt;T extends Element&lt;?&gt;&gt; T as(Class&lt;T&gt; type) {
+<span class="nc" id="L99">        return type.cast(this);</span>
+    }
+
+    /**
+     * @return the API version this element comes from
+     */
+    API getApi();
+
+    /**
+     * @return the archive the element comes from or null if that cannot be determined
+     */
+    @Nullable
+    Archive getArchive();
+
+    /**
+     * @return the parent element or null if this is a root element
+     */
+    @Nullable
+    E getParent();
+
+    /**
+     * Sets a new parent.
+     * 
+     * @param parent
+     *            the new parent of this element
+     */
+    void setParent(@Nullable E parent);
+
+    SortedSet&lt;E&gt; getChildren();
+
+    /**
+     * Provides the full &quot;path&quot; to the element in the forest in a human readable way. This method is meant to be used by
+     * the reporters to identify the element in the reports.
+     *
+     * @return human readable representation of the element
+     */
+    String getFullHumanReadableString();
+
+    /**
+     * If the API analyzer supports the feature, this returns the set of elements that reference this element in some
+     * way (typically, those would be the use sites of this element).
+     */
+    default Set&lt;Reference&lt;E&gt;&gt; getReferencingElements() {
+<span class="nc" id="L142">        return Collections.emptySet();</span>
+    }
+
+    /**
+     * This returns the {@link #getReferencingElements() referencing elements} of this element and of all its children,
+     * recursively.
+     */
+    default Set&lt;Reference&lt;E&gt;&gt; getCumulativeReferencingElements() {
+<span class="nc" id="L150">        Set&lt;Reference&lt;E&gt;&gt; ret = new HashSet&lt;&gt;(getReferencingElements());</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        for (E child : getChildren()) {</span>
+<span class="nc" id="L152">            ret.addAll(child.getCumulativeReferencingElements());</span>
+<span class="nc" id="L153">        }</span>
+
+<span class="nc" id="L155">        return ret;</span>
+    }
+
+    /**
+     * If the API analyzer supports the feature, this returns the set of elements that are referenced by this element in
+     * some way (typically, those would be the elements somehow used by this element).
+     */
+    default Set&lt;Reference&lt;E&gt;&gt; getReferencedElements() {
+<span class="nc" id="L163">        return Collections.emptySet();</span>
+    }
+
+    /**
+     * This returns the {@link #getReferencedElements() referenced elements} of this element and of all its children,
+     * recursively.
+     */
+    default Set&lt;Reference&lt;E&gt;&gt; getCumulativeReferencedElements() {
+<span class="fc" id="L171">        Set&lt;Reference&lt;E&gt;&gt; ret = new HashSet&lt;&gt;(getReferencedElements());</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        for (E child : getChildren()) {</span>
+<span class="fc" id="L173">            ret.addAll(child.getCumulativeReferencedElements());</span>
+<span class="fc" id="L174">        }</span>
+
+<span class="fc" id="L176">        return ret;</span>
+    }
+
+    /**
+     * This method is functionally equivalent to
+     * {@link #searchChildren(java.util.List, java.lang.Class, boolean, org.revapi.query.Filter)} but returns the result
+     * in a newly allocated list instance. This is basically a convenience method to enable a more succinct expressions.
+     *
+     * @param &lt;T&gt;
+     *            the type of the elements to look for
+     * @param resultType
+     *            the type of the elements to look for
+     * @param recurse
+     *            false to search only in direct children of the element, true to search recursively
+     * @param filter
+     *            optional filter to further trim the number of results @return the list of child elements of given type
+     *            potentially satisfying given filter
+     *
+     * @return the list of found elements
+     * 
+     * @deprecated in favor of {@link #stream(Class, boolean)}
+     */
+    @Deprecated
+    &lt;T extends Element&lt;E&gt;&gt; List&lt;T&gt; searchChildren(Class&lt;T&gt; resultType, boolean recurse,
+            @Nullable Filter&lt;? super T&gt; filter);
+
+    /**
+     * Recursively searches the children of this element for elements of given type, potentially applicable to given
+     * filter.
+     *
+     * &lt;p&gt;
+     * This is identical to {@link #searchChildren(Class, boolean, org.revapi.query.Filter)} in behavior but avoids the
+     * instantiation of a new list.
+     *
+     * @param &lt;T&gt;
+     *            the type of the elements to look for
+     * @param results
+     *            the list of the results to fill
+     * @param resultType
+     *            the type of the elements to look for
+     * @param recurse
+     *            false to search only in direct children of the element, true to search recursively
+     * @param filter
+     *            optional filter to further trim the number of results
+     * 
+     * @deprecated in favor of {@link #stream(Class, boolean)}
+     */
+    @Deprecated
+    &lt;T extends Element&lt;E&gt;&gt; void searchChildren(List&lt;T&gt; results, Class&lt;T&gt; resultType, boolean recurse,
+            @Nullable Filter&lt;? super T&gt; filter);
+
+    /**
+     * Similar to search methods but avoids the traversal over the whole forest. Instead the traversal is incremental
+     * and governed by the returned iterator.
+     *
+     * @param &lt;T&gt;
+     *            the type of the elements to look for
+     * @param resultType
+     *            the type of elements to look for
+     * @param recurse
+     *            if true, the iterator traverses the element forest using depth first search
+     * @param filter
+     *            optional filter to further trim the number of results
+     *
+     * @return the iterator that will iterate over the results
+     *
+     * @see #searchChildren(Class, boolean, org.revapi.query.Filter)
+     * 
+     * @deprecated use the more standard {@link #stream(Class, boolean)}
+     */
+    @Deprecated
+    &lt;T extends Element&lt;E&gt;&gt; Iterator&lt;T&gt; iterateOverChildren(Class&lt;T&gt; resultType, boolean recurse,
+            @Nullable Filter&lt;? super T&gt; filter);
+
+    /**
+     * A stream equivalent of {@link #iterateOverChildren(Class, boolean, Filter)}. The resulting stream contains
+     * distinct non-null elements.
+     *
+     * @param &lt;T&gt;
+     *            the type of the elements to look for
+     * @param elementType
+     *            the type of elements to look for
+     * @param recurse
+     *            if true, the iterator traverses the element forest using depth first search
+     * 
+     * @return the stream of elements complying to the filter
+     */
+    default &lt;T extends Element&lt;E&gt;&gt; Stream&lt;T&gt; stream(Class&lt;T&gt; elementType, boolean recurse) {
+<span class="nc" id="L264">        Stream&lt;T&gt; stream = getChildren().stream().filter(Objects::nonNull)</span>
+<span class="nc" id="L265">                .filter(e -&gt; elementType.isAssignableFrom(e.getClass())).map(elementType::cast);</span>
+
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        if (recurse) {</span>
+<span class="nc" id="L268">            stream = stream.flatMap(e -&gt; Stream.concat(Stream.of(e), e.stream(elementType, true)));</span>
+        }
+
+<span class="nc" id="L271">        return stream;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

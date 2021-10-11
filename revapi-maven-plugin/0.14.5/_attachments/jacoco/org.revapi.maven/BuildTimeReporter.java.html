@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BuildTimeReporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">BuildTimeReporter.java</span></div><h1>BuildTimeReporter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.revapi.AnalysisContext;
+import org.revapi.Archive;
+import org.revapi.Criticality;
+import org.revapi.Difference;
+import org.revapi.Element;
+import org.revapi.Report;
+import org.revapi.Reporter;
+
+/**
+ * Build-time reporter is a {@link Reporter} extension for Revapi that is used by the {@link CheckMojo} to output the
+ * found problems and also to provide the suggestions to the user how to ignore the problems if deemed ok.
+ * &lt;p&gt;
+ * Even though this is a normal Revapi extension, it doesn't use the normal configuration mechanisms provided by Revapi
+ * (i.e. it doesn't define a configuration schema and doesn't accept any configuration from the configuration in the
+ * analysis context during the {@link #initialize(AnalysisContext)} method). Instead, it is configured through the
+ * {@link AnalysisContext#getData(String)}. This is to make it easier to pass complex objects to the reporter and also
+ * to amplify the fact that this is no &quot;normal&quot; extension but is tightly bound to the {@link CheckMojo} and the Maven
+ * build.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">public final class BuildTimeReporter implements Reporter {</span>
+    public static final String BREAKING_CRITICALITY_KEY = &quot;org.revapi.maven.buildTimeBreakingCriticality&quot;;
+    public static final String OUTPUT_NON_IDENTIFYING_ATTACHMENTS = &quot;org.revapi.maven.outputNonIdentifyingAttachments&quot;;
+    public static final String SUGGESTIONS_BUILDER_KEY = &quot;org.revapi.maven.buildTimeSuggestionsBuilder&quot;;
+
+    private Criticality breakingCriticality;
+    private List&lt;Report&gt; allProblems;
+    private List&lt;Archive&gt; oldApi;
+    private List&lt;Archive&gt; newApi;
+    private boolean outputNonIdentifyingAttachments;
+    private SuggestionsBuilder suggestionsBuilder;
+
+    public boolean hasBreakingProblems() {
+<span class="nc bnc" id="L63" title="All 4 branches missed.">        return allProblems != null &amp;&amp; !allProblems.isEmpty();</span>
+    }
+
+    public String getAllProblemsMessage() {
+<span class="nc" id="L67">        StringBuilder errors = new StringBuilder(&quot;The following API problems caused the build to fail:\n&quot;);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        for (Report r : allProblems) {</span>
+<span class="nc" id="L69">            Element element = r.getNewElement();</span>
+            Archive archive;
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (element == null) {</span>
+<span class="nc" id="L72">                element = r.getOldElement();</span>
+<span class="nc bnc" id="L73" title="All 4 branches missed.">                assert element != null;</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                archive = shouldOutputArchive(oldApi, element.getArchive()) ? element.getArchive() : null;</span>
+            } else {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                archive = shouldOutputArchive(newApi, element.getArchive()) ? element.getArchive() : null;</span>
+            }
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            for (Difference d : r.getDifferences()) {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                if (isReportable(d)) {</span>
+<span class="nc" id="L81">                    errors.append(d.code).append(&quot;: &quot;).append(element.getFullHumanReadableString()).append(&quot;: &quot;)</span>
+<span class="nc" id="L82">                            .append(d.description);</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                    if (archive != null) {</span>
+<span class="nc" id="L84">                        errors.append(&quot; [&quot;).append(archive.getName()).append(&quot;]&quot;);</span>
+                    }
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                    if (d.documentationLink != null) {</span>
+<span class="nc" id="L87">                        errors.append(&quot; &quot;).append(d.documentationLink);</span>
+                    }
+<span class="nc" id="L89">                    errors.append(&quot;\n&quot;);</span>
+                }
+<span class="nc" id="L91">            }</span>
+<span class="nc" id="L92">        }</span>
+
+<span class="nc" id="L94">        return errors.toString();</span>
+    }
+
+    public String getIgnoreSuggestion() {
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        if (allProblems.isEmpty()) {</span>
+<span class="nc" id="L99">            return null;</span>
+        }
+
+<span class="fc" id="L102">        return suggestionsBuilder.build(allProblems, new SuggestionBuilderContext());</span>
+    }
+
+    @Nullable
+    @Override
+    public String getExtensionId() {
+<span class="nc" id="L108">        return &quot;revapi.maven.internal.buildTimeReporter&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="nc" id="L114">        return null;</span>
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext context) {
+<span class="fc" id="L119">        allProblems = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L120">        oldApi = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        for (Archive a : context.getOldApi().getArchives()) {</span>
+<span class="nc" id="L122">            oldApi.add(a);</span>
+<span class="nc" id="L123">        }</span>
+<span class="fc" id="L124">        newApi = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        for (Archive a : context.getNewApi().getArchives()) {</span>
+<span class="nc" id="L126">            newApi.add(a);</span>
+<span class="nc" id="L127">        }</span>
+<span class="fc" id="L128">        this.breakingCriticality = (Criticality) context.getData(BREAKING_CRITICALITY_KEY);</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (breakingCriticality == null) {</span>
+<span class="nc" id="L130">            throw new IllegalStateException(&quot;Max criticality must be provided in the context data of the&quot;</span>
+                    + &quot; BuildTimeReporter. If you see this, you've come across a bug, please report it.&quot;);
+        }
+
+<span class="fc" id="L134">        Boolean outputNonIdentifyingAttachments = (Boolean) context.getData(OUTPUT_NON_IDENTIFYING_ATTACHMENTS);</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        this.outputNonIdentifyingAttachments = outputNonIdentifyingAttachments == null ? true</span>
+<span class="fc" id="L136">                : outputNonIdentifyingAttachments;</span>
+<span class="fc" id="L137">        this.suggestionsBuilder = (SuggestionsBuilder) context.getData(SUGGESTIONS_BUILDER_KEY);</span>
+
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (suggestionsBuilder == null) {</span>
+<span class="nc" id="L140">            throw new IllegalStateException(&quot;SuggestionBuilder instance must be provided in the context data of the&quot;</span>
+                    + &quot; BuildTimeReporter. If you see this, you've come across a bug, please report it.&quot;);
+        }
+<span class="fc" id="L143">    }</span>
+
+    @Override
+    public void report(@Nonnull Report report) {
+<span class="fc" id="L147">        Element element = report.getNewElement();</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if (element == null) {</span>
+<span class="nc" id="L149">            element = report.getOldElement();</span>
+        }
+
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (element == null) {</span>
+            // wat? At least one of old and new should always be non-null
+<span class="nc" id="L154">            return;</span>
+        }
+
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        for (Difference d : report.getDifferences()) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">            if (isReportable(d)) {</span>
+<span class="fc" id="L159">                allProblems.add(report);</span>
+<span class="fc" id="L160">                break;</span>
+            }
+<span class="nc" id="L162">        }</span>
+<span class="fc" id="L163">    }</span>
+
+    private boolean isReportable(Difference d) {
+<span class="fc" id="L166">        Criticality c = d.criticality;</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        return breakingCriticality.compareTo(c) &lt;= 0;</span>
+    }
+
+    private boolean shouldOutputArchive(List&lt;Archive&gt; primaryApi, Archive archive) {
+<span class="nc bnc" id="L171" title="All 4 branches missed.">        return !primaryApi.contains(archive) || primaryApi.size() &gt; 1;</span>
+    }
+
+    @Override
+    public void close() throws IOException {
+<span class="nc" id="L176">    }</span>
+
+    /**
+     * A suggestion builder is an object that the {@link BuildTimeReporter} uses to render suggestions for ignoring the
+     * found problems.
+     */
+    public interface SuggestionsBuilder {
+        String build(List&lt;Report&gt; reports, SuggestionBuilderContext context);
+    }
+
+    /**
+     * The context that can be used by the {@link SuggestionsBuilder} to get information about the differences and the
+     * configured output options.
+     */
+<span class="fc" id="L190">    public final class SuggestionBuilderContext {</span>
+        boolean isReportable(Difference difference) {
+<span class="fc" id="L192">            return BuildTimeReporter.this.isReportable(difference);</span>
+        }
+
+        boolean isAttachmentsReported() {
+<span class="fc" id="L196">            return outputNonIdentifyingAttachments;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

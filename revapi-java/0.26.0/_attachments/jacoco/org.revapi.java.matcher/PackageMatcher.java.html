@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PackageMatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.matcher</a> &gt; <span class="el_source">PackageMatcher.java</span></div><h1>PackageMatcher.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.matcher;
+
+import java.util.Optional;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
+import javax.lang.model.element.PackageElement;
+
+import org.revapi.ArchiveAnalyzer;
+import org.revapi.Element;
+import org.revapi.FilterStartResult;
+import org.revapi.Ternary;
+import org.revapi.TreeFilter;
+import org.revapi.base.BaseElementMatcher;
+import org.revapi.base.IndependentTreeFilter;
+import org.revapi.java.JavaArchiveAnalyzer;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.java.spi.JavaModelElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+<span class="fc" id="L38">public class PackageMatcher extends BaseElementMatcher {</span>
+<span class="fc" id="L39">    private static final Logger LOG = LoggerFactory.getLogger(PackageMatcher.class);</span>
+
+    @Override
+    public Optional&lt;CompiledRecipe&gt; compile(String recipe) {
+<span class="fc" id="L43">        return Optional.of(new CompiledRecipe() {</span>
+<span class="pc bpc" id="L44" title="2 of 6 branches missed.">            final Pattern pattern = recipe.length() &gt; 1 &amp;&amp; recipe.startsWith(&quot;/&quot;) &amp;&amp; recipe.endsWith(&quot;/&quot;)</span>
+<span class="fc" id="L45">                    ? Pattern.compile(recipe.substring(1, recipe.length() - 1)) : null;</span>
+
+            @SuppressWarnings(&quot;unchecked&quot;)
+            @Nullable
+            @Override
+            public &lt;E extends Element&lt;E&gt;&gt; TreeFilter&lt;E&gt; filterFor(ArchiveAnalyzer&lt;E&gt; archiveAnalyzer) {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                if (!(archiveAnalyzer instanceof JavaArchiveAnalyzer)) {</span>
+<span class="fc" id="L52">                    return null;</span>
+                }
+
+<span class="fc" id="L55">                return (TreeFilter&lt;E&gt;) new IndependentTreeFilter&lt;JavaElement&gt;() {</span>
+                    @Override
+                    protected FilterStartResult doStart(JavaElement element) {
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                        if (!(element instanceof JavaModelElement)) {</span>
+<span class="nc" id="L59">                            return FilterStartResult.defaultResult();</span>
+                        }
+
+<span class="fc" id="L62">                        JavaModelElement modelElement = (JavaModelElement) element;</span>
+
+<span class="fc" id="L64">                        PackageElement pkg = getPackage(modelElement);</span>
+
+<span class="fc" id="L66">                        Ternary ret = Ternary.fromBoolean(matches(pkg));</span>
+
+<span class="fc" id="L68">                        return FilterStartResult.direct(ret, ret);</span>
+                    }
+
+                    private PackageElement getPackage(JavaModelElement el) {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                        javax.lang.model.element.Element type = el == null ? null : el.getDeclaringElement();</span>
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                        PackageElement pkg = el == null ? null</span>
+<span class="fc" id="L75">                                : el.getTypeEnvironment().getElementUtils().getPackageOf(type);</span>
+
+<span class="pc bpc" id="L77" title="3 of 4 branches missed.">                        if (pkg == null &amp;&amp; el != null) {</span>
+<span class="nc" id="L78">                            LOG.warn(&quot;Could not find the package of type {} represented by an instance of type {}&quot;, el,</span>
+<span class="nc" id="L79">                                    el.getClass());</span>
+                        }
+
+<span class="fc" id="L82">                        return pkg;</span>
+                    }
+
+                    private boolean matches(PackageElement pkg) {
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                        if (pattern == null) {</span>
+<span class="fc" id="L87">                            return recipe.contentEquals(pkg.getQualifiedName());</span>
+                        } else {
+<span class="fc" id="L89">                            return pattern.matcher(pkg.getQualifiedName()).matches();</span>
+                        }
+                    }
+                };
+            }
+        });
+    }
+
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L99">        return &quot;java-package&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

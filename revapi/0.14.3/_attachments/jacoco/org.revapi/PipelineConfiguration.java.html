@@ -1,0 +1,884 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PipelineConfiguration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">PipelineConfiguration.java</span></div><h1>PipelineConfiguration.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.annotation.Nonnull;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.dmr.ModelNode;
+import org.revapi.configuration.JSONUtil;
+
+/**
+ * This class represents the configuration of the Revapi analysis pipeline. This is different from the configuration of
+ * the individual extensions (which are part of the pipeline) as it provides the configuration of the pipeline itself.
+ * Namely, this class defines all the possible extensions that can be used during the analysis as well as the
+ * configuration of the &quot;shape&quot; of the pipeline - as of now only the transformation blocks can be defined.
+ *
+ * &lt;p&gt;
+ * The analysis can be influenced by defining &quot;transformation blocks&quot;. By default, each {@link DifferenceTransform} can
+ * transform a difference into another one. Each such newly created difference is then again examined by all difference
+ * transforms to see if it is also can be transformed again. This is sometimes not what the user intends with the
+ * configuration, because it might be useful to &quot;group&quot; certain transformations into &quot;blocks&quot; that happen &quot;atomically&quot;
+ * without the constituent transforms in the block influencing each others results.
+ *
+ * &lt;p&gt;
+ * E.g., consider the following scenario:
+ * &lt;p&gt;
+ * There is a &quot;reclassify&quot; transform that is configured to &quot;tune down&quot; severity of certain differences. At the same
+ * time, there is another transformation, say a &quot;policy transformation&quot; that considers any potentially breaking change
+ * as breaking - the goal of the policy is to have a &quot;clean&quot; set of changes without any potentially breaking change in
+ * the release.
+ *
+ * &lt;p&gt;
+ * Without a transformation block, these two transformations cannot coexist together without causing an &quot;infinite loop&quot;
+ * (Revapi will interrupt the difference transformations after a certain number attempts).
+ *
+ * &lt;p&gt;
+ * In the outlined scenario, the intention of the user is to have the &quot;reclassify&quot; transform make some differences
+ * admissible for the release and the &quot;policy&quot; transform to make all other differences breaking. The problem with this
+ * is that, as described above, Revapi cannot guess this intention and just blindly applies all transforms on each and
+ * every difference found. This makes it impossible for the &quot;policy&quot; transform to &quot;not see&quot; the admissible differences
+ * that the &quot;reclassify&quot; transform tunes down.
+ *
+ * &lt;p&gt;
+ * Enter transformation blocks. Transformation blocks enable certain transformations to be applied in the defined order
+ * while considering the result of such series of transformations as potential input for other transformations outside
+ * of the block. This enables the user to say &quot;first reclassify then apply policy&quot;, resulting her original intention
+ * being clear to Revapi.
+ *
+ * &lt;p&gt;
+ * As explained in the {@link AnalysisContext}, each transformation extension can be configured multiple times using
+ * different IDs. An ID is optional if there is only a single configuration of a single type of transformation. When
+ * trying to group the transformations into blocks, Revapi first tries to find a transformation with given ID and if it
+ * finds none, it tries to match the provided string with the name of the extension (internally called the extension
+ * ID).
+ */
+public final class PipelineConfiguration {
+    private final Set&lt;Class&lt;? extends ApiAnalyzer&lt;?&gt;&gt;&gt; apiAnalyzerTypes;
+    private final Set&lt;Class&lt;? extends Reporter&gt;&gt; reporterTypes;
+    private final Set&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; transformTypes;
+    private final Set&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; treeFilterTypes;
+    private final Set&lt;Class&lt;? extends ElementMatcher&gt;&gt; matcherTypes;
+
+    private final Set&lt;List&lt;String&gt;&gt; transformationBlocks;
+    private final List&lt;String&gt; includedAnalyzerExtensionIds;
+    private final List&lt;String&gt; excludedAnalyzerExtensionIds;
+    private final List&lt;String&gt; includedReporterExtensionIds;
+    private final List&lt;String&gt; excludedReporterExtensionIds;
+    private final List&lt;String&gt; includedTransformExtensionIds;
+    private final List&lt;String&gt; excludedTransformExtensionIds;
+    private final List&lt;String&gt; includedFilterExtensionIds;
+    private final List&lt;String&gt; excludedFilterExtensionIds;
+    private final List&lt;String&gt; includedMatcherExtensionIds;
+    private final List&lt;String&gt; excludedMatcherExtensionIds;
+    private final Set&lt;Criticality&gt; criticalities;
+    private final Map&lt;DifferenceSeverity, Criticality&gt; severityMapping;
+
+    /**
+     * @return a pipeline configuration builder instance
+     */
+    public static Builder builder() {
+<span class="fc" id="L116">        return new Builder();</span>
+    }
+
+    /**
+     * Parses the configuration node and provides a pipeline configuration without any extensions marked for loading.
+     * The configuration node is supposed to conform to the pipeline configuration JSON schema.
+     *
+     * &lt;p&gt;
+     * The caller is supposed to use the methods from the builder to add/find extension classes that will be used in the
+     * analysis.
+     *
+     * &lt;p&gt;
+     * Note that the returned pipeline configuration might not contain all the extensions available in the classloader
+     * depending on the include/exclude filters in the configuration.
+     *
+     * @param json
+     *            the configuration node
+     * 
+     * @return a pipeline configuration parsed from the configuration
+     * 
+     * @see Builder#build()
+     * 
+     * @deprecated use the Jackson-based variant
+     */
+    @Deprecated
+    public static PipelineConfiguration.Builder parse(ModelNode json) {
+<span class="nc" id="L142">        return parse(JSONUtil.convert(json));</span>
+    }
+
+    /**
+     * Parses the configuration node and provides a pipeline configuration without any extensions marked for loading.
+     * The configuration node is supposed to conform to the pipeline configuration JSON schema.
+     *
+     * &lt;p&gt;
+     * The caller is supposed to use the methods from the builder to add/find extension classes that will be used in the
+     * analysis.
+     *
+     * &lt;p&gt;
+     * Note that the returned pipeline configuration might not contain all the extensions available in the classloader
+     * depending on the include/exclude filters in the configuration.
+     *
+     * @param json
+     *            the configuration node
+     * 
+     * @return a pipeline configuration parsed from the configuration
+     * 
+     * @see Builder#build()
+     */
+    public static PipelineConfiguration.Builder parse(JsonNode json) {
+<span class="fc" id="L165">        JsonNode analyzerIncludeNode = json.path(&quot;analyzers&quot;).path(&quot;include&quot;);</span>
+<span class="fc" id="L166">        JsonNode analyzerExcludeNode = json.path(&quot;analyzers&quot;).path(&quot;exclude&quot;);</span>
+<span class="fc" id="L167">        JsonNode filterIncludeNode = json.path(&quot;filters&quot;).path(&quot;include&quot;);</span>
+<span class="fc" id="L168">        JsonNode filterExcludeNode = json.path(&quot;filters&quot;).path(&quot;exclude&quot;);</span>
+<span class="fc" id="L169">        JsonNode transformIncludeNode = json.path(&quot;transforms&quot;).path(&quot;include&quot;);</span>
+<span class="fc" id="L170">        JsonNode transformExcludeNode = json.path(&quot;transforms&quot;).path(&quot;exclude&quot;);</span>
+<span class="fc" id="L171">        JsonNode reporterIncludeNode = json.path(&quot;reporters&quot;).path(&quot;include&quot;);</span>
+<span class="fc" id="L172">        JsonNode reporterExcludeNode = json.path(&quot;reporters&quot;).path(&quot;exclude&quot;);</span>
+<span class="fc" id="L173">        JsonNode matcherIncludeNode = json.path(&quot;matchers&quot;).path(&quot;include&quot;);</span>
+<span class="fc" id="L174">        JsonNode matcherExcludeNode = json.path(&quot;matchers&quot;).path(&quot;exclude&quot;);</span>
+<span class="fc" id="L175">        JsonNode criticalities = json.path(&quot;criticalities&quot;);</span>
+<span class="fc" id="L176">        JsonNode severityMapping = json.path(&quot;severityMapping&quot;);</span>
+
+<span class="fc" id="L178">        return builder().withTransformationBlocks(json.path(&quot;transformBlocks&quot;))</span>
+<span class="fc" id="L179">                .withAnalyzerExtensionIdsInclude(asStringList(analyzerIncludeNode))</span>
+<span class="fc" id="L180">                .withAnalyzerExtensionIdsExclude(asStringList(analyzerExcludeNode))</span>
+<span class="fc" id="L181">                .withFilterExtensionIdsInclude(asStringList(filterIncludeNode))</span>
+<span class="fc" id="L182">                .withFilterExtensionIdsExclude(asStringList(filterExcludeNode))</span>
+<span class="fc" id="L183">                .withTransformExtensionIdsInclude(asStringList(transformIncludeNode))</span>
+<span class="fc" id="L184">                .withTransformExtensionIdsExclude(asStringList(transformExcludeNode))</span>
+<span class="fc" id="L185">                .withReporterExtensionIdsInclude(asStringList(reporterIncludeNode))</span>
+<span class="fc" id="L186">                .withReporterExtensionIdsExclude(asStringList(reporterExcludeNode))</span>
+<span class="fc" id="L187">                .withMatcherExtensionIdsInclude(asStringList(matcherIncludeNode))</span>
+<span class="fc" id="L188">                .withMatcherExtensionIdsExclude(asStringList(matcherExcludeNode))</span>
+<span class="fc" id="L189">                .withReporterExtensionIdsExclude(asStringList(reporterExcludeNode))</span>
+<span class="fc" id="L190">                .withCriticalities(asCriticalitySet(criticalities))</span>
+<span class="fc" id="L191">                .withUntypedSeverityMapping(asSeverityMapping(severityMapping));</span>
+    }
+
+    /**
+     * Similar to {@link #parse(ModelNode)} but the extensions to use are provided by the caller straight away instead
+     * of letting the caller use the builder to finish up the configuration.
+     *
+     * &lt;p&gt;
+     * Note that the returned pipeline configuration might not contain all the extensions available in the classloader
+     * depending on the include/exclude filters in the configuration.
+     *
+     * @param json
+     *            the configuration node
+     * @param analyzers
+     *            the set of analyzers to choose from
+     * @param filters
+     *            the set of filters to choose from
+     * @param transforms
+     *            the set of transforms to choose from
+     * @param reporters
+     *            the set of reporters to choose from
+     * 
+     * @return pipeline configuration corresponding to the provided configuration node
+     * 
+     * @see Builder#build()
+     * 
+     * @deprecated use the Jackson-based variant
+     */
+    @Deprecated
+    public static PipelineConfiguration parse(ModelNode json, Collection&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers,
+            Collection&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; filters,
+            Collection&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms,
+            Collection&lt;Class&lt;? extends Reporter&gt;&gt; reporters, Collection&lt;Class&lt;? extends ElementMatcher&gt;&gt; matchers) {
+<span class="fc" id="L224">        return parse(JSONUtil.convert(json), analyzers, filters, transforms, reporters, matchers);</span>
+    }
+
+    /**
+     * Similar to {@link #parse(JsonNode)} but the extensions to use are provided by the caller straight away instead of
+     * letting the caller use the builder to finish up the configuration.
+     *
+     * &lt;p&gt;
+     * Note that the returned pipeline configuration might not contain all the extensions available in the classloader
+     * depending on the include/exclude filters in the configuration.
+     *
+     * @param json
+     *            the configuration node
+     * @param analyzers
+     *            the set of analyzers to choose from
+     * @param filters
+     *            the set of filters to choose from
+     * @param transforms
+     *            the set of transforms to choose from
+     * @param reporters
+     *            the set of reporters to choose from
+     * 
+     * @return pipeline configuration corresponding to the provided configuration node
+     * 
+     * @see Builder#build()
+     */
+    public static PipelineConfiguration parse(JsonNode json, Collection&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers,
+            Collection&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; filters,
+            Collection&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms,
+            Collection&lt;Class&lt;? extends Reporter&gt;&gt; reporters, Collection&lt;Class&lt;? extends ElementMatcher&gt;&gt; matchers) {
+
+<span class="fc" id="L255">        return parse(json).withAnalyzers(analyzers).withFilters(filters).withTransforms(transforms)</span>
+<span class="fc" id="L256">                .withReporters(reporters).withMatchers(matchers).build();</span>
+    }
+
+    private static List&lt;String&gt; asStringList(JsonNode listNode) {
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        if (listNode.isMissingNode()) {</span>
+<span class="fc" id="L261">            return Collections.emptyList();</span>
+        } else {
+<span class="fc" id="L263">            return StreamSupport.stream(listNode.spliterator(), false).map(JsonNode::asText).collect(toList());</span>
+        }
+    }
+
+    private static Set&lt;Criticality&gt; asCriticalitySet(JsonNode node) {
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">        if (node.isMissingNode()) {</span>
+<span class="fc" id="L269">            return emptySet();</span>
+        }
+
+<span class="nc" id="L272">        return StreamSupport.stream(node.spliterator(), false)</span>
+<span class="nc" id="L273">                .map(n -&gt; new Criticality(n.path(&quot;name&quot;).asText(), n.path(&quot;level&quot;).asInt())).collect(toSet());</span>
+    }
+
+    private static Map&lt;DifferenceSeverity, String&gt; asSeverityMapping(JsonNode node) {
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">        if (node.isMissingNode()) {</span>
+<span class="fc" id="L278">            return emptyMap();</span>
+        }
+
+<span class="nc" id="L281">        return StreamSupport.stream(node.spliterator(), false)</span>
+<span class="nc" id="L282">                .collect(Collectors.toMap(n -&gt; DifferenceSeverity.fromCamelCase(n.path(&quot;severity&quot;).asText()),</span>
+<span class="nc" id="L283">                        n -&gt; n.path(&quot;criticality&quot;).asText()));</span>
+    }
+
+    public PipelineConfiguration(Set&lt;Class&lt;? extends ApiAnalyzer&lt;?&gt;&gt;&gt; apiAnalyzerTypes,
+            Set&lt;Class&lt;? extends Reporter&gt;&gt; reporterTypes, Set&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; transformTypes,
+            Set&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; treeFilterTypes, Set&lt;Class&lt;? extends ElementMatcher&gt;&gt; matcherTypes,
+            Set&lt;List&lt;String&gt;&gt; transformationBlocks, List&lt;String&gt; includedAnalyzerExtensionIds,
+            List&lt;String&gt; excludedAnalyzerExtensionIds, List&lt;String&gt; includedReporterExtensionIds,
+            List&lt;String&gt; excludedReporterExtensionIds, List&lt;String&gt; includedTransformExtensionIds,
+            List&lt;String&gt; excludedTransformExtensionIds, List&lt;String&gt; includedFilterExtensionIds,
+            List&lt;String&gt; excludedFilterExtensionIds, List&lt;String&gt; includedMatcherExtensionIds,
+            List&lt;String&gt; excludedMatcherExtensionIds, Set&lt;Criticality&gt; criticalities,
+<span class="fc" id="L295">            Map&lt;DifferenceSeverity, Criticality&gt; severityMapping) {</span>
+<span class="fc" id="L296">        this.apiAnalyzerTypes = apiAnalyzerTypes;</span>
+<span class="fc" id="L297">        this.reporterTypes = reporterTypes;</span>
+<span class="fc" id="L298">        this.transformTypes = transformTypes;</span>
+<span class="fc" id="L299">        this.treeFilterTypes = treeFilterTypes;</span>
+<span class="fc" id="L300">        this.matcherTypes = matcherTypes;</span>
+<span class="fc" id="L301">        this.transformationBlocks = transformationBlocks;</span>
+<span class="fc" id="L302">        this.includedAnalyzerExtensionIds = includedAnalyzerExtensionIds;</span>
+<span class="fc" id="L303">        this.excludedAnalyzerExtensionIds = excludedAnalyzerExtensionIds;</span>
+<span class="fc" id="L304">        this.includedReporterExtensionIds = includedReporterExtensionIds;</span>
+<span class="fc" id="L305">        this.excludedReporterExtensionIds = excludedReporterExtensionIds;</span>
+<span class="fc" id="L306">        this.includedTransformExtensionIds = includedTransformExtensionIds;</span>
+<span class="fc" id="L307">        this.excludedTransformExtensionIds = excludedTransformExtensionIds;</span>
+<span class="fc" id="L308">        this.includedFilterExtensionIds = includedFilterExtensionIds;</span>
+<span class="fc" id="L309">        this.excludedFilterExtensionIds = excludedFilterExtensionIds;</span>
+<span class="fc" id="L310">        this.includedMatcherExtensionIds = includedMatcherExtensionIds;</span>
+<span class="fc" id="L311">        this.excludedMatcherExtensionIds = excludedMatcherExtensionIds;</span>
+<span class="fc" id="L312">        this.criticalities = criticalities;</span>
+<span class="fc" id="L313">        this.severityMapping = severityMapping;</span>
+<span class="fc" id="L314">    }</span>
+
+    public Set&lt;Class&lt;? extends ApiAnalyzer&lt;?&gt;&gt;&gt; getApiAnalyzerTypes() {
+<span class="fc" id="L317">        return apiAnalyzerTypes;</span>
+    }
+
+    public Set&lt;Class&lt;? extends Reporter&gt;&gt; getReporterTypes() {
+<span class="fc" id="L321">        return reporterTypes;</span>
+    }
+
+    public Set&lt;Class&lt;? extends DifferenceTransform&lt;?&gt;&gt;&gt; getTransformTypes() {
+<span class="fc" id="L325">        return transformTypes;</span>
+    }
+
+    public Set&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; getTreeFilterTypes() {
+<span class="fc" id="L329">        return treeFilterTypes;</span>
+    }
+
+    public Set&lt;Class&lt;? extends ElementMatcher&gt;&gt; getMatcherTypes() {
+<span class="fc" id="L333">        return matcherTypes;</span>
+    }
+
+    public Set&lt;List&lt;String&gt;&gt; getTransformationBlocks() {
+<span class="fc" id="L337">        return transformationBlocks;</span>
+    }
+
+    public List&lt;String&gt; getIncludedAnalyzerExtensionIds() {
+<span class="fc" id="L341">        return includedAnalyzerExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getExcludedAnalyzerExtensionIds() {
+<span class="fc" id="L345">        return excludedAnalyzerExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getIncludedReporterExtensionIds() {
+<span class="fc" id="L349">        return includedReporterExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getExcludedReporterExtensionIds() {
+<span class="fc" id="L353">        return excludedReporterExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getIncludedTransformExtensionIds() {
+<span class="fc" id="L357">        return includedTransformExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getExcludedTransformExtensionIds() {
+<span class="fc" id="L361">        return excludedTransformExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getIncludedFilterExtensionIds() {
+<span class="fc" id="L365">        return includedFilterExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getExcludedFilterExtensionIds() {
+<span class="fc" id="L369">        return excludedFilterExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getIncludedMatcherExtensionIds() {
+<span class="fc" id="L373">        return includedMatcherExtensionIds;</span>
+    }
+
+    public List&lt;String&gt; getExcludedMatcherExtensionIds() {
+<span class="fc" id="L377">        return excludedMatcherExtensionIds;</span>
+    }
+
+    public Set&lt;Criticality&gt; getCriticalities() {
+<span class="fc" id="L381">        return criticalities;</span>
+    }
+
+    public Map&lt;DifferenceSeverity, Criticality&gt; getSeverityMapping() {
+<span class="fc" id="L385">        return severityMapping;</span>
+    }
+
+<span class="fc" id="L388">    public static final class Builder {</span>
+<span class="fc" id="L389">        private Set&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers = null;</span>
+<span class="fc" id="L390">        private Set&lt;Class&lt;? extends Reporter&gt;&gt; reporters = null;</span>
+<span class="fc" id="L391">        private Set&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms = null;</span>
+<span class="fc" id="L392">        private Set&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; filters = null;</span>
+<span class="fc" id="L393">        private Set&lt;Class&lt;? extends ElementMatcher&gt;&gt; matchers = null;</span>
+<span class="fc" id="L394">        private Set&lt;List&lt;String&gt;&gt; transformationBlocks = null;</span>
+<span class="fc" id="L395">        private List&lt;String&gt; includedAnalyzerExtensionIds = null;</span>
+<span class="fc" id="L396">        private List&lt;String&gt; excludedAnalyzerExtensionIds = null;</span>
+<span class="fc" id="L397">        private List&lt;String&gt; includedReporterExtensionIds = null;</span>
+<span class="fc" id="L398">        private List&lt;String&gt; excludedReporterExtensionIds = null;</span>
+<span class="fc" id="L399">        private List&lt;String&gt; includedTransformExtensionIds = null;</span>
+<span class="fc" id="L400">        private List&lt;String&gt; excludedTransformExtensionIds = null;</span>
+<span class="fc" id="L401">        private List&lt;String&gt; includedFilterExtensionIds = null;</span>
+<span class="fc" id="L402">        private List&lt;String&gt; excludedFilterExtensionIds = null;</span>
+<span class="fc" id="L403">        private List&lt;String&gt; includedMatcherExtensionIds = null;</span>
+<span class="fc" id="L404">        private List&lt;String&gt; excludedMatcherExtensionIds = null;</span>
+<span class="fc" id="L405">        private Set&lt;Criticality&gt; criticalities = null;</span>
+        private Map&lt;DifferenceSeverity, String&gt; severityMapping;
+
+        public Builder withAnalyzersFromThreadContextClassLoader() {
+<span class="nc" id="L409">            return withAnalyzers(ServiceTypeLoader.load(ApiAnalyzer.class));</span>
+        }
+
+        public Builder withAnalyzersFrom(ClassLoader cl) {
+<span class="nc" id="L413">            return withAnalyzers(ServiceTypeLoader.load(ApiAnalyzer.class, cl));</span>
+        }
+
+        @SafeVarargs
+        public final Builder withAnalyzers(Class&lt;? extends ApiAnalyzer&gt;... analyzers) {
+<span class="fc" id="L418">            return withAnalyzers(Arrays.asList(analyzers));</span>
+        }
+
+        public Builder withAnalyzers(Iterable&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers) {
+<span class="pc bpc" id="L422" title="1 of 2 branches missed.">            if (this.analyzers == null) {</span>
+<span class="fc" id="L423">                this.analyzers = new HashSet&lt;&gt;();</span>
+            }
+<span class="fc bfc" id="L425" title="All 2 branches covered.">            for (Class&lt;? extends ApiAnalyzer&gt; a : analyzers) {</span>
+<span class="fc" id="L426">                this.analyzers.add(a);</span>
+<span class="fc" id="L427">            }</span>
+
+<span class="fc" id="L429">            return this;</span>
+        }
+
+        public Builder withReportersFromThreadContextClassLoader() {
+<span class="nc" id="L433">            return withReporters(ServiceTypeLoader.load(Reporter.class));</span>
+        }
+
+        public Builder withReportersFrom(ClassLoader cl) {
+<span class="nc" id="L437">            return withReporters(ServiceTypeLoader.load(Reporter.class, cl));</span>
+        }
+
+        @SafeVarargs
+        public final Builder withReporters(Class&lt;? extends Reporter&gt;... reporters) {
+<span class="fc" id="L442">            return withReporters(Arrays.asList(reporters));</span>
+        }
+
+        public Builder withReporters(Iterable&lt;Class&lt;? extends Reporter&gt;&gt; reporters) {
+<span class="pc bpc" id="L446" title="1 of 2 branches missed.">            if (this.reporters == null) {</span>
+<span class="fc" id="L447">                this.reporters = new HashSet&lt;&gt;();</span>
+            }
+<span class="fc bfc" id="L449" title="All 2 branches covered.">            for (Class&lt;? extends Reporter&gt; r : reporters) {</span>
+<span class="fc" id="L450">                this.reporters.add(r);</span>
+<span class="fc" id="L451">            }</span>
+
+<span class="fc" id="L453">            return this;</span>
+        }
+
+        public Builder withTransformsFromThreadContextClassLoader() {
+<span class="nc" id="L457">            return withTransforms(ServiceTypeLoader.load(DifferenceTransform.class));</span>
+        }
+
+        public Builder withTransformsFrom(ClassLoader cl) {
+<span class="nc" id="L461">            return withTransforms(ServiceTypeLoader.load(DifferenceTransform.class, cl));</span>
+        }
+
+        @SafeVarargs
+        public final Builder withTransforms(Class&lt;? extends DifferenceTransform&gt;... transforms) {
+<span class="fc" id="L466">            return withTransforms(Arrays.asList(transforms));</span>
+        }
+
+        public Builder withTransforms(Iterable&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms) {
+<span class="fc bfc" id="L470" title="All 2 branches covered.">            if (this.transforms == null) {</span>
+<span class="fc" id="L471">                this.transforms = new HashSet&lt;&gt;();</span>
+            }
+<span class="fc bfc" id="L473" title="All 2 branches covered.">            for (Class&lt;? extends DifferenceTransform&gt; t : transforms) {</span>
+<span class="fc" id="L474">                this.transforms.add(t);</span>
+<span class="fc" id="L475">            }</span>
+
+<span class="fc" id="L477">            return this;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder withFiltersFromThreadContextClassLoader() {
+<span class="nc" id="L482">            withFilters(ServiceTypeLoader.load(TreeFilterProvider.class));</span>
+<span class="nc" id="L483">            return withFilters((Iterable) ServiceTypeLoader.load(ElementFilter.class));</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder withFiltersFrom(ClassLoader cl) {
+<span class="nc" id="L488">            withFilters(ServiceTypeLoader.load(TreeFilterProvider.class, cl));</span>
+<span class="nc" id="L489">            return withFilters((Iterable) ServiceTypeLoader.load(ElementFilter.class, cl));</span>
+        }
+
+        @SafeVarargs
+        public final Builder withFilters(Class&lt;? extends TreeFilterProvider&gt;... filters) {
+<span class="fc" id="L494">            return withFilters(Arrays.asList(filters));</span>
+        }
+
+        public Builder withFilters(Iterable&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; filters) {
+<span class="pc bpc" id="L498" title="1 of 2 branches missed.">            if (this.filters == null) {</span>
+<span class="fc" id="L499">                this.filters = new HashSet&lt;&gt;();</span>
+            }
+<span class="fc bfc" id="L501" title="All 2 branches covered.">            for (Class&lt;? extends TreeFilterProvider&gt; f : filters) {</span>
+<span class="fc" id="L502">                this.filters.add(f);</span>
+<span class="fc" id="L503">            }</span>
+
+<span class="fc" id="L505">            return this;</span>
+        }
+
+        public Builder withMatchersFromThreadContextClassLoader() {
+<span class="nc" id="L509">            return withMatchers(ServiceTypeLoader.load(ElementMatcher.class));</span>
+        }
+
+        public Builder withMatchersFrom(@Nonnull ClassLoader cl) {
+<span class="nc" id="L513">            return withMatchers(ServiceTypeLoader.load(ElementMatcher.class, cl));</span>
+        }
+
+        @SafeVarargs
+        public final Builder withMatchers(Class&lt;? extends ElementMatcher&gt;... filters) {
+<span class="nc" id="L518">            return withMatchers(Arrays.asList(filters));</span>
+        }
+
+        public Builder withMatchers(@Nonnull Iterable&lt;Class&lt;? extends ElementMatcher&gt;&gt; filters) {
+<span class="pc bpc" id="L522" title="1 of 2 branches missed.">            if (this.matchers == null) {</span>
+<span class="fc" id="L523">                this.matchers = new HashSet&lt;&gt;();</span>
+            }
+<span class="pc bpc" id="L525" title="1 of 2 branches missed.">            for (Class&lt;? extends ElementMatcher&gt; f : filters) {</span>
+<span class="nc" id="L526">                this.matchers.add(f);</span>
+<span class="nc" id="L527">            }</span>
+
+<span class="fc" id="L529">            return this;</span>
+        }
+
+        public Builder withAllExtensionsFromThreadContextClassLoader() {
+<span class="nc" id="L533">            return withAllExtensionsFrom(Thread.currentThread().getContextClassLoader());</span>
+        }
+
+        public Builder withAllExtensionsFrom(ClassLoader cl) {
+<span class="nc" id="L537">            return withAnalyzersFrom(cl).withFiltersFrom(cl).withReportersFrom(cl).withTransformsFrom(cl)</span>
+<span class="nc" id="L538">                    .withMatchersFrom(cl);</span>
+        }
+
+        public Builder withTransformationBlocks(Set&lt;List&lt;String&gt;&gt; transformationBlocks) {
+<span class="nc" id="L542">            this.transformationBlocks = new HashSet&lt;&gt;(transformationBlocks.size());</span>
+
+<span class="nc bnc" id="L544" title="All 2 branches missed.">            for (List&lt;String&gt; block : transformationBlocks) {</span>
+<span class="nc" id="L545">                this.transformationBlocks.add(new ArrayList&lt;&gt;(block));</span>
+<span class="nc" id="L546">            }</span>
+
+<span class="nc" id="L548">            return this;</span>
+        }
+
+        public Builder addTransformationBlock(List&lt;String&gt; transformationBlock) {
+<span class="pc bpc" id="L552" title="1 of 2 branches missed.">            if (transformationBlocks == null) {</span>
+<span class="fc" id="L553">                transformationBlocks = new HashSet&lt;&gt;();</span>
+            }
+<span class="fc" id="L555">            transformationBlocks.add(new ArrayList&lt;&gt;(transformationBlock));</span>
+<span class="fc" id="L556">            return this;</span>
+        }
+
+        public Builder withAnalyzerExtensionIdsInclude(List&lt;String&gt; analyzerExtensionIds) {
+<span class="fc" id="L560">            this.includedAnalyzerExtensionIds = new ArrayList&lt;&gt;(analyzerExtensionIds);</span>
+<span class="fc" id="L561">            return this;</span>
+        }
+
+        public Builder addAnalyzerExtensionIdInclude(String analyzerExtensionId) {
+<span class="nc bnc" id="L565" title="All 2 branches missed.">            if (this.includedAnalyzerExtensionIds == null) {</span>
+<span class="nc" id="L566">                this.includedAnalyzerExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L569">            this.includedAnalyzerExtensionIds.add(analyzerExtensionId);</span>
+<span class="nc" id="L570">            return this;</span>
+        }
+
+        public Builder withAnalyzerExtensionIdsExclude(List&lt;String&gt; analyzerExtensionIds) {
+<span class="fc" id="L574">            this.excludedAnalyzerExtensionIds = new ArrayList&lt;&gt;(analyzerExtensionIds);</span>
+<span class="fc" id="L575">            return this;</span>
+        }
+
+        public Builder addAnalyzerExtensionIdExclude(String analyzerExtensionId) {
+<span class="nc bnc" id="L579" title="All 2 branches missed.">            if (this.excludedAnalyzerExtensionIds == null) {</span>
+<span class="nc" id="L580">                this.excludedAnalyzerExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L583">            this.excludedAnalyzerExtensionIds.add(analyzerExtensionId);</span>
+<span class="nc" id="L584">            return this;</span>
+        }
+
+        public Builder withReporterExtensionIdsInclude(List&lt;String&gt; reporterExtensionIds) {
+<span class="fc" id="L588">            this.includedReporterExtensionIds = new ArrayList&lt;&gt;(reporterExtensionIds);</span>
+<span class="fc" id="L589">            return this;</span>
+        }
+
+        public Builder addReporterExtensionIdInclude(String reporterExtensionId) {
+<span class="nc bnc" id="L593" title="All 2 branches missed.">            if (this.includedReporterExtensionIds == null) {</span>
+<span class="nc" id="L594">                this.includedReporterExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L597">            this.includedReporterExtensionIds.add(reporterExtensionId);</span>
+<span class="nc" id="L598">            return this;</span>
+        }
+
+        public Builder withReporterExtensionIdsExclude(List&lt;String&gt; reporterExtensionIds) {
+<span class="fc" id="L602">            this.excludedReporterExtensionIds = new ArrayList&lt;&gt;(reporterExtensionIds);</span>
+<span class="fc" id="L603">            return this;</span>
+        }
+
+        public Builder addReporterExtensionIdExclude(String reporterExtensionId) {
+<span class="nc bnc" id="L607" title="All 2 branches missed.">            if (this.excludedReporterExtensionIds == null) {</span>
+<span class="nc" id="L608">                this.excludedReporterExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L611">            this.excludedReporterExtensionIds.add(reporterExtensionId);</span>
+<span class="nc" id="L612">            return this;</span>
+        }
+
+        public Builder withTransformExtensionIdsInclude(List&lt;String&gt; transformExtensionIds) {
+<span class="fc" id="L616">            this.includedTransformExtensionIds = new ArrayList&lt;&gt;(transformExtensionIds);</span>
+<span class="fc" id="L617">            return this;</span>
+        }
+
+        public Builder addTransformExtensionIdInclude(String transformExtensionId) {
+<span class="nc bnc" id="L621" title="All 2 branches missed.">            if (this.includedTransformExtensionIds == null) {</span>
+<span class="nc" id="L622">                this.includedTransformExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L625">            this.includedTransformExtensionIds.add(transformExtensionId);</span>
+<span class="nc" id="L626">            return this;</span>
+        }
+
+        public Builder withTransformExtensionIdsExclude(List&lt;String&gt; transformExtensionIds) {
+<span class="fc" id="L630">            this.excludedTransformExtensionIds = new ArrayList&lt;&gt;(transformExtensionIds);</span>
+<span class="fc" id="L631">            return this;</span>
+        }
+
+        public Builder addTransformExtensionIdExclude(String transformExtensionId) {
+<span class="nc bnc" id="L635" title="All 2 branches missed.">            if (this.excludedTransformExtensionIds == null) {</span>
+<span class="nc" id="L636">                this.excludedTransformExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L639">            this.excludedTransformExtensionIds.add(transformExtensionId);</span>
+<span class="nc" id="L640">            return this;</span>
+        }
+
+        public Builder withFilterExtensionIdsInclude(List&lt;String&gt; filterExtensionIds) {
+<span class="fc" id="L644">            this.includedFilterExtensionIds = new ArrayList&lt;&gt;(filterExtensionIds);</span>
+<span class="fc" id="L645">            return this;</span>
+        }
+
+        public Builder addFilterExtensionIdInclude(String filterExtensionId) {
+<span class="nc bnc" id="L649" title="All 2 branches missed.">            if (this.includedFilterExtensionIds == null) {</span>
+<span class="nc" id="L650">                this.includedFilterExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L653">            this.includedFilterExtensionIds.add(filterExtensionId);</span>
+<span class="nc" id="L654">            return this;</span>
+        }
+
+        public Builder withFilterExtensionIdsExclude(List&lt;String&gt; filterExtensionIds) {
+<span class="fc" id="L658">            this.excludedFilterExtensionIds = new ArrayList&lt;&gt;(filterExtensionIds);</span>
+<span class="fc" id="L659">            return this;</span>
+        }
+
+        public Builder addFilterExtensionIdExclude(String filterExtensionId) {
+<span class="nc bnc" id="L663" title="All 2 branches missed.">            if (this.excludedFilterExtensionIds == null) {</span>
+<span class="nc" id="L664">                this.excludedFilterExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L667">            this.excludedFilterExtensionIds.add(filterExtensionId);</span>
+<span class="nc" id="L668">            return this;</span>
+        }
+
+        public Builder withMatcherExtensionIdsInclude(List&lt;String&gt; matcherExtensionIds) {
+<span class="fc" id="L672">            this.includedMatcherExtensionIds = new ArrayList&lt;&gt;(matcherExtensionIds);</span>
+<span class="fc" id="L673">            return this;</span>
+        }
+
+        public Builder addMatcherExtensionIdInclude(String matcherExtensionId) {
+<span class="nc bnc" id="L677" title="All 2 branches missed.">            if (this.includedMatcherExtensionIds == null) {</span>
+<span class="nc" id="L678">                this.includedMatcherExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L681">            this.includedMatcherExtensionIds.add(matcherExtensionId);</span>
+<span class="nc" id="L682">            return this;</span>
+        }
+
+        public Builder withMatcherExtensionIdsExclude(List&lt;String&gt; matcherExtensionIds) {
+<span class="fc" id="L686">            this.excludedMatcherExtensionIds = new ArrayList&lt;&gt;(matcherExtensionIds);</span>
+<span class="fc" id="L687">            return this;</span>
+        }
+
+        public Builder addMatcherExtensionIdExclude(String matcherExtensionId) {
+<span class="nc bnc" id="L691" title="All 2 branches missed.">            if (this.excludedMatcherExtensionIds == null) {</span>
+<span class="nc" id="L692">                this.excludedMatcherExtensionIds = new ArrayList&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L695">            this.excludedMatcherExtensionIds.add(matcherExtensionId);</span>
+<span class="nc" id="L696">            return this;</span>
+        }
+
+        /**
+         * @deprecated use the Jackson-based variant
+         */
+        @Deprecated
+        public Builder withTransformationBlocks(ModelNode configuration) {
+<span class="nc bnc" id="L704" title="All 2 branches missed.">            if (configuration == null) {</span>
+<span class="nc" id="L705">                return this;</span>
+            }
+
+<span class="nc" id="L708">            return withTransformationBlocks(JSONUtil.convert(configuration));</span>
+        }
+
+        public Builder withTransformationBlocks(JsonNode configuration) {
+<span class="pc bpc" id="L712" title="3 of 4 branches missed.">            if (JSONUtil.isNullOrUndefined(configuration) || !configuration.isArray()) {</span>
+<span class="fc" id="L713">                return this;</span>
+            }
+
+<span class="nc" id="L716">            transformationBlocks = new HashSet&lt;&gt;();</span>
+
+<span class="nc bnc" id="L718" title="All 2 branches missed.">            for (JsonNode block : configuration) {</span>
+<span class="nc" id="L719">                List&lt;String&gt; ids = StreamSupport.stream(block.spliterator(), false).map(JsonNode::asText)</span>
+<span class="nc" id="L720">                        .collect(toList());</span>
+<span class="nc" id="L721">                transformationBlocks.add(ids);</span>
+<span class="nc" id="L722">            }</span>
+
+<span class="nc" id="L724">            return this;</span>
+        }
+
+        public Builder withCriticalities(Set&lt;Criticality&gt; criticalities) {
+<span class="pc bpc" id="L728" title="2 of 4 branches missed.">            if (criticalities == null || criticalities.isEmpty()) {</span>
+<span class="fc" id="L729">                return this;</span>
+            }
+
+<span class="nc bnc" id="L732" title="All 2 branches missed.">            if (this.criticalities == null) {</span>
+<span class="nc" id="L733">                this.criticalities = new HashSet&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L736">            this.criticalities.addAll(criticalities);</span>
+<span class="nc" id="L737">            return this;</span>
+        }
+
+        public Builder addCriticality(Criticality criticality) {
+<span class="nc bnc" id="L741" title="All 2 branches missed.">            if (this.criticalities == null) {</span>
+<span class="nc" id="L742">                this.criticalities = new HashSet&lt;&gt;();</span>
+            }
+
+<span class="nc" id="L745">            this.criticalities.add(criticality);</span>
+<span class="nc" id="L746">            return this;</span>
+        }
+
+        public Builder withSeverityMapping(Map&lt;DifferenceSeverity, Criticality&gt; severityMapping) {
+<span class="nc bnc" id="L750" title="All 4 branches missed.">            if (severityMapping == null || severityMapping.isEmpty()) {</span>
+<span class="nc" id="L751">                return this;</span>
+            }
+
+<span class="nc bnc" id="L754" title="All 2 branches missed.">            if (this.severityMapping == null) {</span>
+<span class="nc" id="L755">                this.severityMapping = new EnumMap&lt;&gt;(DifferenceSeverity.class);</span>
+            }
+
+<span class="nc" id="L758">            severityMapping.forEach((s, c) -&gt; this.severityMapping.put(s, c.getName()));</span>
+
+<span class="nc" id="L760">            return this;</span>
+        }
+
+        public Builder withUntypedSeverityMapping(Map&lt;DifferenceSeverity, String&gt; severityMapping) {
+<span class="pc bpc" id="L764" title="2 of 4 branches missed.">            if (severityMapping == null || severityMapping.isEmpty()) {</span>
+<span class="fc" id="L765">                return this;</span>
+            }
+
+<span class="nc bnc" id="L768" title="All 2 branches missed.">            if (this.severityMapping == null) {</span>
+<span class="nc" id="L769">                this.severityMapping = new EnumMap&lt;&gt;(DifferenceSeverity.class);</span>
+            }
+
+<span class="nc" id="L772">            this.severityMapping.putAll(severityMapping);</span>
+
+<span class="nc" id="L774">            return this;</span>
+        }
+
+        public Builder addSeverityMapping(DifferenceSeverity severity, Criticality criticality) {
+<span class="nc" id="L778">            return addUntypedSeverityMapping(severity, criticality.getName());</span>
+        }
+
+        public Builder addUntypedSeverityMapping(DifferenceSeverity severity, String criticalityName) {
+<span class="nc bnc" id="L782" title="All 2 branches missed.">            if (this.severityMapping == null) {</span>
+<span class="nc" id="L783">                this.severityMapping = new EnumMap&lt;&gt;(DifferenceSeverity.class);</span>
+            }
+
+<span class="nc" id="L786">            this.severityMapping.put(severity, criticalityName);</span>
+<span class="nc" id="L787">            return this;</span>
+        }
+
+        /**
+         * Returns a new {@link PipelineConfiguration} instance. The builder is reusable after this call and the
+         * returned instance is independent of it.
+         *
+         * @return a new Revapi pipeline configuration
+         * 
+         * @throws IllegalStateException
+         *             if there are no api analyzers or no reporters added.
+         */
+        public PipelineConfiguration build() throws IllegalStateException {
+<span class="pc bpc" id="L800" title="1 of 2 branches missed.">            Set&lt;Class&lt;? extends ApiAnalyzer&gt;&gt; analyzers = this.analyzers == null ? emptySet()</span>
+<span class="fc" id="L801">                    : new HashSet&lt;&gt;(this.analyzers);</span>
+<span class="pc bpc" id="L802" title="1 of 2 branches missed.">            Set&lt;Class&lt;? extends Reporter&gt;&gt; reporters = this.reporters == null ? emptySet()</span>
+<span class="fc" id="L803">                    : new HashSet&lt;&gt;(this.reporters);</span>
+<span class="fc bfc" id="L804" title="All 2 branches covered.">            Set&lt;Class&lt;? extends DifferenceTransform&gt;&gt; transforms = this.transforms == null ? emptySet()</span>
+<span class="fc" id="L805">                    : new HashSet&lt;&gt;(this.transforms);</span>
+<span class="fc bfc" id="L806" title="All 2 branches covered.">            Set&lt;Class&lt;? extends TreeFilterProvider&gt;&gt; filters = this.filters == null ? emptySet()</span>
+<span class="fc" id="L807">                    : new HashSet&lt;&gt;(this.filters);</span>
+<span class="fc bfc" id="L808" title="All 2 branches covered.">            Set&lt;Class&lt;? extends ElementMatcher&gt;&gt; matchers = this.matchers == null ? emptySet()</span>
+<span class="fc" id="L809">                    : new HashSet&lt;&gt;(this.matchers);</span>
+<span class="fc bfc" id="L810" title="All 2 branches covered.">            Set&lt;List&lt;String&gt;&gt; transformationBlocks = this.transformationBlocks == null ? emptySet()</span>
+<span class="fc" id="L811">                    : new HashSet&lt;&gt;(this.transformationBlocks);</span>
+<span class="fc bfc" id="L812" title="All 2 branches covered.">            List&lt;String&gt; includedAnalyzerExtensionIds = this.includedAnalyzerExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L813">                    : new ArrayList&lt;&gt;(this.includedAnalyzerExtensionIds);</span>
+<span class="fc bfc" id="L814" title="All 2 branches covered.">            List&lt;String&gt; excludedAnalyzerExtensionIds = this.excludedAnalyzerExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L815">                    : new ArrayList&lt;&gt;(this.excludedAnalyzerExtensionIds);</span>
+<span class="fc bfc" id="L816" title="All 2 branches covered.">            List&lt;String&gt; includedReporterExtensionIds = this.includedReporterExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L817">                    : new ArrayList&lt;&gt;(this.includedReporterExtensionIds);</span>
+<span class="fc bfc" id="L818" title="All 2 branches covered.">            List&lt;String&gt; excludedReporterExtensionIds = this.excludedReporterExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L819">                    : new ArrayList&lt;&gt;(this.excludedReporterExtensionIds);</span>
+<span class="fc bfc" id="L820" title="All 2 branches covered.">            List&lt;String&gt; includedTransformExtensionIds = this.includedTransformExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L821">                    : new ArrayList&lt;&gt;(this.includedTransformExtensionIds);</span>
+<span class="fc bfc" id="L822" title="All 2 branches covered.">            List&lt;String&gt; excludedTransformExtensionIds = this.excludedTransformExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L823">                    : new ArrayList&lt;&gt;(this.excludedTransformExtensionIds);</span>
+<span class="fc bfc" id="L824" title="All 2 branches covered.">            List&lt;String&gt; includedFilterExtensionIds = this.includedFilterExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L825">                    : new ArrayList&lt;&gt;(this.includedFilterExtensionIds);</span>
+<span class="fc bfc" id="L826" title="All 2 branches covered.">            List&lt;String&gt; excludedFilterExtensionIds = this.excludedFilterExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L827">                    : new ArrayList&lt;&gt;(this.excludedFilterExtensionIds);</span>
+<span class="fc bfc" id="L828" title="All 2 branches covered.">            List&lt;String&gt; includedMatcherExtensionIds = this.includedMatcherExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L829">                    : new ArrayList&lt;&gt;(this.includedMatcherExtensionIds);</span>
+<span class="fc bfc" id="L830" title="All 2 branches covered.">            List&lt;String&gt; excludedMatcherExtensionIds = this.excludedMatcherExtensionIds == null ? emptyList()</span>
+<span class="fc" id="L831">                    : new ArrayList&lt;&gt;(this.excludedMatcherExtensionIds);</span>
+
+<span class="pc bpc" id="L833" title="1 of 2 branches missed.">            boolean defaultCriticalities = criticalities == null;</span>
+<span class="pc bpc" id="L834" title="1 of 2 branches missed.">            Set&lt;Criticality&gt; criticalities = this.criticalities == null ? Criticality.defaultCriticalities()</span>
+<span class="pc" id="L835">                    : new HashSet&lt;&gt;(this.criticalities);</span>
+
+            Map&lt;DifferenceSeverity, Criticality&gt; sm;
+<span class="pc bpc" id="L838" title="1 of 2 branches missed.">            if (severityMapping == null) {</span>
+<span class="pc bpc" id="L839" title="1 of 2 branches missed.">                if (defaultCriticalities) {</span>
+<span class="fc" id="L840">                    sm = Criticality.defaultSeverityMapping();</span>
+                } else {
+<span class="nc" id="L842">                    sm = new EnumMap&lt;&gt;(DifferenceSeverity.class);</span>
+
+<span class="nc" id="L844">                    Map&lt;String, Criticality&gt; cByName = criticalities.stream()</span>
+<span class="nc" id="L845">                            .collect(toMap(Criticality::getName, identity()));</span>
+
+<span class="nc bnc" id="L847" title="All 2 branches missed.">                    for (Map.Entry&lt;DifferenceSeverity, Criticality&gt; e : Criticality.defaultSeverityMapping()</span>
+<span class="nc" id="L848">                            .entrySet()) {</span>
+                        // we might have redefined the criticalities with the same name, so let's use what's actually
+                        // configured
+<span class="nc" id="L851">                        Criticality realC = cByName.get(e.getValue().getName());</span>
+<span class="nc" id="L852">                        sm.put(e.getKey(), realC);</span>
+<span class="nc" id="L853">                    }</span>
+<span class="nc" id="L854">                }</span>
+            } else {
+<span class="nc" id="L856">                Map&lt;String, Criticality&gt; cByName = criticalities.stream()</span>
+<span class="nc" id="L857">                        .collect(toMap(Criticality::getName, identity()));</span>
+
+<span class="nc" id="L859">                sm = new EnumMap&lt;&gt;(DifferenceSeverity.class);</span>
+<span class="nc bnc" id="L860" title="All 2 branches missed.">                for (Map.Entry&lt;DifferenceSeverity, String&gt; e : severityMapping.entrySet()) {</span>
+<span class="nc" id="L861">                    Criticality c = cByName.get(e.getValue());</span>
+<span class="nc bnc" id="L862" title="All 2 branches missed.">                    if (c == null) {</span>
+<span class="nc" id="L863">                        throw new IllegalArgumentException(&quot;Criticality '&quot; + e.getValue() + &quot;' not configured.&quot;);</span>
+                    }
+<span class="nc" id="L865">                    sm.put(e.getKey(), c);</span>
+<span class="nc" id="L866">                }</span>
+            }
+
+<span class="fc" id="L869">            Set&lt;DifferenceSeverity&gt; expectedMappings = EnumSet.allOf(DifferenceSeverity.class);</span>
+<span class="fc" id="L870">            expectedMappings.removeAll(sm.keySet());</span>
+<span class="pc bpc" id="L871" title="1 of 2 branches missed.">            if (!expectedMappings.isEmpty()) {</span>
+<span class="nc" id="L872">                throw new IllegalArgumentException(&quot;The severity-to-criticality mapping is incomplete.&quot;</span>
+                        + &quot; Missing mapping for: &quot; + expectedMappings);
+            }
+
+<span class="fc" id="L876">            return new PipelineConfiguration((Set) analyzers, reporters, (Set) transforms, (Set) filters,</span>
+                    (Set) matchers, transformationBlocks, includedAnalyzerExtensionIds, excludedAnalyzerExtensionIds,
+                    includedReporterExtensionIds, excludedReporterExtensionIds, includedTransformExtensionIds,
+                    excludedTransformExtensionIds, includedFilterExtensionIds, excludedFilterExtensionIds,
+                    includedMatcherExtensionIds, excludedMatcherExtensionIds, criticalities, sm);
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

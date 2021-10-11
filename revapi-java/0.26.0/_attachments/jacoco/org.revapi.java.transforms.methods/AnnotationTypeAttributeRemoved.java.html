@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnnotationTypeAttributeRemoved.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.transforms.methods</a> &gt; <span class="el_source">AnnotationTypeAttributeRemoved.java</span></div><h1>AnnotationTypeAttributeRemoved.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.transforms.methods;
+
+import java.io.Reader;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+
+import org.revapi.AnalysisContext;
+import org.revapi.Difference;
+import org.revapi.DifferenceTransform;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaModelElement;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public class AnnotationTypeAttributeRemoved implements DifferenceTransform&lt;JavaModelElement&gt; {
+    private Locale locale;
+    private final Pattern[] codes;
+
+<span class="fc" id="L44">    public AnnotationTypeAttributeRemoved() {</span>
+<span class="fc" id="L45">        codes = new Pattern[] { Pattern.compile(&quot;^&quot; + Pattern.quote(Code.METHOD_REMOVED.code()) + &quot;$&quot;) };</span>
+<span class="fc" id="L46">    }</span>
+
+    @Nonnull
+    @Override
+    public Pattern[] getDifferenceCodePatterns() {
+<span class="fc" id="L51">        return codes;</span>
+    }
+
+    @Nullable
+    @Override
+    public String getExtensionId() {
+<span class="fc" id="L57">        return &quot;revapi.java.annotationTypeAttributeRemoved&quot;;</span>
+    }
+
+    @Nullable
+    @Override
+    public Reader getJSONSchema() {
+<span class="fc" id="L63">        return null;</span>
+    }
+
+    @Override
+    public void initialize(@Nonnull AnalysisContext analysisContext) {
+<span class="fc" id="L68">        locale = analysisContext.getLocale();</span>
+<span class="fc" id="L69">    }</span>
+
+    @Nullable
+    @Override
+    public Difference transform(@Nullable JavaModelElement oldElement, @Nullable JavaModelElement newElement,
+            @Nonnull Difference difference) {
+
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (oldElement == null) {</span>
+<span class="nc" id="L77">            throw new IllegalStateException(&quot;Annotation type attribute detection called with one of the elements null.&quot;</span>
+                    + &quot; That should never be the case.&quot;);
+        }
+
+<span class="fc" id="L81">        ExecutableElement method = (ExecutableElement) oldElement.getDeclaringElement();</span>
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (method.getEnclosingElement().getKind() == ElementKind.ANNOTATION_TYPE) {</span>
+<span class="fc" id="L84">            return Code.METHOD_ATTRIBUTE_REMOVED_FROM_ANNOTATION_TYPE.createDifference(locale,</span>
+                    new LinkedHashMap&lt;&gt;(difference.attachments));
+        }
+
+<span class="fc" id="L88">        return difference;</span>
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L93">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FilterStartResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">FilterStartResult.java</span></div><h1>FilterStartResult.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import static org.revapi.Ternary.FALSE;
+import static org.revapi.Ternary.TRUE;
+import static org.revapi.Ternary.UNDECIDED;
+
+/**
+ * The result of the element filtering in {@link TreeFilter}. The result tells the analysis whether to let the element
+ * pass or not to the next stage but also whether to descend to its children or not.
+ */
+public final class FilterStartResult {
+<span class="fc" id="L28">    private static final FilterStartResult FALSE_FALSE_FALSE = new FilterStartResult(FALSE, FALSE, false);</span>
+<span class="fc" id="L29">    private static final FilterStartResult FALSE_FALSE_TRUE = new FilterStartResult(FALSE, FALSE, true);</span>
+<span class="fc" id="L30">    private static final FilterStartResult FALSE_TRUE_FALSE = new FilterStartResult(FALSE, TRUE, false);</span>
+<span class="fc" id="L31">    private static final FilterStartResult FALSE_TRUE_TRUE = new FilterStartResult(FALSE, TRUE, true);</span>
+<span class="fc" id="L32">    private static final FilterStartResult FALSE_UNDECIDED_FALSE = new FilterStartResult(FALSE, UNDECIDED, false);</span>
+<span class="fc" id="L33">    private static final FilterStartResult FALSE_UNDECIDED_TRUE = new FilterStartResult(FALSE, UNDECIDED, true);</span>
+<span class="fc" id="L34">    private static final FilterStartResult TRUE_FALSE_FALSE = new FilterStartResult(TRUE, FALSE, false);</span>
+<span class="fc" id="L35">    private static final FilterStartResult TRUE_FALSE_TRUE = new FilterStartResult(TRUE, FALSE, true);</span>
+<span class="fc" id="L36">    private static final FilterStartResult TRUE_TRUE_FALSE = new FilterStartResult(TRUE, TRUE, false);</span>
+<span class="fc" id="L37">    private static final FilterStartResult TRUE_TRUE_TRUE = new FilterStartResult(TRUE, TRUE, true);</span>
+<span class="fc" id="L38">    private static final FilterStartResult TRUE_UNDECIDED_FALSE = new FilterStartResult(TRUE, UNDECIDED, false);</span>
+<span class="fc" id="L39">    private static final FilterStartResult TRUE_UNDECIDED_TRUE = new FilterStartResult(TRUE, UNDECIDED, true);</span>
+<span class="fc" id="L40">    private static final FilterStartResult UNDECIDED_FALSE_FALSE = new FilterStartResult(UNDECIDED, FALSE, false);</span>
+<span class="fc" id="L41">    private static final FilterStartResult UNDECIDED_FALSE_TRUE = new FilterStartResult(UNDECIDED, FALSE, true);</span>
+<span class="fc" id="L42">    private static final FilterStartResult UNDECIDED_TRUE_FALSE = new FilterStartResult(UNDECIDED, TRUE, false);</span>
+<span class="fc" id="L43">    private static final FilterStartResult UNDECIDED_TRUE_TRUE = new FilterStartResult(UNDECIDED, TRUE, true);</span>
+<span class="fc" id="L44">    private static final FilterStartResult UNDECIDED_UNDECIDED_FALSE = new FilterStartResult(UNDECIDED, UNDECIDED,</span>
+            false);
+<span class="fc" id="L46">    private static final FilterStartResult UNDECIDED_UNDECIDED_TRUE = new FilterStartResult(UNDECIDED, UNDECIDED, true);</span>
+
+    private final Ternary match;
+    private final Ternary descend;
+    private final boolean inherited;
+
+    /**
+     * This result is undecided about its match and descend and is marked as inherited. This means that it doesn't
+     * influence the &quot;decision&quot; of other filters but if it is the only one present, it gives the consumers of the result
+     * the chance to make a decision whether to make the elements pass or not.
+     *
+     * &lt;p&gt;
+     * This should be used by the tree filters in cases where they don't have anything to &quot;say&quot; about filtering (due to
+     * lack of configuration or something similar).
+     */
+    public static FilterStartResult defaultResult() {
+<span class="fc" id="L62">        return from(UNDECIDED, UNDECIDED, true);</span>
+    }
+
+    /**
+     * The result will match any element and will always descend to any element's children. This SHOULD NOT be used as a
+     * default value of the filter result. Instead, it is meant for situations where one wants to retrieve all elements
+     * in the tree using {@link ElementForest#stream(Class, boolean, TreeFilter, Element)} or similar methods.
+     */
+    public static FilterStartResult matchAndDescend() {
+<span class="fc" id="L71">        return TRUE_TRUE_FALSE;</span>
+    }
+
+    public static FilterStartResult doesntMatch() {
+<span class="fc" id="L75">        return FALSE_FALSE_FALSE;</span>
+    }
+
+    public static FilterStartResult direct(Ternary match, Ternary descend) {
+<span class="fc" id="L79">        return from(match, descend, false);</span>
+    }
+
+    public static FilterStartResult inherit(FilterStartResult parent) {
+<span class="fc" id="L83">        return from(parent.match, parent.descend, true);</span>
+    }
+
+    public static FilterStartResult from(Ternary match, Ternary descend, boolean inherited) {
+<span class="pc bpc" id="L87" title="1 of 4 branches missed.">        switch (match) {</span>
+        case TRUE:
+<span class="pc bpc" id="L89" title="2 of 4 branches missed.">            switch (descend) {</span>
+            case FALSE:
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                return inherited ? TRUE_FALSE_TRUE : TRUE_FALSE_FALSE;</span>
+            case TRUE:
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">                return inherited ? TRUE_TRUE_TRUE : TRUE_TRUE_FALSE;</span>
+            case UNDECIDED:
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                return inherited ? TRUE_UNDECIDED_TRUE : TRUE_UNDECIDED_FALSE;</span>
+            }
+<span class="nc" id="L97">            break;</span>
+        case FALSE:
+<span class="pc bpc" id="L99" title="2 of 4 branches missed.">            switch (descend) {</span>
+            case FALSE:
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                return inherited ? FALSE_FALSE_TRUE : FALSE_FALSE_FALSE;</span>
+            case TRUE:
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                return inherited ? FALSE_TRUE_TRUE : FALSE_TRUE_FALSE;</span>
+            case UNDECIDED:
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                return inherited ? FALSE_UNDECIDED_TRUE : FALSE_UNDECIDED_FALSE;</span>
+            }
+<span class="nc" id="L107">            break;</span>
+        case UNDECIDED:
+<span class="pc bpc" id="L109" title="3 of 4 branches missed.">            switch (descend) {</span>
+            case FALSE:
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                return inherited ? UNDECIDED_FALSE_TRUE : UNDECIDED_FALSE_FALSE;</span>
+            case TRUE:
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                return inherited ? UNDECIDED_TRUE_TRUE : UNDECIDED_TRUE_FALSE;</span>
+            case UNDECIDED:
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                return inherited ? UNDECIDED_UNDECIDED_TRUE : UNDECIDED_UNDECIDED_FALSE;</span>
+            }
+            break;
+        }
+<span class="nc" id="L119">        throw new IllegalStateException(&quot;Unhandled filter match or descend value.&quot;);</span>
+    }
+
+    public static FilterStartResult from(FilterFinishResult result, Ternary descend) {
+<span class="nc" id="L123">        return from(result.getMatch(), descend, result.isInherited());</span>
+    }
+
+<span class="fc" id="L126">    private FilterStartResult(Ternary match, Ternary descend, boolean inherited) {</span>
+<span class="fc" id="L127">        this.match = match;</span>
+
+<span class="fc" id="L129">        this.descend = descend;</span>
+<span class="fc" id="L130">        this.inherited = inherited;</span>
+<span class="fc" id="L131">    }</span>
+
+    /**
+     * The result of the test
+     */
+    public Ternary getMatch() {
+<span class="fc" id="L137">        return match;</span>
+    }
+
+    public Ternary getDescend() {
+<span class="fc" id="L141">        return descend;</span>
+    }
+
+    /**
+     * Tells whether the result is implicitly inherited from some parent element or if it was explicitly evaluated on
+     * some element.
+     */
+    public boolean isInherited() {
+<span class="fc" id="L149">        return inherited;</span>
+    }
+
+    public FilterStartResult and(FilterStartResult other) {
+        boolean newInherited;
+<span class="pc bpc" id="L154" title="2 of 4 branches missed.">        switch (match) {</span>
+        case TRUE:
+<span class="pc bpc" id="L156" title="1 of 3 branches missed.">            switch (other.match) {</span>
+            case TRUE:
+<span class="pc bpc" id="L158" title="2 of 4 branches missed.">                newInherited = inherited || other.inherited;</span>
+<span class="fc" id="L159">                break;</span>
+            case FALSE:
+            case UNDECIDED:
+<span class="fc" id="L162">                newInherited = other.inherited;</span>
+<span class="fc" id="L163">                break;</span>
+            default:
+<span class="nc" id="L165">                throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + match);</span>
+            }
+            break;
+        case FALSE:
+<span class="fc" id="L169">            newInherited = inherited;</span>
+<span class="fc" id="L170">            break;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            newInherited = other.match == FALSE ? inherited : other.inherited;</span>
+<span class="nc" id="L173">            break;</span>
+        default:
+<span class="nc" id="L175">            throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + match);</span>
+        }
+<span class="fc" id="L177">        return from(match.and(other.match), combineDescend(other), newInherited);</span>
+    }
+
+    public FilterStartResult and(Iterable&lt;FilterStartResult&gt; others) {
+<span class="nc" id="L181">        FilterStartResult res = this;</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        for (FilterStartResult other : others) {</span>
+<span class="nc" id="L183">            res = res.and(other);</span>
+<span class="nc" id="L184">        }</span>
+<span class="nc" id="L185">        return res;</span>
+    }
+
+    public FilterStartResult or(FilterStartResult other) {
+        boolean newInherited;
+<span class="pc bpc" id="L190" title="3 of 4 branches missed.">        switch (match) {</span>
+        case TRUE:
+<span class="pc bpc" id="L192" title="2 of 3 branches missed.">            switch (other.match) {</span>
+            case TRUE:
+<span class="nc bnc" id="L194" title="All 4 branches missed.">                newInherited = inherited || other.inherited;</span>
+<span class="nc" id="L195">                break;</span>
+            case FALSE:
+            case UNDECIDED:
+<span class="fc" id="L198">                newInherited = inherited;</span>
+<span class="fc" id="L199">                break;</span>
+            default:
+<span class="nc" id="L201">                throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + match);</span>
+            }
+            break;
+        case FALSE:
+<span class="nc" id="L205">            newInherited = other.inherited;</span>
+<span class="nc" id="L206">            break;</span>
+        case UNDECIDED:
+<span class="nc bnc" id="L208" title="All 2 branches missed.">            newInherited = other.match == FALSE ? other.inherited : inherited;</span>
+<span class="nc" id="L209">            break;</span>
+        default:
+<span class="nc" id="L211">            throw new IllegalArgumentException(&quot;Unhandled match type: &quot; + match);</span>
+        }
+
+<span class="fc" id="L214">        return from(match.or(other.match), combineDescend(other), newInherited);</span>
+    }
+
+    public FilterStartResult or(Iterable&lt;FilterStartResult&gt; others) {
+<span class="nc" id="L218">        FilterStartResult res = this;</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        for (FilterStartResult other : others) {</span>
+<span class="nc" id="L220">            res = res.or(other);</span>
+<span class="nc" id="L221">        }</span>
+<span class="nc" id="L222">        return res;</span>
+    }
+
+    public FilterStartResult negateMatch() {
+<span class="fc" id="L226">        return from(match.negate(), descend, inherited);</span>
+    }
+
+    public FilterStartResult withMatch(Ternary match) {
+<span class="fc" id="L230">        return from(match, descend, inherited);</span>
+    }
+
+    public FilterStartResult withDescend(Ternary descend) {
+<span class="nc" id="L234">        return from(match, descend, inherited);</span>
+    }
+
+    public FilterStartResult withInherited(boolean inherited) {
+<span class="fc" id="L238">        return from(match, descend, inherited);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L244">            return true;</span>
+        }
+<span class="nc bnc" id="L246" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L247">            return false;</span>
+        }
+
+<span class="nc" id="L250">        FilterStartResult other = (FilterStartResult) o;</span>
+
+<span class="nc bnc" id="L252" title="All 6 branches missed.">        return descend == other.descend &amp;&amp; inherited == other.inherited &amp;&amp; match == other.match;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L257">        int result = match.hashCode();</span>
+<span class="nc" id="L258">        result = 31 * result + descend.hashCode();</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        result = 31 * result + (inherited ? 1 : 0);</span>
+<span class="nc" id="L260">        return result;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L265">        return &quot;FilterStartResult{&quot; + &quot;match=&quot; + match + &quot;, descend=&quot; + descend + &quot;, inherited=&quot; + inherited + '}';</span>
+    }
+
+    private Ternary combineDescend(FilterStartResult other) {
+        // we favor descend over non-descend.. E.g. if one filter wants to descend, it overrides the decision of
+        // other filters to not descend...
+        // we also favor a decision over a non-decision. E.g. if we're undecided about the descend, we let the other
+        // result decide.
+
+<span class="pc bpc" id="L274" title="3 of 4 branches missed.">        switch (descend) {</span>
+        case TRUE:
+<span class="nc" id="L276">            return descend;</span>
+        case FALSE:
+<span class="nc bnc" id="L278" title="All 2 branches missed.">            return other.descend == TRUE ? TRUE : FALSE;</span>
+        case UNDECIDED:
+<span class="fc" id="L280">            return other.descend;</span>
+        default:
+<span class="nc" id="L282">            throw new IllegalStateException(&quot;Unhandled descend type&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IncludeExcludeTreeFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.base</a> &gt; <span class="el_source">IncludeExcludeTreeFilter.java</span></div><h1>IncludeExcludeTreeFilter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.base;
+
+import static org.revapi.FilterStartResult.inherit;
+
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.revapi.Element;
+import org.revapi.FilterFinishResult;
+import org.revapi.FilterStartResult;
+import org.revapi.Ternary;
+import org.revapi.TreeFilter;
+
+/**
+ * A tree filter that uses a combination of an include and exclude filters to arrive at the filtering decisions. If
+ * there is no include filter defined, everything is included. If there is an exclude filter defined, it excludes from
+ * the included elements.
+ *
+ * @param &lt;E&gt;
+ */
+public class IncludeExcludeTreeFilter&lt;E extends Element&lt;E&gt;&gt; extends BaseTreeFilter&lt;E&gt; {
+
+    private final @Nullable TreeFilter&lt;E&gt; include;
+    private final @Nullable TreeFilter&lt;E&gt; exclude;
+<span class="fc" id="L44">    private final IdentityHashMap&lt;E, IncludeExcludeResult&gt; progress = new IdentityHashMap&lt;&gt;();</span>
+
+    /**
+     * A lack of any include or exclude filter needs to be expressed as a null value.
+     *
+     * @param include
+     *            the include filter or null if there is no include filter
+     * @param exclude
+     *            the exclude filter or null if there is no exclude filter
+     */
+<span class="fc" id="L54">    public IncludeExcludeTreeFilter(@Nullable TreeFilter&lt;E&gt; include, @Nullable TreeFilter&lt;E&gt; exclude) {</span>
+<span class="fc" id="L55">        this.include = include;</span>
+<span class="fc" id="L56">        this.exclude = exclude;</span>
+<span class="fc" id="L57">    }</span>
+
+    @Override
+    public FilterStartResult start(E element) {
+<span class="fc" id="L61">        return doStart(element).compute();</span>
+    }
+
+    protected IncludeExcludeResult doStart(E element) {
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        FilterStartResult inclusion = processIncludeStart(include == null ? null : include.start(element));</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        FilterStartResult exclusion = processExcludeStart(exclude == null ? null : exclude.start(element));</span>
+
+<span class="fc" id="L68">        E parent = element.getParent();</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        IncludeExcludeResult parentResult = parent == null ? null : progress.get(parent);</span>
+
+<span class="fc" id="L71">        IncludeExcludeResult res = constructResult(inclusion, exclusion, parentResult);</span>
+<span class="fc" id="L72">        progress.put(element, res);</span>
+
+<span class="fc" id="L74">        return res;</span>
+    }
+
+    protected IncludeExcludeResult constructResult(@Nullable FilterStartResult inclusion,
+            @Nullable FilterStartResult exclusion, @Nullable IncludeExcludeResult parent) {
+<span class="fc" id="L79">        return new IncludeExcludeResult(inclusion, exclusion, parent);</span>
+    }
+
+    protected @Nullable FilterStartResult processIncludeStart(@Nullable FilterStartResult result) {
+<span class="fc" id="L83">        return result;</span>
+    }
+
+    protected @Nullable FilterStartResult processExcludeStart(@Nullable FilterStartResult result) {
+<span class="fc" id="L87">        return result;</span>
+    }
+
+    @Override
+    public FilterFinishResult finish(E element) {
+
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        FilterFinishResult inclusion = include == null ? null : include.finish(element);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        FilterFinishResult exclusion = exclude == null ? null : exclude.finish(element);</span>
+
+        IncludeExcludeResult currentResult;
+        // TODO we can't remove the result from the progress because revapi-java does out-of-order filtering of methods
+        // revapi-java needs to be fixed because that breaks the contract of the TreeFilter... But let's just not at
+        // this moment, because there are big changes planeed for revapi-java anyway.
+        // if ((inclusion == null || inclusion.getMatch() != Ternary.UNDECIDED) &amp;&amp;
+        // (exclusion == null || exclusion.getMatch() != Ternary.UNDECIDED)) {
+        // currentResult = progress.remove(element);
+        // } else {
+        // currentResult = progress.get(element);
+        // }
+<span class="fc" id="L106">        currentResult = progress.get(element);</span>
+
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (currentResult == null) {</span>
+<span class="nc" id="L109">            throw new IllegalStateException(&quot;Unbalanced start/finish calls.&quot;);</span>
+        }
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (inclusion != null) {</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">            if (currentResult.include == null) {</span>
+<span class="nc" id="L114">                currentResult.include = FilterStartResult.from(inclusion, Ternary.TRUE);</span>
+            } else {
+<span class="fc" id="L116">                currentResult.include = currentResult.include.withMatch(inclusion.getMatch());</span>
+            }
+        }
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (exclusion != null) {</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">            if (currentResult.exclude == null) {</span>
+<span class="nc" id="L122">                currentResult.exclude = FilterStartResult.from(exclusion, Ternary.TRUE);</span>
+            } else {
+<span class="fc" id="L124">                currentResult.exclude = currentResult.exclude.withMatch(exclusion.getMatch());</span>
+            }
+        }
+
+<span class="fc" id="L128">        return FilterFinishResult.from(currentResult.compute());</span>
+    }
+
+    @Override
+    public Map&lt;E, FilterFinishResult&gt; finish() {
+<span class="nc" id="L133">        Map&lt;E, FilterFinishResult&gt; finalIncludes = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (include != null) {</span>
+<span class="nc" id="L135">            finalIncludes.putAll(include.finish());</span>
+        }
+
+<span class="nc" id="L138">        Map&lt;E, FilterFinishResult&gt; finalExcludes = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (exclude != null) {</span>
+<span class="nc" id="L140">            finalExcludes.putAll(exclude.finish());</span>
+        }
+
+<span class="nc" id="L143">        Map&lt;E, FilterFinishResult&gt; ret = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        for (Map.Entry&lt;E, IncludeExcludeResult&gt; e : progress.entrySet()) {</span>
+<span class="nc" id="L145">            IncludeExcludeResult r = e.getValue();</span>
+<span class="nc" id="L146">            E el = e.getKey();</span>
+
+<span class="nc" id="L148">            FilterFinishResult im = finalIncludes.get(el);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            if (im != null) {</span>
+<span class="nc" id="L150">                r.include = FilterStartResult.from(im, Ternary.TRUE);</span>
+            }
+
+<span class="nc" id="L153">            FilterFinishResult em = finalExcludes.get(el);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (em != null) {</span>
+<span class="nc" id="L155">                r.exclude = FilterStartResult.from(em, Ternary.TRUE);</span>
+            }
+
+<span class="nc" id="L158">            ret.put(el, FilterFinishResult.from(r.compute()));</span>
+<span class="nc" id="L159">        }</span>
+
+<span class="nc" id="L161">        progress.clear();</span>
+
+<span class="nc" id="L163">        return ret;</span>
+    }
+
+    protected static class IncludeExcludeResult {
+        public @Nullable FilterStartResult include;
+        public @Nullable FilterStartResult exclude;
+        public @Nullable IncludeExcludeResult parent;
+
+        public IncludeExcludeResult(@Nullable FilterStartResult include, @Nullable FilterStartResult exclude,
+<span class="fc" id="L172">                @Nullable IncludeExcludeResult parent) {</span>
+<span class="fc" id="L173">            this.include = include;</span>
+<span class="fc" id="L174">            this.exclude = exclude;</span>
+<span class="fc" id="L175">            this.parent = parent;</span>
+<span class="fc" id="L176">        }</span>
+
+        FilterStartResult compute() {
+<span class="fc bfc" id="L179" title="All 2 branches covered.">            if (parent == null) {</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                if (include == null) {</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">                    if (exclude == null) {</span>
+<span class="fc" id="L182">                        return FilterStartResult.defaultResult();</span>
+                    } else {
+                        // exclude is never authoritative
+<span class="fc" id="L185">                        return exclude.negateMatch().withInherited(true);</span>
+                    }
+                } else {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                    if (exclude == null) {</span>
+<span class="fc" id="L189">                        return include;</span>
+                    } else {
+<span class="fc" id="L191">                        return include.and(exclude.negateMatch());</span>
+                    }
+                }
+            } else {
+<span class="fc" id="L195">                FilterStartResult parentResult = parent.compute();</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">                if (include == null) {</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                    if (exclude == null) {</span>
+<span class="nc" id="L198">                        return inherit(parentResult);</span>
+                    } else {
+<span class="nc" id="L200">                        return inherit(parentResult).and(exclude.negateMatch());</span>
+                    }
+                } else {
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                    if (exclude == null) {</span>
+                        // if a parent is included, all its children are included unless explicitly excluded
+                        // if the parent is excluded, explicit include can override that
+<span class="fc" id="L206">                        return inherit(parentResult).or(include);</span>
+                    } else {
+                        // if parent is included, our include match cannot override it, just the excludes
+                        // if parent is not included, our include can determine whether this element is included or not
+<span class="fc bfc" id="L210" title="All 2 branches covered.">                        if (parentResult.getMatch().toBoolean(true)) {</span>
+<span class="fc" id="L211">                            return inherit(parentResult).and(exclude.negateMatch());</span>
+                        } else {
+<span class="fc" id="L213">                            return include.and(exclude.negateMatch());</span>
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

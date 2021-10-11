@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Props.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">Props.java</span></div><h1>Props.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.6.0
+ */
+<span class="nc" id="L24">final class Props {</span>
+    private static final String PREFIX = &quot;revapi.&quot;;
+
+<span class="nc" id="L27">    static final class pipelineConfiguration {</span>
+        static final String NAME = &quot;&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L32">    static final class analysisConfiguration {</span>
+        static final String NAME = &quot;&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L37">    static final class analysisConfigurationFiles {</span>
+        static final String NAME = PREFIX + &quot;analysisConfigurationFiles&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L42">    static final class failOnMissingConfigurationFiles {</span>
+        static final String NAME = PREFIX + &quot;failOnMissingConfigurationFiles&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L47">    static final class oldArtifacts {</span>
+        static final String NAME = PREFIX + &quot;oldArtifacts&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L52">    static final class oldVersion {</span>
+        static final String NAME = PREFIX + &quot;oldVersion&quot;;
+        static final String DEFAULT_VALUE = &quot;RELEASE&quot;;
+    }
+
+<span class="nc" id="L57">    static final class newArtifacts {</span>
+        static final String NAME = PREFIX + &quot;newArtifacts&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L62">    static final class newVersion {</span>
+        static final String NAME = PREFIX + &quot;newVersion&quot;;
+        static final String DEFAULT_VALUE = &quot;${project.version}&quot;;
+    }
+
+<span class="nc" id="L67">    static final class skip {</span>
+        static final String NAME = PREFIX + &quot;skip&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L72">    static final class failSeverity {</span>
+        static final String NAME = PREFIX + &quot;failSeverity&quot;;
+        static final String DEFAULT_VALUE = &quot;potentiallyBreaking&quot;;
+    }
+
+<span class="nc" id="L77">    static final class alwaysCheckForReleaseVersion {</span>
+        static final String NAME = PREFIX + &quot;alwaysCheckForReleaseVersion&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L82">    static final class failBuildOnProblemsFound {</span>
+        static final String NAME = PREFIX + &quot;failBuildOnProblemsFound&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L87">    static final class failOnUnresolvedArtifacts {</span>
+        static final String NAME = PREFIX + &quot;failOnUnresolvedArtifacts&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L92">    static final class failOnUnresolvedDependencies {</span>
+        static final String NAME = PREFIX + &quot;failOnUnresolvedDependencies&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L97">    static final class checkDependencies {</span>
+        static final String NAME = PREFIX + &quot;checkDependencies&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L102">    static final class resolveProvidedDependencies {</span>
+        static final String NAME = PREFIX + &quot;resolveProvidedDependencies&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L107">    static final class resolveTransitiveProvidedDependencies {</span>
+        static final String NAME = PREFIX + &quot;resolveTransitiveProvidedDependencies&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L112">    static final class versionFormat {</span>
+        static final String NAME = PREFIX + &quot;versionFormat&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L117">    static final class singleVersionForAllModules {</span>
+        static final String NAME = PREFIX + &quot;singleVersionForAllModules&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L122">    static final class disallowedExtensions {</span>
+        static final String NAME = PREFIX + &quot;disallowedExtensions&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L127">    static final class disallowedExtensionsInVersioning {</span>
+        static final String NAME = PREFIX + &quot;disallowedExtensions&quot;;
+        static final String DEFAULT_VALUE = &quot;org.revapi.basic.SemverIgnoreTransform&quot;;
+    }
+
+<span class="nc" id="L132">    static final class generateSiteReport {</span>
+        static final String NAME = PREFIX + &quot;generateSiteReport&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L137">    static final class reportSeverity {</span>
+        static final String NAME = PREFIX + &quot;reportSeverity&quot;;
+        static final String DEFAULT_VALUE = &quot;potentiallyBreaking&quot;;
+    }
+
+<span class="nc" id="L142">    static final class useBuildConfiguration {</span>
+        static final String NAME = PREFIX + &quot;useBuildConfiguration&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L147">    static final class convertPomXml {</span>
+        static final String NAME = PREFIX + &quot;convertPomXml&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L152">    static final class convertAnalysisConfigurationFiles {</span>
+        static final String NAME = PREFIX + &quot;convertAnalysisConfigurationFiles&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L157">    static final class outputIgnoreSuggestions {</span>
+        static final String NAME = PREFIX + &quot;outputIgnoreSuggestions&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L162">    static final class ignoreSuggestionsFormat {</span>
+        static final String NAME = PREFIX + &quot;ignoreSuggestionsFormat&quot;;
+        static final String DEFAULT_VALUE = &quot;json&quot;;
+    }
+
+<span class="nc" id="L167">    static final class outputNonIdentifyingDifferenceInfo {</span>
+        static final String NAME = PREFIX + &quot;outputNonIdentifyingDifferenceInfo&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L172">    static final class forceVersionUpdate {</span>
+        static final String NAME = PREFIX + &quot;forceVersionUpdate&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L177">    static final class expandProperties {</span>
+        static final String NAME = PREFIX + &quot;expandProperties&quot;;
+        static final String DEFAULT_VALUE = &quot;false&quot;;
+    }
+
+<span class="nc" id="L182">    static final class ignoreSuggestionsFile {</span>
+        static final String NAME = PREFIX + &quot;ignoreSuggestionsFile&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L187">    static final class failCriticality {</span>
+        static final String NAME = PREFIX + &quot;maximumCriticality&quot;;
+    }
+
+<span class="nc" id="L191">    static final class reportCriticality {</span>
+        static final String NAME = PREFIX + &quot;minimumCriticality&quot;;
+    }
+
+<span class="nc" id="L195">    static final class preserveNewerVersion {</span>
+        static final String NAME = PREFIX + &quot;preserveNewerVersion&quot;;
+        static final String DEFAULT_VALUE = &quot;true&quot;;
+    }
+
+<span class="nc" id="L200">    static final class promotedDependencies {</span>
+        static final String NAME = &quot;&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L205">    static final class oldPromotedDependencies {</span>
+        static final String NAME = &quot;&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+
+<span class="nc" id="L210">    static final class newPromotedDependencies {</span>
+        static final String NAME = &quot;&quot;;
+        static final String DEFAULT_VALUE = &quot;&quot;;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
