@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DifferenceMatchRecipe.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Basic Features</a> &gt; <a href="index.source.html" class="el_package">org.revapi.basic</a> &gt; <span class="el_source">DifferenceMatchRecipe.java</span></div><h1>DifferenceMatchRecipe.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.basic;
+
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toMap;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.revapi.ArchiveAnalyzer;
+import org.revapi.Element;
+import org.revapi.ElementMatcher;
+import org.revapi.TreeFilter;
+import org.revapi.configuration.JSONUtil;
+
+/**
+ * A helper class to {@link org.revapi.basic.AbstractDifferenceReferringTransform} that defines the match of a
+ * configuration element and a difference.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public abstract class DifferenceMatchRecipe {
+    final JsonNode config;
+    final boolean regex;
+    final String code;
+    final Pattern codeRegex;
+    final ElementMatcher.CompiledRecipe oldRecipe;
+    final ElementMatcher.CompiledRecipe newRecipe;
+    final Map&lt;String, String&gt; attachments;
+    final Map&lt;String, Pattern&gt; attachmentRegexes;
+
+    protected DifferenceMatchRecipe(Map&lt;String, ElementMatcher&gt; matchers, JsonNode config,
+<span class="fc" id="L58">            String... additionalReservedProperties) {</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (!config.hasNonNull(&quot;code&quot;)) {</span>
+<span class="nc" id="L60">            throw new IllegalArgumentException(&quot;Difference code has to be specified.&quot;);</span>
+        }
+
+<span class="fc" id="L63">        Set&lt;String&gt; reservedProperties = new HashSet&lt;&gt;(4 + additionalReservedProperties.length);</span>
+<span class="fc" id="L64">        reservedProperties.add(&quot;regex&quot;);</span>
+<span class="fc" id="L65">        reservedProperties.add(&quot;code&quot;);</span>
+<span class="fc" id="L66">        reservedProperties.add(&quot;old&quot;);</span>
+<span class="fc" id="L67">        reservedProperties.add(&quot;new&quot;);</span>
+<span class="fc" id="L68">        reservedProperties.addAll(asList(additionalReservedProperties));</span>
+
+<span class="fc" id="L70">        regex = config.path(&quot;regex&quot;).asBoolean();</span>
+<span class="fc" id="L71">        code = config.get(&quot;code&quot;).asText();</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        codeRegex = regex ? Pattern.compile(code) : null;</span>
+<span class="fc" id="L73">        oldRecipe = getRecipe(regex, config.path(&quot;old&quot;), matchers);</span>
+<span class="fc" id="L74">        newRecipe = getRecipe(regex, config.path(&quot;new&quot;), matchers);</span>
+<span class="fc" id="L75">        attachments = getAttachments(config, reservedProperties);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (regex) {</span>
+<span class="fc" id="L77">            attachmentRegexes = attachments.entrySet().stream()</span>
+<span class="fc" id="L78">                    .collect(toMap(Map.Entry::getKey, e -&gt; Pattern.compile(e.getValue())));</span>
+        } else {
+<span class="fc" id="L80">            attachmentRegexes = null;</span>
+        }
+<span class="fc" id="L82">        this.config = config;</span>
+<span class="fc" id="L83">    }</span>
+
+    @Nullable
+    public &lt;E extends Element&lt;E&gt;&gt; MatchingProgress&lt;E&gt; startWithAnalyzers(ArchiveAnalyzer&lt;E&gt; oldAnalyzer,
+            ArchiveAnalyzer&lt;E&gt; newAnalyzer) {
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        TreeFilter&lt;E&gt; oldFilter = oldRecipe == null ? null : oldRecipe.filterFor(oldAnalyzer);</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        TreeFilter&lt;E&gt; newFilter = newRecipe == null ? null : newRecipe.filterFor(newAnalyzer);</span>
+<span class="fc" id="L90">        return createMatchingProgress(oldFilter, newFilter);</span>
+    }
+
+    protected abstract &lt;E extends Element&lt;E&gt;&gt; MatchingProgress&lt;E&gt; createMatchingProgress(
+            @Nullable TreeFilter&lt;E&gt; oldFilter, @Nullable TreeFilter&lt;E&gt; newFilter);
+
+    private static ElementMatcher.CompiledRecipe getRecipe(boolean regex, JsonNode elementRoot,
+            Map&lt;String, ElementMatcher&gt; matchers) {
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (elementRoot.isMissingNode()) {</span>
+<span class="fc" id="L99">            return null;</span>
+        }
+
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (elementRoot.isTextual()) {</span>
+<span class="fc" id="L103">            String recipe = elementRoot.asText();</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            return (regex ? new RegexElementMatcher() : new ExactElementMatcher()).compile(recipe)</span>
+<span class="pc" id="L105">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Failed to compile the match recipe.&quot;));</span>
+        } else {
+<span class="fc" id="L107">            String matcherId = elementRoot.path(&quot;matcher&quot;).asText();</span>
+<span class="fc" id="L108">            String recipe = elementRoot.path(&quot;match&quot;).asText();</span>
+
+<span class="fc" id="L110">            ElementMatcher matcher = matchers.get(matcherId);</span>
+
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            if (matcher == null) {</span>
+<span class="nc" id="L113">                throw new IllegalArgumentException(&quot;Matcher called '&quot; + matcherId + &quot;' not found.&quot;);</span>
+            }
+
+<span class="fc" id="L116">            return matcher.compile(recipe)</span>
+<span class="pc" id="L117">                    .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Failed to compile the match recipe.&quot;));</span>
+        }
+    }
+
+    private static Map&lt;String, String&gt; getAttachments(JsonNode elementRoot, Set&lt;String&gt; reservedProperties) {
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if (JSONUtil.isNullOrUndefined(elementRoot)) {</span>
+<span class="nc" id="L123">            return Collections.emptyMap();</span>
+        }
+
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (!elementRoot.isObject()) {</span>
+<span class="nc" id="L127">            return Collections.emptyMap();</span>
+        } else {
+<span class="fc" id="L129">            Map&lt;String, String&gt; ret = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L131">            Iterator&lt;Map.Entry&lt;String, JsonNode&gt;&gt; it = elementRoot.fields();</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L133">                Map.Entry&lt;String, JsonNode&gt; e = it.next();</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                if (!reservedProperties.contains(e.getKey())) {</span>
+<span class="fc" id="L135">                    ret.put(e.getKey(), e.getValue().asText());</span>
+                }
+<span class="fc" id="L137">            }</span>
+
+<span class="fc" id="L139">            return ret;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

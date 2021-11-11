@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Difference.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">Difference.java</span></div><h1>Difference.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+/**
+ * Represents a single difference between an old and new API element.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public final class Difference {
+<span class="fc" id="L39">    private static abstract class BuilderBase&lt;This extends BuilderBase&lt;?&gt;&gt; {</span>
+        String code;
+        String name;
+        String description;
+<span class="fc" id="L43">        Map&lt;CompatibilityType, DifferenceSeverity&gt; classification = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L44">        Map&lt;String, String&gt; attachments = new LinkedHashMap&lt;&gt;(2);</span>
+<span class="fc" id="L45">        List&lt;String&gt; identifyingAttachments = new ArrayList&lt;&gt;(2);</span>
+        String justification;
+        Criticality criticality;
+        URI documentationLink;
+
+        @Nonnull
+        public This withCode(@Nonnull String code) {
+<span class="fc" id="L52">            this.code = code;</span>
+<span class="fc" id="L53">            return castThis();</span>
+        }
+
+        @Nonnull
+        public This withName(@Nonnull String name) {
+<span class="fc" id="L58">            this.name = name;</span>
+<span class="fc" id="L59">            return castThis();</span>
+        }
+
+        @Nonnull
+        public This withDescription(@Nullable String description) {
+<span class="fc" id="L64">            this.description = description;</span>
+<span class="fc" id="L65">            return castThis();</span>
+        }
+
+        @Nonnull
+        public This addClassification(@Nonnull CompatibilityType compat, @Nonnull DifferenceSeverity severity) {
+<span class="fc" id="L70">            classification.put(compat, severity);</span>
+<span class="fc" id="L71">            return castThis();</span>
+        }
+
+        @Nonnull
+        public This addClassifications(Map&lt;CompatibilityType, DifferenceSeverity&gt; classifications) {
+<span class="fc" id="L76">            classification.putAll(classifications);</span>
+<span class="fc" id="L77">            return castThis();</span>
+        }
+
+        public This clearClassifications() {
+<span class="nc" id="L81">            classification.clear();</span>
+<span class="nc" id="L82">            return castThis();</span>
+        }
+
+        @Nonnull
+        public This addAttachment(@Nonnull String key, @Nonnull String value) {
+<span class="fc" id="L87">            attachments.put(key, value);</span>
+<span class="fc" id="L88">            return castThis();</span>
+        }
+
+        @Nonnull
+        public This addAttachments(@Nonnull Map&lt;String, String&gt; attachments) {
+<span class="fc" id="L93">            this.attachments.putAll(attachments);</span>
+<span class="fc" id="L94">            return castThis();</span>
+        }
+
+        public This clearAttachments() {
+<span class="nc" id="L98">            this.attachments.clear();</span>
+<span class="nc" id="L99">            return castThis();</span>
+        }
+
+        @Nonnull
+        public This withIdentifyingAttachments(@Nonnull List&lt;String&gt; attachments) {
+<span class="fc" id="L104">            this.identifyingAttachments = attachments;</span>
+<span class="fc" id="L105">            return castThis();</span>
+        }
+
+        public This withJustification(String justification) {
+<span class="fc" id="L109">            this.justification = justification;</span>
+<span class="fc" id="L110">            return castThis();</span>
+        }
+
+        public This withCriticality(Criticality criticality) {
+<span class="fc" id="L114">            this.criticality = criticality;</span>
+<span class="fc" id="L115">            return castThis();</span>
+        }
+
+        public This withDocumentationLink(URI link) {
+<span class="fc" id="L119">            this.documentationLink = link;</span>
+<span class="fc" id="L120">            return castThis();</span>
+        }
+
+        protected void validate() throws IllegalStateException {
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">            if (code == null) {</span>
+<span class="nc" id="L125">                throw new IllegalStateException(&quot;Difference code cannot be null&quot;);</span>
+            }
+<span class="fc" id="L127">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        private This castThis() {
+<span class="fc" id="L131">            return (This) this;</span>
+        }
+    }
+
+    public static final class Builder extends BuilderBase&lt;Builder&gt; {
+
+<span class="fc" id="L137">        private Builder() {</span>
+
+<span class="fc" id="L139">        }</span>
+
+        @Nonnull
+        public Difference build() {
+<span class="fc" id="L143">            validate();</span>
+<span class="fc" id="L144">            return new Difference(code, name, description, justification, criticality, documentationLink,</span>
+                    classification, attachments, identifyingAttachments);
+        }
+    }
+
+    public static final class InReportBuilder extends BuilderBase&lt;InReportBuilder&gt; {
+        private final Report.Builder reportBuilder;
+
+<span class="fc" id="L152">        InReportBuilder(Report.Builder reportBuilder) {</span>
+<span class="fc" id="L153">            this.reportBuilder = reportBuilder;</span>
+<span class="fc" id="L154">        }</span>
+
+        @Nonnull
+        public Report.Builder done() {
+<span class="fc" id="L158">            validate();</span>
+<span class="fc" id="L159">            Difference p = new Difference(code, name, description, justification, criticality, documentationLink,</span>
+                    classification, attachments, identifyingAttachments);
+<span class="fc" id="L161">            reportBuilder.differences.add(p);</span>
+<span class="fc" id="L162">            return reportBuilder;</span>
+        }
+    }
+
+    @Nonnull
+    public static Builder builder() {
+<span class="fc" id="L168">        return new Builder();</span>
+    }
+
+    public static Builder copy(Difference other) {
+<span class="fc" id="L172">        return builder().withCode(other.code).withDescription(other.description).withName(other.name)</span>
+<span class="fc" id="L173">                .withJustification(other.justification).withCriticality(other.criticality)</span>
+<span class="fc" id="L174">                .withDocumentationLink(other.documentationLink).withIdentifyingAttachments(other.identifyingAttachments)</span>
+<span class="fc" id="L175">                .addAttachments(other.attachments).addClassifications(other.classification);</span>
+    }
+
+    /**
+     * API analyzer dependent unique identification of the reported problem
+     */
+    public final String code;
+
+    /**
+     * Human readable name of the problem
+     */
+    public final String name;
+
+    /**
+     * Detailed description of the problem
+     */
+    public final String description;
+    public final Map&lt;CompatibilityType, DifferenceSeverity&gt; classification;
+
+    /**
+     * The attachments of the difference, keyed by their meaning. Each difference can define a different set of
+     * attachments that correspond to &quot;findings&quot; the difference represents. The map preserves the insertion order.
+     */
+    public final Map&lt;String, String&gt; attachments;
+
+    private final List&lt;String&gt; identifyingAttachments;
+
+    /**
+     * The justification for this difference. This is meant to be read from the user-supplied configuration, set by some
+     * difference transform and read by the reporters.
+     */
+    public final String justification;
+
+    /**
+     * The criticality of the difference. Never null when accessed in a {@link Reporter}.
+     */
+    public final @Nullable Criticality criticality;
+
+    /**
+     * The optional link to the documentation with further information about the difference.
+     */
+    public final @Nullable URI documentationLink;
+
+    /**
+     * @deprecated use the builder. This will be removed in some future release.
+     */
+    @Deprecated
+    public Difference(@Nonnull String code, @Nonnull String name, @Nullable String description,
+            @Nonnull CompatibilityType compatibility, @Nonnull DifferenceSeverity severity,
+            @Nonnull Map&lt;String, String&gt; attachments) {
+<span class="nc" id="L225">        this(code, name, description, Collections.singletonMap(compatibility, severity), attachments);</span>
+<span class="nc" id="L226">    }</span>
+
+    /**
+     * @deprecated use the builder. This will be removed in some future release.
+     */
+    @Deprecated
+    public Difference(@Nonnull String code, @Nonnull String name, @Nullable String description,
+            @Nonnull Map&lt;CompatibilityType, DifferenceSeverity&gt; classification,
+            @Nonnull Map&lt;String, String&gt; attachments) {
+<span class="nc" id="L235">        this(code, name, description, classification, attachments, Collections.emptyList());</span>
+<span class="nc" id="L236">    }</span>
+
+    /**
+     * @deprecated use the builder. This will be removed in some future release.
+     */
+    @Deprecated
+    public Difference(@Nonnull String code, @Nonnull String name, @Nullable String description,
+            @Nonnull Map&lt;CompatibilityType, DifferenceSeverity&gt; classification,
+            @Nonnull Map&lt;String, String&gt; attachments, @Nonnull List&lt;String&gt; identifyingAttachments) {
+<span class="nc" id="L245">        this(code, name, description, null, null, classification, attachments, identifyingAttachments);</span>
+<span class="nc" id="L246">    }</span>
+
+    /**
+     * @deprecated use the builder. This will be removed in some future release.
+     */
+    @Deprecated
+    public Difference(@Nonnull String code, @Nonnull String name, @Nullable String description,
+            @Nullable String justification, @Nullable Criticality criticality,
+            @Nonnull Map&lt;CompatibilityType, DifferenceSeverity&gt; classification,
+            @Nonnull Map&lt;String, String&gt; attachments, @Nonnull List&lt;String&gt; identifyingAttachments) {
+<span class="nc" id="L256">        this(code, name, description, justification, criticality, null, classification, attachments,</span>
+                identifyingAttachments);
+<span class="nc" id="L258">    }</span>
+
+    private Difference(String code, String name, @Nullable String description, @Nullable String justification,
+            @Nullable Criticality criticality, @Nullable URI documentationLink,
+            Map&lt;CompatibilityType, DifferenceSeverity&gt; classification, Map&lt;String, String&gt; attachments,
+<span class="fc" id="L263">            List&lt;String&gt; identifyingAttachments) {</span>
+<span class="fc" id="L264">        this.code = code;</span>
+<span class="fc" id="L265">        this.name = name;</span>
+<span class="fc" id="L266">        this.description = description;</span>
+<span class="fc" id="L267">        this.justification = justification;</span>
+<span class="fc" id="L268">        this.criticality = criticality;</span>
+<span class="fc" id="L269">        HashMap&lt;CompatibilityType, DifferenceSeverity&gt; tmp = new HashMap&lt;&gt;(classification);</span>
+<span class="fc" id="L270">        this.classification = Collections.unmodifiableMap(tmp);</span>
+<span class="fc" id="L271">        this.attachments = Collections.unmodifiableMap(new LinkedHashMap&lt;&gt;(attachments));</span>
+<span class="fc" id="L272">        this.identifyingAttachments = Collections.unmodifiableList(identifyingAttachments);</span>
+<span class="fc" id="L273">        this.documentationLink = documentationLink;</span>
+<span class="fc" id="L274">    }</span>
+
+    public boolean isIdentifyingAttachment(String attachmentName) {
+<span class="nc" id="L277">        return identifyingAttachments.contains(attachmentName);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        if (this == o) {</span>
+<span class="fc" id="L283">            return true;</span>
+        }
+<span class="pc bpc" id="L285" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L286">            return false;</span>
+        }
+<span class="fc" id="L288">        Difference that = (Difference) o;</span>
+<span class="pc bpc" id="L289" title="2 of 4 branches missed.">        return code.equals(that.code) &amp;&amp; Objects.equals(criticality, that.criticality)</span>
+<span class="pc bpc" id="L290" title="2 of 4 branches missed.">                &amp;&amp; Objects.equals(name, that.name) &amp;&amp; Objects.equals(description, that.description)</span>
+<span class="fc bfc" id="L291" title="All 4 branches covered.">                &amp;&amp; classification.equals(that.classification) &amp;&amp; attachments.equals(that.attachments)</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(justification, that.justification);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L297">        return Objects.hash(code, criticality, name, description, classification, attachments, justification);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L302">        final StringBuilder sb = new StringBuilder(&quot;Difference[&quot;);</span>
+<span class="nc" id="L303">        sb.append(&quot;code='&quot;).append(code).append('\'');</span>
+<span class="nc" id="L304">        sb.append(&quot;, name='&quot;).append(name).append('\'');</span>
+<span class="nc" id="L305">        sb.append(&quot;, classification=&quot;).append(classification);</span>
+<span class="nc" id="L306">        sb.append(&quot;, description='&quot;).append(description).append('\'');</span>
+<span class="nc" id="L307">        sb.append(&quot;, justification='&quot;).append(justification).append('\'');</span>
+<span class="nc" id="L308">        sb.append(&quot;, criticality='&quot;).append(criticality).append('\'');</span>
+<span class="nc" id="L309">        sb.append(']');</span>
+<span class="nc" id="L310">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
