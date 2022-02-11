@@ -696,8 +696,69 @@ configuration options.</p>
 </div>
 </div>
 <div class="sect1">
+<h2 id="_how_to_deal_with_external_class_exposed_in_api"><a class="anchor" href="#_how_to_deal_with_external_class_exposed_in_api"></a>How to deal with External Class Exposed In API ?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This is mainly a warning to ensure that you are exposing class from external dependency on purpose.
+Generally, exposing a class from an external dependency could be considered a bad design because this could make it harder to upgrade to a more recent version of the dependency. One reason amongst others which makes encapsulation a good practice.</p>
+</div>
+<div class="paragraph">
+<p>But there are use cases where this totally makes sense. The most common one is probably when you have a multi-module Maven project. In this case it is usual to have some modules exposing classes from another "core" or "api" module.</p>
+</div>
+<div class="paragraph">
+<p>E.g : <code>myproject-impl</code> exposes classes from <code>myproject-core</code>.</p>
+</div>
+<div class="paragraph">
+<p>An easy way to deal with this is to configure revapi like this :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">            &lt;plugin&gt;
+                &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+                &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+                &lt;configuration&gt;
+                    &lt;analysisConfiguration&gt;
+                        &lt;revapi.differences&gt;
+                            &lt;differences&gt;
+                                &lt;item&gt;
+                                    &lt;regex&gt;true&lt;/regex&gt;
+                                    &lt;ignore&gt;true&lt;/ignore&gt;
+                                    &lt;code&gt;java.class.externalClassExposedInAPI&lt;/code&gt;
+                                    &lt;newArchive&gt;org\.my\.project:myproject.*:.*&lt;/newArchive&gt;
+                                    &lt;justification&gt;
+                                        MyProject sub-modules implement MyProject API which
+                                        makes them expose MyProject specific classes usually.
+                                    &lt;/justification&gt;
+                                &lt;/item&gt;
+                            &lt;/differences&gt;
+                        &lt;/revapi.differences&gt;
+                    &lt;/analysisConfiguration&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Please consult the <a href="../../revapi-basic-features/0.12.5/differences.html" class="page">Differences Transformation</a> for more details.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
 <h2 id="_require_version_changes_and_ignore_certain_codes"><a class="anchor" href="#_require_version_changes_and_ignore_certain_codes"></a>Require Version Changes And Ignore Certain Codes</h2>
 <div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This FAQ entry references Revapi extensions that have been deprecated. If you&#8217;re still using <code>revapi.reclassify</code>
+or <code>revapi.ignore</code> extensions, consider reconfiguring Revapi using the newer <code>revapi.differences</code> which replaces both
+of these extensions.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>In situations where you want to require that certain version changes are made to have a passing build you can use
 the semver ignore extension. Additionally, if you are wanting to not ignore specific codes, for an example in Java,
@@ -751,45 +812,6 @@ must also be specified to ensure that these extensions are run together and in a
                             &lt;/transformBlocks&gt;
                         &lt;/pipelineConfiguration&gt;
                     &lt;/configuration&gt;
-                &lt;/plugin&gt;</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_how_to_deal_with_external_class_exposed_in_api"><a class="anchor" href="#_how_to_deal_with_external_class_exposed_in_api"></a>How to deal with External Class Exposed In API ?</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>This is mainly a warning to ensure that you are exposing class from external dependency on purpose.
-Generally, exposing a class from an external dependency could be considered a bad design because this could make it harder to upgrade to a more recent version of the dependency. One reason amongst others which makes encapsulation a good practice.</p>
-</div>
-<div class="paragraph">
-<p>But there are use cases where this totally makes sense. The most common one is probably when you have a multi-module Maven project. In this case it is usual to have some modules exposing classes from another "core" or "api" module.</p>
-</div>
-<div class="paragraph">
-<p>E.g : <code>myproject-impl</code> exposes classes from <code>myproject-core</code>.</p>
-</div>
-<div class="paragraph">
-<p>An easy way to deal with this is to configure revapi like this :</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">            &lt;plugin&gt;
-                &lt;groupId&gt;org.revapi&lt;/groupId&gt;
-                &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
-                &lt;configuration&gt;
-                    &lt;analysisConfiguration&gt;
-                        &lt;revapi.ignore&gt;
-                            &lt;item&gt;
-                                &lt;regex&gt;true&lt;/regex&gt;
-                                &lt;code&gt;java.class.externalClassExposedInAPI&lt;/code&gt;
-                                &lt;newArchive&gt;org\.my\.project:myproject.*:.*&lt;/newArchive&gt;
-                                &lt;justification&gt;
-                                    MyProject sub-modules implement MyProject API which
-                                    makes them expose MyProject specific classes usually.
-                                &lt;/justification&gt;
-                            &lt;/item&gt;
-                        &lt;/revapi.ignore&gt;
                 &lt;/plugin&gt;</code></pre>
 </div>
 </div>
