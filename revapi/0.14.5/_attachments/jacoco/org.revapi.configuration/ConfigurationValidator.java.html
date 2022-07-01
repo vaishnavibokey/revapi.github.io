@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigurationValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.configuration</a> &gt; <span class="el_source">ConfigurationValidator.java</span></div><h1>ConfigurationValidator.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.configuration;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaException;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.SpecVersionDetector;
+import com.networknt.schema.ValidationMessage;
+import org.jboss.dmr.ModelNode;
+
+/**
+ * @see #validate(JsonNode, Configurable)
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+<span class="fc" id="L43">public final class ConfigurationValidator {</span>
+
+    /**
+     * Validates that the full configuration contains valid configuration for given configurable.
+     *
+     * @param fullConfiguration
+     *            the full configuration containing properties for all configurables
+     * @param configurable
+     *            the configurable to validate the configuration for
+     *
+     * @return the result of the validation.
+     *
+     * @throws ConfigurationException
+     *             if reading the JSON schemas of the configurable failed
+     * 
+     * @deprecated use the Jackson-based variant
+     */
+    @Deprecated
+    public ValidationResult validate(@Nonnull ModelNode fullConfiguration, @Nonnull Configurable configurable)
+            throws ConfigurationException {
+<span class="nc" id="L63">        return validate(JSONUtil.convert(fullConfiguration), configurable);</span>
+    }
+
+    /**
+     * Validates that the full configuration contains valid configuration for given configurable.
+     *
+     * @param fullConfiguration
+     *            the full configuration containing properties for all configurables
+     * @param configurable
+     *            the configurable to validate the configuration for
+     *
+     * @return the result of the validation.
+     *
+     * @throws ConfigurationException
+     *             if reading the JSON schemas of the configurable failed
+     */
+    public ValidationResult validate(@Nullable JsonNode fullConfiguration, Configurable configurable)
+            throws ConfigurationException {
+        try {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (JSONUtil.isNullOrUndefined(fullConfiguration)) {</span>
+<span class="nc" id="L83">                return ValidationResult.success();</span>
+            }
+
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">            if (!fullConfiguration.isArray()) {</span>
+<span class="nc" id="L87">                throw new ConfigurationException(&quot;Expecting a JSON array as the configuration object.&quot;);</span>
+            }
+
+<span class="fc" id="L90">            return _validate(fullConfiguration, configurable);</span>
+<span class="nc" id="L91">        } catch (IOException e) {</span>
+<span class="nc" id="L92">            throw new ConfigurationException(&quot;Failed to validate configuration.&quot;, e);</span>
+        }
+    }
+
+    /**
+     * Validates the provided configuration against the provided schema.
+     * 
+     * @param extensionConfiguration
+     *            the actual configuration of some extension (not wrapped in the identifying object as is the case with
+     *            the full configuration provided to {@link #validate(ModelNode, Configurable)}.
+     * @param configurationSchema
+     *            the schema to validate the configuration against
+     * 
+     * @return the results of the validation
+     * 
+     * @throws ConfigurationException
+     *             if an error occurs during the processing of the data or schema as opposed to a simple validation
+     *             failure which would be captured in the returned object
+     * 
+     * @deprecated use the Jackson-based variant
+     */
+    @Deprecated
+    public ValidationResult validate(@Nonnull ModelNode extensionConfiguration, @Nonnull ModelNode configurationSchema)
+            throws ConfigurationException {
+<span class="nc" id="L116">        return validate(JSONUtil.convert(extensionConfiguration), JSONUtil.convert(configurationSchema));</span>
+    }
+
+    /**
+     * Validates the provided configuration against the provided schema.
+     * 
+     * @param extensionConfiguration
+     *            the actual configuration of some extension (not wrapped in the identifying object as is the case with
+     *            the full configuration provided to {@link #validate(JsonNode, Configurable)}.
+     * @param configurationSchema
+     *            the schema to validate the configuration against
+     * 
+     * @return the results of the validation
+     * 
+     * @throws ConfigurationException
+     *             if an error occurs during the processing of the data or schema as opposed to a simple validation
+     *             failure which would be captured in the returned object
+     */
+    public ValidationResult validate(JsonNode extensionConfiguration, JsonNode configurationSchema)
+            throws ConfigurationException {
+        try {
+<span class="fc" id="L137">            JsonSchema jsonSchema = JsonSchemaFactory.getInstance(detectVersionOrV4(configurationSchema))</span>
+<span class="fc" id="L138">                    .getSchema(configurationSchema);</span>
+<span class="fc" id="L139">            Set&lt;ValidationMessage&gt; result = jsonSchema.validate(extensionConfiguration);</span>
+<span class="fc" id="L140">            return ValidationResult.fromValidationMessages(result);</span>
+<span class="nc" id="L141">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L142">            throw new ConfigurationException(&quot;Failed to validate configuration.&quot;, e);</span>
+        }
+    }
+
+    private ValidationResult _validate(JsonNode fullConfiguration, Configurable configurable) throws IOException {
+<span class="fc" id="L147">        String extensionId = configurable.getExtensionId();</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (extensionId == null) {</span>
+<span class="fc" id="L149">            return ValidationResult.success();</span>
+        }
+
+        JsonNode schema;
+<span class="fc" id="L153">        try (Reader rdr = configurable.getJSONSchema()) {</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">            if (rdr == null) {</span>
+<span class="nc" id="L155">                return ValidationResult.success();</span>
+            }
+<span class="fc" id="L157">            schema = JSONUtil.parse(rdr);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        }</span>
+
+<span class="fc" id="L160">        JsonNode extensionConfig = null;</span>
+<span class="fc" id="L161">        int idx = 0;</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">        for (JsonNode cfg : fullConfiguration) {</span>
+<span class="fc" id="L163">            JsonNode extensionIdNode = cfg.get(&quot;extension&quot;);</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">            if (JSONUtil.isNullOrUndefined(extensionIdNode)) {</span>
+<span class="nc" id="L165">                throw new ConfigurationException(</span>
+                        &quot;Found invalid configuration object without \&quot;extension\&quot; identifier.&quot;);
+            }
+
+<span class="fc bfc" id="L169" title="All 2 branches covered.">            if (extensionId.equals(extensionIdNode.asText())) {</span>
+<span class="fc" id="L170">                extensionConfig = cfg.get(&quot;configuration&quot;);</span>
+<span class="fc" id="L171">                break;</span>
+            }
+<span class="fc" id="L173">            idx++;</span>
+<span class="fc" id="L174">        }</span>
+
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (extensionConfig == null) {</span>
+<span class="nc" id="L177">            extensionConfig = JsonNodeFactory.instance.nullNode();</span>
+        }
+
+<span class="fc" id="L180">        ValidationResult result = validate(extensionConfig, schema);</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">        if (result.getErrors() != null) {</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">            for (int i = 0; i &lt; result.getErrors().length; ++i) {</span>
+<span class="fc" id="L183">                ValidationResult.Error e = result.getErrors()[i];</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">                String path = e.dataPath == null ? &quot;&quot;</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">                        : (e.dataPath.startsWith(&quot;$&quot;) ? e.dataPath.substring(1) : e.dataPath);</span>
+
+<span class="fc bfc" id="L187" title="All 2 branches covered.">                path = &quot;$[&quot; + idx + &quot;].configuration&quot; + (path.isEmpty() ? &quot;&quot; : (&quot;.&quot; + path));</span>
+
+<span class="fc" id="L189">                String message = e.message;</span>
+<span class="pc bpc" id="L190" title="2 of 4 branches missed.">                if (e.dataPath != null &amp;&amp; message.startsWith(e.dataPath)) {</span>
+<span class="fc" id="L191">                    message = path + message.substring(e.dataPath.length());</span>
+                }
+
+<span class="fc" id="L194">                ValidationResult.Error newErr = new ValidationResult.Error(e.code, message, path);</span>
+<span class="fc" id="L195">                result.getErrors()[i] = newErr;</span>
+            }
+        }
+
+<span class="fc" id="L199">        return result;</span>
+    }
+
+    private static SpecVersion.VersionFlag detectVersionOrV4(JsonNode schema) {
+        try {
+<span class="nc" id="L204">            return SpecVersionDetector.detect(schema);</span>
+<span class="fc" id="L205">        } catch (JsonSchemaException e) {</span>
+<span class="fc" id="L206">            return SpecVersion.VersionFlag.V4;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

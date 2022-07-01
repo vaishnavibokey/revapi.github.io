@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Versions Transformation :: Revapi</title>
+    <link rel="canonical" href="https://revapi.org/revapi-basic-features/0.12.6/versions.html">
+    <meta name="generator" content="Antora 2.3.3">
+<link rel="stylesheet" href="../../_/css/site.css">
+<link rel="stylesheet" href="../../_/css/news.css">
+<link rel="stylesheet" href="../../_/css/additions.css">
+
+<link rel="alternate" type="application/rss+xml" title="Revapi RSS" href="../../_/../revapi-site/main/news/_attachments/news.atom" />
+<link rel="stylesheet" href="../../_/css/search.css">
+    <script>var uiRootPath = '../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="https://revapi.org">Revapi</a>
+              <div class="navbar-item">
+                <input id="search-input" type="text" placeholder="Search docs">
+              </div>
+            <button class="navbar-burger" data-target="topbar-nav">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+        <div id="topbar-nav" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="../../revapi-site/main/index.html/../news/index.html">News</a>
+                <a class="navbar-item" href="../../revapi-site/main/index.html/../downloads.html">Downloads</a>
+                <a class="navbar-item" href="https://diff.revapi.org">Online Check</a>
+                <a class="navbar-item" href="https://github.com/revapi/revapi"><img src="../../_/img/github.svg" alt="Github Repository"/></a>
+                <a class="navbar-item" href="https://twitter.com/revapi_org"><img src="../../_/img/twitter.svg" alt="Twitter"/></a>
+                <a class="navbar-item" href="../../_/../revapi-site/main/news/_attachments/news.atom"><img src="../../_/img/rss.svg" alt="RSS"/></a>
+            </div>
+        </div>
+    </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="revapi-basic-features" data-version="0.12.6">
+  <aside class="nav">
+    <div class="panels">
+    <div class="nav-panel-menu is-active" data-panel="menu">
+        <nav class="nav-menu">
+                <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/getting-started.html">Getting Started</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/faq.html">FAQ</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.5/architecture.html">Architecture</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.5/configuration.html">Configuration</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi/0.14.5/extending-revapi.html">Extending Revapi</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../../revapi-site/main/building.html">Building</a>
+  </li>
+</ul>
+  </li>
+</ul>
+            <ul class="nav-list">
+                <li class="nav-item" data-depth="0">
+                    <hr/>
+                    <i class="nav-text">Modules</i>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-ant-task/0.12.6/index.html">
+                                    <span class="nav-text">Ant Task</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi/0.14.5/index.html">
+                                    <span class="nav-text">API</span>
+                                </a>
+                            </li>
+                            <li class="nav-item is-active" data-depth="0">
+                                <a class="nav-link" href="index.html">
+                                    <span class="nav-text">Basic Features</span>
+                                </a>
+                                    <ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="differences.html">Multi-purpose Difference Transform</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="reclassify.html">Classification Transform</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="filter.html">Element Filter</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="ignore.html">Ignore Differences</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="versions.html">Version-based Transform</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="element-matching.html">Matching Elements</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="_attachments/apidocs/index.html">Javadoc</a>
+  </li>
+</ul>
+  </li>
+</ul>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-standalone/0.11.6/index.html">
+                                    <span class="nav-text">CLI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-file-base/0.4.6/index.html">
+                                    <span class="nav-text">File Reporter Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-jackson/0.4.2/index.html">
+                                    <span class="nav-text">Jackson Analyzer Base</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java/0.27.0/index.html">
+                                    <span class="nav-text">Java Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-java-spi/0.24.0/index.html">
+                                    <span class="nav-text">Java Analyzer SPI</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-json/0.3.5/index.html">
+                                    <span class="nav-text">JSON Analyzer</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-json/0.4.6/index.html">
+                                    <span class="nav-text">JSON Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-maven-plugin/0.14.7/index.html">
+                                    <span class="nav-text">Maven Plugin</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-reporter-text/0.14.6/index.html">
+                                    <span class="nav-text">Text Reporter</span>
+                                </a>
+                            </li>
+                            <li class="nav-item" data-depth="0">
+                                <a class="nav-link" href="../../revapi-yaml/0.3.5/index.html">
+                                    <span class="nav-text">YAML Analyzer</span>
+                                </a>
+                            </li>
+                </li>
+            </ul>
+        </nav>
+    </div>
+<div class="nav-panel-explore" data-panel="explore" style="display: none">
+  <div class="context">
+    <span class="title">Basic Features</span>
+    <span class="version">0.12.6</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <span class="title">Ant Task</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-ant-task/0.12.6/index.html">0.12.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.12.5/index.html">0.12.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.12.4/index.html">0.12.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.12.3/index.html">0.12.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.12.2/index.html">0.12.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.12.0/index.html">0.12.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-ant-task/0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">API</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi/0.14.5/index.html">0.14.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.14.4/index.html">0.14.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.14.3/index.html">0.14.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.14.2/index.html">0.14.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.14.1/index.html">0.14.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <span class="title">Basic Features</span>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">0.12.6</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.5/index.html">0.12.5</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.4/index.html">0.12.4</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.3/index.html">0.12.3</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.2/index.html">0.12.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../0.10.0/index.html">0.10.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">CLI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-standalone/0.11.6/index.html">0.11.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.11.5/index.html">0.11.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.11.4/index.html">0.11.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.11.3/index.html">0.11.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.11.2/index.html">0.11.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.11.1/index.html">0.11.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.11.0/index.html">0.11.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.2/index.html">0.10.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.1/index.html">0.10.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.10.0/index.html">0.10.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.8/index.html">0.9.8</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.7/index.html">0.9.7</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-standalone/0.9.6/index.html">0.9.6</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">File Reporter Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-file-base/0.4.6/index.html">0.4.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.4.5/index.html">0.4.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.4.4/index.html">0.4.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.4.3/index.html">0.4.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.4.2/index.html">0.4.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.4.1/index.html">0.4.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.4.0/index.html">0.4.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-file-base/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Jackson Analyzer Base</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-jackson/0.4.2/index.html">0.4.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.4.1/index.html">0.4.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.4.0/index.html">0.4.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-jackson/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java/0.27.0/index.html">0.27.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.26.1/index.html">0.26.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.26.0/index.html">0.26.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.25.0/index.html">0.25.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.24.4/index.html">0.24.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.24.3/index.html">0.24.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.24.2/index.html">0.24.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.24.1/index.html">0.24.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.24.0/index.html">0.24.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.2/index.html">0.23.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.1/index.html">0.23.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java/0.22.0/index.html">0.22.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Java Analyzer SPI</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-java-spi/0.24.0/index.html">0.24.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.23.6/index.html">0.23.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.23.5/index.html">0.23.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.23.4/index.html">0.23.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.23.3/index.html">0.23.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.23.2/index.html">0.23.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.23.1/index.html">0.23.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.23.0/index.html">0.23.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.2/index.html">0.22.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.1/index.html">0.22.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.22.0/index.html">0.22.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.1/index.html">0.21.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-java-spi/0.21.0/index.html">0.21.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-json/0.3.5/index.html">0.3.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.3.4/index.html">0.3.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.3.3/index.html">0.3.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-json/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">JSON Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-json/0.4.6/index.html">0.4.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.4.5/index.html">0.4.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.4.4/index.html">0.4.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.4.3/index.html">0.4.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.4.2/index.html">0.4.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.4.1/index.html">0.4.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.4.0/index.html">0.4.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-json/0.2.0/index.html">0.2.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Maven Plugin</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-maven-plugin/0.14.7/index.html">0.14.7</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.14.6/index.html">0.14.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.14.5/index.html">0.14.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.14.4/index.html">0.14.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.14.3/index.html">0.14.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.14.2/index.html">0.14.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.14.1/index.html">0.14.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.6/index.html">0.13.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.5/index.html">0.13.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.4/index.html">0.13.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.3/index.html">0.13.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.2/index.html">0.12.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-maven-plugin/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Revapi Site</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-site/main/index.html">main</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">Text Reporter</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-reporter-text/0.14.6/index.html">0.14.6</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.14.5/index.html">0.14.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.14.4/index.html">0.14.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.14.3/index.html">0.14.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.14.2/index.html">0.14.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.14.1/index.html">0.14.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.14.0/index.html">0.14.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.2/index.html">0.13.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.1/index.html">0.13.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.13.0/index.html">0.13.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.1/index.html">0.12.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-reporter-text/0.12.0/index.html">0.12.0</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <span class="title">YAML Analyzer</span>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../revapi-yaml/0.3.5/index.html">0.3.5</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.3.4/index.html">0.3.4</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.3.3/index.html">0.3.3</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.3.2/index.html">0.3.2</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.3.1/index.html">0.3.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.3.0/index.html">0.3.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.1/index.html">0.2.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.2.0/index.html">0.2.0</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.1/index.html">0.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../revapi-yaml/0.1.0/index.html">0.1.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../revapi-site/main/index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Basic Features</a></li>
+    <li><a href="versions.html">Version-based Transform</a></li>
+  </ul>
+</nav>
+  Version:
+<div class="page-versions">
+    <button class="version-menu-toggle" title="Versions of the component">
+      0.12.6
+    </button>
+  <div class="version-menu">
+        <a class="version is-current" href="versions.html">
+
+          0.12.6
+        </a>
+        <a class="version" href="../0.12.5/versions.html">
+
+          0.12.5
+        </a>
+        <a class="version" href="../0.12.4/versions.html">
+
+          0.12.4
+        </a>
+        <a class="version" href="../0.12.3/versions.html">
+
+          0.12.3
+        </a>
+        <a class="version" href="../0.12.2/versions.html">
+
+          0.12.2
+        </a>
+        <a class="version" href="../0.12.1/versions.html">
+
+          0.12.1
+        </a>
+        <a class="version is-missing" href="../0.11.2/index.html">
+
+          0.11.2
+        </a>
+        <a class="version is-missing" href="../0.11.1/index.html">
+
+          0.11.1
+        </a>
+        <a class="version is-missing" href="../0.11.0/index.html">
+
+          0.11.0
+        </a>
+        <a class="version is-missing" href="../0.10.2/index.html">
+
+          0.10.2
+        </a>
+        <a class="version is-missing" href="../0.10.1/index.html">
+
+          0.10.1
+        </a>
+        <a class="version is-missing" href="../0.10.0/index.html">
+
+          0.10.0
+        </a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/revapi/revapi/edit/main/revapi-basic-features/src/site/modules/ROOT/pages/versions.adoc" title="Edit the latest version of this page">Edit this page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Versions Transformation</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Extension</strong>: <code>revapi.versions</code></p>
+</div>
+<div class="paragraph">
+<p>This is a generic transformation of differences based on the changes of the version between the old and new archives.</p>
+</div>
+<div class="paragraph">
+<p>It can be useful for automatically allowing certain kinds of changes based on the version difference (e.g. allow breaking changes in a new major version).</p>
+</div>
+<div class="paragraph">
+<p>By default, it assumes semantic versioning of the archives but can be reconfigured to support different versioning policies.</p>
+</div>
+<div class="paragraph">
+<p>The extension is disabled by default and has to be explicitly configured to be switched on.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The documentation of the now deprecated <code>revapi.semver.ignore</code> transformation, which served a similar purpose in the past, is
+<a href="semver-ignore.html" class="page">here</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Please be aware that this extension may interfere with <code>revapi.differences</code> if both <code>revapi.versions</code> and <code>revapi.differences</code> are configured
+to modify the criticality of the differences. In that case they may override each other&#8217;s changes resulting in the infamous infinite loop during
+the transformation. To rectify that problem, you need to place these two differences in a
+<a href="../../revapi/0.14.5/configuration.html#_transform_blocks" class="page">transformation block</a>. Check out the example <a href="#_allow_changes_that_are_marked_as_ok_by_other_rules">Allow changes that are marked as ok by other rules</a>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_sample_configuration"><a class="anchor" href="#_sample_configuration"></a>Sample Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following is the default configuration of the extension:</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+The default configuration is most probably NOT what you want, because all it does is that it adds a new
+attachment on the version difference. If you want to break the build on breaking changes or define some other behavior,
+you will need to supply custom <code>onAllowed</code> or <code>onDisallowed</code> configuration. See the <a href="#_examples">Examples</a> for, well,
+the examples.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "enabled": false, <i class="conum" data-value="1"></i><b>(1)</b>
+  "semantic0": true, <i class="conum" data-value="2"></i><b>(2)</b>
+  "strictSemver": true, <i class="conum" data-value="3"></i><b>(3)</b>
+  "versionIncreaseAllows": { <i class="conum" data-value="4"></i><b>(4)</b>
+    "major": {
+      "severity": "BREAKING"
+    },
+    "minor": {
+      "severity": "NON_BREAKING"
+    },
+    "patch": {
+      "severity": "EQUIVALENT"
+    }
+  },
+  "onAllowed": { <i class="conum" data-value="5"></i><b>(5)</b>
+    "attachments": {
+      "breaksVersioningRules": "false"
+    }
+  },
+  "onDisallowed": { <i class="conum" data-value="6"></i><b>(6)</b>
+    "criticality": "error",
+    "attachments": {
+      "breaksVersioningRules": "true"
+    }
+  },
+  "passThroughDifference": [] <i class="conum" data-value="7"></i><b>(7)</b>
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The extension is disabled by default.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td><code>semantic0</code> tells the extension to honor the special rules for <code>0.y.z</code> versions in semantic versioning.
+See below for a more detailed discussion of the attribute.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td><code>strictSemver</code> modifies the parsing of the version. If set to <code>false</code>, there is no restriction on the characters in
+the suffix of the version. If set to <code>true</code> (the default), all the parts of the version need to strictly conform to
+the <a href="https://semver.org">semver</a> specification.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td><code>versionIncreaseAllows</code> specifies the rules for allowed changes in different version increase situations.
+<code>x.y.z.suffix</code> versioning is required for this to work.
+By default, an increase in the major version allows breaking changes, an increase in minor version allows non-breaking changes and a patch version only allows equivalent API changes.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td><code>onAllowed</code> specifies the modifications to be performed on differences that are deemed allowed by the version increase rules.
+By default, a "marker" attachment noting that the versioning rules have been broken is set to <code>false</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td><code>onDisallowed</code> specifies the modifications to be performed on differences that are deemed disallowed by the version increase rules.
+By default, the criticality of the difference is set to <code>error</code> and "marker" attachment noting that the versioning rules have been broken is set to <code>true</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td>One can define a set of difference codes that are not going to be touched by this transformation and will be let through as is.
+This is useful when you want certain kinds of differences to never be allowed.
+By default, this list is empty.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>To use this default configuration, all you need to do is to specifically enable the extension:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+  "extension": "revapi.versions",
+  "configuration": {
+    "enabled": true
+  }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or in XML:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;enabled&gt;true&lt;/enabled&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_properties"><a class="anchor" href="#_properties"></a>Properties</h2>
+<div class="sectionbody">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>enabled</code></dt>
+<dd>
+<p>Defaults to <code>false</code>.
+When set to <code>true</code>, the extension is enabled and checks for the versioning rules.</p>
+</dd>
+<dt class="hdlist1"><code>semantic0</code></dt>
+<dd>
+<p>The <a href="https://semver.org">semantic versioning</a> specifies that if the major version is <code>0</code>, any kind of change can happen at any time because the API is not considered stable.
+If set to <code>true</code> (which is the default), this attribute makes the extension honor this behavior (i.e. any difference is allowed on any kind of version increase).</p>
+</dd>
+<dt class="hdlist1"><code>versionIncreaseAllows</code></dt>
+<dd>
+<p>Within this attribute, one can specify the rules to allow differences for different kinds of version increases.</p>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>major</code></dt>
+<dd>
+<p>Specifies the rules for allowing differences when a major version increases.
+This can either directly contain the following configuration options or be a list thereof. If more than 1 rule is specified, a difference matches if at least 1 of the rules is satisfied.</p>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>regex</code></dt>
+<dd>
+<p>Defaults to <code>false</code>.
+When set to <code>true</code>, textual properties are considered regular expressions instead of clear text.</p>
+</dd>
+<dt class="hdlist1"><code>severity</code></dt>
+<dd>
+<p>The maximum severity of a difference to be allowed.
+One of <code>NONE</code>, <code>EQUIVALENT</code>, <code>NON_BREAKING</code>, <code>POTENTIALLY_BREAKING</code>,
+<code>BREAKING</code>.
+Cannot be matched as a regular expression.</p>
+</dd>
+<dt class="hdlist1"><code>criticality</code></dt>
+<dd>
+<p>The maximum criticality of a difference to be allowed.
+This is one of criticalities configured in the
+<a href="../../revapi/0.14.5/configuration.html#_criticality" class="page">pipeline configuration</a>.
+This cannot be matched using a regular expression.</p>
+</dd>
+<dt class="hdlist1"><code>classification</code></dt>
+<dd>
+<p>This is a map of classifications that a difference needs to maximally have to be allowed.
+The keys are one of <code>BINARY</code>,
+<code>SOURCE</code>, <code>SEMANTIC</code>, <code>OTHER</code> (i.e. one of compatibility types) and the values are the severities: <code>EQUIVALENT</code>,
+<code>NON_BREAKING</code>, <code>POTENTIALLY_BREAKING</code> or <code>BREAKING</code>.</p>
+</dd>
+<dt class="hdlist1"><code>code</code></dt>
+<dd>
+<p>The code (i.e. the identifier) of the difference that should be allowed.</p>
+</dd>
+<dt class="hdlist1"><code>justification</code></dt>
+<dd>
+<p>The text of the justification that should make the difference be allowed.
+If <code>regex</code> is true, this is understood to be a regular expression, otherwise an exact match is used.</p>
+</dd>
+<dt class="hdlist1"><code>attachments</code></dt>
+<dd>
+<p>The map of attachments that the difference needs to have in order to be allowed.
+The keys always need to match exactly, the values are interpreted either exactly or as a regular expression depending on the value of the <code>regex</code> property.</p>
+</dd>
+<dt class="hdlist1"><code>inArchives</code></dt>
+<dd>
+<p>A list of archives in which this rule applies.
+These are either exact matches or regular expressions depending on the value of the <code>regex</code> attribute.
+The values are compared with the "base names" of the archives - i.e. the name without a version.</p>
+</dd>
+</dl>
+</div>
+</dd>
+<dt class="hdlist1"><code>minor</code></dt>
+<dd>
+<p>This attribute specifies the allowed changes in a minor version increase.
+The options are the same as with the major version increase.</p>
+</dd>
+<dt class="hdlist1"><code>patch</code></dt>
+<dd>
+<p>This attribute specifies the allowed changes in a patch version increase.
+The options are the same as with the major version increase.</p>
+</dd>
+<dt class="hdlist1"><code>suffix</code></dt>
+<dd>
+<p>This attribute specifies the allowed changes when only a suffix.
+The options are the same as with the major version increase + the <code>old</code> and <code>new</code> attributes described below.</p>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>old</code></dt>
+<dd>
+<p>The suffix of the old version, e.g. <code>Beta</code>.
+If <code>regex</code> attribute is true, this is considered a regular expression.</p>
+</dd>
+<dt class="hdlist1"><code>new</code></dt>
+<dd>
+<p>The suffix of the new version, e.g. <code>Final</code>.
+If <code>regex</code> attribute is true, this is considered a regular expression.</p>
+</dd>
+</dl>
+</div>
+</dd>
+</dl>
+</div>
+</dd>
+<dt class="hdlist1"><code>onAllowed</code></dt>
+<dd>
+<p>This configuration describes how to modify the differences that we found to conform to the versioning rules and are therefore allowed.</p>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>remove</code></dt>
+<dd>
+<p>Defaults to <code>false</code>.
+If <code>true</code>, the difference is removed from the analysis results.</p>
+</dd>
+<dt class="hdlist1"><code>classification</code></dt>
+<dd>
+<p>This is a map of classifications (same in the format with the classification specification in the version increase configuration).
+These classifications will be added to the difference classification (overwriting the pre-existing classifications, if any).</p>
+</dd>
+<dt class="hdlist1"><code>justification</code></dt>
+<dd>
+<p>This either the exact text of the justification that should be added to the difference, or an object with <code>prepend</code>
+and/or <code>append</code> keys using which you can prepend or append some text to pre-existing justification.</p>
+</dd>
+<dt class="hdlist1"><code>description</code></dt>
+<dd>
+<p>This either the exact text of the description that should be added to the difference, or an object with <code>prepend</code>
+and/or <code>append</code> keys using which you can prepend or append some text to pre-existing description.</p>
+</dd>
+<dt class="hdlist1"><code>criticality</code></dt>
+<dd>
+<p>The criticality that should be set on the difference.</p>
+</dd>
+<dt class="hdlist1"><code>attachments</code></dt>
+<dd>
+<p>The map of attachments that should be added to the difference, potentially overwriting any pre-existing ones.</p>
+</dd>
+</dl>
+</div>
+</dd>
+<dt class="hdlist1"><code>onDisallowed</code></dt>
+<dd>
+<p>This has the same configuration properties as <code>onAllowed</code> but describes the modifications to be made on the disallowed differences.</p>
+</dd>
+<dt class="hdlist1"><code>passThroughDifferences</code></dt>
+<dd>
+<p>This is a list of difference codes that should be ignored by this extension and be passed on to the next stages as is.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples"><a class="anchor" href="#_examples"></a>Examples</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_define_how_to_react_on_the_version_changes"><a class="anchor" href="#_define_how_to_react_on_the_version_changes"></a>Define how to react on the version changes</h3>
+<div class="paragraph">
+<p>The default configuration defines a very simple "reaction" on the version changes. It merely defines an attachment on
+the differences that tells whether that difference breaks or conforms to the versioning rules. This can be useful if
+you define some further "reaction" on such attachment in other extensions, but generally speaking, you will want to
+define what should be done with the differences using the <code>onAllowed</code> and <code>onDisallowed</code> properties of
+<code>revapi.versions</code>.</p>
+</div>
+<div class="paragraph">
+<p>There is a couple of things one can do with the difference:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Changing the criticality</dt>
+<dd>
+<p>This is likely what you want to do with the disallowed differences. Learn more about criticality
+<a href="../../revapi/0.14.5/configuration.html#_criticality" class="page">here</a>.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;versionIncreaseAllows&gt;
+        ....
+    &lt;/versionIncreaseAllows&gt;
+    &lt;onDisallowed&gt;
+        &lt;criticality&gt;error&lt;/criticality&gt;
+    &lt;/onDisallowed&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you face a situation where some version of your dependency (that you make public through your API, too) introduced
+some API changes that you are comfortable allowing (but that would otherwise break the build because of the more strict
+settings you configured for your own code), you can reset the criticality on the differences coming from such dependency
+using the following configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;versionIncreaseAllows&gt;
+        &lt;major&gt;
+            &lt;inArchives&gt;
+                &lt;item&gt;org.acme:my-dep&lt;/item&gt;
+            &lt;/inArchives&gt;
+        &lt;/major&gt;
+    &lt;/versionIncreaseAllows&gt;
+    &lt;onAllowed&gt;
+        &lt;criticality&gt;documented&lt;/criticality&gt;
+    &lt;/onAllowed&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1">Removing the difference</dt>
+<dd>
+<p>You can choose to remove the differences. This can be used for example to ignore changes coming from a particular
+version of some of your dependency that you also make public in your API but that you are comfortable allowing.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You should possibly just set the criticality on such changes to a value that doesn&#8217;t break the build (like
+<code>documented</code> in the default set of criticalities) to preserve the visibility of the changes.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;versionIncreaseAllows&gt;
+        &lt;major&gt;
+            &lt;inArchives&gt;
+                &lt;item&gt;org.acme:my-dep&lt;/item&gt;
+            &lt;/inArchives&gt;
+        &lt;/major&gt;
+    &lt;/versionIncreaseAllows&gt;
+    &lt;onAllowed&gt;
+        &lt;remove&gt;true&lt;/remove&gt;
+    &lt;/onAllowed&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1">Modify justification</dt>
+<dd>
+<p>When you want to modify the justification to highlight the fact that the difference is being dealt with the way it is
+because of versioning rules, you can do so like this:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;versionIncreaseAllows&gt;
+        ...
+    &lt;/versionIncreaseAllows&gt;
+    &lt;onAllowed&gt;
+        &lt;justification&gt;
+            &lt;append&gt; (conforms to versioning rules)&lt;/append&gt;
+        &lt;/justification&gt;
+    &lt;/onAllowed&gt;
+    &lt;onDisallowed&gt;
+        &lt;justification&gt;
+            &lt;append&gt; (breaks the versioning rules)&lt;/append&gt;
+        &lt;/justification&gt;
+    &lt;/onDisallowed&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also use <code>prepend</code> to prefix the pre-existing justification with some text, or you can specify a textual
+justification as a whole:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;versionIncreaseAllows&gt;
+        &lt;major&gt;
+            &lt;inArchives&gt;
+                &lt;item&gt;org.acme:my-dep&lt;/item&gt;
+            &lt;/inArchives&gt;
+        &lt;/major&gt;
+    &lt;/versionIncreaseAllows&gt;
+    &lt;onAllowed&gt;
+        &lt;criticality&gt;documented&lt;/criticality&gt;
+        &lt;justification&gt;We're assuming, you can accommodate for the changes in my-dep.&lt;/justification&gt;
+    &lt;/onAllowed&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1">Modifying the description</dt>
+<dd>
+<p>If you don&#8217;t want to modify the <code>justification</code> for a difference but instead want to modify its <code>description</code>, you can
+do so in very much the same way as in the previous examples. Just replace <code>justification</code> with <code>description</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dont_allow_any_changes_between_a_beta_and_a_final_version"><a class="anchor" href="#_dont_allow_any_changes_between_a_beta_and_a_final_version"></a>Don&#8217;t allow any changes between a beta, and a final version</h3>
+<div class="paragraph">
+<p>Let&#8217;s assume that we mark the beta versions with the <code>beta</code> suffix and final versions are without any suffix whatsoever.
+We want to make sure that there are no API changes at all between the beta and the final version.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;versionIncreaseAllows&gt;
+        &lt;suffix&gt;
+            &lt;regex&gt;true&lt;/regex&gt;
+            &lt;old&gt;[bB]eta&lt;/old&gt;
+            &lt;severity&gt;NONE&lt;/severity&gt;
+        &lt;/suffix&gt;
+    &lt;/versionIncreaseAllows&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_allow_adding_method_to_the_interfaces_but_no_other_breaking_changes_in_non_major_releases"><a class="anchor" href="#_allow_adding_method_to_the_interfaces_but_no_other_breaking_changes_in_non_major_releases"></a>Allow adding method to the interfaces, but no other breaking changes in non-major releases</h3>
+<div class="paragraph">
+<p>Let&#8217;s assume that the interfaces in our library are not meant for implementation but merely for
+providing a public interface to the private implementations. Therefore, our policy is that we don&#8217;t consider adding
+methods to interfaces as a breaking change.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;revapi.versions&gt;
+    &lt;versionIncreaseAllows&gt;
+        &lt;minor&gt;
+            &lt;item&gt;
+                &lt;code&gt;java.method.addedToInterface&lt;/code&gt;
+            &lt;/item&gt;
+            &lt;item&gt;
+                &lt;severity&gt;NON_BREAKING&lt;/severity&gt;
+            &lt;/item&gt;
+        &lt;/minor&gt;
+        &lt;patch&gt;
+            &lt;item&gt;
+                &lt;code&gt;java.method.addedToInterface&lt;/code&gt;
+            &lt;/item&gt;
+            &lt;item&gt;
+                &lt;severity&gt;EQUIVALENT&lt;/severity&gt;
+            &lt;/item&gt;
+        &lt;/patch&gt;
+    &lt;/versionIncreaseAllows&gt;
+&lt;/revapi.versions&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_allow_changes_that_are_marked_as_ok_by_other_rules"><a class="anchor" href="#_allow_changes_that_are_marked_as_ok_by_other_rules"></a>Allow changes that are marked as ok by other rules</h3>
+<div class="paragraph">
+<p>Using the transformation blocks, one can configure the order in which the differences are processed by different extensions.
+We can take advantage of that and using more powerful transformations, like <a href="differences.html" class="page">Differences Transformation</a>, to pick and choose which changes are ok.</p>
+</div>
+<div class="paragraph">
+<p>In this example we have a special <code>revapi.differences</code> instance called <code>manually-vetted</code> that is meant to capture differences that the maintainer manually examined and deemed ok for the next release.
+These differences don&#8217;t conform to "the normal" set of rules otherwise required.</p>
+</div>
+<div class="paragraph">
+<p>In Maven, one can configure the transform blocks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+    &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;0.14.7&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;pipelineConfiguration&gt;
+            &lt;transformBlocks&gt;
+                &lt;block&gt;
+                    &lt;item&gt;manually-vetted&lt;/item&gt;
+                    &lt;item&gt;revapi.versions&lt;/item&gt;
+                &lt;/block&gt;
+            &lt;/transformBlocks&gt;
+        &lt;/pipelineConfiguration&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With the transform block in place, we can configure the manually vetted differences and versions extensions. Notice the multiple rules for each version increase - a difference is considered OK if at least 1 of the rules is satisfied.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.revapi&lt;/groupId&gt;
+    &lt;artifactId&gt;revapi-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;0.14.7&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;analysisConfiguration&gt;
+            &lt;revapi.differences id="manually-vetted"&gt;
+                &lt;attachments&gt;
+                    &lt;vetted&gt;ok&lt;/vetted&gt;
+                &lt;/attachments&gt;
+                &lt;differences&gt;
+                    &#8230;&#8203; any difference matches configured using the <a href="differences.html" class="page">Differences Transformation</a>&#8230;&#8203;
+                &lt;/differences&gt;
+            &lt;/revapi.differences&gt;
+            &lt;revapi.versions&gt;
+                &lt;versionIncreaseAllows&gt;
+                    &lt;major&gt;
+                        &lt;item&gt;
+                            &lt;severity&gt;BREAKING&lt;/severity&gt;
+                        &lt;/item&gt;
+                        &lt;item&gt;
+                            &lt;attachments&gt;
+                                &lt;vetted&gt;ok&lt;/vetted&gt;
+                            &lt;/attachments&gt;
+                        &lt;/item&gt;
+                    &lt;/major&gt;
+                    &lt;minor&gt;
+                        &lt;item&gt;
+                            &lt;severity&gt;NON_BREAKING&lt;/severity&gt;
+                        &lt;/item&gt;
+                        &lt;item&gt;
+                            &lt;attachments&gt;
+                                &lt;vetted&gt;ok&lt;/vetted&gt;
+                            &lt;/attachments&gt;
+                        &lt;/item&gt;
+                    &lt;/minor&gt;
+                    &lt;patch&gt;
+                        &lt;item&gt;
+                            &lt;severity&gt;EQUIVALENT&lt;/severity&gt;
+                        &lt;/item&gt;
+                        &lt;item&gt;
+                            &lt;attachments&gt;
+                                &lt;vetted&gt;ok&lt;/vetted&gt;
+                            &lt;/attachments&gt;
+                        &lt;/item&gt;
+                    &lt;/patch&gt;
+                &lt;/versionIncreaseAllows&gt;
+            &lt;/revapi.versions&gt;
+        &lt;/analysisConfiguration&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+    <p>Copyright 2014-2022 Lukas Krejci.</p>
+    <p>This site was built using <a href="https://antora.org">Antora 2.3.3</a>.</p>
+</footer>
+<script>
+  window.antora = window.antora || {}
+  window.antora.basePath = '../..'
+  window.antora.pagePath = '/revapi-basic-features/0.12.6/versions.html'
+</script>
+<script src="../../_/js/site.js"></script>
+  <script src="../../_/js/vendor/lunr.js"></script>
+  <script src="../../_/js/vendor/search.js"></script>
+  <script async src="../../_/../search-index.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+<script>
+    function toggleVersionSelector(id) {
+        var sel = document.getElementById(id)
+        if (!sel) {
+            return
+        }
+
+        if (sel.style.display == 'none') {
+            sel.style.display = 'block';
+        } else {
+            sel.style.display = 'none';
+        }
+    }
+</script>  </body>
+</html>
