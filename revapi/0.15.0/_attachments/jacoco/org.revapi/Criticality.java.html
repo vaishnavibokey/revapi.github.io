@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Criticality.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi</a> &gt; <span class="el_source">Criticality.java</span></div><h1>Criticality.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi;
+
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * Criticality represents the assigned importance of a {@link Difference}. While difference has its classifications and
+ * severities, criticality expresses how that classification is perceived in the concrete case of the difference.
+ *
+ * An API author might consider it OK to have breaking changes in certain part of API, yet wants to highlight to the
+ * users in reports that those are indeed breaking. It would not have therefore been enough to just reclassify the
+ * difference as non-breaking.
+ *
+ * There are a couple of predefined criticalities that are always present in the analysis and are ready to use:
+ *
+ * &lt;ol&gt;
+ * &lt;li&gt;{@link Criticality#ALLOWED}
+ * &lt;li&gt;{@link Criticality#DOCUMENTED}
+ * &lt;li&gt;{@link Criticality#HIGHLIGHT}
+ * &lt;li&gt;{@link Criticality#ERROR}
+ * &lt;/ol&gt;
+ */
+public final class Criticality implements Comparable&lt;Criticality&gt; {
+    /**
+     * Differences with this criticality are allowed and considered OK. The {@link #getLevel() level} of this
+     * criticality is 1000.
+     */
+<span class="fc" id="L47">    public static final Criticality ALLOWED = new Criticality(&quot;allowed&quot;, 1000);</span>
+
+    /**
+     * Differences with this criticality are necessary in the project and are documented. The {@link #getLevel() level}
+     * of this criticality is 2000.
+     */
+<span class="fc" id="L53">    public static final Criticality DOCUMENTED = new Criticality(&quot;documented&quot;, 2000);</span>
+
+    /**
+     * Differences with this criticality are necessary in the project, are documented and are very important/severe so
+     * should be highlighted in the reports. The {@link #getLevel() level} of this criticality is 3000.
+     */
+<span class="fc" id="L59">    public static final Criticality HIGHLIGHT = new Criticality(&quot;highlight&quot;, 3000);</span>
+
+    /**
+     * Differences with this criticality are not allowed and should be dealt with in the checked codebase. The
+     * {@link #getLevel() level} of this criticality is the maximum integer value. There can be no criticality more
+     * severe than this.
+     */
+<span class="fc" id="L66">    public static final Criticality ERROR = new Criticality(&quot;error&quot;, Integer.MAX_VALUE);</span>
+
+    private final String name;
+    private final int level;
+
+    /**
+     * Creates a new criticality instance.
+     *
+     * @param name
+     *            the human readable name of the criticality
+     * @param level
+     *            how critical it is. A non-negative integer
+     */
+<span class="fc" id="L79">    public Criticality(String name, int level) {</span>
+<span class="fc" id="L80">        this.name = name;</span>
+<span class="fc" id="L81">        this.level = level;</span>
+<span class="fc" id="L82">    }</span>
+
+    /**
+     * The default set of criticalities known to the pipeline configuration.
+     */
+    public static Set&lt;Criticality&gt; defaultCriticalities() {
+<span class="fc" id="L88">        Set&lt;Criticality&gt; ret = new HashSet&lt;&gt;(4, 1.0f);</span>
+<span class="fc" id="L89">        ret.add(ALLOWED);</span>
+<span class="fc" id="L90">        ret.add(DOCUMENTED);</span>
+<span class="fc" id="L91">        ret.add(HIGHLIGHT);</span>
+<span class="fc" id="L92">        ret.add(ERROR);</span>
+
+<span class="fc" id="L94">        return ret;</span>
+    }
+
+    /**
+     * The default mapping from difference severity to criticality used in the analysis context if not configured
+     * otherwise.
+     */
+    public static Map&lt;DifferenceSeverity, Criticality&gt; defaultSeverityMapping() {
+<span class="fc" id="L102">        Map&lt;DifferenceSeverity, Criticality&gt; ret = new EnumMap&lt;&gt;(DifferenceSeverity.class);</span>
+<span class="fc" id="L103">        ret.put(DifferenceSeverity.EQUIVALENT, ALLOWED);</span>
+<span class="fc" id="L104">        ret.put(DifferenceSeverity.NON_BREAKING, DOCUMENTED);</span>
+<span class="fc" id="L105">        ret.put(DifferenceSeverity.POTENTIALLY_BREAKING, ERROR);</span>
+<span class="fc" id="L106">        ret.put(DifferenceSeverity.BREAKING, ERROR);</span>
+
+<span class="fc" id="L108">        return ret;</span>
+    }
+
+    public String getName() {
+<span class="fc" id="L112">        return name;</span>
+    }
+
+    public int getLevel() {
+<span class="nc" id="L116">        return level;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L122">            return true;</span>
+        }
+<span class="nc bnc" id="L124" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L125">            return false;</span>
+        }
+<span class="nc" id="L127">        Criticality that = (Criticality) o;</span>
+<span class="nc bnc" id="L128" title="All 4 branches missed.">        return level == that.level &amp;&amp; name.equals(that.name);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L133">        return Objects.hash(name, level);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L138">        return &quot;Criticality[&quot; + &quot;name='&quot; + name + '\'' + &quot;, level=&quot; + level + ']';</span>
+    }
+
+    @Override
+    public int compareTo(Criticality o) {
+<span class="nc" id="L143">        return this.level - o.level;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

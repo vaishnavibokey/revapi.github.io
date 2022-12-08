@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">API</a> &gt; <a href="index.source.html" class="el_package">org.revapi.configuration</a> &gt; <span class="el_source">JSONUtil.java</span></div><h1>JSONUtil.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.configuration;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BigIntegerNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import org.jboss.dmr.ModelNode;
+
+/**
+ * A utility class for JSON files. The JSON specification doesn't allow comments but the extension's configuration is
+ * likely to contain comments so that users can &quot;annotate&quot; what individual configuration items mean.
+ *
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+public final class JSONUtil {
+
+<span class="fc" id="L60">    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();</span>
+
+<span class="fc" id="L62">    private enum State {</span>
+<span class="fc" id="L63">        NORMAL, FIRST_SLASH, SINGLE_LINE, MULTI_LINE, STAR_IN_MULTI_LINE, IN_STRING, ESCAPE_IN_STRING</span>
+    }
+
+    private JSONUtil() {
+
+    }
+
+    public static JsonNode convert(ModelNode node) {
+<span class="nc bnc" id="L71" title="All 10 branches missed.">        switch (node.getType()) {</span>
+        case LIST:
+<span class="nc" id="L73">            ArrayNode a = JsonNodeFactory.instance.arrayNode();</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            for (ModelNode mn : node.asList()) {</span>
+<span class="nc" id="L75">                a.add(convert(mn));</span>
+<span class="nc" id="L76">            }</span>
+<span class="nc" id="L77">            return a;</span>
+        case OBJECT:
+<span class="nc" id="L79">            ObjectNode o = JsonNodeFactory.instance.objectNode();</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            for (String key : node.keys()) {</span>
+<span class="nc" id="L81">                o.set(key, convert(node.get(key)));</span>
+<span class="nc" id="L82">            }</span>
+<span class="nc" id="L83">            return o;</span>
+        case BOOLEAN:
+<span class="nc" id="L85">            return BooleanNode.valueOf(node.asBoolean());</span>
+        case INT:
+<span class="nc" id="L87">            return IntNode.valueOf(node.asInt());</span>
+        case LONG:
+<span class="nc" id="L89">            return LongNode.valueOf(node.asLong());</span>
+        case BIG_INTEGER:
+<span class="nc" id="L91">            return BigIntegerNode.valueOf(node.asBigInteger());</span>
+        case BIG_DECIMAL:
+<span class="nc" id="L93">            return DecimalNode.valueOf(node.asBigDecimal());</span>
+        case STRING:
+<span class="nc" id="L95">            return TextNode.valueOf(node.asString());</span>
+        case DOUBLE:
+<span class="nc" id="L97">            return DoubleNode.valueOf(node.asDouble());</span>
+        default:
+<span class="nc" id="L99">            return JsonNodeFactory.instance.nullNode();</span>
+        }
+    }
+
+    public static ModelNode convert(JsonNode node) {
+<span class="nc bnc" id="L104" title="All 6 branches missed.">        switch (node.getNodeType()) {</span>
+        case STRING:
+<span class="nc" id="L106">            return new ModelNode().set(node.asText());</span>
+        case BOOLEAN:
+<span class="nc" id="L108">            return new ModelNode().set(node.asBoolean());</span>
+        case OBJECT:
+<span class="nc" id="L110">            ModelNode o = new ModelNode();</span>
+<span class="nc" id="L111">            o.setEmptyObject();</span>
+<span class="nc" id="L112">            Iterator&lt;Map.Entry&lt;String, JsonNode&gt;&gt; it = node.fields();</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            while (it.hasNext()) {</span>
+<span class="nc" id="L114">                Map.Entry&lt;String, JsonNode&gt; e = it.next();</span>
+<span class="nc" id="L115">                o.get(e.getKey()).set(convert(e.getValue()));</span>
+<span class="nc" id="L116">            }</span>
+<span class="nc" id="L117">            return o;</span>
+        case ARRAY:
+<span class="nc" id="L119">            ModelNode a = new ModelNode();</span>
+<span class="nc" id="L120">            a.setEmptyList();</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            for (JsonNode v : node) {</span>
+<span class="nc" id="L122">                a.add(convert(v));</span>
+<span class="nc" id="L123">            }</span>
+<span class="nc" id="L124">            return a;</span>
+        case NUMBER:
+<span class="nc" id="L126">            ModelNode n = new ModelNode();</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (node.isBigDecimal()) {</span>
+<span class="nc" id="L128">                n.set(node.decimalValue());</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            } else if (node.isBigInteger()) {</span>
+<span class="nc" id="L130">                n.set(node.bigIntegerValue());</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            } else if (node.isDouble()) {</span>
+<span class="nc" id="L132">                n.set(node.asDouble());</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            } else if (node.isFloat()) {</span>
+<span class="nc" id="L134">                n.set(node.floatValue());</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">            } else if (node.isInt()) {</span>
+<span class="nc" id="L136">                n.set(node.asInt());</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            } else if (node.isLong()) {</span>
+<span class="nc" id="L138">                n.set(node.asLong());</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            } else if (node.isShort()) {</span>
+<span class="nc" id="L140">                n.set(node.shortValue());</span>
+            }
+<span class="nc" id="L142">            return n;</span>
+        default:
+<span class="nc" id="L144">            return new ModelNode();</span>
+        }
+    }
+
+    public static JsonNode parse(String string) {
+        try {
+<span class="fc" id="L150">            return OBJECT_MAPPER.readTree(string);</span>
+<span class="nc" id="L151">        } catch (JsonProcessingException e) {</span>
+<span class="nc" id="L152">            throw new IllegalArgumentException(&quot;Failed to parse JSON.&quot;, e);</span>
+        }
+    }
+
+    public static JsonNode parse(Reader reader) throws IOException {
+<span class="fc" id="L157">        return OBJECT_MAPPER.readTree(reader);</span>
+    }
+
+    public static String toString(JsonNode json) {
+<span class="nc" id="L161">        return json.toPrettyString();</span>
+    }
+
+    public static boolean isNullOrUndefined(@Nullable JsonNode node) {
+<span class="fc bfc" id="L165" title="All 6 branches covered.">        return node == null || node.isNull() || node.isMissingNode();</span>
+    }
+
+    /**
+     * @param json
+     *            the JSON-encoded data
+     * @param charset
+     *            the charset of the data
+     * 
+     * @return an input stream that strips comments from json data provided as an input stream.
+     * 
+     * @deprecated This ignores the charset and uses UTf-8. Use {@link #stripComments(InputStream)} instead.
+     */
+    @Deprecated
+    public static InputStream stripComments(InputStream json, Charset charset) {
+<span class="nc" id="L180">        Reader rdr = stripComments(new InputStreamReader(json, Charset.forName(&quot;UTF-8&quot;)));</span>
+<span class="nc" id="L181">        return new ReaderInputStream(rdr, charset);</span>
+    }
+
+    /**
+     * Strips comments from the json in the inputstream. Assumes UTF-8 encoding.
+     *
+     * @param json
+     *            the JSON-encoded data
+     * 
+     * @return a reader that strips comments from json data provided as an input stream.
+     */
+    public static Reader stripComments(InputStream json) {
+<span class="nc" id="L193">        return stripComments(new InputStreamReader(json, StandardCharsets.UTF_8));</span>
+    }
+
+    /**
+     * @param json
+     *            the JSON-encoded data
+     * 
+     * @return a String with comments stripped from the provided json data.
+     */
+    public static String stripComments(String json) {
+        try {
+<span class="fc" id="L204">            try (Reader rdr = stripComments(new StringReader(json))) {</span>
+<span class="fc" id="L205">                StringBuilder bld = new StringBuilder();</span>
+
+<span class="fc" id="L207">                char[] buf = new char[1024];</span>
+                int cnt;
+
+<span class="fc bfc" id="L210" title="All 2 branches covered.">                while ((cnt = rdr.read(buf)) != -1) {</span>
+<span class="fc" id="L211">                    bld.append(buf, 0, cnt);</span>
+                }
+
+<span class="fc" id="L214">                return bld.toString();</span>
+            }
+<span class="nc" id="L216">        } catch (IOException e) {</span>
+            // doesn't happen with strings
+<span class="nc" id="L218">            throw new AssertionError(&quot;IOException in StringReader? I thought that was impossible!&quot;, e);</span>
+        }
+    }
+
+    /**
+     * @param json
+     *            the JSON-encoded data
+     * 
+     * @return a reader that strips comments from json data provided as a reader.
+     */
+    public static Reader stripComments(final Reader json) {
+<span class="fc" id="L229">        return new Reader() {</span>
+
+<span class="fc" id="L231">            State state = State.NORMAL;</span>
+<span class="fc" id="L232">            int lastChar = -1;</span>
+
+            @Override
+            public int read() throws IOException {
+                while (true) {
+<span class="fc" id="L237">                    boolean cont = true;</span>
+<span class="fc" id="L238">                    int emit = lastChar;</span>
+
+<span class="pc bpc" id="L240" title="1 of 8 branches missed.">                    switch (state) {</span>
+                    case NORMAL:
+<span class="fc bfc" id="L242" title="All 3 branches covered.">                        switch (lastChar) {</span>
+                        case '/':
+<span class="fc" id="L244">                            state = State.FIRST_SLASH;</span>
+<span class="fc" id="L245">                            break;</span>
+                        case '&quot;':
+<span class="fc" id="L247">                            state = State.IN_STRING;</span>
+                            // intentional fallthrough
+                        default:
+<span class="fc bfc" id="L250" title="All 2 branches covered.">                            if (lastChar != -1) {</span>
+<span class="fc" id="L251">                                lastChar = -1;</span>
+<span class="fc" id="L252">                                cont = false;</span>
+                            }
+                        }
+                        break;
+                    case FIRST_SLASH:
+<span class="pc bpc" id="L257" title="1 of 4 branches missed.">                        switch (lastChar) {</span>
+                        case '/':
+<span class="fc" id="L259">                            state = State.SINGLE_LINE;</span>
+<span class="fc" id="L260">                            break;</span>
+                        case '*':
+<span class="fc" id="L262">                            state = State.MULTI_LINE;</span>
+<span class="fc" id="L263">                            break;</span>
+                        case '&quot;':
+<span class="nc" id="L265">                            emit = '/';</span>
+<span class="nc" id="L266">                            state = State.IN_STRING;</span>
+<span class="nc" id="L267">                            break;</span>
+                        default:
+<span class="fc" id="L269">                            emit = '/';</span>
+<span class="fc" id="L270">                            state = State.NORMAL;</span>
+<span class="fc" id="L271">                            cont = false;</span>
+                        }
+<span class="fc" id="L273">                        break;</span>
+                    case SINGLE_LINE:
+<span class="fc bfc" id="L275" title="All 2 branches covered.">                        switch (lastChar) {</span>
+                        case '\n':
+<span class="fc" id="L277">                            state = State.NORMAL;</span>
+<span class="fc" id="L278">                            lastChar = -1;</span>
+<span class="fc" id="L279">                            cont = false;</span>
+<span class="fc" id="L280">                            break;</span>
+                        default:
+<span class="fc" id="L282">                            break;</span>
+                        }
+                        break;
+                    case MULTI_LINE:
+<span class="fc bfc" id="L286" title="All 2 branches covered.">                        switch (lastChar) {</span>
+                        case '*':
+<span class="fc" id="L288">                            state = State.STAR_IN_MULTI_LINE;</span>
+                            break;
+                        }
+<span class="fc" id="L291">                        break;</span>
+                    case STAR_IN_MULTI_LINE:
+<span class="fc bfc" id="L293" title="All 2 branches covered.">                        switch (lastChar) {</span>
+                        case '/':
+<span class="fc" id="L295">                            state = State.NORMAL;</span>
+                            break;
+                        }
+<span class="fc" id="L298">                        break;</span>
+                    case IN_STRING:
+<span class="fc bfc" id="L300" title="All 3 branches covered.">                        switch (lastChar) {</span>
+                        case '\\':
+<span class="fc" id="L302">                            state = State.ESCAPE_IN_STRING;</span>
+<span class="fc" id="L303">                            break;</span>
+                        case '&quot;':
+<span class="fc" id="L305">                            state = State.NORMAL;</span>
+                            break;
+                        }
+<span class="fc bfc" id="L308" title="All 2 branches covered.">                        if (lastChar != -1) {</span>
+<span class="fc" id="L309">                            cont = false;</span>
+<span class="fc" id="L310">                            lastChar = -1;</span>
+                        }
+                        break;
+                    case ESCAPE_IN_STRING:
+<span class="fc bfc" id="L314" title="All 2 branches covered.">                        if (lastChar != -1) {</span>
+<span class="fc" id="L315">                            cont = false;</span>
+<span class="fc" id="L316">                            lastChar = -1;</span>
+<span class="fc" id="L317">                            state = State.IN_STRING;</span>
+                        }
+                        break;
+                    }
+
+<span class="fc bfc" id="L322" title="All 2 branches covered.">                    if (cont) {</span>
+<span class="fc" id="L323">                        int ci = json.read();</span>
+
+<span class="fc bfc" id="L325" title="All 2 branches covered.">                        if (ci == -1) {</span>
+                            // the end of input.. emit something if we're in an emittable state..
+<span class="fc" id="L327">                            lastChar = -1;</span>
+
+<span class="fc bfc" id="L329" title="All 2 branches covered.">                            switch (state) {</span>
+                            case SINGLE_LINE:
+                            case MULTI_LINE:
+                            case STAR_IN_MULTI_LINE:
+<span class="fc" id="L333">                                return -1;</span>
+                            default:
+<span class="fc" id="L335">                                return emit;</span>
+                            }
+                        }
+
+<span class="fc" id="L339">                        lastChar = ci;</span>
+<span class="fc" id="L340">                    } else {</span>
+<span class="fc" id="L341">                        return emit;</span>
+                    }
+<span class="fc" id="L343">                }</span>
+            }
+
+            @Override
+            public int read(@Nonnull char[] cbuf, int off, int len) throws IOException {
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">                for (int i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L349">                    int c = read();</span>
+
+<span class="fc bfc" id="L351" title="All 2 branches covered.">                    if (c == -1) {</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">                        return i == 0 ? -1 : i;</span>
+                    }
+
+<span class="fc" id="L355">                    cbuf[off + i] = (char) c;</span>
+                }
+
+<span class="nc" id="L358">                return len;</span>
+            }
+
+            @Override
+            public void close() throws IOException {
+<span class="fc" id="L363">                json.close();</span>
+<span class="fc" id="L364">            }</span>
+        };
+    }
+
+    /**
+     * Converts the provided javascript object to JSON string.
+     *
+     * &lt;p&gt;
+     * If the object is a Map instance, it is stringified as key-value pairs, if it is a list, it is stringified as a
+     * list, otherwise the object is merely converted to string using the {@code toString()} method.
+     *
+     * @param object
+     *            the object to stringify.
+     *
+     * @return the object as a JSON string
+     */
+    public static String stringifyJavascriptObject(Object object) {
+<span class="nc" id="L381">        StringBuilder bld = new StringBuilder();</span>
+<span class="nc" id="L382">        stringify(object, bld);</span>
+<span class="nc" id="L383">        return bld.toString();</span>
+    }
+
+    public static ModelNode toModelNode(Object object) {
+<span class="nc" id="L387">        ModelNode ret = new ModelNode();</span>
+
+<span class="nc bnc" id="L389" title="All 2 branches missed.">        if (object instanceof Map) {</span>
+<span class="nc" id="L390">            ret.setEmptyObject();</span>
+<span class="nc bnc" id="L391" title="All 2 branches missed.">            for (Map.Entry&lt;?, ?&gt; e : ((Map&lt;?, ?&gt;) object).entrySet()) {</span>
+<span class="nc" id="L392">                String key = e.getKey().toString();</span>
+                try {
+                    // noinspection ResultOfMethodCallIgnored
+<span class="nc" id="L395">                    int idx = Integer.parseInt(key);</span>
+<span class="nc bnc" id="L396" title="All 2 branches missed.">                    if (!ret.has(0)) {</span>
+<span class="nc" id="L397">                        boolean isMap = false;</span>
+                        try {
+<span class="nc" id="L399">                            ret.keys();</span>
+<span class="nc" id="L400">                        } catch (IllegalArgumentException ignored) {</span>
+<span class="nc" id="L401">                            isMap = true;</span>
+<span class="nc" id="L402">                        }</span>
+
+<span class="nc bnc" id="L404" title="All 2 branches missed.">                        if (isMap) {</span>
+<span class="nc" id="L405">                            throw new IllegalArgumentException(&quot;Mixed javascript list and object not supported.&quot;);</span>
+                        }
+<span class="nc" id="L407">                        ret.setEmptyList();</span>
+                    }
+
+<span class="nc" id="L410">                    ret.get(idx).set(toModelNode(e.getValue()));</span>
+<span class="nc" id="L411">                } catch (NumberFormatException ignored) {</span>
+<span class="nc" id="L412">                    ret.get(e.getKey().toString()).set(toModelNode(e.getValue()));</span>
+<span class="nc" id="L413">                }</span>
+<span class="nc" id="L414">            }</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">        } else if (object instanceof List) {</span>
+<span class="nc" id="L416">            ret.setEmptyList();</span>
+<span class="nc bnc" id="L417" title="All 2 branches missed.">            for (Object o : (List&lt;?&gt;) object) {</span>
+<span class="nc" id="L418">                ret.add(toModelNode(o));</span>
+<span class="nc" id="L419">            }</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">        } else if (object instanceof Integer) {</span>
+<span class="nc" id="L421">            ret.set((Integer) object);</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">        } else if (object instanceof Double) {</span>
+<span class="nc" id="L423">            ret.set((Double) object);</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        } else if (object instanceof Boolean) {</span>
+<span class="nc" id="L425">            ret.set((Boolean) object);</span>
+<span class="nc bnc" id="L426" title="All 2 branches missed.">        } else if (object instanceof Long) {</span>
+<span class="nc" id="L427">            ret.set((Long) object);</span>
+<span class="nc bnc" id="L428" title="All 2 branches missed.">        } else if (object instanceof String) {</span>
+<span class="nc" id="L429">            ret.set((String) object);</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">        } else if (object instanceof BigDecimal) {</span>
+<span class="nc" id="L431">            ret.set((BigDecimal) object);</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">        } else if (object instanceof BigInteger) {</span>
+<span class="nc" id="L433">            ret.set((BigInteger) object);</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">        } else if (object != null) {</span>
+<span class="nc" id="L435">            ret.set(object.toString());</span>
+        }
+
+<span class="nc" id="L438">        return ret;</span>
+    }
+
+    private static void stringify(Object object, StringBuilder bld) {
+<span class="nc bnc" id="L442" title="All 2 branches missed.">        if (object instanceof Map) {</span>
+<span class="nc" id="L443">            bld.append(&quot;{&quot;);</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L445">            Iterator&lt;Map.Entry&gt; it = ((Map) object).entrySet().iterator();</span>
+<span class="nc bnc" id="L446" title="All 2 branches missed.">            if (it.hasNext()) {</span>
+<span class="nc" id="L447">                Map.Entry&lt;?, ?&gt; e = it.next();</span>
+<span class="nc" id="L448">                bld.append(&quot;\&quot;&quot;).append(e.getKey()).append(&quot;\&quot;:&quot;);</span>
+<span class="nc" id="L449">                stringify(e.getValue(), bld);</span>
+            }
+
+<span class="nc bnc" id="L452" title="All 2 branches missed.">            while (it.hasNext()) {</span>
+<span class="nc" id="L453">                bld.append(&quot;,&quot;);</span>
+<span class="nc" id="L454">                Map.Entry&lt;?, ?&gt; e = it.next();</span>
+<span class="nc" id="L455">                bld.append(&quot;\&quot;&quot;).append(e.getKey()).append(&quot;\&quot;:&quot;);</span>
+<span class="nc" id="L456">                stringify(e.getValue(), bld);</span>
+<span class="nc" id="L457">            }</span>
+
+<span class="nc" id="L459">            bld.append(&quot;}&quot;);</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">        } else if (object instanceof List) {</span>
+<span class="nc" id="L461">            bld.append(&quot;[&quot;);</span>
+<span class="nc" id="L462">            Iterator&lt;?&gt; it = ((List&lt;?&gt;) object).iterator();</span>
+
+<span class="nc bnc" id="L464" title="All 2 branches missed.">            if (it.hasNext()) {</span>
+<span class="nc" id="L465">                stringify(it.next(), bld);</span>
+            }
+
+<span class="nc bnc" id="L468" title="All 2 branches missed.">            while (it.hasNext()) {</span>
+<span class="nc" id="L469">                bld.append(&quot;,&quot;);</span>
+<span class="nc" id="L470">                stringify(it.next(), bld);</span>
+            }
+
+<span class="nc" id="L473">            bld.append(&quot;]&quot;);</span>
+<span class="nc bnc" id="L474" title="All 2 branches missed.">        } else if (object == null) {</span>
+<span class="nc" id="L475">            bld.append(&quot;null&quot;);</span>
+        } else {
+<span class="nc" id="L477">            bld.append(object.toString());</span>
+        }
+<span class="nc" id="L479">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

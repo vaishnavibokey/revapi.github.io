@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultValueChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.checks.methods</a> &gt; <span class="el_source">DefaultValueChanged.java</span></div><h1>DefaultValueChanged.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.checks.methods;
+
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.TypeElement;
+
+import org.revapi.Difference;
+import org.revapi.java.spi.CheckBase;
+import org.revapi.java.spi.Code;
+import org.revapi.java.spi.JavaMethodElement;
+import org.revapi.java.spi.Util;
+
+/**
+ * @author Lukas Krejci
+ * 
+ * @since 0.1
+ */
+<span class="fc" id="L37">public final class DefaultValueChanged extends CheckBase {</span>
+
+    @Override
+    public EnumSet&lt;Type&gt; getInterest() {
+<span class="fc" id="L41">        return EnumSet.of(Type.METHOD);</span>
+    }
+
+    @Override
+    protected List&lt;Difference&gt; doEnd() {
+<span class="fc" id="L46">        ActiveElements&lt;JavaMethodElement&gt; methods = popIfActive();</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (methods == null) {</span>
+<span class="fc" id="L48">            return null;</span>
+        }
+
+<span class="fc" id="L51">        AnnotationValue oldValue = methods.oldElement.getDeclaringElement().getDefaultValue();</span>
+<span class="fc" id="L52">        AnnotationValue newValue = methods.newElement.getDeclaringElement().getDefaultValue();</span>
+
+<span class="fc" id="L54">        String attribute = methods.oldElement.getDeclaringElement().getSimpleName().toString();</span>
+<span class="fc" id="L55">        String annotationType = ((TypeElement) methods.oldElement.getDeclaringElement().getEnclosingElement())</span>
+<span class="fc" id="L56">                .getQualifiedName().toString();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        String ov = oldValue == null ? null : Util.toHumanReadableString(oldValue);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        String nv = newValue == null ? null : Util.toHumanReadableString(newValue);</span>
+
+        Difference difference;
+
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (ov == null) {</span>
+<span class="fc" id="L63">            difference = createDifference(Code.METHOD_DEFAULT_VALUE_ADDED,</span>
+<span class="fc" id="L64">                    Code.attachmentsFor(methods.oldElement, methods.newElement, &quot;value&quot;, nv));</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        } else if (nv == null) {</span>
+<span class="fc" id="L66">            difference = createDifference(Code.METHOD_DEFAULT_VALUE_REMOVED,</span>
+<span class="fc" id="L67">                    Code.attachmentsFor(methods.oldElement, methods.newElement, &quot;value&quot;, ov));</span>
+        } else {
+<span class="fc" id="L69">            difference = createDifferenceWithExplicitParams(Code.METHOD_DEFAULT_VALUE_CHANGED,</span>
+<span class="fc" id="L70">                    Code.attachmentsFor(methods.oldElement, methods.newElement, &quot;oldValue&quot;, ov, &quot;newValue&quot;, nv),</span>
+                    attribute, annotationType, ov, nv);
+        }
+
+<span class="fc" id="L74">        return Collections.singletonList(difference);</span>
+    }
+
+    @Override
+    protected void doVisitMethod(JavaMethodElement oldMethod, JavaMethodElement newMethod) {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (!isBothAccessible(oldMethod, newMethod)) {</span>
+<span class="fc" id="L80">            return;</span>
+        }
+
+<span class="fc" id="L83">        AnnotationValue oldVal = oldMethod.getDeclaringElement().getDefaultValue();</span>
+<span class="fc" id="L84">        AnnotationValue newVal = newMethod.getDeclaringElement().getDefaultValue();</span>
+
+<span class="fc bfc" id="L86" title="All 10 branches covered.">        boolean equal = oldVal != null &amp;&amp; newVal != null &amp;&amp; Util.isEqual(oldVal, newVal)</span>
+                || (oldVal == null &amp;&amp; newVal == null);
+
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (!equal) {</span>
+<span class="fc" id="L90">            pushActive(oldMethod, newMethod);</span>
+        }
+<span class="fc" id="L92">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

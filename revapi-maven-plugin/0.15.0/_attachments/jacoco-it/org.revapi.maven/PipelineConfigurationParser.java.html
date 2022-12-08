@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PipelineConfigurationParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Maven Plugin</a> &gt; <a href="index.source.html" class="el_package">org.revapi.maven</a> &gt; <span class="el_source">PipelineConfigurationParser.java</span></div><h1>PipelineConfigurationParser.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.maven;
+
+import static java.util.stream.Collectors.toList;
+
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
+import org.codehaus.plexus.configuration.PlexusConfigurationException;
+import org.revapi.Criticality;
+import org.revapi.DifferenceSeverity;
+import org.revapi.PipelineConfiguration;
+import org.revapi.configuration.JSONUtil;
+
+final class PipelineConfigurationParser {
+
+    private PipelineConfigurationParser() {
+
+    }
+
+    static PipelineConfiguration.Builder parse(PlexusConfiguration pipelineConfiguration) {
+        String jsonConfig;
+        try {
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            jsonConfig = pipelineConfiguration == null ? null : pipelineConfiguration.getValue();</span>
+<span class="nc" id="L43">        } catch (PlexusConfigurationException e) {</span>
+<span class="nc" id="L44">            throw new IllegalStateException(&quot;Failed to read the configuration&quot;, e);</span>
+<span class="fc" id="L45">        }</span>
+
+        PipelineConfiguration.Builder ret;
+
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (jsonConfig == null) {</span>
+            // we're seeing XML. PipelineConfiguration is a set &quot;format&quot;, not something dynamic as the extension
+            // configurations. We can therefore try to parse it straight away.
+<span class="fc" id="L52">            ret = parsePipelineConfigurationXML(pipelineConfiguration);</span>
+        } else {
+<span class="nc" id="L54">            JsonNode json = JSONUtil.parse(jsonConfig);</span>
+<span class="nc" id="L55">            ret = PipelineConfiguration.parse(json);</span>
+        }
+
+        // important to NOT add any extensions here yet. That's the job of the pipelineModifier that is responsible
+        // to construct
+<span class="fc" id="L60">        return ret;</span>
+
+    }
+
+    private static PipelineConfiguration.Builder parsePipelineConfigurationXML(
+            PlexusConfiguration pipelineConfiguration) {
+<span class="fc" id="L66">        PipelineConfiguration.Builder bld = PipelineConfiguration.builder();</span>
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (pipelineConfiguration == null) {</span>
+<span class="fc" id="L69">            return bld;</span>
+        }
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (PlexusConfiguration c : pipelineConfiguration.getChildren()) {</span>
+<span class="pc bpc" id="L73" title="6 of 8 branches missed.">            switch (c.getName()) {</span>
+            case &quot;analyzers&quot;:
+<span class="nc" id="L75">                parseIncludeExclude(c, bld::addAnalyzerExtensionIdInclude, bld::addAnalyzerExtensionIdExclude);</span>
+<span class="nc" id="L76">                break;</span>
+            case &quot;reporters&quot;:
+<span class="nc" id="L78">                parseIncludeExclude(c, bld::addReporterExtensionIdInclude, bld::addReporterExtensionIdExclude);</span>
+<span class="nc" id="L79">                break;</span>
+            case &quot;filters&quot;:
+<span class="nc" id="L81">                parseIncludeExclude(c, bld::addFilterExtensionIdInclude, bld::addFilterExtensionIdExclude);</span>
+<span class="nc" id="L82">                break;</span>
+            case &quot;transforms&quot;:
+<span class="fc" id="L84">                parseIncludeExclude(c, bld::addTransformExtensionIdInclude, bld::addTransformExtensionIdExclude);</span>
+<span class="fc" id="L85">                break;</span>
+            case &quot;transformBlocks&quot;:
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                for (PlexusConfiguration b : c.getChildren()) {</span>
+<span class="fc" id="L88">                    List&lt;String&gt; blockIds = Stream.of(b.getChildren()).map(plexusConfiguration -&gt; {</span>
+                        try {
+<span class="fc" id="L90">                            return plexusConfiguration.getValue();</span>
+<span class="nc" id="L91">                        } catch (PlexusConfigurationException e) {</span>
+<span class="nc" id="L92">                            throw new IllegalStateException(&quot;Failed to read the configuration&quot;, e);</span>
+                        }
+<span class="fc" id="L94">                    }).collect(toList());</span>
+<span class="fc" id="L95">                    bld.addTransformationBlock(blockIds);</span>
+                }
+<span class="fc" id="L97">                break;</span>
+            case &quot;criticalities&quot;:
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                for (PlexusConfiguration t : c.getChildren()) {</span>
+                    try {
+<span class="nc" id="L101">                        String name = t.getChild(&quot;name&quot;).getValue();</span>
+<span class="nc" id="L102">                        int level = Integer.parseInt(t.getChild(&quot;level&quot;).getValue());</span>
+<span class="nc" id="L103">                        bld.addCriticality(new Criticality(name, level));</span>
+<span class="nc" id="L104">                    } catch (PlexusConfigurationException e) {</span>
+<span class="nc" id="L105">                        throw new IllegalStateException(&quot;Failed to read the configuration&quot;, e);</span>
+<span class="nc" id="L106">                    }</span>
+                }
+<span class="nc" id="L108">                break;</span>
+            case &quot;severityMapping&quot;:
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                for (PlexusConfiguration m : c.getChildren()) {</span>
+                    try {
+<span class="nc" id="L112">                        String severityName = m.getName();</span>
+<span class="nc" id="L113">                        String criticalityName = m.getValue();</span>
+<span class="nc" id="L114">                        DifferenceSeverity severity = DifferenceSeverity.fromCamelCase(severityName);</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                        if (severity == null) {</span>
+<span class="nc" id="L116">                            throw new IllegalArgumentException(&quot;Unknown severity encountered while processing the&quot;</span>
+                                    + &quot; severityMapping: &quot; + severityName);
+                        }
+
+<span class="nc" id="L120">                        bld.addUntypedSeverityMapping(severity, criticalityName);</span>
+<span class="nc" id="L121">                    } catch (PlexusConfigurationException e) {</span>
+<span class="nc" id="L122">                        throw new IllegalStateException(&quot;Failed to read the configuration&quot;, e);</span>
+<span class="nc" id="L123">                    }</span>
+                }
+            }
+        }
+
+<span class="fc" id="L128">        return bld;</span>
+    }
+
+    private static void parseIncludeExclude(PlexusConfiguration parent, Consumer&lt;String&gt; handleInclude,
+            Consumer&lt;String&gt; handleExclude) {
+
+<span class="fc" id="L134">        PlexusConfiguration include = parent.getChild(&quot;include&quot;);</span>
+<span class="fc" id="L135">        PlexusConfiguration exclude = parent.getChild(&quot;exclude&quot;);</span>
+
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (include != null) {</span>
+<span class="fc" id="L138">            Stream.of(include.getChildren()).forEach(c -&gt; {</span>
+                try {
+<span class="nc" id="L140">                    handleInclude.accept(c.getValue());</span>
+<span class="nc" id="L141">                } catch (PlexusConfigurationException e) {</span>
+<span class="nc" id="L142">                    throw new IllegalStateException(e);</span>
+<span class="nc" id="L143">                }</span>
+<span class="nc" id="L144">            });</span>
+        }
+
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (exclude != null) {</span>
+<span class="fc" id="L148">            Stream.of(exclude.getChildren()).forEach(c -&gt; {</span>
+                try {
+<span class="fc" id="L150">                    handleExclude.accept(c.getValue());</span>
+<span class="nc" id="L151">                } catch (PlexusConfigurationException e) {</span>
+<span class="nc" id="L152">                    throw new IllegalStateException(e);</span>
+<span class="fc" id="L153">                }</span>
+<span class="fc" id="L154">            });</span>
+        }
+<span class="fc" id="L156">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PackageFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Java Analyzer</a> &gt; <a href="index.source.html" class="el_package">org.revapi.java.filters</a> &gt; <span class="el_source">PackageFilter.java</span></div><h1>PackageFilter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014-2021 Lukas Krejci
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.revapi.java.filters;
+
+import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+
+import org.revapi.FilterStartResult;
+import org.revapi.Ternary;
+import org.revapi.TreeFilter;
+import org.revapi.base.IndependentTreeFilter;
+import org.revapi.base.OverridableIncludeExcludeTreeFilter;
+import org.revapi.java.spi.JavaElement;
+import org.revapi.java.spi.JavaTypeElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This is a solution to the removal of package and class filtering directly in the classpath scanner. We need something
+ * that people will be able to use until this functionality is removed for good and only the variant with revapi.filter
+ * and the java matcher are available.
+ *
+ * @deprecated This is deprecated because it is a temporary measure
+ */
+@Deprecated
+public class PackageFilter extends OverridableIncludeExcludeTreeFilter&lt;JavaElement&gt; {
+<span class="fc" id="L44">    private static final Logger LOG = LoggerFactory.getLogger(PackageFilter.class);</span>
+
+    public PackageFilter(Pattern[] includes, Pattern[] excludes) {
+<span class="fc" id="L47">        super(asFilter(includes), asFilter(excludes));</span>
+<span class="fc" id="L48">    }</span>
+
+    private static @Nullable TreeFilter&lt;JavaElement&gt; asFilter(Pattern[] patterns) {
+<span class="fc" id="L51">        return ClassFilter.asFilter(patterns, PackageFilter::asFilter);</span>
+    }
+
+    private static TreeFilter&lt;JavaElement&gt; asFilter(Pattern pattern) {
+<span class="fc" id="L55">        return new IndependentTreeFilter&lt;JavaElement&gt;() {</span>
+            @Override
+            protected FilterStartResult doStart(JavaElement element) {
+<span class="fc" id="L58">                String pkg = findPackage(element);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                if (pkg == null) {</span>
+<span class="nc" id="L60">                    return FilterStartResult.doesntMatch();</span>
+                }
+
+<span class="fc" id="L63">                Ternary match = Ternary.fromBoolean(pattern.matcher(pkg).matches());</span>
+                // undecided about the descend so that other filters can make a decisive decision and at the same time
+                // we don't force the descend
+<span class="fc" id="L66">                return FilterStartResult.direct(match, Ternary.UNDECIDED);</span>
+            }
+        };
+    }
+
+    private static String findPackage(JavaElement el) {
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">        while (el != null &amp;&amp; !(el instanceof JavaTypeElement)) {</span>
+<span class="fc" id="L73">            el = el.getParent();</span>
+        }
+
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        TypeElement type = el == null ? null : ((JavaTypeElement) el).getDeclaringElement();</span>
+
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        PackageElement pkg = el == null ? null : el.getTypeEnvironment().getElementUtils().getPackageOf(type);</span>
+
+<span class="pc bpc" id="L80" title="3 of 4 branches missed.">        if (pkg == null &amp;&amp; el != null) {</span>
+<span class="nc" id="L81">            LOG.warn(&quot;Could not find the package of type {} represented by an instance of type {}&quot;, el, el.getClass());</span>
+        }
+
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        return pkg == null ? null : pkg.getQualifiedName().toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
