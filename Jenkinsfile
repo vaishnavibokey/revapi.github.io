@@ -1,15 +1,8 @@
 pipeline {
     agent any
 
-    stages {
-        stage('download_install_apache') {
-            steps {
-                sh "sudo yum install httpd -y"
-                sh "java -version"
-
-            }
-        }
-		stage('start_httpd') {
+    stages {     
+           stage('start_httpd') {
             steps {
                 sh "sudo service httpd start"
             }
@@ -21,7 +14,7 @@ pipeline {
         }
 		stage('deploy_httpd') {
             steps {
-                sh "echo 'This is my apache server' >> index.html"
+                sh "echo 'new datar' >> index.html"
 				sh "sudo cp -r index.html /var/www/html"
             }
         }
